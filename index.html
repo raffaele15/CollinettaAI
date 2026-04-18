@@ -605,7 +605,8 @@ function rebuildSearchIndex() {
       { name: 'numeri', weight: 1 },
       { name: 'body', weight: 0.5 }
     ],
-    threshold: 0.35, includeMatches: true, minMatchCharLength: 2
+    threshold: 0.35, includeMatches: true, minMatchCharLength: 2,
+    ignoreLocation: true
   });
 }
 
