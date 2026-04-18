@@ -1,6 +1,9 @@
 # Lock advisory per edit simultanei
-# Formato: slug_file -> { utente, iniziato, scade }
-# I lock scadono automaticamente dopo 30 minuti
-# File gestito dall'app, non modificare a mano
+# Gestito dall'app, non modificare a mano
 
-locks: {}
+locks:
+  rachicentesi:
+    utente: raffaele
+    iniziato: '2026-04-18T22:19:18.066Z'
+    scade: '2026-04-18T22:49:18.066Z'
+  
