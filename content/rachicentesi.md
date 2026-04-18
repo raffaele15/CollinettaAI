@@ -3,6 +3,8 @@ id: rachicentesi
 titolo: Rachicentesi
 tag: [procedura, liquor, diagnostica, puntura-lombare]
 categoria: procedure-reparto
+capitolo: rachicentesi
+ordine_nel_capitolo: 1
 urgenza_tipica: programmata
 tempo_esecuzione_min: 30
 moduli_correlati:
