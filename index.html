@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CollinettaAI — Manuale Neurologia</title>
+<meta name="theme-color" content="#F6F2EA">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+
+<style>
+:root {
+  --bg:#F6F2EA; --bg-paper:#FBF8F2; --bg-raised:#FEFDF9; --bg-sink:#EFE9DC;
+  --ink:#1A1A1A; --ink-soft:#44433F; --ink-muted:#7A7772; --ink-faint:#A29E96;
+  --rule:#D9D2C3; --rule-soft:#E8E3D6; --rule-strong:#BEB5A1;
+  --accent:#2B4A6F; --accent-soft:#E6EBF2; --accent-dark:#1F3654;
+  --warning:#8A5A1F; --warning-soft:#F4EBD9;
+  --danger:#8F2E2A; --danger-soft:#F4E3E2;
+  --success:#2F5F3D; --success-soft:#E6F0E9;
+  --serif:'Fraunces','Iowan Old Style','Times New Roman',serif;
+  --sans:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+  --shadow-subtle:0 1px 0 rgba(255,255,255,0.7) inset, 0 0 0 1px rgba(0,0,0,0.02);
+  --shadow-raised:0 4px 16px rgba(43,42,40,0.06), 0 1px 3px rgba(43,42,40,0.04);
+  --shadow-modal:0 20px 60px rgba(43,42,40,0.18), 0 2px 8px rgba(43,42,40,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);font-size:15px;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
+.hidden{display:none!important}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
+a:hover{border-color:var(--accent)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+code{font-family:var(--mono);font-size:.92em;background:var(--bg-sink);padding:2px 5px;border-radius:2px}
+
+/* LOGIN */
+#login-view{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px}
+.login-card{max-width:440px;width:100%;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:48px 40px;box-shadow:var(--shadow-raised);position:relative}
+.login-card::before{content:'';position:absolute;top:-1px;left:-1px;right:-1px;height:3px;background:var(--ink)}
+.login-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:14px}
+.login-title{font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.05;letter-spacing:-.02em;margin-bottom:6px}
+.login-title em{font-style:italic;font-weight:300}
+.login-subtitle{font-family:var(--serif);font-style:italic;font-weight:300;font-size:16px;color:var(--ink-muted);margin-bottom:36px}
+.field{margin-bottom:20px}
+label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:6px}
+input[type="text"],input[type="password"],textarea,select{width:100%;font-family:var(--sans);font-size:15px;padding:12px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.mono-input{font-family:var(--mono);font-size:14px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-size:14px;font-weight:500;padding:12px 22px;border:1px solid var(--ink);background:var(--ink);color:var(--bg-paper);border-radius:2px;cursor:pointer;transition:background .15s,transform .08s;letter-spacing:.01em;white-space:nowrap}
+.btn:hover{background:var(--ink-soft)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.secondary{background:transparent;color:var(--ink)}
+.btn.secondary:hover{background:var(--rule-soft)}
+.btn.ghost{background:transparent;border-color:var(--rule);color:var(--ink-soft)}
+.btn.ghost:hover{border-color:var(--ink);color:var(--ink);background:var(--bg-raised)}
+.btn.danger{background:var(--danger);border-color:var(--danger)}
+.btn.danger:hover{background:#7a2723}
+.btn.full{width:100%}
+.btn.sm{font-size:12px;padding:8px 14px}
+
+.login-help{margin-top:32px;padding-top:24px;border-top:1px solid var(--rule-soft);font-size:13px;color:var(--ink-muted);line-height:1.6}
+.login-error{display:none;margin-bottom:16px;padding:10px 14px;background:var(--danger-soft);border-left:3px solid var(--danger);border-radius:2px;font-size:13px;color:var(--danger)}
+.login-error.visible{display:block}
+
+/* APP SHELL */
+#app-view{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
+header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;padding:14px 24px;background:rgba(251,248,242,.92);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--rule)}
+.brand{display:flex;align-items:baseline;gap:10px;cursor:pointer}
+.brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
+.brand-divider{width:1px;height:16px;background:var(--rule-strong)}
+.brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
+.search-wrap{position:relative;max-width:580px;margin:0 auto;width:100%}
+.search-wrap input{padding:10px 14px 10px 38px;font-size:14px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none}
+.search-kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding:2px 6px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-raised)}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:2px;color:var(--ink-soft);transition:background .15s,color .15s;position:relative}
+.icon-btn:hover{background:var(--rule-soft);color:var(--ink)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:2px;border:1px solid var(--rule);cursor:pointer;transition:background .15s}
+.user-chip:hover{background:var(--bg-raised)}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--bg-paper);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em}
+.user-name{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.02em}
+
+.app-body{display:grid;grid-template-columns:240px 1fr;min-height:0}
+@media (max-width:900px){.app-body{grid-template-columns:1fr}.sidebar{display:none}}
+aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:sticky;top:65px;align-self:start;height:calc(100vh - 65px);overflow-y:auto}
+.nav-group{margin-bottom:24px}
+.nav-group-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);padding:0 12px 8px;font-weight:500}
+.nav-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-radius:2px;font-size:14px;color:var(--ink-soft);cursor:pointer;transition:background .12s,color .12s}
+.nav-item:hover{background:var(--rule-soft);color:var(--ink)}
+.nav-item.active{background:var(--ink);color:var(--bg-paper)}
+.nav-item-count{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+.nav-item.active .nav-item-count{color:rgba(251,248,242,.6)}
+main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
+@media (max-width:700px){main.content{padding:28px 20px 60px}}
+
+/* PAGE HEADERS */
+.page-head{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--rule)}
+.page-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px}
+.page-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);line-height:1.05;letter-spacing:-.02em;color:var(--ink)}
+.page-title em{font-style:italic;font-weight:300}
+.page-meta{margin-top:16px;font-size:13px;color:var(--ink-muted);display:flex;gap:20px;flex-wrap:wrap}
+.page-meta-item{display:flex;align-items:center;gap:6px}
+.page-actions{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap}
+
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;background:var(--bg-sink);color:var(--ink-soft);border-radius:2px;margin-right:6px}
+.tag.tag-urgenza{background:var(--danger-soft);color:var(--danger)}
+.tag.tag-procedura{background:var(--accent-soft);color:var(--accent)}
+.tag.tag-tabella{background:var(--warning-soft);color:var(--warning)}
+
+.procedura-body{font-size:16px;line-height:1.7;color:var(--ink-soft)}
+.procedura-body h2{font-family:var(--serif);font-weight:500;font-size:24px;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule-soft)}
+.procedura-body h2:first-child{margin-top:0}
+.procedura-body h3{font-family:var(--serif);font-weight:500;font-size:18px;color:var(--ink);margin:28px 0 12px}
+.procedura-body p{margin-bottom:16px}
+.procedura-body ul,.procedura-body ol{margin:0 0 16px 24px}
+.procedura-body li{margin-bottom:6px}
+.procedura-body strong{color:var(--ink);font-weight:600}
+.procedura-body em{color:var(--ink)}
+.procedura-body blockquote{margin:20px 0;padding:16px 20px;background:var(--bg-sink);border-left:3px solid var(--ink-faint);font-family:var(--serif);font-style:italic;color:var(--ink-soft);font-size:15px;line-height:1.6;border-radius:0 2px 2px 0}
+.procedura-body blockquote strong{font-style:normal}
+.procedura-body code{font-size:13px}
+.procedura-body table{width:100%;border-collapse:collapse;margin:24px 0;font-size:14px}
+.procedura-body table th,.procedura-body table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.procedura-body table th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule);background:var(--bg-sink)}
+.procedura-body table tr:last-child td{border-bottom:1px solid var(--rule)}
+
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:32px;padding-top:32px;border-top:1px solid var(--rule)}
+.related-card{padding:14px 16px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;cursor:pointer;transition:border-color .15s,background .15s}
+.related-card:hover{border-color:var(--ink);background:var(--bg-raised)}
+.related-card-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px}
+.related-card-title{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);line-height:1.3}
+
+/* HOME */
+.home-hero{margin-bottom:48px}
+.home-title{font-family:var(--serif);font-weight:300;font-size:clamp(36px,6vw,56px);line-height:1.0;letter-spacing:-.03em;margin-bottom:10px}
+.home-title em{font-style:italic}
+.home-lead{font-family:var(--serif);font-style:italic;font-weight:300;font-size:18px;color:var(--ink-muted);max-width:62ch;line-height:1.5}
+.home-section{margin-bottom:48px}
+.home-section-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.home-section-title::after{content:'';flex:1;height:1px;background:var(--rule)}
+.procedure-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.procedure-card{display:block;padding:20px 22px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;cursor:pointer;transition:border-color .15s,transform .1s,box-shadow .15s;position:relative;overflow:hidden}
+.procedure-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent);transform:scaleY(0);transform-origin:top;transition:transform .2s}
+.procedure-card:hover{border-color:var(--ink);box-shadow:var(--shadow-raised)}
+.procedure-card:hover::before{transform:scaleY(1)}
+.procedure-card-title{font-family:var(--serif);font-size:19px;font-weight:500;line-height:1.2;margin-bottom:8px;color:var(--ink)}
+.procedure-card-meta{font-size:12px;color:var(--ink-muted);display:flex;align-items:center;gap:10px;margin-top:12px}
+.procedure-card-tags{margin-top:10px}
+
+/* NUMERI */
+.numeri-filters{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
+.filter-chip{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:6px 12px;border:1px solid var(--rule);border-radius:2px;color:var(--ink-soft);cursor:pointer;background:transparent;transition:all .15s}
+.filter-chip:hover{border-color:var(--ink);color:var(--ink)}
+.filter-chip.active{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
+.numeri-group{margin-bottom:32px}
+.numeri-group-title{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:12px;color:var(--ink);letter-spacing:-.01em}
+.numero-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule-soft)}
+.numero-row:last-child{border:none}
+.numero-label{font-size:14px;color:var(--ink-soft);line-height:1.4}
+.numero-label .badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;margin-right:6px;border-radius:2px;background:var(--warning-soft);color:var(--warning)}
+.numero-nums{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.numero-btn{font-family:var(--mono);font-size:13px;font-weight:500;padding:6px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;color:var(--ink);cursor:pointer;transition:all .12s;letter-spacing:.02em}
+.numero-btn:hover{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
+.numero-note{font-size:12px;color:var(--ink-muted);margin-top:4px;font-style:italic}
+.codici-banner{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:20px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;margin-bottom:32px}
+.codici-banner-item{display:flex;flex-direction:column;gap:4px}
+.codici-banner-label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted)}
+.codici-banner-value{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+
+/* EDITOR */
+.editor-head{padding-bottom:20px;margin-bottom:24px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.editor-head-main{flex:1;min-width:0}
+.editor-head-title{font-family:var(--serif);font-size:28px;font-weight:500;line-height:1.1;letter-spacing:-.02em;margin-bottom:6px}
+.editor-head-sub{font-size:13px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.02em}
+.editor-head-actions{display:flex;gap:8px}
+.editor-section{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;margin-bottom:20px;overflow:hidden}
+.editor-section-head{padding:14px 20px;border-bottom:1px solid var(--rule-soft);background:var(--bg-sink)}
+.editor-section-title{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:500}
+.editor-section-body{padding:20px}
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+
+.toastui-editor-defaultUI{border:none!important;font-family:var(--sans)!important}
+.toastui-editor-defaultUI-toolbar{background:var(--bg-sink)!important;border-bottom:1px solid var(--rule-soft)!important}
+.toastui-editor-contents{font-family:var(--serif)!important;font-size:16px!important;line-height:1.7!important;color:var(--ink-soft)!important;padding:24px!important}
+.toastui-editor-contents h1,.toastui-editor-contents h2,.toastui-editor-contents h3{font-family:var(--serif)!important;color:var(--ink)!important;border:none!important}
+.toastui-editor-mode-switch{display:none!important}
+
+/* MODALS */
+.modal-backdrop{position:fixed;inset:0;background:rgba(26,26,26,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .15s ease-out}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-modal);animation:slideUp .2s ease-out}
+@keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-head{padding:24px 24px 0}
+.modal-title{font-family:var(--serif);font-weight:500;font-size:22px;line-height:1.2;margin-bottom:8px;letter-spacing:-.01em}
+.modal-sub{font-size:14px;color:var(--ink-muted);line-height:1.55}
+.modal-body{padding:20px 24px}
+.modal-actions{padding:16px 24px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+
+/* TOASTS */
+#toast-stack{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{min-width:260px;max-width:360px;padding:12px 16px;background:var(--ink);color:var(--bg-paper);border-radius:2px;box-shadow:var(--shadow-raised);font-size:13px;animation:slideInRight .2s ease-out;pointer-events:auto;border-left:3px solid var(--bg-paper)}
+.toast.success{border-left-color:#A8D4AE}
+.toast.error{background:var(--danger)}
+.toast.warning{border-left-color:#F4EBD9}
+@keyframes slideInRight{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOutRight{from{transform:translateX(0);opacity:1}to{transform:translateX(20px);opacity:0}}
+.toast.leaving{animation:slideOutRight .2s ease-in forwards}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px 20px;color:var(--ink-muted);font-size:14px}
+.spinner{width:18px;height:18px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{padding:60px 20px;text-align:center;color:var(--ink-muted)}
+.empty-title{font-family:var(--serif);font-size:22px;color:var(--ink-soft);margin-bottom:8px}
+
+.search-results{margin-top:8px}
+.search-result-item{padding:14px 18px;border:1px solid var(--rule);border-radius:2px;margin-bottom:10px;cursor:pointer;background:var(--bg-paper);transition:all .15s}
+.search-result-item:hover{border-color:var(--ink);background:var(--bg-raised)}
+.search-result-type{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px}
+.search-result-title{font-family:var(--serif);font-size:17px;font-weight:500;margin-bottom:4px;color:var(--ink)}
+.search-result-snippet{font-size:13px;color:var(--ink-muted);line-height:1.5}
+
+@media print{body{background:white;color:black}header.topbar,aside.sidebar,.page-actions,.editor-head-actions{display:none!important}main.content{padding:0;max-width:100%}.procedura-body blockquote{background:#f4f4f4}a{color:black}}
+</style>
+</head>
+<body>
+
+<div id="login-view">
+  <div class="login-card">
+    <div class="login-eyebrow">Clinica Neurologica · AOPD</div>
+    <h1 class="login-title">Collinetta<em>AI</em></h1>
+    <p class="login-subtitle">Manuale di reparto per specializzandi</p>
+    <div id="login-error" class="login-error"></div>
+    <form id="login-form">
+      <div class="field">
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" class="mono-input" placeholder="es. dr.rossi" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="login-passphrase">Passphrase</label>
+        <input type="password" id="login-passphrase" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn full" id="login-submit"><span id="login-submit-text">Accedi</span></button>
+    </form>
+    <div class="login-help">
+      <strong>Nuovo dispositivo?</strong> La sessione non viene mai memorizzata tra aperture del browser. Dovrai reinserire la passphrase ad ogni sessione.
+      <br><br>
+      <strong>Passphrase dimenticata?</strong> Chiedi a un admin di rigenerare il tuo blob cifrato.
+    </div>
+  </div>
+</div>
+
+<div id="app-view" class="hidden">
+  <header class="topbar">
+    <div class="brand" id="brand-home" title="Torna alla home">
+      <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
+      <span class="brand-divider"></span>
+      <span class="brand-sub">Neurologia · AOPD</span>
+    </div>
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="global-search" placeholder="Cerca procedure, numeri, moduli...">
+      <span class="search-kbd">⌘K</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btn-refresh" title="Aggiorna dal repository">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      </button>
+      <div class="user-chip" id="user-menu-btn">
+        <span class="user-avatar" id="user-avatar">??</span>
+        <span class="user-name" id="user-name-display">—</span>
+      </div>
+    </div>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar">
+      <div class="nav-group">
+        <div class="nav-group-label">Contenuti</div>
+        <div class="nav-item" data-route="home"><span>Home</span></div>
+        <div class="nav-item" data-route="procedure"><span>Procedure</span><span class="nav-item-count" id="nav-count-procedure">—</span></div>
+        <div class="nav-item" data-route="numeri"><span>Numeri utili</span></div>
+        <div class="nav-item" data-route="moduli"><span>Moduli</span><span class="nav-item-count" id="nav-count-moduli">—</span></div>
+        <div class="nav-item" data-route="tabelle"><span>Tabelle</span><span class="nav-item-count" id="nav-count-tabelle">—</span></div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Sistema</div>
+        <div class="nav-item" data-route="cestino"><span>Cestino</span></div>
+        <div class="nav-item hidden" data-route="utenti" id="nav-utenti"><span>Gestione utenti</span></div>
+        <div class="nav-item" id="nav-logout"><span>Esci</span></div>
+      </div>
+    </aside>
+    <main class="content" id="main-content"></main>
+  </div>
+</div>
+
+<div id="modal-container"></div>
+<div id="toast-stack"></div>
+
+<script>
+/* ============================ CONFIG ============================ */
+const CONFIG = {
+  REPO_OWNER: 'raffaele15',
+  REPO_NAME: 'CollinettaAI',
+  AUTH_REPO_NAME: 'CollinettaAI-auth',
+  BRANCH: 'main',
+  LOCK_DURATION_MS: 30 * 60 * 1000,
+  LOCK_RENEW_MS: 25 * 60 * 1000,
+  API_BASE: 'https://api.github.com'
+};
+
+/* ============================ BOOTSTRAP PAT (PAT-1) ============================
+   Read-only PAT frammentato per accedere al repo privato CollinettaAI-auth.
+   Rigenera e sostituisci i frammenti se ruoti il token. */
+const _b1 = 'github_pat_1';
+const _b2 = '1AKSFWIQ0rA';
+const _b3 = 'zzEWQT2eBw_gd';
+const _b4 = 'fmyokfIGfG';
+const _b5 = 'MRsppaoDEE';
+const _b6 = 'z86UUxo6Xc';
+const _b7 = 'qbFwoeEEQ6cY';
+const _b8 = 'VBLW26SUkBHLrgG';
+const BOOTSTRAP_PAT = _b1 + _b2 + _b3 + _b4 + _b5 + _b6 + _b7 + _b8;
+
+/* ============================ UTILITIES ============================ */
+const $ = (id) => document.getElementById(id);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso); const now = new Date(); const diff = (now - d) / 1000;
+  if (diff < 60) return 'pochi secondi fa';
+  if (diff < 3600) return `${Math.floor(diff/60)} minuti fa`;
+  if (diff < 86400) return `${Math.floor(diff/3600)} ore fa`;
+  if (diff < 604800) return `${Math.floor(diff/86400)} giorni fa`;
+  return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function nowIso() { return new Date().toISOString(); }
+
+function toast(message, level = 'info', duration = 3500) {
+  const stack = $('toast-stack');
+  const el = document.createElement('div');
+  el.className = `toast ${level}`;
+  el.textContent = message;
+  stack.appendChild(el);
+  setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 220); }, duration);
+}
+
+/* ============================ CRYPTO ============================ */
+function base64ToBuffer(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function deriveKey(passphrase, saltBuf, iterations) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: saltBuf, iterations, hash: 'SHA-256' },
+    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+  );
+}
+
+async function decryptUserData(entry, passphrase) {
+  const salt = base64ToBuffer(entry.salt);
+  const iv = base64ToBuffer(entry.iv);
+  const ciphertext = base64ToBuffer(entry.ciphertext);
+  const key = await deriveKey(passphrase, salt, entry.iterations || 250000);
+  const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  const plainText = new TextDecoder().decode(plainBuf);
+  // Payload is always a JSON object: {token, nome?, cognome?}
+  return JSON.parse(plainText);
+}
+
+/* ============================ GITHUB API ============================ */
+const gh = {
+  _headers() {
+    return {
+      'Authorization': `token ${state.session.token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+  },
+  async getFile(path) {
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}&t=${Date.now()}`;
+    const res = await fetch(url, { headers: this._headers(), cache: 'no-store' });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`GET ${path}: ${res.status}`);
+    const data = await res.json();
+    if (data.type !== 'file') return data;
+    const content = data.content ? new TextDecoder().decode(base64ToBuffer(data.content.replace(/\n/g, ''))) : '';
+    return { content, sha: data.sha, path: data.path };
+  },
+  async listDir(path) {
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}&t=${Date.now()}`;
+    const res = await fetch(url, { headers: this._headers(), cache: 'no-store' });
+    if (res.status === 404) return [];
+    if (!res.ok) throw new Error(`LIST ${path}: ${res.status}`);
+    return await res.json();
+  },
+  async putFile(path, content, sha, message) {
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
+    const enc = new TextEncoder();
+    const bytes = enc.encode(content);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    const contentB64 = btoa(binary);
+    const body = { message, content: contentB64, branch: CONFIG.BRANCH };
+    if (sha) body.sha = sha;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { ...this._headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 409 || res.status === 422) {
+      const txt = await res.text();
+      if (txt.includes('does not match') || txt.includes('conflict') || res.status === 409) {
+        const err = new Error('conflict'); err.code = 'CONFLICT'; throw err;
+      }
+      throw new Error(`PUT ${path}: ${res.status} ${txt}`);
+    }
+    if (!res.ok) throw new Error(`PUT ${path}: ${res.status} ${await res.text()}`);
+    return await res.json();
+  },
+  async deleteFile(path, sha, message) {
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
+    const body = { message, sha, branch: CONFIG.BRANCH };
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { ...this._headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`DELETE ${path}: ${res.status}`);
+    return await res.json();
+  }
+};
+
+/* ============================ CONTENT PARSING ============================ */
+function parseMarkdown(text) {
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (m) {
+    let frontmatter = {};
+    try { frontmatter = jsyaml.load(m[1]) || {}; } catch (e) { console.warn('YAML parse error', e); }
+    return { frontmatter, body: m[2] || '' };
+  }
+  return { frontmatter: {}, body: text };
+}
+
+function stringifyMarkdown(frontmatter, body) {
+  const yamlStr = jsyaml.dump(frontmatter, { lineWidth: 120, noRefs: true, sortKeys: false });
+  return `---\n${yamlStr}---\n\n${String(body).trimStart()}`;
+}
+
+/* ============================ STATE ============================ */
+const state = {
+  session: null,
+  tokensFile: null,
+  index: { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, lastIndexed: null },
+  currentView: 'home',
+  editorInstance: null,
+  editingContext: null,
+  fuse: null
+};
+
+const SESSION_KEY = 'collinettaai.session';
+function saveSession() { if (state.session) sessionStorage.setItem(SESSION_KEY, JSON.stringify(state.session)); }
+function loadSession() {
+  const raw = sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+function clearSession() { sessionStorage.removeItem(SESSION_KEY); state.session = null; }
+
+
+/* ============================ INDEX BUILD ============================ */
+async function buildIndex() {
+  const index = { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, lastIndexed: nowIso() };
+
+  try {
+    const files = await gh.listDir('content/procedure');
+    for (const f of files) {
+      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
+      const slug = f.name.replace(/\.md$/, '');
+      const file = await gh.getFile(f.path);
+      if (!file) continue;
+      const { frontmatter, body } = parseMarkdown(file.content);
+      index.procedure.push({ slug, path: f.path, sha: file.sha, ...frontmatter, body_preview: body.substring(0, 300), body });
+    }
+  } catch (e) { console.warn('procedure index error', e); }
+
+  try {
+    const files = await gh.listDir('content/moduli');
+    for (const f of files) {
+      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
+      const slug = f.name.replace(/\.md$/, '');
+      const file = await gh.getFile(f.path);
+      if (!file) continue;
+      const { frontmatter, body } = parseMarkdown(file.content);
+      index.moduli.push({ slug, path: f.path, sha: file.sha, ...frontmatter, body });
+    }
+  } catch (e) { console.warn('moduli index error', e); }
+
+  try {
+    const files = await gh.listDir('content/tabelle');
+    for (const f of files) {
+      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
+      const slug = f.name.replace(/\.md$/, '');
+      const file = await gh.getFile(f.path);
+      if (!file) continue;
+      const { frontmatter, body } = parseMarkdown(file.content);
+      index.tabelle.push({ slug, path: f.path, sha: file.sha, ...frontmatter, body });
+    }
+  } catch (e) { console.warn('tabelle index error', e); }
+
+  try {
+    const cFiles = await gh.listDir('cestino/procedure');
+    for (const f of cFiles) {
+      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
+      const file = await gh.getFile(f.path);
+      if (!file) continue;
+      const { frontmatter } = parseMarkdown(file.content);
+      index.cestino.push({ filename: f.name, path: f.path, sha: file.sha, ...frontmatter });
+    }
+  } catch (e) { console.warn('cestino index error', e); }
+
+  try {
+    const file = await gh.getFile('content/numeri.yml');
+    if (file) {
+      const parsed = jsyaml.load(file.content) || {};
+      index.numeri = { ...parsed, _sha: file.sha, _path: file.path };
+    }
+  } catch (e) { console.warn('numeri load error', e); }
+
+  state.index = index;
+  rebuildSearchIndex();
+  updateNavCounts();
+  return index;
+}
+
+function rebuildSearchIndex() {
+  const docs = [];
+  state.index.procedure.forEach(p => docs.push({
+    type: 'procedura', slug: p.slug,
+    titolo: p.titolo || p.slug,
+    tag: (p.tag || []).join(' '),
+    termini: (p.termini_equivalenti || []).join(' '),
+    body: p.body_preview || ''
+  }));
+  state.index.moduli.forEach(m => docs.push({
+    type: 'modulo', slug: m.slug,
+    titolo: m.titolo || m.slug,
+    tag: (m.tag || []).join(' ')
+  }));
+  state.index.tabelle.forEach(t => docs.push({
+    type: 'tabella', slug: t.slug,
+    titolo: t.titolo || t.slug
+  }));
+  if (state.index.numeri) {
+    (state.index.numeri.gruppi || []).forEach(g => {
+      (g.contatti || []).forEach(c => {
+        docs.push({
+          type: 'numero', slug: c.id,
+          titolo: c.etichetta, gruppo: g.nome,
+          numeri: (c.numeri || []).join(' '),
+          tag: (c.tag || []).join(' ')
+        });
+      });
+    });
+  }
+  state.fuse = new Fuse(docs, {
+    keys: [
+      { name: 'titolo', weight: 3 },
+      { name: 'termini', weight: 2 },
+      { name: 'tag', weight: 1.5 },
+      { name: 'gruppo', weight: 1 },
+      { name: 'numeri', weight: 1 },
+      { name: 'body', weight: 0.5 }
+    ],
+    threshold: 0.35, includeMatches: true, minMatchCharLength: 2
+  });
+}
+
+function updateNavCounts() {
+  const p = $('nav-count-procedure'), m = $('nav-count-moduli'), t = $('nav-count-tabelle');
+  if (p) p.textContent = state.index.procedure.length;
+  if (m) m.textContent = state.index.moduli.length;
+  if (t) t.textContent = state.index.tabelle.length;
+}
+
+/* ============================ LOCKS ============================ */
+const locks = {
+  _renewTimer: null,
+  async load() {
+    const file = await gh.getFile('locks.yml');
+    if (!file) return { locks: {}, _sha: null };
+    const data = jsyaml.load(file.content) || {};
+    return { locks: data.locks || {}, _sha: file.sha };
+  },
+  async write(locksObj, sha, action) {
+    const header = "# Lock advisory per edit simultanei\n# Gestito dall'app, non modificare a mano\n\n";
+    const locksYaml = Object.keys(locksObj).length === 0
+      ? 'locks: {}\n'
+      : 'locks:\n' + jsyaml.dump(locksObj, { indent: 2, lineWidth: 120 }).replace(/^/gm, '  ');
+    const content = header + locksYaml;
+    return gh.putFile('locks.yml', content, sha, `chore(locks): ${action}`);
+  },
+  isExpired(lock) {
+    if (!lock || !lock.scade) return true;
+    return new Date(lock.scade) < new Date();
+  },
+  async acquire(slug) {
+    try {
+      const { locks: all, _sha } = await this.load();
+      const existing = all[slug];
+      if (existing && !this.isExpired(existing) && existing.utente !== state.session.username) {
+        return { acquired: false, heldBy: existing.utente, since: existing.iniziato, expires: existing.scade };
+      }
+      const now = new Date();
+      all[slug] = {
+        utente: state.session.username,
+        iniziato: now.toISOString(),
+        scade: new Date(now.getTime() + CONFIG.LOCK_DURATION_MS).toISOString()
+      };
+      await this.write(all, _sha, `acquire ${slug} by ${state.session.username}`);
+      this._startRenew(slug);
+      return { acquired: true };
+    } catch (e) {
+      console.warn('lock acquire failed', e);
+      return { acquired: true, warning: 'Lock non registrato' };
+    }
+  },
+  async release(slug) {
+    this._stopRenew();
+    try {
+      const { locks: all, _sha } = await this.load();
+      if (all[slug] && all[slug].utente === state.session.username) {
+        delete all[slug];
+        await this.write(all, _sha, `release ${slug} by ${state.session.username}`);
+      }
+    } catch (e) { console.warn('lock release failed', e); }
+  },
+  _startRenew(slug) {
+    this._stopRenew();
+    this._renewTimer = setTimeout(async () => {
+      try {
+        const { locks: all, _sha } = await this.load();
+        if (all[slug] && all[slug].utente === state.session.username) {
+          all[slug].scade = new Date(Date.now() + CONFIG.LOCK_DURATION_MS).toISOString();
+          await this.write(all, _sha, `renew ${slug}`);
+          this._startRenew(slug);
+        }
+      } catch (e) { console.warn('lock renew failed', e); }
+    }, CONFIG.LOCK_RENEW_MS);
+  },
+  _stopRenew() { if (this._renewTimer) { clearTimeout(this._renewTimer); this._renewTimer = null; } }
+};
+
+/* ============================ LOGIN ============================ */
+async function loadTokensFile() {
+  try {
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.AUTH_REPO_NAME}/contents/data/encrypted-tokens.json?ref=${CONFIG.BRANCH}&t=${Date.now()}`;
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `token ${BOOTSTRAP_PAT}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      },
+      cache: 'no-store'
+    });
+    if (res.status === 404) throw new Error('File data/encrypted-tokens.json non trovato nel repo auth');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const meta = await res.json();
+    if (!meta.content) throw new Error('File auth vuoto');
+    const json = new TextDecoder().decode(base64ToBuffer(meta.content.replace(/\n/g, '')));
+    return JSON.parse(json);
+  } catch (e) {
+    throw new Error(`Impossibile caricare credenziali dal repo auth. Verifica PAT-1 e nome repo. (${e.message})`);
+  }
+}
+
+async function attemptLogin(username, passphrase) {
+  const loginError = $('login-error');
+  const btn = $('login-submit');
+  const btnText = $('login-submit-text');
+  loginError.classList.remove('visible');
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner" style="margin:0;width:14px;height:14px;border-width:2px;border-top-color:currentColor;"></span> Decifratura...';
+
+  try {
+    if (!state.tokensFile) state.tokensFile = await loadTokensFile();
+    const entry = (state.tokensFile.utenti || {})[username];
+    if (!entry) throw new Error('Username non riconosciuto.');
+    let payload;
+    try { payload = await decryptUserData(entry, passphrase); }
+    catch { throw new Error('Passphrase errata.'); }
+    if (!payload || !payload.token) throw new Error('Payload cifrato non valido.');
+    const testRes = await fetch(`${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}`, {
+      headers: { 'Authorization': `token ${payload.token}`, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!testRes.ok) throw new Error(`Token non valido (HTTP ${testRes.status}).`);
+    state.session = {
+      username,
+      token: payload.token,
+      nome: payload.nome || null,
+      cognome: payload.cognome || null
+    };
+    saveSession();
+    await enterApp();
+  } catch (e) {
+    loginError.textContent = e.message;
+    loginError.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Accedi';
+  }
+}
+
+async function enterApp() {
+  $('login-view').classList.add('hidden');
+  $('app-view').classList.remove('hidden');
+  const displayName = (state.session.nome && state.session.cognome)
+    ? `${state.session.nome} ${state.session.cognome}`
+    : state.session.username;
+  $('user-name-display').textContent = displayName;
+  const avatarSource = (state.session.nome && state.session.cognome)
+    ? state.session.nome[0] + state.session.cognome[0]
+    : state.session.username.substring(0, 2);
+  $('user-avatar').textContent = avatarSource.toUpperCase();
+  $('nav-utenti').classList.toggle('hidden', state.session.username !== 'admin');
+  renderLoading('Indicizzazione contenuti...');
+  try {
+    await buildIndex();
+    navigate('home');
+  } catch (e) {
+    renderError('Errore caricamento indice', e.message);
+  }
+}
+
+function logout() {
+  clearSession();
+  state.index = { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, lastIndexed: null };
+  state.editingContext = null;
+  if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
+  $('app-view').classList.add('hidden');
+  $('login-view').classList.remove('hidden');
+  $('login-username').value = '';
+  $('login-passphrase').value = '';
+  $('login-error').classList.remove('visible');
+}
+
+
+/* ============================ ROUTER ============================ */
+function navigate(route, params = {}) {
+  if (state.editingContext && state.editingContext.isDirty) {
+    if (!confirm("Hai modifiche non salvate. Sicuro di uscire dall'editor?")) return;
+  }
+  if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
+  if (state.editingContext && state.editingContext.hasLock) {
+    locks.release(state.editingContext.slug).catch(() => {});
+  }
+  state.editingContext = null;
+  state.currentView = route;
+  window.removeEventListener('beforeunload', beforeUnloadHandler);
+
+  $$('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.route === route || (route.startsWith(el.dataset.route + '-') && el.dataset.route));
+  });
+  if (route !== 'search') $('global-search').value = '';
+
+  switch (route) {
+    case 'home': renderHome(); break;
+    case 'procedure': renderProcedureList(); break;
+    case 'procedura': renderProcedura(params.slug); break;
+    case 'procedura-edit': renderProceduraEditor(params.slug); break;
+    case 'numeri': renderNumeri(params.filter); break;
+    case 'moduli': renderModuliList(); break;
+    case 'modulo': renderModulo(params.slug); break;
+    case 'tabelle': renderTabelleList(); break;
+    case 'tabella': renderTabella(params.slug); break;
+    case 'cestino': renderCestino(); break;
+    case 'utenti': renderGestioneUtenti(); break;
+    case 'search': renderSearchResults(params.query); break;
+    default: renderHome();
+  }
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* ============================ VIEW HELPERS ============================ */
+function renderLoading(message = 'Caricamento...') {
+  $('main-content').innerHTML = `<div class="loading"><span class="spinner"></span> ${escapeHtml(message)}</div>`;
+}
+
+function renderError(title, detail) {
+  $('main-content').innerHTML = `
+    <div class="empty">
+      <div class="empty-title">${escapeHtml(title)}</div>
+      <p>${escapeHtml(detail || '')}</p>
+      <button class="btn ghost" style="margin-top:20px;" onclick="navigate('home')">Torna alla home</button>
+    </div>`;
+}
+
+function findContattoBySlug(slug) {
+  if (!state.index.numeri) return null;
+  for (const g of (state.index.numeri.gruppi || [])) {
+    for (const c of (g.contatti || [])) if (c.id === slug) return { ...c, _gruppo: g.nome };
+  }
+  return null;
+}
+
+/* ============================ VIEW — HOME ============================ */
+function renderHome() {
+  const procs = state.index.procedure;
+  const recent = [...procs].sort((a, b) => new Date(b.ultima_modifica || 0) - new Date(a.ultima_modifica || 0)).slice(0, 6);
+  $('main-content').innerHTML = `
+    <div class="home-hero">
+      <h1 class="home-title">Manuale di <em>reparto</em></h1>
+      <p class="home-lead">Procedure, moduli e numeri utili per gli specializzandi di Neurologia. Mantenuto collettivamente, aggiornato in continuo.</p>
+    </div>
+    <div class="home-section">
+      <div class="home-section-title"><span>Procedure</span></div>
+      <div class="procedure-grid">
+        ${procs.map(p => renderProcedureCard(p)).join('')}
+        <div class="procedure-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);" onclick="toast('Creazione nuova procedura — prossima versione', 'info')">
+          <span style="font-family:var(--serif);font-style:italic;">+ Nuova procedura</span>
+        </div>
+      </div>
+    </div>
+    <div class="home-section">
+      <div class="home-section-title"><span>Modificate di recente</span></div>
+      ${recent.map(p => `
+        <div class="numero-row" style="cursor:pointer;" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
+          <div>
+            <div style="font-family:var(--serif);font-size:17px;font-weight:500;color:var(--ink);">${escapeHtml(p.titolo || p.slug)}</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;">Modificato ${timeAgo(p.ultima_modifica)} da <span style="font-family:var(--mono);">${escapeHtml(p.modificato_da || '—')}</span></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);">→</div>
+        </div>
+      `).join('') || '<p style="color:var(--ink-muted);">Nessuna modifica recente.</p>'}
+    </div>
+    <div class="home-section">
+      <div class="home-section-title"><span>Accesso rapido</span></div>
+      <div class="procedure-grid">
+        <div class="procedure-card" onclick="navigate('numeri')">
+          <div class="procedure-card-title">Numeri utili</div>
+          <div class="procedure-card-meta">Rubrica telefonica del reparto</div>
+        </div>
+        <div class="procedure-card" onclick="navigate('numeri', {filter:'guardia'})">
+          <div class="procedure-card-title">MdG di guardia</div>
+          <div class="procedure-card-meta">Medici di guardia delle specialità</div>
+        </div>
+        <div class="procedure-card" onclick="navigate('numeri', {filter:'urgenza'})">
+          <div class="procedure-card-title">Urgenze</div>
+          <div class="procedure-card-meta">Contatti per emergenze e urgenze</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderProcedureCard(p) {
+  const tagsHtml = (p.tag || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+  return `
+    <div class="procedure-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
+      <div class="procedure-card-title">${escapeHtml(p.titolo || p.slug)}</div>
+      <div class="procedure-card-tags">${tagsHtml}</div>
+      <div class="procedure-card-meta"><span>Aggiornato ${timeAgo(p.ultima_modifica)}</span></div>
+    </div>`;
+}
+
+function renderProcedureList() {
+  const procs = state.index.procedure;
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Sezione</div>
+      <h1 class="page-title">Procedure</h1>
+    </div>
+    <div class="procedure-grid">${procs.map(p => renderProcedureCard(p)).join('') || '<p style="color:var(--ink-muted);">Nessuna procedura.</p>'}</div>`;
+}
+
+/* ============================ VIEW — PROCEDURA ============================ */
+function renderProcedura(slug) {
+  const proc = state.index.procedure.find(p => p.slug === slug);
+  if (!proc) return renderError('Procedura non trovata', slug);
+  const tagsHtml = (proc.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
+  const bodyHtml = DOMPurify.sanitize(marked.parse(proc.body || ''));
+
+  const related = [];
+  (proc.moduli_correlati || []).forEach(mid => {
+    const m = state.index.moduli.find(x => x.slug === mid);
+    if (m) related.push({ label: 'Modulo', title: m.titolo, click: `navigate('modulo', {slug:'${m.slug}'})` });
+  });
+  (proc.tabelle_correlate || []).forEach(tid => {
+    const t = state.index.tabelle.find(x => x.slug === tid);
+    if (t) related.push({ label: 'Tabella', title: t.titolo, click: `navigate('tabella', {slug:'${t.slug}'})` });
+  });
+  (proc.numeri_correlati || []).forEach(nid => {
+    const n = findContattoBySlug(nid);
+    if (n) related.push({ label: 'Numero', title: `${n.etichetta} (${(n.numeri || []).join(', ')})`, click: `navigate('numeri', {filter:'${escapeHtml(nid)}'})` });
+  });
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Procedura</div>
+      <h1 class="page-title">${escapeHtml(proc.titolo || proc.slug)}</h1>
+      <div style="margin-top:12px;">${tagsHtml}</div>
+      <div class="page-meta">
+        <div class="page-meta-item">Aggiornata ${timeAgo(proc.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(proc.modificato_da || '—')}</strong></div>
+        ${proc.tempo_esecuzione_min ? `<div class="page-meta-item">Tempo tipico: ${escapeHtml(String(proc.tempo_esecuzione_min))} min</div>` : ''}
+      </div>
+      <div class="page-actions">
+        <button class="btn" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
+        <button class="btn ghost" onclick="window.print()">Stampa</button>
+        <button class="btn ghost" onclick="showHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
+        <button class="btn ghost" onclick="confirmDelete('procedura', '${escapeHtml(slug)}')">Elimina</button>
+      </div>
+    </div>
+    <article class="procedura-body">${bodyHtml}</article>
+    ${related.length ? `<div class="related-grid">${related.map(r => `
+      <div class="related-card" onclick="${r.click}">
+        <div class="related-card-label">${escapeHtml(r.label)}</div>
+        <div class="related-card-title">${escapeHtml(r.title)}</div>
+      </div>`).join('')}</div>` : ''}`;
+}
+
+function showHistoryModal(slug) {
+  const proc = state.index.procedure.find(p => p.slug === slug);
+  if (!proc) return;
+  const storia = proc.cronologia_recente || [];
+  const rows = storia.length
+    ? storia.map(s => `
+        <div class="numero-row">
+          <div>
+            <div style="font-size:14px;">${escapeHtml(s.nota || '—')}</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;">
+              <span style="font-family:var(--mono);">${escapeHtml(s.utente)}</span> · ${timeAgo(s.data)}
+            </div>
+          </div>
+        </div>`).join('')
+    : '<p style="color:var(--ink-muted);padding:16px 0;">Nessuna cronologia nel file.</p>';
+  const ghUrl = `https://github.com/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/commits/${CONFIG.BRANCH}/${proc.path}`;
+  showModal({
+    title: 'Cronologia modifiche',
+    subtitle: 'Ultime revisioni registrate nel file.',
+    body: rows + `<p style="margin-top:16px;font-size:13px;color:var(--ink-muted);">Per la cronologia Git completa: <a href="${ghUrl}" target="_blank" rel="noopener">vedi su GitHub</a></p>`,
+    actions: [{ label: 'Chiudi', onClick: closeModal }]
+  });
+}
+
+
+/* ============================ VIEW — EDITOR ============================ */
+async function renderProceduraEditor(slug) {
+  renderLoading('Preparazione editor...');
+  const lockResult = await locks.acquire(slug);
+  if (!lockResult.acquired) {
+    showModal({
+      title: 'File già in modifica',
+      subtitle: `Il file è attualmente in modifica da <strong style="font-family:var(--mono);">${escapeHtml(lockResult.heldBy)}</strong> dal ${new Date(lockResult.since).toLocaleTimeString('it-IT')}.`,
+      body: '<p style="font-size:14px;color:var(--ink-soft);">Cosa vuoi fare?</p>',
+      actions: [
+        { label: 'Annulla', variant: 'ghost', onClick: () => { closeModal(); navigate('procedura', {slug}); } },
+        { label: 'Modifica comunque', variant: 'danger', onClick: () => { closeModal(); proceedToEdit(slug, true); } }
+      ]
+    });
+    return;
+  }
+  proceedToEdit(slug, false);
+}
+
+async function proceedToEdit(slug, forceOverride) {
+  try {
+    const file = await gh.getFile(`content/procedure/${slug}.md`);
+    if (!file) throw new Error('File non trovato');
+    const { frontmatter, body } = parseMarkdown(file.content);
+    state.editingContext = {
+      type: 'procedura', slug, path: file.path, sha: file.sha,
+      originalFrontmatter: { ...frontmatter },
+      originalBody: body,
+      isDirty: false,
+      hasLock: !forceOverride
+    };
+    renderEditorUI(slug, frontmatter, body);
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+  } catch (e) {
+    renderError('Errore apertura editor', e.message);
+  }
+}
+
+function beforeUnloadHandler(e) {
+  if (state.editingContext && state.editingContext.isDirty) {
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+}
+
+function renderEditorUI(slug, frontmatter, body) {
+  const moduliOpts = state.index.moduli.map(m => m.slug);
+  const tabelleOpts = state.index.tabelle.map(t => t.slug);
+  const proceduraOpts = state.index.procedure.map(p => p.slug).filter(s => s !== slug);
+
+  $('main-content').innerHTML = `
+    <div class="editor-head">
+      <div class="editor-head-main">
+        <div class="editor-head-title">${escapeHtml(frontmatter.titolo || slug)}</div>
+        <div class="editor-head-sub">Modifica — ${escapeHtml(slug)}.md</div>
+      </div>
+      <div class="editor-head-actions">
+        <button class="btn ghost" id="btn-cancel-edit">Annulla</button>
+        <button class="btn" id="btn-save-edit">Salva</button>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <div class="editor-section-head"><div class="editor-section-title">Metadati</div></div>
+      <div class="editor-section-body">
+        <div class="meta-grid">
+          <div class="field">
+            <label for="meta-titolo">Titolo</label>
+            <input type="text" id="meta-titolo" value="${escapeHtml(frontmatter.titolo || '')}">
+          </div>
+          <div class="field">
+            <label for="meta-categoria">Categoria</label>
+            <select id="meta-categoria">
+              <option value="procedure-reparto" ${frontmatter.categoria === 'procedure-reparto' ? 'selected' : ''}>Procedura di reparto</option>
+              <option value="workflow" ${frontmatter.categoria === 'workflow' ? 'selected' : ''}>Workflow / Guida</option>
+              <option value="educational" ${frontmatter.categoria === 'educational' ? 'selected' : ''}>Educational</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="meta-tag">Tag (separati da virgola)</label>
+            <input type="text" id="meta-tag" value="${escapeHtml((frontmatter.tag || []).join(', '))}">
+          </div>
+          <div class="field">
+            <label for="meta-tempo">Tempo esecuzione (min)</label>
+            <input type="text" id="meta-tempo" class="mono-input" value="${escapeHtml(frontmatter.tempo_esecuzione_min || '')}">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label for="meta-termini">Termini equivalenti / sinonimi (separati da virgola)</label>
+            <input type="text" id="meta-termini" value="${escapeHtml((frontmatter.termini_equivalenti || []).join(', '))}">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label for="meta-note-modifica">Nota breve su questa modifica (appare in cronologia)</label>
+            <input type="text" id="meta-note-modifica" placeholder="es. aggiornato numero lab neurologia">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <div class="editor-section-head"><div class="editor-section-title">Relazioni</div></div>
+      <div class="editor-section-body">
+        <div class="meta-grid">
+          <div class="field">
+            <label>Moduli correlati (slug, separati da virgola)</label>
+            <input type="text" id="meta-moduli" class="mono-input" value="${escapeHtml((frontmatter.moduli_correlati || []).join(', '))}" placeholder="es. ${moduliOpts.slice(0,2).join(', ')}">
+          </div>
+          <div class="field">
+            <label>Tabelle correlate</label>
+            <input type="text" id="meta-tabelle" class="mono-input" value="${escapeHtml((frontmatter.tabelle_correlate || []).join(', '))}" placeholder="es. ${tabelleOpts.slice(0,2).join(', ')}">
+          </div>
+          <div class="field">
+            <label>Procedure correlate</label>
+            <input type="text" id="meta-procedure" class="mono-input" value="${escapeHtml((frontmatter.procedure_correlate || []).join(', '))}" placeholder="es. ${proceduraOpts.slice(0,2).join(', ')}">
+          </div>
+          <div class="field">
+            <label>Numeri correlati (id contatti)</label>
+            <input type="text" id="meta-numeri" class="mono-input" value="${escapeHtml((frontmatter.numeri_correlati || []).join(', '))}" placeholder="es. lab-neurologia, mdg-neurologia">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <div class="editor-section-head"><div class="editor-section-title">Contenuto</div></div>
+      <div id="editor-wrapper"></div>
+    </div>`;
+
+  state.editorInstance = new toastui.Editor({
+    el: $('editor-wrapper'),
+    height: '600px',
+    initialEditType: 'wysiwyg',
+    previewStyle: 'vertical',
+    initialValue: body,
+    usageStatistics: false,
+    hideModeSwitch: true,
+    toolbarItems: [
+      ['heading', 'bold', 'italic', 'strike'],
+      ['hr', 'quote'],
+      ['ul', 'ol', 'task'],
+      ['table', 'link'],
+      ['code', 'codeblock']
+    ]
+  });
+
+  state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  ['meta-titolo','meta-categoria','meta-tag','meta-tempo','meta-termini','meta-note-modifica','meta-moduli','meta-tabelle','meta-procedure','meta-numeri'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  });
+
+  $('btn-cancel-edit').onclick = () => {
+    if (state.editingContext.isDirty && !confirm('Annullare le modifiche non salvate?')) return;
+    if (state.editingContext.hasLock) locks.release(state.editingContext.slug).catch(() => {});
+    state.editingContext = null;
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    navigate('procedura', { slug });
+  };
+  $('btn-save-edit').onclick = saveProcedura;
+}
+
+async function saveProcedura() {
+  const ctx = state.editingContext;
+  if (!ctx) return;
+  const btn = $('btn-save-edit');
+  btn.disabled = true;
+  btn.textContent = 'Salvataggio...';
+
+  try {
+    const nf = { ...ctx.originalFrontmatter };
+    nf.titolo = $('meta-titolo').value.trim() || ctx.slug;
+    nf.categoria = $('meta-categoria').value;
+    nf.tag = $('meta-tag').value.split(',').map(s => s.trim()).filter(Boolean);
+    const tempo = $('meta-tempo').value.trim();
+    if (tempo) { const n = parseInt(tempo, 10); nf.tempo_esecuzione_min = isNaN(n) ? tempo : n; }
+    else delete nf.tempo_esecuzione_min;
+    nf.termini_equivalenti = $('meta-termini').value.split(',').map(s => s.trim()).filter(Boolean);
+    nf.moduli_correlati = $('meta-moduli').value.split(',').map(s => s.trim()).filter(Boolean);
+    nf.tabelle_correlate = $('meta-tabelle').value.split(',').map(s => s.trim()).filter(Boolean);
+    nf.procedure_correlate = $('meta-procedure').value.split(',').map(s => s.trim()).filter(Boolean);
+    nf.numeri_correlati = $('meta-numeri').value.split(',').map(s => s.trim()).filter(Boolean);
+    nf.ultima_modifica = nowIso();
+    nf.modificato_da = state.session.username;
+
+    const nota = $('meta-note-modifica').value.trim() || 'aggiornamento';
+    nf.cronologia_recente = [
+      { data: nowIso(), utente: state.session.username, nota },
+      ...((ctx.originalFrontmatter.cronologia_recente || []).slice(0, 4))
+    ];
+
+    const newBody = state.editorInstance.getMarkdown();
+    const newContent = stringifyMarkdown(nf, newBody);
+    const commitMsg = `Aggiorna ${ctx.slug} — ${nota} (by ${state.session.username})`;
+
+    try { await gh.putFile(ctx.path, newContent, ctx.sha, commitMsg); }
+    catch (e) {
+      if (e.code === 'CONFLICT') return handleConflict(ctx, newContent, commitMsg);
+      throw e;
+    }
+
+    toast('Modifiche salvate', 'success');
+    if (ctx.hasLock) locks.release(ctx.slug).catch(() => {});
+
+    const idx = state.index.procedure.findIndex(p => p.slug === ctx.slug);
+    if (idx >= 0) {
+      state.index.procedure[idx] = {
+        ...state.index.procedure[idx], ...nf,
+        body: newBody, body_preview: newBody.substring(0, 300)
+      };
+      rebuildSearchIndex();
+    }
+
+    state.editingContext = null;
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
+    navigate('procedura', { slug: ctx.slug });
+  } catch (e) {
+    toast('Errore salvataggio: ' + e.message, 'error', 6000);
+    btn.disabled = false;
+    btn.textContent = 'Salva';
+  }
+}
+
+async function handleConflict(ctx, ourNewContent, commitMsg) {
+  const btn = $('btn-save-edit');
+  const fresh = await gh.getFile(ctx.path);
+  const { frontmatter: theirFm } = parseMarkdown(fresh.content);
+  showModal({
+    title: 'Conflitto di modifiche',
+    subtitle: `Il file è stato aggiornato da <strong style="font-family:var(--mono);">${escapeHtml(theirFm.modificato_da || 'qualcun altro')}</strong> ${timeAgo(theirFm.ultima_modifica)}.`,
+    body: `
+      <p style="font-size:14px;color:var(--ink-soft);margin-bottom:16px;">
+        La risoluzione a livello di sezione arriverà in v1.1. Per ora due strade:
+      </p>
+      <div style="display:grid;gap:10px;">
+        <div style="padding:14px;background:var(--bg-sink);border-left:3px solid var(--accent);border-radius:2px;">
+          <strong style="font-size:13px;">Ricarica e riapplica</strong><br>
+          <span style="font-size:13px;color:var(--ink-soft);">Perdi le tue modifiche, riparti dalla versione fresca.</span>
+        </div>
+        <div style="padding:14px;background:var(--bg-sink);border-left:3px solid var(--danger);border-radius:2px;">
+          <strong style="font-size:13px;">Sovrascrivi</strong><br>
+          <span style="font-size:13px;color:var(--ink-soft);">Salvi la tua versione. Le loro modifiche restano in Git history ma non nel file attuale.</span>
+        </div>
+      </div>`,
+    actions: [
+      { label: 'Ricarica e riapplica', onClick: async () => {
+        closeModal();
+        const slugLocal = ctx.slug;
+        state.editingContext = null;
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+        if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
+        await buildIndex();
+        navigate('procedura-edit', { slug: slugLocal });
+      }},
+      { label: 'Sovrascrivi', variant: 'danger', onClick: async () => {
+        closeModal();
+        try {
+          await gh.putFile(ctx.path, ourNewContent, fresh.sha, commitMsg + ' [OVERRIDE]');
+          toast('Salvato (sovrascritto)', 'warning');
+          if (ctx.hasLock) locks.release(ctx.slug).catch(() => {});
+          const slugLocal = ctx.slug;
+          state.editingContext = null;
+          window.removeEventListener('beforeunload', beforeUnloadHandler);
+          if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
+          await buildIndex();
+          navigate('procedura', { slug: slugLocal });
+        } catch (e) {
+          toast('Override fallito: ' + e.message, 'error');
+          btn.disabled = false; btn.textContent = 'Salva';
+        }
+      }},
+      { label: 'Annulla', variant: 'ghost', onClick: () => { closeModal(); btn.disabled = false; btn.textContent = 'Salva'; } }
+    ]
+  });
+}
+
+
+/* ============================ VIEW — NUMERI ============================ */
+function renderNumeri(filter) {
+  const data = state.index.numeri;
+  if (!data) return renderError('Rubrica non disponibile', 'Il file content/numeri.yml non è stato caricato.');
+
+  const codiciGen = data.codici_generali || [];
+  const gruppi = data.gruppi || [];
+
+  let filteredGruppi = gruppi;
+  let filterLabel = null;
+  if (filter === 'guardia') {
+    filteredGruppi = gruppi.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
+    filterLabel = 'Medici di Guardia';
+  } else if (filter === 'urgenza') {
+    filteredGruppi = gruppi.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('urgenza') || (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
+    filterLabel = 'Urgenze e Guardie';
+  } else if (filter) {
+    const c = findContattoBySlug(filter);
+    if (c) {
+      filteredGruppi = gruppi.map(g => {
+        const matches = (g.contatti || []).filter(x => x.id === filter);
+        return matches.length ? { ...g, contatti: matches } : null;
+      }).filter(Boolean);
+      filterLabel = `Contatto: ${c.etichetta}`;
+    }
+  }
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Rubrica</div>
+      <h1 class="page-title">Numeri <em>utili</em></h1>
+      ${filterLabel ? `<div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Filtrato per: <strong>${escapeHtml(filterLabel)}</strong></div>` : ''}
+      <div class="numeri-filters" style="margin-top:20px;">
+        <button class="filter-chip ${!filter ? 'active' : ''}" onclick="navigate('numeri')">Tutti</button>
+        <button class="filter-chip ${filter === 'guardia' ? 'active' : ''}" onclick="navigate('numeri', {filter:'guardia'})">Solo MdG guardia</button>
+        <button class="filter-chip ${filter === 'urgenza' ? 'active' : ''}" onclick="navigate('numeri', {filter:'urgenza'})">Urgenze</button>
+      </div>
+    </div>
+
+    ${!filter && codiciGen.length ? `
+      <div class="codici-banner">
+        ${codiciGen.map(c => `
+          <div class="codici-banner-item">
+            <div class="codici-banner-label">${escapeHtml(c.etichetta)}</div>
+            <div class="codici-banner-value">${escapeHtml(c.valore)}</div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
+    ${filteredGruppi.length === 0 ? '<p style="color:var(--ink-muted);">Nessun contatto corrisponde al filtro.</p>' : ''}
+
+    ${filteredGruppi.map(g => `
+      <div class="numeri-group">
+        <h2 class="numeri-group-title">${escapeHtml(g.nome)}</h2>
+        ${(g.contatti || []).map(c => renderNumeroRow(c)).join('')}
+      </div>
+    `).join('')}`;
+}
+
+function renderNumeroRow(c) {
+  const tags = c.tag || [];
+  const guardiaBadge = tags.includes('guardia') ? `<span class="badge">Guardia</span>` : '';
+  const urgenzaBadge = tags.includes('urgenza') ? `<span class="badge" style="background:var(--danger-soft);color:var(--danger);">Urgenza</span>` : '';
+  const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
+  const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
+  const nums = (c.numeri || []).map(n =>
+    `<button class="numero-btn" onclick="copyNumber('${escapeHtml(n)}')" title="Copia">${escapeHtml(n)}</button>`
+  ).join('');
+  return `
+    <div class="numero-row">
+      <div>
+        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${escapeHtml(c.etichetta)}${orari}</div>
+        ${note}
+      </div>
+      <div class="numero-nums">${nums || '<span style="font-size:12px;color:var(--ink-muted);">—</span>'}</div>
+    </div>`;
+}
+
+async function copyNumber(n) {
+  try {
+    await navigator.clipboard.writeText(n);
+    toast(`${n} copiato`, 'success', 1500);
+  } catch {
+    toast('Copia non supportata', 'warning');
+  }
+}
+
+/* ============================ VIEW — MODULI ============================ */
+function renderModuliList() {
+  const moduli = state.index.moduli;
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Sezione</div>
+      <h1 class="page-title">Moduli</h1>
+      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
+        Moduli cartacei e template. Upload immagini e editor dedicato in arrivo in v1.1.
+      </div>
+    </div>
+    <div class="procedure-grid">
+      ${moduli.map(m => `
+        <div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeHtml(m.slug)}'})">
+          <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}</div>
+          <div class="procedure-card-tags">${(m.tag || []).slice(0,3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+          <div class="procedure-card-meta"><span>${escapeHtml(m.tipo || 'modulo')}</span></div>
+        </div>
+      `).join('') || '<p style="color:var(--ink-muted);">Nessun modulo.</p>'}
+    </div>`;
+}
+
+function renderModulo(slug) {
+  const m = state.index.moduli.find(x => x.slug === slug);
+  if (!m) return renderError('Modulo non trovato', slug);
+  const bodyHtml = DOMPurify.sanitize(marked.parse(m.body || ''));
+  const imgUrl = m.immagine ? `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/${CONFIG.BRANCH}/content/${m.immagine}` : null;
+  const relatedProcs = (m.procedure_correlate || []).map(pid => state.index.procedure.find(p => p.slug === pid)).filter(Boolean);
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Modulo</div>
+      <h1 class="page-title">${escapeHtml(m.titolo || slug)}</h1>
+      <div class="page-meta">
+        <div class="page-meta-item">Tipo: ${escapeHtml(m.tipo || '—')}</div>
+        <div class="page-meta-item">Aggiornato ${timeAgo(m.ultima_modifica)}</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost" onclick="window.print()">Stampa</button>
+        ${imgUrl ? `<a class="btn ghost" href="${imgUrl}" target="_blank" rel="noopener">Apri immagine</a>` : ''}
+      </div>
+    </div>
+    <article class="procedura-body">${bodyHtml}</article>
+    ${imgUrl ? `
+      <div style="margin-top:32px;padding:24px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;text-align:center;">
+        <img src="${imgUrl}" alt="${escapeHtml(m.titolo || slug)}" style="max-width:100%;border:1px solid var(--rule-soft);" onerror="this.parentElement.innerHTML='<p style=color:var(--ink-muted);font-size:14px;>Immagine non ancora caricata: <code>content/${escapeHtml(m.immagine || '')}</code></p>'">
+      </div>
+    ` : `
+      <div style="margin-top:32px;padding:24px;background:var(--bg-sink);border:1px dashed var(--rule-strong);border-radius:2px;text-align:center;color:var(--ink-muted);">
+        <p style="font-family:var(--serif);font-style:italic;">Nessuna immagine allegata. L'upload sarà disponibile in v1.1.</p>
+      </div>
+    `}
+    ${relatedProcs.length ? `
+      <div class="related-grid">
+        ${relatedProcs.map(p => `
+          <div class="related-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
+            <div class="related-card-label">Procedura</div>
+            <div class="related-card-title">${escapeHtml(p.titolo)}</div>
+          </div>`).join('')}
+      </div>` : ''}`;
+}
+
+/* ============================ VIEW — TABELLE ============================ */
+function renderTabelleList() {
+  const tt = state.index.tabelle;
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Sezione</div>
+      <h1 class="page-title">Tabelle di riferimento</h1>
+    </div>
+    <div class="procedure-grid">
+      ${tt.map(t => `
+        <div class="procedure-card" onclick="navigate('tabella', {slug:'${escapeHtml(t.slug)}'})">
+          <div class="procedure-card-title">${escapeHtml(t.titolo || t.slug)}</div>
+          <div class="procedure-card-meta"><span>Aggiornata ${timeAgo(t.ultima_modifica)}</span></div>
+        </div>
+      `).join('') || '<p style="color:var(--ink-muted);">Nessuna tabella.</p>'}
+    </div>`;
+}
+
+function renderTabella(slug) {
+  const t = state.index.tabelle.find(x => x.slug === slug);
+  if (!t) return renderError('Tabella non trovata', slug);
+  const bodyHtml = DOMPurify.sanitize(marked.parse(t.body || ''));
+  const relatedProcs = (t.procedure_correlate || []).map(pid => state.index.procedure.find(p => p.slug === pid)).filter(Boolean);
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Tabella</div>
+      <h1 class="page-title">${escapeHtml(t.titolo || slug)}</h1>
+      <div class="page-meta">
+        <div class="page-meta-item">Aggiornata ${timeAgo(t.ultima_modifica)} da <span style="font-family:var(--mono);color:var(--ink-soft);">${escapeHtml(t.modificato_da || '—')}</span></div>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost" onclick="window.print()">Stampa</button>
+      </div>
+    </div>
+    <article class="procedura-body">${bodyHtml}</article>
+    ${relatedProcs.length ? `
+      <div class="related-grid">
+        ${relatedProcs.map(p => `
+          <div class="related-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
+            <div class="related-card-label">Procedura</div>
+            <div class="related-card-title">${escapeHtml(p.titolo)}</div>
+          </div>`).join('')}
+      </div>` : ''}`;
+}
+
+/* ============================ VIEW — CESTINO ============================ */
+function renderCestino() {
+  const items = state.index.cestino || [];
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Sistema</div>
+      <h1 class="page-title">Cestino</h1>
+      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
+        File eliminati. Possono essere ripristinati o eliminati definitivamente.
+      </div>
+    </div>
+    ${items.length === 0 ? `
+      <div class="empty">
+        <div class="empty-title">Cestino vuoto</div>
+        <p>Nessun file archiviato.</p>
+      </div>
+    ` : items.map(it => `
+      <div class="numero-row">
+        <div>
+          <div style="font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink);">${escapeHtml(it.titolo || it.filename)}</div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;">
+            ${escapeHtml(it.filename)} · eliminato ${timeAgo(it.eliminato_data || it.ultima_modifica)} da <span style="font-family:var(--mono);">${escapeHtml(it.eliminato_da || it.modificato_da || '—')}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn ghost sm" onclick="restoreFromCestino('${escapeHtml(it.path)}', '${escapeHtml(it.filename)}')">Ripristina</button>
+          <button class="btn ghost sm" onclick="purgeFromCestino('${escapeHtml(it.path)}', '${escapeHtml(it.filename)}', '${escapeHtml(it.sha)}')">Elimina definitivamente</button>
+        </div>
+      </div>
+    `).join('')}`;
+}
+
+/* ============================ CESTINO OPERATIONS ============================ */
+function confirmDelete(type, slug) {
+  const entity = state.index[type === 'procedura' ? 'procedure' : type].find(x => x.slug === slug);
+  if (!entity) return;
+  showModal({
+    title: 'Spostare nel cestino?',
+    subtitle: `<strong>${escapeHtml(entity.titolo || slug)}</strong> sarà spostato in <code>cestino/</code>. Potrai ripristinarlo o eliminarlo definitivamente dopo.`,
+    body: '<p style="font-size:13px;color:var(--ink-muted);">Questa operazione è reversibile dal cestino.</p>',
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Sposta nel cestino', variant: 'danger', onClick: () => { closeModal(); softDelete(type, slug); } }
+    ]
+  });
+}
+
+async function softDelete(type, slug) {
+  toast('Eliminazione in corso...', 'info', 2000);
+  try {
+    const typeDir = type === 'procedura' ? 'procedure' : type;
+    const srcPath = `content/${typeDir}/${slug}.md`;
+    const file = await gh.getFile(srcPath);
+    if (!file) throw new Error('File non trovato');
+
+    const { frontmatter, body } = parseMarkdown(file.content);
+    frontmatter.eliminato_data = nowIso();
+    frontmatter.eliminato_da = state.session.username;
+    const archivedContent = stringifyMarkdown(frontmatter, body);
+
+    const ts = nowIso().replace(/[:.]/g, '-').replace(/\..*/, '');
+    const newFilename = `${slug}__${ts}__${state.session.username}.md`;
+    const newPath = `cestino/${typeDir}/${newFilename}`;
+
+    await gh.putFile(newPath, archivedContent, null, `Sposta nel cestino: ${slug} (by ${state.session.username})`);
+    await gh.deleteFile(srcPath, file.sha, `Rimuovi ${slug} (spostato in cestino by ${state.session.username})`);
+
+    toast('Spostato nel cestino', 'success');
+    await buildIndex();
+    navigate('home');
+  } catch (e) {
+    toast('Errore: ' + e.message, 'error', 6000);
+  }
+}
+
+async function restoreFromCestino(path, filename) {
+  const m = filename.match(/^(.+?)__\d{4}-\d{2}-\d{2}T/);
+  if (!m) return toast('Formato filename non riconosciuto', 'error');
+  const targetSlug = m[1];
+  const typeDir = path.split('/')[1];
+  const targetPath = `content/${typeDir}/${targetSlug}.md`;
+
+  const existing = await gh.getFile(targetPath);
+  if (existing) {
+    showModal({
+      title: 'Conflitto sul nome',
+      subtitle: `Esiste già un file attivo <code>${escapeHtml(targetPath)}</code>.`,
+      body: `<p style="font-size:14px;color:var(--ink-soft);">Cosa vuoi fare?</p>`,
+      actions: [
+        { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+        { label: 'Sostituisci', variant: 'danger', onClick: () => { closeModal(); doRestore(path, filename, targetSlug, typeDir, true); } },
+        { label: 'Ripristina con nome diverso', onClick: () => {
+          closeModal();
+          const proposed = prompt('Nuovo slug per il file ripristinato:', `${targetSlug}-ripristinato`);
+          if (proposed && proposed.trim()) doRestore(path, filename, proposed.trim(), typeDir, false);
+        }}
+      ]
+    });
+  } else {
+    doRestore(path, filename, targetSlug, typeDir, false);
+  }
+}
+
+async function doRestore(cestinoPath, cestinoFilename, targetSlug, typeDir, replaceExisting) {
+  try {
+    const cestinoFile = await gh.getFile(cestinoPath);
+    if (!cestinoFile) throw new Error('File nel cestino non trovato');
+    const { frontmatter, body } = parseMarkdown(cestinoFile.content);
+    delete frontmatter.eliminato_data;
+    delete frontmatter.eliminato_da;
+    frontmatter.ultima_modifica = nowIso();
+    frontmatter.modificato_da = state.session.username;
+    const restoredContent = stringifyMarkdown(frontmatter, body);
+    const targetPath = `content/${typeDir}/${targetSlug}.md`;
+
+    if (replaceExisting) {
+      const existing = await gh.getFile(targetPath);
+      const ts = nowIso().replace(/[:.]/g, '-').replace(/\..*/, '');
+      const archiveName = `${existing.path.split('/').pop().replace(/\.md$/,'')}__${ts}__${state.session.username}.md`;
+      const archivePath = `cestino/${typeDir}/${archiveName}`;
+      await gh.putFile(archivePath, existing.content, null, `Archivio pre-restore: ${targetSlug}`);
+      await gh.putFile(targetPath, restoredContent, existing.sha, `Ripristina ${targetSlug} (replace) by ${state.session.username}`);
+    } else {
+      await gh.putFile(targetPath, restoredContent, null, `Ripristina ${targetSlug} by ${state.session.username}`);
+    }
+
+    await gh.deleteFile(cestinoPath, cestinoFile.sha, `Svuota cestino: ${cestinoFilename}`);
+    toast('Ripristinato', 'success');
+    await buildIndex();
+    navigate('procedura', { slug: targetSlug });
+  } catch (e) {
+    toast('Errore ripristino: ' + e.message, 'error', 6000);
+  }
+}
+
+function purgeFromCestino(path, filename, sha) {
+  showModal({
+    title: 'Eliminare definitivamente?',
+    subtitle: `<strong>${escapeHtml(filename)}</strong> sarà rimosso dal repository. La Git history conserverà comunque la traccia.`,
+    body: '<p style="font-size:13px;color:var(--ink-muted);">Operazione non reversibile dal cestino. Solo via Git revert.</p>',
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Elimina definitivamente', variant: 'danger', onClick: async () => {
+        closeModal();
+        try {
+          await gh.deleteFile(path, sha, `Elimina definitivamente ${filename} by ${state.session.username}`);
+          toast('Eliminato', 'success');
+          await buildIndex();
+          navigate('cestino');
+        } catch (e) {
+          toast('Errore: ' + e.message, 'error');
+        }
+      }}
+    ]
+  });
+}
+
+
+/* ============================ GESTIONE UTENTI (admin only) ============================ */
+async function encryptUserData(payload, passphrase) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const km = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt, iterations:250000, hash:'SHA-256' },
+    km, { name:'AES-GCM', length:256 }, false, ['encrypt']
+  );
+  const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, enc.encode(JSON.stringify(payload)));
+  const b64 = b => btoa(String.fromCharCode(...new Uint8Array(b)));
+  return {
+    salt: b64(salt), iv: b64(iv), ciphertext: b64(ct),
+    iterations: 250000, algorithm: 'AES-GCM-256', kdf: 'PBKDF2-SHA256',
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function fetchAuthFile() {
+  const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.AUTH_REPO_NAME}/contents/data/encrypted-tokens.json?ref=${CONFIG.BRANCH}&t=${Date.now()}`;
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `token ${BOOTSTRAP_PAT}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error(`GET auth file: ${res.status}`);
+  const meta = await res.json();
+  const content = new TextDecoder().decode(base64ToBuffer(meta.content.replace(/\n/g, '')));
+  return { data: JSON.parse(content), sha: meta.sha };
+}
+
+async function writeAuthFile(fileObj, sha, message) {
+  const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.AUTH_REPO_NAME}/contents/data/encrypted-tokens.json`;
+  const enc = new TextEncoder();
+  const bytes = enc.encode(JSON.stringify(fileObj, null, 2));
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  const contentB64 = btoa(binary);
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${BOOTSTRAP_PAT}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    body: JSON.stringify({ message, content: contentB64, sha, branch: CONFIG.BRANCH })
+  });
+  if (!res.ok) throw new Error(`PUT auth file: ${res.status} ${await res.text()}`);
+  return await res.json();
+}
+
+async function renderGestioneUtenti() {
+  if (state.session.username !== 'admin') return renderError('Accesso negato', 'Solo admin.');
+  renderLoading('Caricamento utenti...');
+  try {
+    const { data } = await fetchAuthFile();
+    const users = data.utenti || {};
+    const entries = Object.entries(users).sort(([a], [b]) => a.localeCompare(b));
+    $('main-content').innerHTML = `
+      <div class="page-head">
+        <div class="page-eyebrow">Amministrazione</div>
+        <h1 class="page-title">Gestione <em>utenti</em></h1>
+        <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">${entries.length} utenti registrati. I nuovi utenti ereditano il PAT-2 dalla tua sessione.</div>
+        <div class="page-actions">
+          <button class="btn" id="btn-add-user">+ Aggiungi utente</button>
+        </div>
+      </div>
+      ${entries.length === 0 ? '<p style="color:var(--ink-muted);">Nessun utente.</p>' :
+        entries.map(([uname, entry]) => `
+          <div class="numero-row">
+            <div>
+              <div style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--ink);">${escapeHtml(uname)}${uname === 'admin' ? ' <span class="tag" style="margin-left:8px;">admin</span>' : ''}</div>
+              <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;">Aggiornato ${timeAgo(entry.updated_at)}</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn ghost sm" onclick="rigeneraUtente('${escapeHtml(uname)}')">Rigenera passphrase</button>
+              ${uname !== state.session.username ? `<button class="btn ghost sm" onclick="rimuoviUtente('${escapeHtml(uname)}')">Rimuovi</button>` : ''}
+            </div>
+          </div>
+        `).join('')
+      }`;
+    $('btn-add-user').onclick = () => mostraFormUtente(null);
+  } catch (e) {
+    renderError('Errore caricamento', e.message);
+  }
+}
+
+function mostraFormUtente(existingUsername) {
+  const isRegen = !!existingUsername;
+  showModal({
+    title: isRegen ? `Rigenera ${existingUsername}` : 'Nuovo utente',
+    subtitle: isRegen
+      ? 'Imposta una nuova passphrase. Nome e cognome restano invariati.'
+      : 'Il PAT-2 verrà preso dalla tua sessione. Nome e cognome appariranno nei commit e nella precompilazione moduli.',
+    body: `
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="nu-username" class="mono-input" value="${escapeHtml(existingUsername || '')}" ${isRegen ? 'readonly style="background:var(--bg-sink);"' : ''} placeholder="es. dr.rossi">
+      </div>
+      ${!isRegen ? `
+        <div class="field"><label>Nome</label><input type="text" id="nu-nome"></div>
+        <div class="field"><label>Cognome</label><input type="text" id="nu-cognome"></div>
+      ` : ''}
+      <div class="field">
+        <label>Passphrase</label>
+        <input type="password" id="nu-pass1">
+      </div>
+      <div class="field">
+        <label>Conferma passphrase</label>
+        <input type="password" id="nu-pass2">
+      </div>
+      <div id="nu-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: isRegen ? 'Rigenera' : 'Crea utente', onClick: async () => {
+        const uname = $('nu-username').value.trim();
+        const nome = isRegen ? null : $('nu-nome').value.trim();
+        const cognome = isRegen ? null : $('nu-cognome').value.trim();
+        const p1 = $('nu-pass1').value;
+        const p2 = $('nu-pass2').value;
+        const err = $('nu-error');
+        err.style.display = 'none';
+        function show(msg) { err.textContent = msg; err.style.display = 'block'; }
+        if (!uname) return show('Username obbligatorio.');
+        if (!/^[a-z0-9._-]+$/i.test(uname)) return show('Username: solo lettere, cifre, punto, trattino, underscore.');
+        if (!isRegen && (!nome || !cognome)) return show('Nome e cognome obbligatori.');
+        if (!p1) return show('Passphrase obbligatoria.');
+        if (p1 !== p2) return show('Le passphrase non coincidono.');
+        try {
+          const { data, sha } = await fetchAuthFile();
+          data.utenti = data.utenti || {};
+          if (isRegen) {
+            const existing = data.utenti[uname];
+            if (!existing) return show('Utente non trovato.');
+            // Need original nome/cognome — decrypt with... we can't without old passphrase
+            // So for regen: ask admin to re-enter nome/cognome too, or just reset them blank.
+            // Simplification: store nome/cognome next to the encrypted entry (unencrypted) for admin view.
+            // For now, regen ONLY changes the passphrase, keeping token/nome/cognome (which admin doesn't know).
+            // Simpler: regen just rewrites with a fresh token (admin's current PAT-2) and re-entered nome/cognome.
+            return show('Rigenera solo passphrase non ancora supportato — usa Rimuovi + Crea.');
+          }
+          const payload = { token: state.session.token, nome, cognome };
+          data.utenti[uname] = await encryptUserData(payload, p1);
+          await writeAuthFile(data, sha, `Aggiungi utente ${uname} (by ${state.session.username})`);
+          closeModal();
+          toast(`Utente ${uname} creato`, 'success');
+          renderGestioneUtenti();
+        } catch (e) {
+          show('Errore: ' + e.message);
+        }
+      }}
+    ]
+  });
+}
+
+function rigeneraUtente(username) {
+  showModal({
+    title: `Rigenera ${username}`,
+    subtitle: 'Per cambiare la passphrase devi ricreare il blob — servono nuovamente nome, cognome e nuova passphrase. Il PAT-2 verrà preso dalla tua sessione.',
+    body: `
+      <div class="field"><label>Nome</label><input type="text" id="rg-nome"></div>
+      <div class="field"><label>Cognome</label><input type="text" id="rg-cognome"></div>
+      <div class="field"><label>Nuova passphrase</label><input type="password" id="rg-pass1"></div>
+      <div class="field"><label>Conferma</label><input type="password" id="rg-pass2"></div>
+      <div id="rg-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Rigenera', onClick: async () => {
+        const nome = $('rg-nome').value.trim();
+        const cognome = $('rg-cognome').value.trim();
+        const p1 = $('rg-pass1').value;
+        const p2 = $('rg-pass2').value;
+        const err = $('rg-error');
+        err.style.display = 'none';
+        function show(m) { err.textContent = m; err.style.display = 'block'; }
+        if (!nome || !cognome) return show('Nome e cognome obbligatori.');
+        if (!p1) return show('Passphrase obbligatoria.');
+        if (p1 !== p2) return show('Non coincidono.');
+        try {
+          const { data, sha } = await fetchAuthFile();
+          const payload = { token: state.session.token, nome, cognome };
+          data.utenti[username] = await encryptUserData(payload, p1);
+          await writeAuthFile(data, sha, `Rigenera ${username} (by ${state.session.username})`);
+          closeModal();
+          toast(`${username} rigenerato`, 'success');
+          renderGestioneUtenti();
+        } catch (e) { show('Errore: ' + e.message); }
+      }}
+    ]
+  });
+}
+
+function rimuoviUtente(username) {
+  if (username === state.session.username) return toast('Non puoi rimuovere te stesso', 'warning');
+  showModal({
+    title: `Rimuovere ${username}?`,
+    subtitle: `L'utente non potrà più accedere. Operazione reversibile solo ricreando il blob.`,
+    body: '<p style="font-size:13px;color:var(--ink-muted);">La Git history di CollinettaAI-auth conserverà comunque il blob precedente.</p>',
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Rimuovi', variant: 'danger', onClick: async () => {
+        closeModal();
+        try {
+          const { data, sha } = await fetchAuthFile();
+          if (data.utenti) delete data.utenti[username];
+          await writeAuthFile(data, sha, `Rimuovi ${username} (by ${state.session.username})`);
+          toast(`${username} rimosso`, 'success');
+          renderGestioneUtenti();
+        } catch (e) {
+          toast('Errore: ' + e.message, 'error');
+        }
+      }}
+    ]
+  });
+}
+
+/* ============================ SEARCH ============================ */
+function renderSearchResults(query) {
+  if (!state.fuse || !query || query.length < 2) {
+    $('main-content').innerHTML = `
+      <div class="page-head">
+        <div class="page-eyebrow">Ricerca</div>
+        <h1 class="page-title">Cerca nel manuale</h1>
+      </div>
+      <p style="color:var(--ink-muted);">Digita almeno 2 caratteri nella barra in alto.</p>`;
+    return;
+  }
+  const results = state.fuse.search(query).slice(0, 40);
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Risultati</div>
+      <h1 class="page-title">Ricerca: <em>${escapeHtml(query)}</em></h1>
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${results.length} risultati</div>
+    </div>
+    <div class="search-results">
+      ${results.length === 0 ? `<p style="color:var(--ink-muted);">Nessun risultato per "${escapeHtml(query)}".</p>` :
+        results.map(r => {
+          const item = r.item;
+          let click = '';
+          if (item.type === 'procedura') click = `navigate('procedura', {slug:'${escapeHtml(item.slug)}'})`;
+          else if (item.type === 'modulo') click = `navigate('modulo', {slug:'${escapeHtml(item.slug)}'})`;
+          else if (item.type === 'tabella') click = `navigate('tabella', {slug:'${escapeHtml(item.slug)}'})`;
+          else if (item.type === 'numero') click = `navigate('numeri', {filter:'${escapeHtml(item.slug)}'})`;
+          const typeLabel = item.type === 'procedura' ? 'Procedura'
+            : item.type === 'modulo' ? 'Modulo'
+            : item.type === 'tabella' ? 'Tabella'
+            : item.type === 'numero' ? `Numero · ${escapeHtml(item.gruppo || '')}` : item.type;
+          const snippet = item.type === 'numero' && item.numeri
+            ? `Numeri: ${escapeHtml(item.numeri)}`
+            : (item.body || '').substring(0, 140) + ((item.body || '').length > 140 ? '…' : '');
+          return `
+            <div class="search-result-item" onclick="${click}">
+              <div class="search-result-type">${typeLabel}</div>
+              <div class="search-result-title">${escapeHtml(item.titolo)}</div>
+              ${snippet ? `<div class="search-result-snippet">${escapeHtml(snippet)}</div>` : ''}
+            </div>`;
+        }).join('')
+      }
+    </div>`;
+}
+
+/* ============================ MODAL ============================ */
+function showModal({ title, subtitle, body, actions }) {
+  closeModal();
+  const container = $('modal-container');
+  const actionsHtml = (actions || []).map((a, i) => {
+    const variant = a.variant === 'danger' ? 'danger' : a.variant === 'ghost' ? 'ghost' : '';
+    return `<button class="btn ${variant}" data-action-idx="${i}">${escapeHtml(a.label)}</button>`;
+  }).join('');
+  container.innerHTML = `
+    <div class="modal-backdrop" id="current-modal-backdrop">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">${title}</div>
+          ${subtitle ? `<div class="modal-sub">${subtitle}</div>` : ''}
+        </div>
+        ${body ? `<div class="modal-body">${body}</div>` : ''}
+        ${actionsHtml ? `<div class="modal-actions">${actionsHtml}</div>` : ''}
+      </div>
+    </div>`;
+  $$('[data-action-idx]').forEach(btn => {
+    const idx = parseInt(btn.dataset.actionIdx, 10);
+    btn.addEventListener('click', () => {
+      const action = actions[idx];
+      if (action && action.onClick) action.onClick();
+    });
+  });
+  const backdrop = $('current-modal-backdrop');
+  if (backdrop) backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+}
+
+function closeModal() {
+  $('modal-container').innerHTML = '';
+}
+
+/* ============================ INIT ============================ */
+function initEventListeners() {
+  $('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const u = $('login-username').value.trim();
+    const p = $('login-passphrase').value;
+    if (u && p) attemptLogin(u, p);
+  });
+
+  $$('.nav-item').forEach(el => {
+    if (el.dataset.route) {
+      el.addEventListener('click', () => navigate(el.dataset.route));
+    }
+  });
+
+  $('nav-logout').addEventListener('click', () => {
+    if (confirm('Uscire dalla sessione?')) logout();
+  });
+
+  $('brand-home').addEventListener('click', () => navigate('home'));
+
+  $('btn-refresh').addEventListener('click', async () => {
+    if (state.editingContext && state.editingContext.isDirty) {
+      if (!confirm('Hai modifiche non salvate. Ricaricare comunque (perderai le modifiche)?')) return;
+    }
+    $('btn-refresh').classList.add('has-badge');
+    toast('Ricaricamento indice...', 'info', 2000);
+    try {
+      await buildIndex();
+      toast('Indice aggiornato', 'success');
+      $('btn-refresh').classList.remove('has-badge');
+      navigate(state.currentView);
+    } catch (e) {
+      toast('Errore refresh: ' + e.message, 'error');
+    }
+  });
+
+  const searchInput = $('global-search');
+  let searchTimeout = null;
+  searchInput.addEventListener('input', (e) => {
+    const q = e.target.value;
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      if (q.length >= 2) navigate('search', { query: q });
+      else if (q.length === 0 && state.currentView === 'search') navigate('home');
+    }, 200);
+  });
+
+  // Keyboard shortcut: Cmd/Ctrl + K focuses search
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+    if (e.key === 'Escape') {
+      if ($('modal-container').children.length > 0) closeModal();
+    }
+  });
+}
+
+async function init() {
+  initEventListeners();
+
+  // Check for existing session
+  const saved = loadSession();
+  if (saved && saved.token && saved.username) {
+    state.session = saved;
+    // Verify token still works
+    try {
+      const testRes = await fetch(`${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}`, {
+        headers: { 'Authorization': `token ${saved.token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      if (testRes.ok) {
+        await enterApp();
+        return;
+      }
+    } catch {}
+    clearSession();
+  }
+
+  // Show login
+  $('login-view').classList.remove('hidden');
+  $('app-view').classList.add('hidden');
+  setTimeout(() => $('login-username').focus(), 100);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
