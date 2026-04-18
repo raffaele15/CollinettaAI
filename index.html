@@ -289,6 +289,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
       <div class="nav-group">
         <div class="nav-group-label">Contenuti</div>
         <div class="nav-item" data-route="home"><span>Home</span></div>
+        <div class="nav-item" data-route="manuale"><span>Manuale</span><span class="nav-item-count" id="nav-count-capitoli">—</span></div>
         <div class="nav-item" data-route="procedure"><span>Procedure</span><span class="nav-item-count" id="nav-count-procedure">—</span></div>
         <div class="nav-item" data-route="numeri"><span>Numeri utili</span></div>
         <div class="nav-item" data-route="moduli"><span>Moduli</span><span class="nav-item-count" id="nav-count-moduli">—</span></div>
@@ -473,7 +474,7 @@ function stringifyMarkdown(frontmatter, body) {
 const state = {
   session: null,
   tokensFile: null,
-  index: { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, lastIndexed: null },
+  index: { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null },
   currentView: 'home',
   editorInstance: null,
   editingContext: null,
@@ -549,6 +550,16 @@ async function buildIndex() {
     }
   } catch (e) { console.warn('numeri load error', e); }
 
+  try {
+    const file = await gh.getFile('content/capitoli.yml');
+    if (file) {
+      const parsed = jsyaml.load(file.content) || {};
+      index.capitoli = (parsed.capitoli || []).sort((a, b) => (a.ordine || 99) - (b.ordine || 99));
+    } else {
+      index.capitoli = [];
+    }
+  } catch (e) { console.warn('capitoli load error', e); index.capitoli = []; }
+
   state.index = index;
   rebuildSearchIndex();
   updateNavCounts();
@@ -599,7 +610,8 @@ function rebuildSearchIndex() {
 }
 
 function updateNavCounts() {
-  const p = $('nav-count-procedure'), m = $('nav-count-moduli'), t = $('nav-count-tabelle');
+  const c = $('nav-count-capitoli'), p = $('nav-count-procedure'), m = $('nav-count-moduli'), t = $('nav-count-tabelle');
+  if (c) c.textContent = (state.index.capitoli || []).length;
   if (p) p.textContent = state.index.procedure.length;
   if (m) m.textContent = state.index.moduli.length;
   if (t) t.textContent = state.index.tabelle.length;
@@ -756,7 +768,7 @@ async function enterApp() {
 
 function logout() {
   clearSession();
-  state.index = { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, lastIndexed: null };
+  state.index = { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null };
   state.editingContext = null;
   if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
   $('app-view').classList.add('hidden');
@@ -787,6 +799,8 @@ function navigate(route, params = {}) {
 
   switch (route) {
     case 'home': renderHome(); break;
+    case 'manuale': renderManuale(); break;
+    case 'capitolo': renderCapitolo(params.id); break;
     case 'procedure': renderProcedureList(); break;
     case 'procedura': renderProcedura(params.slug); break;
     case 'procedura-edit': renderProceduraEditor(params.slug); break;
@@ -884,6 +898,77 @@ function renderProcedureCard(p) {
     </div>`;
 }
 
+function renderManuale() {
+  const capitoli = state.index.capitoli || [];
+  // Map procedure counts per capitolo
+  const countByCap = {};
+  state.index.procedure.forEach(p => {
+    if (p.capitolo) countByCap[p.capitolo] = (countByCap[p.capitolo] || 0) + 1;
+  });
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Manuale</div>
+      <h1 class="page-title">How to Survive <em>Neuro</em></h1>
+      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">Manuale completo del reparto. Ogni capitolo aggrega le procedure che vi appartengono, in ordine di lettura.</div>
+    </div>
+    ${capitoli.length === 0 ? '<p style="color:var(--ink-muted);">Nessun capitolo definito in <code>content/capitoli.yml</code>.</p>' :
+      capitoli.map(cap => {
+        const count = countByCap[cap.id] || 0;
+        return `
+          <div class="numero-row" style="cursor:${count ? 'pointer' : 'default'};opacity:${count ? '1' : '0.55'};" ${count ? `onclick="navigate('capitolo', {id:'${escapeHtml(cap.id)}'})"` : ''}>
+            <div>
+              <div style="display:flex;align-items:baseline;gap:10px;">
+                <span style="font-family:var(--mono);font-size:12px;color:var(--ink-muted);min-width:24px;">${cap.ordine || '—'}.</span>
+                <span style="font-family:var(--serif);font-size:19px;font-weight:500;color:var(--ink);">${escapeHtml(cap.titolo)}</span>
+              </div>
+              ${cap.descrizione ? `<div style="font-size:13px;color:var(--ink-muted);margin-top:4px;margin-left:34px;">${escapeHtml(cap.descrizione)}</div>` : ''}
+            </div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);">
+              ${count ? count + ' pezz' + (count === 1 ? 'o' : 'i') : 'vuoto'}
+            </div>
+          </div>`;
+      }).join('')
+    }`;
+}
+
+function renderCapitolo(capId) {
+  const cap = (state.index.capitoli || []).find(c => c.id === capId);
+  if (!cap) return renderError('Capitolo non trovato', capId);
+
+  const pezzi = state.index.procedure
+    .filter(p => p.capitolo === capId)
+    .sort((a, b) => (a.ordine_nel_capitolo || 99) - (b.ordine_nel_capitolo || 99));
+
+  const tocHtml = pezzi.length > 1
+    ? `<nav style="margin-bottom:32px;padding:16px 20px;background:var(--bg-sink);border-left:3px solid var(--ink-faint);border-radius:0 2px 2px 0;">
+         <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;">Indice capitolo</div>
+         ${pezzi.map((p, i) => `<div style="padding:4px 0;"><a href="#p-${escapeHtml(p.slug)}" style="font-family:var(--serif);color:var(--ink-soft);">${i+1}. ${escapeHtml(p.titolo || p.slug)}</a></div>`).join('')}
+       </nav>`
+    : '';
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow" style="cursor:pointer;" onclick="navigate('manuale')">← Manuale · Capitolo ${cap.ordine}</div>
+      <h1 class="page-title">${escapeHtml(cap.titolo)}</h1>
+      ${cap.descrizione ? `<div style="margin-top:12px;font-size:14px;color:var(--ink-muted);font-style:italic;font-family:var(--serif);">${escapeHtml(cap.descrizione)}</div>` : ''}
+      <div class="page-actions">
+        <button class="btn ghost" onclick="window.print()">Stampa capitolo</button>
+      </div>
+    </div>
+    ${pezzi.length === 0 ? '<p style="color:var(--ink-muted);">Nessun pezzo assegnato a questo capitolo. Assegna procedure con <code>capitolo: ' + escapeHtml(capId) + '</code> nel frontmatter.</p>' : tocHtml + pezzi.map(p => {
+      const bodyHtml = DOMPurify.sanitize(marked.parse(p.body || ''));
+      return `
+        <article id="p-${escapeHtml(p.slug)}" style="margin-bottom:56px;padding-bottom:32px;border-bottom:1px solid var(--rule);">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:16px;">
+            <h2 style="font-family:var(--serif);font-weight:500;font-size:26px;line-height:1.15;letter-spacing:-.01em;color:var(--ink);">${escapeHtml(p.titolo || p.slug)}</h2>
+            <button class="btn ghost sm" onclick="event.stopPropagation();navigate('procedura-edit', {slug:'${escapeHtml(p.slug)}'})">Modifica</button>
+          </div>
+          <div class="procedura-body" style="font-size:15px;">${bodyHtml}</div>
+        </article>`;
+    }).join('')}`;
+}
+
 function renderProcedureList() {
   const procs = state.index.procedure;
   $('main-content').innerHTML = `
@@ -917,7 +1002,7 @@ function renderProcedura(slug) {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Procedura</div>
+      <div class="page-eyebrow">${proc.capitolo ? `<span style="cursor:pointer;" onclick="navigate('capitolo', {id:'${escapeHtml(proc.capitolo)}'})">← ${escapeHtml((state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo)}</span> · Procedura` : 'Procedura'}</div>
       <h1 class="page-title">${escapeHtml(proc.titolo || proc.slug)}</h1>
       <div style="margin-top:12px;">${tagsHtml}</div>
       <div class="page-meta">
@@ -1044,6 +1129,17 @@ function renderEditorUI(slug, frontmatter, body) {
             </select>
           </div>
           <div class="field">
+            <label for="meta-capitolo">Capitolo</label>
+            <select id="meta-capitolo">
+              <option value="">— nessuno —</option>
+              ${(state.index.capitoli || []).map(c => `<option value="${escapeHtml(c.id)}" ${frontmatter.capitolo === c.id ? 'selected' : ''}>${escapeHtml(c.ordine ? c.ordine + '. ' : '')}${escapeHtml(c.titolo)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label for="meta-ordine-cap">Ordine nel capitolo</label>
+            <input type="text" id="meta-ordine-cap" class="mono-input" value="${escapeHtml(frontmatter.ordine_nel_capitolo || '')}" placeholder="1, 2, 3...">
+          </div>
+          <div class="field">
             <label for="meta-tag">Tag (separati da virgola)</label>
             <input type="text" id="meta-tag" value="${escapeHtml((frontmatter.tag || []).join(', '))}">
           </div>
@@ -1110,7 +1206,7 @@ function renderEditorUI(slug, frontmatter, body) {
   });
 
   state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
-  ['meta-titolo','meta-categoria','meta-tag','meta-tempo','meta-termini','meta-note-modifica','meta-moduli','meta-tabelle','meta-procedure','meta-numeri'].forEach(id => {
+  ['meta-titolo','meta-categoria','meta-capitolo','meta-ordine-cap','meta-tag','meta-tempo','meta-termini','meta-note-modifica','meta-moduli','meta-tabelle','meta-procedure','meta-numeri'].forEach(id => {
     const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
   });
 
@@ -1135,6 +1231,11 @@ async function saveProcedura() {
     const nf = { ...ctx.originalFrontmatter };
     nf.titolo = $('meta-titolo').value.trim() || ctx.slug;
     nf.categoria = $('meta-categoria').value;
+    const capSel = $('meta-capitolo').value;
+    if (capSel) nf.capitolo = capSel; else delete nf.capitolo;
+    const ordCap = $('meta-ordine-cap').value.trim();
+    if (ordCap) { const n = parseInt(ordCap, 10); nf.ordine_nel_capitolo = isNaN(n) ? ordCap : n; }
+    else delete nf.ordine_nel_capitolo;
     nf.tag = $('meta-tag').value.split(',').map(s => s.trim()).filter(Boolean);
     const tempo = $('meta-tempo').value.trim();
     if (tempo) { const n = parseInt(tempo, 10); nf.tempo_esecuzione_min = isNaN(n) ? tempo : n; }
