@@ -853,7 +853,7 @@ function renderHome() {
       <div class="home-section-title"><span>Procedure</span></div>
       <div class="procedure-grid">
         ${procs.map(p => renderProcedureCard(p)).join('')}
-        <div class="procedure-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);" onclick="toast('Creazione nuova procedura — prossima versione', 'info')">
+        <div class="procedure-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);" onclick="nuovaProcedura()">
           <span style="font-family:var(--serif);font-style:italic;">+ Nuova procedura</span>
         </div>
       </div>
@@ -954,6 +954,7 @@ function renderCapitolo(capId) {
       <h1 class="page-title">${escapeHtml(cap.titolo)}</h1>
       ${cap.descrizione ? `<div style="margin-top:12px;font-size:14px;color:var(--ink-muted);font-style:italic;font-family:var(--serif);">${escapeHtml(cap.descrizione)}</div>` : ''}
       <div class="page-actions">
+        <button class="btn" onclick="nuovaProcedura({capitolo:'${escapeHtml(capId)}'})">+ Aggiungi pezzo al capitolo</button>
         <button class="btn ghost" onclick="window.print()">Stampa capitolo</button>
       </div>
     </div>
@@ -976,6 +977,9 @@ function renderProcedureList() {
     <div class="page-head">
       <div class="page-eyebrow">Sezione</div>
       <h1 class="page-title">Procedure</h1>
+      <div class="page-actions">
+        <button class="btn" onclick="nuovaProcedura()">+ Nuova procedura</button>
+      </div>
     </div>
     <div class="procedure-grid">${procs.map(p => renderProcedureCard(p)).join('') || '<p style="color:var(--ink-muted);">Nessuna procedura.</p>'}</div>`;
 }
@@ -1570,6 +1574,103 @@ function renderCestino() {
 }
 
 /* ============================ CESTINO OPERATIONS ============================ */
+function nuovaProcedura(preset = {}) {
+  const existingSlugs = new Set(state.index.procedure.map(p => p.slug));
+  const capOptions = (state.index.capitoli || []).map(c =>
+    `<option value="${escapeHtml(c.id)}" ${preset.capitolo === c.id ? 'selected' : ''}>${escapeHtml((c.ordine ? c.ordine + '. ' : '') + c.titolo)}</option>`
+  ).join('');
+  showModal({
+    title: 'Nuova procedura',
+    subtitle: 'Crea un file vuoto e ti apre subito l\'editor.',
+    body: `
+      <div class="field">
+        <label>Titolo</label>
+        <input type="text" id="np-titolo" placeholder="es. Richiesta RX torace">
+      </div>
+      <div class="field">
+        <label>Slug (nome file, senza .md)</label>
+        <input type="text" id="np-slug" class="mono-input" placeholder="es. richiesta-rx-torace">
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Solo minuscole, cifre e trattini. Deve essere unico.</div>
+      </div>
+      <div class="field">
+        <label>Capitolo (opzionale)</label>
+        <select id="np-capitolo"><option value="">— nessuno —</option>${capOptions}</select>
+      </div>
+      <div class="field">
+        <label>Ordine nel capitolo (opzionale)</label>
+        <input type="text" id="np-ordine" class="mono-input" placeholder="1, 2, 3...">
+      </div>
+      <div id="np-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Crea e apri editor', onClick: async () => {
+        const titolo = $('np-titolo').value.trim();
+        let slug = $('np-slug').value.trim().toLowerCase();
+        const cap = $('np-capitolo').value;
+        const ord = $('np-ordine').value.trim();
+        const err = $('np-error');
+        err.style.display = 'none';
+        const show = m => { err.textContent = m; err.style.display = 'block'; };
+        if (!titolo) return show('Titolo obbligatorio.');
+        if (!slug) {
+          // Auto-slug from title
+          slug = titolo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+        }
+        if (!/^[a-z0-9-]+$/.test(slug)) return show('Slug non valido (solo minuscole, cifre, trattini).');
+        if (existingSlugs.has(slug)) return show('Slug già esistente. Scegline un altro.');
+
+        const nf = {
+          id: slug,
+          titolo,
+          tag: [],
+          categoria: 'procedure-reparto',
+          ultima_modifica: nowIso(),
+          modificato_da: state.session.username,
+          cronologia_recente: [{ data: nowIso(), utente: state.session.username, nota: 'creazione' }]
+        };
+        if (cap) nf.capitolo = cap;
+        if (ord) { const n = parseInt(ord, 10); nf.ordine_nel_capitolo = isNaN(n) ? ord : n; }
+
+        const body = `## Descrizione\n\nScrivi qui la descrizione della procedura.\n`;
+        const content = stringifyMarkdown(nf, body);
+        const path = `content/procedure/${slug}.md`;
+
+        try {
+          const res = await gh.putFile(path, content, null, `Nuova procedura: ${slug} (by ${state.session.username})`);
+          closeModal();
+          toast(`Procedura "${slug}" creata`, 'success');
+          // Add to local index immediately so the editor can open it
+          state.index.procedure.push({
+            slug, path, sha: res.content.sha,
+            ...nf,
+            body_preview: body.substring(0, 300),
+            body
+          });
+          rebuildSearchIndex();
+          updateNavCounts();
+          navigate('procedura-edit', { slug });
+        } catch (e) {
+          show('Errore creazione: ' + e.message);
+        }
+      }}
+    ]
+  });
+  // Auto-fill slug from title as user types
+  setTimeout(() => {
+    const tIn = $('np-titolo');
+    const sIn = $('np-slug');
+    if (!tIn || !sIn) return;
+    let userEditedSlug = false;
+    sIn.addEventListener('input', () => { userEditedSlug = true; });
+    tIn.addEventListener('input', () => {
+      if (userEditedSlug) return;
+      const auto = tIn.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+      sIn.value = auto;
+    });
+    tIn.focus();
+  }, 50);
+}
+
 function confirmDelete(type, slug) {
   const entity = state.index[type === 'procedura' ? 'procedure' : type].find(x => x.slug === slug);
   if (!entity) return;
