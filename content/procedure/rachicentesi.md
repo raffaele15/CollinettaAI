@@ -1,7 +1,11 @@
 ---
 id: rachicentesi
 titolo: Rachicentesi
-tag: [procedura, liquor, diagnostica, puntura-lombare]
+tag:
+  - procedura
+  - liquor
+  - diagnostica
+  - puntura-lombare
 categoria: procedure-reparto
 capitolo: rachicentesi
 ordine_nel_capitolo: 1
@@ -27,10 +31,13 @@ termini_equivalenti:
   - PL
   - LCR
   - liquor
-ultima_modifica: 2026-04-18T14:00:00Z
-modificato_da: raffaele.z
+ultima_modifica: '2026-04-18T22:21:58.594Z'
+modificato_da: raffaele
 cronologia_recente:
-  - data: 2026-04-18T14:00:00Z
+  - data: '2026-04-18T22:21:58.594Z'
+    utente: raffaele
+    nota: aggiornamento
+  - data: 2026-04-18T14:00:00.000Z
     utente: raffaele.z
     nota: migrazione iniziale dal manuale
 ---
@@ -41,15 +48,15 @@ Le rachicentesi si eseguono la mattina, dopo il giro visite, con lo strutturato 
 
 ## Prerequisiti paziente
 
-- Digiuno
-- Sospensione di eventuale terapia antiaggregante / anticoagulante / profilassi secondo le tempistiche appropriate — vedi tabella anticoagulanti-rachicentesi
-- Paziente ben informato su procedura e modalità, con **consenso informato firmato in cartella** (disponibile in cartella condivisa `MODULI`)
+* Digiuno
+* Sospensione di eventuale terapia antiaggregante / anticoagulante / profilassi secondo le tempistiche appropriate — vedi tabella anticoagulanti-rachicentesi
+* Paziente ben informato su procedura e modalità, con **consenso informato firmato in cartella** (disponibile in cartella condivisa `MODULI`)
 
 ## Preparazione specializzando
 
-- Preparare il **modulo verde** per l'analisi chimico-fisica se l'esame viene eseguito nel Laboratorio di Neurologia (se il campione va al Laboratorio Centrale non serve)
-- Preparare le **provette** con accanto le etichette generiche del paziente, da attaccare *subito* dopo il prelievo
-- Preparare le **etichette degli accertamenti** (microbiologia, citologia, sierologia, ecc.) e dividerle in sacchetti biohazard trasparenti, scrivendo sopra la destinazione
+* Preparare il **modulo verde** per l'analisi chimico-fisica se l'esame viene eseguito nel Laboratorio di Neurologia (se il campione va al Laboratorio Centrale non serve)
+* Preparare le **provette** con accanto le etichette generiche del paziente, da attaccare *subito* dopo il prelievo
+* Preparare le **etichette degli accertamenti** (microbiologia, citologia, sierologia, ecc.) e dividerle in sacchetti biohazard trasparenti, scrivendo sopra la destinazione
 
 > ⚠️ **NB**: Ogni provetta non etichettata viene buttata. Etichettare sempre subito.
 
@@ -61,11 +68,11 @@ Effettuare la puntura lombare e il prelievo con l'aiuto di almeno un'infermiera 
 
 ## Post-procedura
 
-- Raccomandare al paziente **posizione supina per almeno 1-2 ore**
-- **Abbondante idratazione** (per os se possibile, altrimenti fisiologica EV)
-- **Antiemetico e paracetamolo** al bisogno
-- Etichettare le provette e dividerle nei sacchetti
-- Scrivere nota in diario
+* Raccomandare al paziente **posizione supina per almeno 1-2 ore**
+* **Abbondante idratazione** (per os se possibile, altrimenti fisiologica EV)
+* **Antiemetico e paracetamolo** al bisogno
+* Etichettare le provette e dividerle nei sacchetti
+* Scrivere nota in diario
 
 ## Nota di diario (template)
 
@@ -84,15 +91,17 @@ Se servono indagini non eseguibili in azienda (autoanticorpi rari, RT-QuIC per p
 
 ### Indirizzi centri di riferimento
 
-- **Verona**: Laboratorio Neuropatologia, Edificio SUD, piano 1, Policlinico GB Rossi, Piazzale Scuro 10, 37134 Verona. Tel: 045 812 4461
-- **Bologna**: Laboratorio Neuropatologia, Padiglione G, piano 1, Ospedale Bellaria, Via Altura 1/8, 40139 Bologna. Tel: 051 496 6741
-- **Pavia**: Laboratorio di Neuroimmunologia, Fondazione Mondino, prima torre – piano terra, Via Mondino 2, 27100 Pavia. Tel: 0382 380-1 / 0382 380-365
+* **Verona**: Laboratorio Neuropatologia, Edificio SUD, piano 1, Policlinico GB Rossi, Piazzale Scuro 10, 37134 Verona. Tel: 045 812 4461
+* **Bologna**: Laboratorio Neuropatologia, Padiglione G, piano 1, Ospedale Bellaria, Via Altura 1/8, 40139 Bologna. Tel: 051 496 6741
+* **Pavia**: Laboratorio di Neuroimmunologia, Fondazione Mondino, prima torre – piano terra, Via Mondino 2, 27100 Pavia. Tel: 0382 380-1 / 0382 380-365
 
 ## Note operative RT-QuIC
 
-- Prelevare **4-5 cc di liquor** in provetta con tappo blu (polipropilene)
-- Usare un campione **non ematico**, prelevato dopo l'aliquota destinata agli esami di routine
-- In caso di prelievo ematico: centrifugare subito 10 min a 2000 g, trasferire sovranatante in altra provetta
-- **Refrigerare subito, non congelare**; consegna entro 24-48 ore
-- Se non possibile inviare in tempo: congelare a -80 °C (Lab Neurologia) e spedire in ghiaccio secco separato dal sangue
-- Prelevare anche **10-15 cc di sangue in EDTA** (provette tappo viola), non congelato
+* Prelevare **4-5 cc di liquor** in provetta con tappo blu (polipropilene)
+* Usare un campione **non ematico**, prelevato dopo l'aliquota destinata agli esami di routine
+* In caso di prelievo ematico: centrifugare subito 10 min a 2000 g, trasferire sovranatante in altra provetta
+* **Refrigerare subito, non congelare**; consegna entro 24-48 ore
+* Se non possibile inviare in tempo: congelare a -80 °C (Lab Neurologia) e spedire in ghiaccio secco separato dal sangue
+* Prelevare anche **10-15 cc di sangue in EDTA** (provette tappo viola), non congelato
+
+altro...
