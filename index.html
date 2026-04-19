@@ -321,6 +321,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
         <div class="nav-item" data-route="home"><span>Home</span></div>
         <div class="nav-item" data-route="manuale"><span>Manuale</span><span class="nav-item-count" id="nav-count-capitoli">—</span></div>
         <div class="nav-item" data-route="procedure"><span>Procedure</span><span class="nav-item-count" id="nav-count-procedure">—</span></div>
+        <div class="nav-item" data-route="clinica"><span>Clinica</span><span class="nav-item-count" id="nav-count-clinica">—</span></div>
         <div class="nav-item" data-route="numeri"><span>Numeri utili</span></div>
         <div class="nav-item" data-route="moduli"><span>Moduli</span><span class="nav-item-count" id="nav-count-moduli">—</span></div>
         <div class="nav-item" data-route="tabelle"><span>Tabelle</span><span class="nav-item-count" id="nav-count-tabelle">—</span></div>
@@ -504,7 +505,7 @@ function stringifyMarkdown(frontmatter, body) {
 const state = {
   session: null,
   tokensFile: null,
-  index: { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null },
+  index: { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null },
   currentView: 'home',
   editorInstance: null,
   editingContext: null,
@@ -562,6 +563,40 @@ async function buildIndex() {
   try {
     await walkProcedure('content/procedure');
   } catch (e) { console.warn('procedure recursive index error', e); }
+
+  // Separate walk for content/clinica/
+  async function walkClinica(path, depth = 0) {
+    if (depth > 3) return;
+    try {
+      const items = await gh.listDir(path);
+      for (const it of items) {
+        if (it.type === 'dir') {
+          await walkClinica(it.path, depth + 1);
+        } else if (it.type === 'file' && it.name.endsWith('.md')) {
+          const slug = it.name.replace(/\.md$/, '');
+          const file = await gh.getFile(it.path);
+          if (!file) continue;
+          const { frontmatter, body } = parseMarkdown(file.content);
+          const relPath = it.path.replace(/^content\/clinica\//, '');
+          const parts = relPath.split('/');
+          const autoSottocategoria = parts.length >= 2 ? parts[0] : null;
+          index.clinica.push({
+            slug,
+            path: it.path,
+            sha: file.sha,
+            categoria: 'clinica',
+            sottocategoria: frontmatter.sottocategoria || autoSottocategoria,
+            ...frontmatter,
+            body_preview: body.substring(0, 300),
+            body
+          });
+        }
+      }
+    } catch (e) { console.warn('clinica walk error', path, e); }
+  }
+  try {
+    await walkClinica('content/clinica');
+  } catch (e) { console.warn('clinica index error', e); }
 
   try {
     const files = await gh.listDir('content/moduli');
@@ -631,6 +666,13 @@ function rebuildSearchIndex() {
     termini: (p.termini_equivalenti || []).join(' '),
     body: p.body_preview || ''
   }));
+  (state.index.clinica || []).forEach(c => docs.push({
+    type: 'clinica', slug: c.slug,
+    titolo: c.titolo || c.slug,
+    tag: (c.tag || []).join(' '),
+    termini: (c.termini_equivalenti || []).join(' '),
+    body: c.body_preview || ''
+  }));
   state.index.moduli.forEach(m => docs.push({
     type: 'modulo', slug: m.slug,
     titolo: m.titolo || m.slug,
@@ -667,9 +709,10 @@ function rebuildSearchIndex() {
 }
 
 function updateNavCounts() {
-  const c = $('nav-count-capitoli'), p = $('nav-count-procedure'), m = $('nav-count-moduli'), t = $('nav-count-tabelle');
+  const c = $('nav-count-capitoli'), p = $('nav-count-procedure'), cl = $('nav-count-clinica'), m = $('nav-count-moduli'), t = $('nav-count-tabelle');
   if (c) c.textContent = (state.index.capitoli || []).length;
   if (p) p.textContent = state.index.procedure.length;
+  if (cl) cl.textContent = (state.index.clinica || []).length;
   if (m) m.textContent = state.index.moduli.length;
   if (t) t.textContent = state.index.tabelle.length;
 }
@@ -825,7 +868,7 @@ async function enterApp() {
 
 function logout() {
   clearSession();
-  state.index = { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null };
+  state.index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null };
   state.editingContext = null;
   if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
   $('app-view').classList.add('hidden');
@@ -860,6 +903,9 @@ function navigate(route, params = {}) {
     case 'capitolo': renderCapitolo(params.id); break;
     case 'procedure': renderProcedureList(); break;
     case 'procedure-cat': renderProcedureByCategoria(params.cat, params.sub); break;
+    case 'clinica': renderClinicaList(params.sub); break;
+    case 'clinica-scheda': renderSchedaClinica(params.slug); break;
+    case 'clinica-edit': renderSchedaClinicaEditor(params.slug); break;
     case 'procedura': renderProcedura(params.slug); break;
     case 'procedura-edit': renderProceduraEditor(params.slug); break;
     case 'numeri': renderNumeri(params.filter); break;
@@ -1037,7 +1083,7 @@ function renderProcedureList() {
     if (!byCat[c]) byCat[c] = [];
     byCat[c].push(p);
   });
-  const catOrder = ['bedside','richieste','farmacologiche','emergenze','clinica','gestione'];
+  const catOrder = ['bedside','richieste','farmacologiche','emergenze','gestione'];
   const cats = [...catOrder.filter(c => byCat[c]), ...Object.keys(byCat).filter(c => !catOrder.includes(c))];
 
   $('main-content').innerHTML = `
@@ -1109,52 +1155,39 @@ function renderProcedureByCategoria(cat, subFilter) {
 }
 
 /* ============================ VIEW — PROCEDURA ============================ */
-function renderProcedura(slug) {
-  const proc = state.index.procedure.find(p => p.slug === slug);
-  if (!proc) return renderError('Procedura non trovata', slug);
-  const tagsHtml = (proc.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
-
-  // Build category breadcrumb
-  const catLabel = proc.categoria ? CATEGORIA_LABELS[proc.categoria] || proc.categoria : 'Procedure';
-  const subLabel = proc.sottocategoria ? SOTTO_LABELS[proc.sottocategoria] || proc.sottocategoria : null;
-  const breadcrumb = proc.capitolo
-    ? `<span style="cursor:pointer;" onclick="navigate('capitolo', {id:'${escapeHtml(proc.capitolo)}'})">← ${escapeHtml((state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo)}</span> · Manuale`
-    : `<span style="cursor:pointer;" onclick="navigate('procedure-cat', {cat:'${escapeHtml(proc.categoria)}'})">${escapeHtml(catLabel)}</span>${subLabel ? ' · ' + escapeHtml(subLabel) : ''}`;
-
-  // Section renderers
+function renderSchedaBody(scheda) {
   const sections = [];
 
-  if (proc.sintesi) {
-    sections.push(schedaSection('Sintesi', `<p style="font-family:var(--serif);font-size:17px;line-height:1.55;font-style:italic;color:var(--ink-soft);">${escapeHtml(proc.sintesi)}</p>`, true));
+  if (scheda.sintesi) {
+    sections.push(schedaSection('Sintesi', `<p style="font-family:var(--serif);font-size:17px;line-height:1.55;font-style:italic;color:var(--ink-soft);">${escapeHtml(scheda.sintesi)}</p>`, true));
   }
 
-  // Two-column block: indicazioni | controindicazioni
-  if (Array.isArray(proc.indicazioni) || Array.isArray(proc.controindicazioni)) {
-    const ind = Array.isArray(proc.indicazioni) && proc.indicazioni.length
-      ? `<div><div class="scheda-subtitle">Indicazioni</div><ul class="scheda-list">${proc.indicazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>` : '';
-    const ctr = Array.isArray(proc.controindicazioni) && proc.controindicazioni.length
-      ? `<div><div class="scheda-subtitle scheda-subtitle-warn">Controindicazioni</div><ul class="scheda-list">${proc.controindicazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>` : '';
+  if (Array.isArray(scheda.indicazioni) || Array.isArray(scheda.controindicazioni)) {
+    const ind = Array.isArray(scheda.indicazioni) && scheda.indicazioni.length
+      ? `<div><div class="scheda-subtitle">Indicazioni</div><ul class="scheda-list">${scheda.indicazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>` : '';
+    const ctr = Array.isArray(scheda.controindicazioni) && scheda.controindicazioni.length
+      ? `<div><div class="scheda-subtitle scheda-subtitle-warn">Controindicazioni</div><ul class="scheda-list">${scheda.controindicazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>` : '';
     if (ind || ctr) sections.push(schedaSection('Indicazioni e controindicazioni', `<div class="scheda-two-col">${ind}${ctr}</div>`, true));
   }
 
-  if (Array.isArray(proc.criteri_valutazione) && proc.criteri_valutazione.length) {
-    sections.push(schedaSection('Criteri di valutazione', `<ul class="scheda-list">${proc.criteri_valutazione.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  if (Array.isArray(scheda.criteri_valutazione) && scheda.criteri_valutazione.length) {
+    sections.push(schedaSection('Criteri di valutazione', `<ul class="scheda-list">${scheda.criteri_valutazione.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
   }
-  if (proc.punteggio) {
-    const p = proc.punteggio;
+  if (scheda.punteggio) {
+    const p = scheda.punteggio;
     const intBlock = Array.isArray(p.interpretazione) ? `<ul class="scheda-list" style="margin-top:8px;">${p.interpretazione.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>` : '';
     sections.push(schedaSection('Punteggio', `<div><strong>Range:</strong> ${escapeHtml(p.range || '—')}</div>${intBlock}`));
   }
-  if (proc.interpretazione && typeof proc.interpretazione === 'string') {
-    sections.push(schedaSection('Interpretazione', DOMPurify.sanitize(marked.parse(proc.interpretazione))));
+  if (scheda.interpretazione && typeof scheda.interpretazione === 'string') {
+    sections.push(schedaSection('Interpretazione', DOMPurify.sanitize(marked.parse(scheda.interpretazione))));
   }
 
-  if (Array.isArray(proc.prerequisiti) && proc.prerequisiti.length) {
-    sections.push(schedaSection('Prerequisiti', `<ul class="scheda-list scheda-checklist">${proc.prerequisiti.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  if (Array.isArray(scheda.prerequisiti) && scheda.prerequisiti.length) {
+    sections.push(schedaSection('Prerequisiti', `<ul class="scheda-list scheda-checklist">${scheda.prerequisiti.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
   }
 
-  if (proc.preparazione && typeof proc.preparazione === 'object') {
-    const p = proc.preparazione;
+  if (scheda.preparazione && typeof scheda.preparazione === 'object') {
+    const p = scheda.preparazione;
     const rows = [];
     if (p.diluizione) rows.push(['Diluizione', p.diluizione]);
     if (p.concentrazione) rows.push(['Concentrazione', p.concentrazione]);
@@ -1165,8 +1198,8 @@ function renderProcedura(slug) {
     if (rows.length) sections.push(schedaSection('Preparazione', scheda2ColTable(rows)));
   }
 
-  if (proc.dosaggio && typeof proc.dosaggio === 'object') {
-    const d = proc.dosaggio;
+  if (scheda.dosaggio && typeof scheda.dosaggio === 'object') {
+    const d = scheda.dosaggio;
     const rows = [];
     if (d.carico) rows.push(['Carico', d.carico]);
     if (d.mantenimento) rows.push(['Mantenimento', d.mantenimento]);
@@ -1175,8 +1208,8 @@ function renderProcedura(slug) {
     if (rows.length) sections.push(schedaSection('Dosaggio', scheda2ColTable(rows)));
   }
 
-  if (proc.algoritmo_linee && typeof proc.algoritmo_linee === 'object') {
-    const lineeHtml = Object.entries(proc.algoritmo_linee).map(([key, linea]) => {
+  if (scheda.algoritmo_linee && typeof scheda.algoritmo_linee === 'object') {
+    const lineeHtml = Object.entries(scheda.algoritmo_linee).map(([key, linea]) => {
       const nome = key.replace(/_/g, ' ').replace(/linea (\d)/, 'Linea $1');
       const finestra = linea.finestra_temporale ? `<div style="font-family:var(--mono);font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">⏱ ${escapeHtml(linea.finestra_temporale)}</div>` : '';
       const cond = linea.condizione ? `<div style="font-style:italic;color:var(--ink-muted);margin-bottom:8px;font-size:14px;">${escapeHtml(linea.condizione)}</div>` : '';
@@ -1200,12 +1233,12 @@ function renderProcedura(slug) {
     sections.push(schedaSection('Algoritmo terapeutico', lineeHtml, true));
   }
 
-  if (Array.isArray(proc.target_clinici) && proc.target_clinici.length) {
-    sections.push(schedaSection('Target clinici', `<ul class="scheda-list">${proc.target_clinici.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  if (Array.isArray(scheda.target_clinici) && scheda.target_clinici.length) {
+    sections.push(schedaSection('Target clinici', `<ul class="scheda-list">${scheda.target_clinici.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
   }
 
-  if (proc.richiesta_galileo && typeof proc.richiesta_galileo === 'object') {
-    const rg = proc.richiesta_galileo;
+  if (scheda.richiesta_galileo && typeof scheda.richiesta_galileo === 'object') {
+    const rg = scheda.richiesta_galileo;
     const rows = [];
     if (rg.percorso) rows.push(['Percorso', rg.percorso]);
     if (rg.urgenza) rows.push(['Urgenza', rg.urgenza]);
@@ -1214,8 +1247,8 @@ function renderProcedura(slug) {
     if (rows.length) sections.push(schedaSection('Richiesta Galileo', scheda2ColTable(rows), true));
   }
 
-  if (Array.isArray(proc.numeri_chiave) && proc.numeri_chiave.length) {
-    const numsHtml = proc.numeri_chiave.map(n => {
+  if (Array.isArray(scheda.numeri_chiave) && scheda.numeri_chiave.length) {
+    const numsHtml = scheda.numeri_chiave.map(n => {
       const nums = (n.numeri || []).map(num => `<button class="numero-btn" onclick="copyNumber('${escapeHtml(num)}')">${escapeHtml(num)}</button>`).join(' ');
       return `
         <div class="numero-row">
@@ -1229,16 +1262,16 @@ function renderProcedura(slug) {
     sections.push(schedaSection('Numeri chiave', numsHtml, true));
   }
 
-  if (proc.orari || proc.tempistica || proc.durata_tipica) {
+  if (scheda.orari || scheda.tempistica || scheda.durata_tipica) {
     const rows = [];
-    if (proc.orari) rows.push(['Orari', proc.orari]);
-    if (proc.tempistica) rows.push(['Tempistica', proc.tempistica]);
-    if (proc.durata_tipica) rows.push(['Durata tipica', proc.durata_tipica]);
+    if (scheda.orari) rows.push(['Orari', scheda.orari]);
+    if (scheda.tempistica) rows.push(['Tempistica', scheda.tempistica]);
+    if (scheda.durata_tipica) rows.push(['Durata tipica', scheda.durata_tipica]);
     sections.push(schedaSection('Tempistiche', scheda2ColTable(rows)));
   }
 
-  if (proc.monitoraggio && typeof proc.monitoraggio === 'object') {
-    const m = proc.monitoraggio;
+  if (scheda.monitoraggio && typeof scheda.monitoraggio === 'object') {
+    const m = scheda.monitoraggio;
     const parts = [];
     if (Array.isArray(m.parametri)) parts.push(`<div><strong>Parametri:</strong> ${m.parametri.map(escapeHtml).join(', ')}</div>`);
     if (m.frequenza) parts.push(`<div><strong>Frequenza:</strong> ${escapeHtml(m.frequenza)}</div>`);
@@ -1247,67 +1280,78 @@ function renderProcedura(slug) {
     sections.push(schedaSection('Monitoraggio', parts.join(''), true));
   }
 
-  if (proc.sospensione_weaning) {
-    sections.push(schedaSection('Sospensione / Weaning', `<p>${escapeHtml(proc.sospensione_weaning)}</p>`));
-  }
-  if (proc.sospensione_farmaci) {
-    sections.push(schedaSection('Sospensione farmaci', typeof proc.sospensione_farmaci === 'string' ? `<p>${escapeHtml(proc.sospensione_farmaci)}</p>` : `<p>Vedi tabella correlata.</p>`));
-  }
+  if (scheda.sospensione_weaning) sections.push(schedaSection('Sospensione / Weaning', `<p>${escapeHtml(scheda.sospensione_weaning)}</p>`));
+  if (scheda.sospensione_farmaci) sections.push(schedaSection('Sospensione farmaci', typeof scheda.sospensione_farmaci === 'string' ? `<p>${escapeHtml(scheda.sospensione_farmaci)}</p>` : `<p>Vedi tabella correlata.</p>`));
 
-  if (Array.isArray(proc.post_procedura) && proc.post_procedura.length) {
-    sections.push(schedaSection('Post-procedura', `<ul class="scheda-list">${proc.post_procedura.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  if (Array.isArray(scheda.post_procedura) && scheda.post_procedura.length) {
+    sections.push(schedaSection('Post-procedura', `<ul class="scheda-list">${scheda.post_procedura.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
   }
+  if (Array.isArray(scheda.effetti_avversi) && scheda.effetti_avversi.length) {
+    sections.push(schedaSection('Effetti avversi', `<ul class="scheda-list">${scheda.effetti_avversi.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+  if (Array.isArray(scheda.interazioni) && scheda.interazioni.length) {
+    sections.push(schedaSection('Interazioni', `<ul class="scheda-list">${scheda.interazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+  if (scheda.accesso_venoso) sections.push(schedaSection('Accesso venoso', `<p>${escapeHtml(scheda.accesso_venoso)}</p>`));
 
-  if (Array.isArray(proc.effetti_avversi) && proc.effetti_avversi.length) {
-    sections.push(schedaSection('Effetti avversi', `<ul class="scheda-list">${proc.effetti_avversi.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
-  }
-  if (Array.isArray(proc.interazioni) && proc.interazioni.length) {
-    sections.push(schedaSection('Interazioni', `<ul class="scheda-list">${proc.interazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
-  }
-  if (proc.accesso_venoso) {
-    sections.push(schedaSection('Accesso venoso', `<p>${escapeHtml(proc.accesso_venoso)}</p>`));
-  }
-
-  if (proc.nota_diario_template) {
+  if (scheda.nota_diario_template) {
     sections.push(schedaSection('Nota diario (template)',
       `<div style="position:relative;">
-        <pre style="font-family:var(--serif);font-size:14px;line-height:1.6;background:var(--bg-sink);padding:16px 20px;border-left:3px solid var(--ink-faint);border-radius:0 2px 2px 0;white-space:pre-wrap;font-style:italic;color:var(--ink-soft);margin:0;">${escapeHtml(proc.nota_diario_template)}</pre>
-        <button class="btn sm ghost" style="position:absolute;top:8px;right:8px;" onclick="copyDiarioNote(this)" data-text="${escapeHtml(proc.nota_diario_template)}">Copia</button>
+        <pre style="font-family:var(--serif);font-size:14px;line-height:1.6;background:var(--bg-sink);padding:16px 20px;border-left:3px solid var(--ink-faint);border-radius:0 2px 2px 0;white-space:pre-wrap;font-style:italic;color:var(--ink-soft);margin:0;">${escapeHtml(scheda.nota_diario_template)}</pre>
+        <button class="btn sm ghost" style="position:absolute;top:8px;right:8px;" onclick="copyDiarioNote(this)" data-text="${escapeHtml(scheda.nota_diario_template)}">Copia</button>
       </div>`));
   }
+  if (scheda.note_libere) sections.push(schedaSection('Note libere', DOMPurify.sanitize(marked.parse(scheda.note_libere))));
+  if (scheda.riferimenti_bibliografici) sections.push(schedaSection('Riferimenti bibliografici', DOMPurify.sanitize(marked.parse(scheda.riferimenti_bibliografici))));
 
-  if (proc.note_libere) {
-    sections.push(schedaSection('Note libere', DOMPurify.sanitize(marked.parse(proc.note_libere))));
-  }
+  return sections.join('');
+}
 
-  if (proc.riferimenti_bibliografici) {
-    sections.push(schedaSection('Riferimenti bibliografici', DOMPurify.sanitize(marked.parse(proc.riferimenti_bibliografici))));
-  }
-
-  // Related items
+function renderSchedaRelated(scheda, isClinica) {
   const related = [];
-  (proc.moduli_correlati || []).forEach(mid => {
+  (scheda.moduli_correlati || []).forEach(mid => {
     const m = state.index.moduli.find(x => x.slug === mid);
     if (m) related.push({ label: 'Modulo', title: m.titolo, click: `navigate('modulo', {slug:'${m.slug}'})` });
   });
-  (proc.tabelle_correlate || []).forEach(tid => {
+  (scheda.tabelle_correlate || []).forEach(tid => {
     const t = state.index.tabelle.find(x => x.slug === tid);
     if (t) related.push({ label: 'Tabella', title: t.titolo, click: `navigate('tabella', {slug:'${t.slug}'})` });
   });
-  (proc.procedure_correlate || []).forEach(pid => {
+  (scheda.procedure_correlate || []).forEach(pid => {
     const p = state.index.procedure.find(x => x.slug === pid);
     if (p) related.push({ label: 'Procedura', title: p.titolo, click: `navigate('procedura', {slug:'${p.slug}'})` });
+    else {
+      const c = (state.index.clinica || []).find(x => x.slug === pid);
+      if (c) related.push({ label: 'Clinica', title: c.titolo, click: `navigate('clinica-scheda', {slug:'${c.slug}'})` });
+    }
   });
-  (proc.invii_campioni_correlati || []).forEach(pid => {
+  (scheda.invii_campioni_correlati || []).forEach(pid => {
     const p = state.index.procedure.find(x => x.slug === pid);
     if (p) related.push({ label: 'Invio campione', title: p.titolo, click: `navigate('procedura', {slug:'${p.slug}'})` });
   });
-  (proc.numeri_correlati || []).forEach(nid => {
+  (scheda.numeri_correlati || []).forEach(nid => {
     const n = findContattoBySlug(nid);
     if (n) related.push({ label: 'Numero', title: `${n.etichetta} (${(n.numeri || []).join(', ')})`, click: `navigate('numeri', {filter:'${escapeHtml(nid)}'})` });
   });
+  if (!related.length) return '';
+  return `<div class="related-grid">${related.map(r => `
+    <div class="related-card" onclick="${r.click}">
+      <div class="related-card-label">${escapeHtml(r.label)}</div>
+      <div class="related-card-title">${escapeHtml(r.title)}</div>
+    </div>`).join('')}</div>`;
+}
 
-  // Fallback: free Markdown body (legacy)
+function renderProcedura(slug) {
+  const proc = state.index.procedure.find(p => p.slug === slug);
+  if (!proc) return renderError('Procedura non trovata', slug);
+  const tagsHtml = (proc.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
+
+  const catLabel = proc.categoria ? CATEGORIA_LABELS[proc.categoria] || proc.categoria : 'Procedure';
+  const subLabel = proc.sottocategoria ? SOTTO_LABELS[proc.sottocategoria] || proc.sottocategoria : null;
+  const breadcrumb = proc.capitolo
+    ? `<span style="cursor:pointer;" onclick="navigate('capitolo', {id:'${escapeHtml(proc.capitolo)}'})">← ${escapeHtml((state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo)}</span> · Manuale`
+    : `<span style="cursor:pointer;" onclick="navigate('procedure-cat', {cat:'${escapeHtml(proc.categoria)}'})">${escapeHtml(catLabel)}</span>${subLabel ? ' · ' + escapeHtml(subLabel) : ''}`;
+
   const bodyHtml = proc.body && proc.body.trim() ? DOMPurify.sanitize(marked.parse(proc.body)) : '';
 
   $('main-content').innerHTML = `
@@ -1326,18 +1370,363 @@ function renderProcedura(slug) {
         <button class="btn ghost" onclick="confirmDelete('procedura', '${escapeHtml(slug)}')">Elimina</button>
       </div>
     </div>
-
     <article class="procedura-body">
-      ${sections.join('')}
+      ${renderSchedaBody(proc)}
       ${bodyHtml ? `<div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--rule);">${bodyHtml}</div>` : ''}
     </article>
-
-    ${related.length ? `<div class="related-grid">${related.map(r => `
-      <div class="related-card" onclick="${r.click}">
-        <div class="related-card-label">${escapeHtml(r.label)}</div>
-        <div class="related-card-title">${escapeHtml(r.title)}</div>
-      </div>`).join('')}</div>` : ''}`;
+    ${renderSchedaRelated(proc, false)}`;
 }
+
+function renderClinicaList(subFilter) {
+  const items = state.index.clinica || [];
+  const bySub = {};
+  items.forEach(c => {
+    const s = c.sottocategoria || '_senza';
+    if (!bySub[s]) bySub[s] = [];
+    bySub[s].push(c);
+  });
+  const subs = Object.keys(bySub).sort();
+  const subOrder = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+  const orderedSubs = [...subOrder.filter(s => bySub[s]), ...subs.filter(s => !subOrder.includes(s))];
+  const filtered = subFilter ? (bySub[subFilter] || []) : items;
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">Sezione</div>
+      <h1 class="page-title">Clinica</h1>
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Prognosi, gestione post-acuta, scale cliniche. Materiale di riferimento consultabile al letto.</div>
+      ${orderedSubs.length > 1 ? `
+        <div class="numeri-filters" style="margin-top:20px;">
+          <button class="filter-chip ${!subFilter ? 'active' : ''}" onclick="navigate('clinica')">Tutte</button>
+          ${orderedSubs.map(s => `<button class="filter-chip ${subFilter === s ? 'active' : ''}" onclick="navigate('clinica', {sub:'${escapeHtml(s)}'})">${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s))} <span style="opacity:.5;">${bySub[s].length}</span></button>`).join('')}
+        </div>
+      ` : ''}
+      <div class="page-actions">
+        <button class="btn" onclick="nuovaSchedaClinica(${subFilter && subFilter !== '_senza' ? `{sottocategoria:'${escapeHtml(subFilter)}'}` : ''})">+ Nuova scheda clinica</button>
+      </div>
+    </div>
+    ${items.length === 0 ? '<p style="color:var(--ink-muted);">Nessuna scheda clinica ancora caricata.</p>' :
+      subFilter || orderedSubs.length === 1
+        ? `<div class="procedure-grid">${filtered.map(c => renderClinicaCard(c)).join('')}</div>`
+        : orderedSubs.map(s => `
+            <div class="home-section">
+              <div class="home-section-title">
+                <span>${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? 'Senza sottocategoria' : s))}</span>
+                <span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);">${bySub[s].length}</span>
+              </div>
+              <div class="procedure-grid">
+                ${bySub[s].map(c => renderClinicaCard(c)).join('')}
+              </div>
+            </div>
+          `).join('')
+    }`;
+}
+
+function renderClinicaCard(c) {
+  const tagsHtml = (c.tag || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+  return `
+    <div class="procedure-card" onclick="navigate('clinica-scheda', {slug:'${escapeHtml(c.slug)}'})">
+      <div class="procedure-card-title">${escapeHtml(c.titolo || c.slug)}</div>
+      <div class="procedure-card-tags">${tagsHtml}</div>
+      <div class="procedure-card-meta"><span>Aggiornata ${timeAgo(c.ultima_modifica)}</span></div>
+    </div>`;
+}
+
+function renderSchedaClinica(slug) {
+  const scheda = (state.index.clinica || []).find(c => c.slug === slug);
+  if (!scheda) return renderError('Scheda clinica non trovata', slug);
+  const tagsHtml = (scheda.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
+  const subLabel = scheda.sottocategoria ? SOTTO_LABELS[scheda.sottocategoria] || scheda.sottocategoria : null;
+  const breadcrumb = `<span style="cursor:pointer;" onclick="navigate('clinica')">Clinica</span>${subLabel ? ' · <span style="cursor:pointer;" onclick="navigate(\'clinica\', {sub:\'' + escapeHtml(scheda.sottocategoria) + '\'})">' + escapeHtml(subLabel) + '</span>' : ''}`;
+  const bodyHtml = scheda.body && scheda.body.trim() ? DOMPurify.sanitize(marked.parse(scheda.body)) : '';
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">${breadcrumb}</div>
+      <h1 class="page-title">${escapeHtml(scheda.titolo || scheda.slug)}</h1>
+      <div style="margin-top:12px;">${tagsHtml}</div>
+      <div class="page-meta">
+        <div class="page-meta-item">Aggiornata ${timeAgo(scheda.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(scheda.modificato_da || '—')}</strong></div>
+      </div>
+      <div class="page-actions">
+        <button class="btn" onclick="navigate('clinica-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
+        <button class="btn ghost" onclick="window.print()">Stampa</button>
+        <button class="btn ghost" onclick="showClinicaHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
+      </div>
+    </div>
+    <article class="procedura-body">
+      ${renderSchedaBody(scheda)}
+      ${bodyHtml ? `<div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--rule);">${bodyHtml}</div>` : ''}
+    </article>
+    ${renderSchedaRelated(scheda, true)}`;
+}
+
+function showClinicaHistoryModal(slug) {
+  const c = (state.index.clinica || []).find(x => x.slug === slug);
+  if (!c) return;
+  const storia = c.cronologia_recente || [];
+  const rows = storia.length
+    ? storia.map(s => `<div class="numero-row"><div><div style="font-size:14px;">${escapeHtml(s.nota || '—')}</div><div style="font-size:12px;color:var(--ink-muted);margin-top:2px;"><span style="font-family:var(--mono);">${escapeHtml(s.utente)}</span> · ${timeAgo(s.data)}</div></div></div>`).join('')
+    : '<p style="color:var(--ink-muted);padding:16px 0;">Nessuna cronologia.</p>';
+  showModal({ title: 'Cronologia', subtitle: '', body: rows, actions: [{ label: 'Chiudi', onClick: closeModal }] });
+}
+
+// Editor for clinical cards — reuses procedure editor with a flag
+async function renderSchedaClinicaEditor(slug) {
+  renderLoading('Preparazione editor clinica...');
+  const lockResult = await locks.acquire('clinica-' + slug);
+  if (!lockResult.acquired) {
+    showModal({
+      title: 'File già in modifica',
+      subtitle: `In modifica da <strong style="font-family:var(--mono);">${escapeHtml(lockResult.heldBy)}</strong>.`,
+      body: '',
+      actions: [
+        { label: 'Annulla', variant: 'ghost', onClick: () => { closeModal(); navigate('clinica-scheda', {slug}); } },
+        { label: 'Modifica comunque', variant: 'danger', onClick: () => { closeModal(); proceedToEditClinica(slug, true); } }
+      ]
+    });
+    return;
+  }
+  proceedToEditClinica(slug, false);
+}
+
+async function proceedToEditClinica(slug, forceOverride) {
+  try {
+    const scheda = (state.index.clinica || []).find(c => c.slug === slug);
+    if (!scheda) throw new Error('Scheda non trovata');
+    const file = await gh.getFile(scheda.path);
+    if (!file) throw new Error('File non trovato');
+    const { frontmatter, body } = parseMarkdown(file.content);
+    state.editingContext = {
+      type: 'clinica', slug, path: file.path, sha: file.sha,
+      originalFrontmatter: { ...frontmatter }, originalBody: body,
+      isDirty: false, hasLock: !forceOverride
+    };
+    renderEditorUIClinica(slug, frontmatter, body);
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+  } catch (e) {
+    renderError('Errore apertura editor', e.message);
+  }
+}
+
+function renderEditorUIClinica(slug, frontmatter, body) {
+  // Simplified editor: Metadata + Markdown body + raw YAML for advanced fields
+  const subOpts = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+  // Extract known schema fields from frontmatter to a YAML blob for manual editing
+  const standardKeys = ['id','titolo','categoria','sottocategoria','tag','termini_equivalenti','ultima_modifica','modificato_da','cronologia_recente'];
+  const advancedFrontmatter = {};
+  Object.keys(frontmatter).forEach(k => {
+    if (!standardKeys.includes(k)) advancedFrontmatter[k] = frontmatter[k];
+  });
+  const advancedYaml = Object.keys(advancedFrontmatter).length
+    ? jsyaml.dump(advancedFrontmatter, { lineWidth: 120, noRefs: true, sortKeys: false })
+    : '';
+
+  $('main-content').innerHTML = `
+    <div class="editor-head">
+      <div class="editor-head-main">
+        <div class="editor-head-title">${escapeHtml(frontmatter.titolo || slug)}</div>
+        <div class="editor-head-sub">Clinica · Modifica — ${escapeHtml(slug)}.md</div>
+      </div>
+      <div class="editor-head-actions">
+        <button class="btn ghost" id="btn-cancel-edit">Annulla</button>
+        <button class="btn" id="btn-save-edit">Salva</button>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <div class="editor-section-head"><div class="editor-section-title">Metadati</div></div>
+      <div class="editor-section-body">
+        <div class="meta-grid">
+          <div class="field">
+            <label>Titolo</label>
+            <input type="text" id="meta-titolo" value="${escapeHtml(frontmatter.titolo || '')}">
+          </div>
+          <div class="field">
+            <label>Sottocategoria</label>
+            <select id="meta-sottocategoria">
+              ${subOpts.map(s => `<option value="${s}" ${frontmatter.sottocategoria === s ? 'selected' : ''}>${escapeHtml(SOTTO_LABELS[s] || s)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Tag (separati da virgola)</label>
+            <input type="text" id="meta-tag" value="${escapeHtml((frontmatter.tag || []).join(', '))}">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Termini equivalenti (separati da virgola)</label>
+            <input type="text" id="meta-termini" value="${escapeHtml((frontmatter.termini_equivalenti || []).join(', '))}">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Nota modifica (va in cronologia)</label>
+            <input type="text" id="meta-note-modifica" placeholder="es. aggiunto score FOUR">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <div class="editor-section-head"><div class="editor-section-title">Campi strutturati (YAML avanzato)</div></div>
+      <div class="editor-section-body">
+        <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Campi come <code>sintesi</code>, <code>indicazioni</code>, <code>punteggio</code>, <code>numeri_chiave</code>, etc. Sintassi YAML.</div>
+        <textarea id="meta-advanced-yaml" rows="14" class="mono-input" style="font-size:12px;line-height:1.5;">${escapeHtml(advancedYaml)}</textarea>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <div class="editor-section-head"><div class="editor-section-title">Corpo Markdown (opzionale)</div></div>
+      <div id="editor-wrapper"></div>
+    </div>`;
+
+  state.editorInstance = new toastui.Editor({
+    el: $('editor-wrapper'),
+    height: '400px',
+    initialEditType: 'wysiwyg',
+    previewStyle: 'vertical',
+    initialValue: body,
+    usageStatistics: false,
+    hideModeSwitch: true,
+    toolbarItems: [['heading','bold','italic'],['hr','quote'],['ul','ol'],['table','link'],['code','codeblock']]
+  });
+
+  state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  ['meta-titolo','meta-sottocategoria','meta-tag','meta-termini','meta-note-modifica','meta-advanced-yaml'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  });
+
+  $('btn-cancel-edit').onclick = () => {
+    if (state.editingContext.isDirty && !confirm('Annullare le modifiche?')) return;
+    if (state.editingContext.hasLock) locks.release('clinica-' + state.editingContext.slug).catch(() => {});
+    state.editingContext = null;
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    navigate('clinica-scheda', { slug });
+  };
+  $('btn-save-edit').onclick = saveSchedaClinica;
+}
+
+async function saveSchedaClinica() {
+  const ctx = state.editingContext;
+  if (!ctx) return;
+  const btn = $('btn-save-edit');
+  btn.disabled = true;
+  btn.textContent = 'Salvataggio...';
+  try {
+    // Parse advanced YAML
+    let advancedFm = {};
+    const yamlStr = $('meta-advanced-yaml').value.trim();
+    if (yamlStr) {
+      try { advancedFm = jsyaml.load(yamlStr) || {}; }
+      catch (e) { throw new Error('YAML avanzato non valido: ' + e.message); }
+    }
+    const nf = {
+      id: ctx.slug,
+      titolo: $('meta-titolo').value.trim() || ctx.slug,
+      categoria: 'clinica',
+      sottocategoria: $('meta-sottocategoria').value,
+      tag: $('meta-tag').value.split(',').map(s => s.trim()).filter(Boolean),
+      termini_equivalenti: $('meta-termini').value.split(',').map(s => s.trim()).filter(Boolean),
+      ...advancedFm,
+      ultima_modifica: nowIso(),
+      modificato_da: state.session.username
+    };
+    const nota = $('meta-note-modifica').value.trim() || 'aggiornamento';
+    nf.cronologia_recente = [
+      { data: nowIso(), utente: state.session.username, nota },
+      ...((ctx.originalFrontmatter.cronologia_recente || []).slice(0, 4))
+    ];
+
+    const newBody = state.editorInstance.getMarkdown();
+    const newContent = stringifyMarkdown(nf, newBody);
+    const commitMsg = `Aggiorna clinica/${ctx.slug} — ${nota} (by ${state.session.username})`;
+
+    await gh.putFile(ctx.path, newContent, ctx.sha, commitMsg);
+    toast('Salvato', 'success');
+    if (ctx.hasLock) locks.release('clinica-' + ctx.slug).catch(() => {});
+
+    // Update local index
+    const idx = state.index.clinica.findIndex(c => c.slug === ctx.slug);
+    if (idx >= 0) {
+      state.index.clinica[idx] = { ...state.index.clinica[idx], ...nf, body: newBody, body_preview: newBody.substring(0, 300) };
+      rebuildSearchIndex();
+    }
+    state.editingContext = null;
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
+    navigate('clinica-scheda', { slug: ctx.slug });
+  } catch (e) {
+    toast('Errore: ' + e.message, 'error', 6000);
+    btn.disabled = false;
+    btn.textContent = 'Salva';
+  }
+}
+
+function nuovaSchedaClinica(preset = {}) {
+  const existingSlugs = new Set((state.index.clinica || []).map(c => c.slug));
+  const subOpts = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+
+  showModal({
+    title: 'Nuova scheda clinica',
+    subtitle: 'Prognosi, gestione post-acuta, o scala clinica.',
+    body: `
+      <div class="field"><label>Titolo</label><input type="text" id="nc-titolo" placeholder="es. ICH Score"></div>
+      <div class="field">
+        <label>Slug (nome file)</label>
+        <input type="text" id="nc-slug" class="mono-input" placeholder="es. ich-score">
+      </div>
+      <div class="field">
+        <label>Sottocategoria</label>
+        <select id="nc-sottocategoria">
+          ${subOpts.map(s => `<option value="${s}" ${preset.sottocategoria === s ? 'selected' : ''}>${escapeHtml(SOTTO_LABELS[s] || s)}</option>`).join('')}
+        </select>
+      </div>
+      <div id="nc-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Crea e apri editor', onClick: async () => {
+        const titolo = $('nc-titolo').value.trim();
+        let slug = $('nc-slug').value.trim().toLowerCase();
+        const sottocat = $('nc-sottocategoria').value;
+        const err = $('nc-error');
+        const show = m => { err.textContent = m; err.style.display = 'block'; };
+        if (!titolo) return show('Titolo obbligatorio.');
+        if (!slug) slug = titolo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+        if (!/^[a-z0-9-]+$/.test(slug)) return show('Slug non valido.');
+        if (existingSlugs.has(slug)) return show('Slug già esistente.');
+
+        const nf = {
+          id: slug, titolo,
+          categoria: 'clinica',
+          sottocategoria: sottocat,
+          tag: [],
+          ultima_modifica: nowIso(),
+          modificato_da: state.session.username,
+          cronologia_recente: [{ data: nowIso(), utente: state.session.username, nota: 'creazione' }]
+        };
+        const content = stringifyMarkdown(nf, '');
+        const path = `content/clinica/${sottocat}/${slug}.md`;
+        try {
+          const res = await gh.putFile(path, content, null, `Nuova scheda clinica: ${slug} (by ${state.session.username})`);
+          closeModal();
+          toast(`Scheda "${slug}" creata`, 'success');
+          state.index.clinica.push({ slug, path, sha: res.content.sha, ...nf, body: '', body_preview: '' });
+          rebuildSearchIndex();
+          updateNavCounts();
+          navigate('clinica-edit', { slug });
+        } catch (e) { show('Errore: ' + e.message); }
+      }}
+    ]
+  });
+  setTimeout(() => {
+    const t = $('nc-titolo'), s = $('nc-slug');
+    let edited = false;
+    s.addEventListener('input', () => { edited = true; });
+    t.addEventListener('input', () => {
+      if (edited) return;
+      s.value = t.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+    });
+    t.focus();
+  }, 50);
+}
+
 
 function schedaSection(title, html, defaultOpen = false) {
   const id = 'sec-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -1367,8 +1756,8 @@ const CATEGORIA_LABELS = {
   richieste: 'Richieste',
   farmacologiche: 'Farmacologiche',
   emergenze: 'Emergenze',
-  clinica: 'Clinica',
   gestione: 'Gestione',
+  clinica: 'Clinica',
   'procedure-reparto': 'Procedura reparto',
   workflow: 'Workflow',
   educational: 'Educational'
@@ -1391,7 +1780,7 @@ const SOTTO_LABELS = {
   'monitoraggi-ematici': 'Monitoraggi ematici',
   'prognosi': 'Prognosi',
   'gestione-post-acuta': 'Gestione post-acuta',
-  'score-scale': 'Score e scale',
+  'scale-cliniche': 'Scale cliniche',
   'dimissione': 'Dimissione',
   'ingresso': 'Ingresso'
 };
@@ -2425,10 +2814,12 @@ function renderSearchResults(query) {
           const item = r.item;
           let click = '';
           if (item.type === 'procedura') click = `navigate('procedura', {slug:'${escapeHtml(item.slug)}'})`;
+          else if (item.type === 'clinica') click = `navigate('clinica-scheda', {slug:'${escapeHtml(item.slug)}'})`;
           else if (item.type === 'modulo') click = `navigate('modulo', {slug:'${escapeHtml(item.slug)}'})`;
           else if (item.type === 'tabella') click = `navigate('tabella', {slug:'${escapeHtml(item.slug)}'})`;
           else if (item.type === 'numero') click = `navigate('numeri', {filter:'${escapeHtml(item.slug)}'})`;
           const typeLabel = item.type === 'procedura' ? 'Procedura'
+            : item.type === 'clinica' ? 'Scheda clinica'
             : item.type === 'modulo' ? 'Modulo'
             : item.type === 'tabella' ? 'Tabella'
             : item.type === 'numero' ? `Numero · ${escapeHtml(item.gruppo || '')}` : item.type;
