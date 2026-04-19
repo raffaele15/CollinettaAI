@@ -305,6 +305,10 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .numeri-group-title{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:12px;color:var(--ink);letter-spacing:-.01em}
 .numero-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule-soft)}
 .numero-row:last-child{border:none}
+.numero-row-guardia{background:linear-gradient(to right,#fef0ef 0%,transparent 100%);border-left:3px solid var(--danger);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
+.numero-row-guardia .numero-label{color:var(--danger);font-weight:500}
+.numero-row-reparto{background:linear-gradient(to right,var(--accent-soft) 0%,transparent 100%);border-left:3px solid var(--accent);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
+.numero-row-reparto .numero-label{color:var(--accent);font-weight:500}
 .numero-label{font-size:14px;color:var(--ink-soft);line-height:1.4}
 .numero-label .badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;margin-right:6px;border-radius:2px;background:var(--warning-soft);color:var(--warning)}
 .numero-nums{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -3518,6 +3522,27 @@ function openGuardieRubrica() {
   }, 50);
 }
 
+function showAllFromGroup(groupId) {
+  // Resetta la ricerca e rimuove eventuali filtri per mostrare il gruppo intero
+  state.rubricaSearch = '';
+  navigate('numeri');
+  // Dopo il render, scrolla al gruppo
+  setTimeout(() => {
+    const groups = document.querySelectorAll('.numeri-group');
+    for (const el of groups) {
+      // Il titolo contiene il nome del gruppo; trovo matchando con onclick dei bottoni edit
+      const delBtn = el.querySelector(`[onclick*="deleteGruppoNumeri('${groupId}')"]`);
+      if (delBtn) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.style.transition = 'background-color 0.3s';
+        el.style.backgroundColor = 'rgba(43,74,111,0.06)';
+        setTimeout(() => { el.style.backgroundColor = ''; }, 1200);
+        break;
+      }
+    }
+  }, 80);
+}
+
 function renderNumeri(filter) {
   const data = state.index.numeri;
   if (!data) return renderError('Rubrica non disponibile', 'Il file content/numeri.yml non è stato caricato.');
@@ -3647,7 +3672,10 @@ function renderNumeri(filter) {
         ${list.map(g => `
           <div class="numeri-group">
             <h2 class="numeri-group-title">
-              ${escapeHtml(g.nome)}${renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
+              ${rubricaQuery
+                ? `<a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Mostra tutti i numeri di questa UOC">${escapeHtml(g.nome)}</a>`
+                : escapeHtml(g.nome)
+              }${renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
               <span class="edit-only" style="margin-left:auto;display:inline-flex;gap:6px;">
                 <button class="btn-icon-mini" onclick="renameGruppoNumeri('${escapeJs(g.id)}')" title="Modifica gruppo">✎</button>
                 <button class="btn-icon-mini" onclick="deleteGruppoNumeri('${escapeJs(g.id)}')" title="Elimina gruppo">🗑</button>
@@ -3656,7 +3684,20 @@ function renderNumeri(filter) {
             ${g.direttore ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
             ${g.email ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
             ${renderSedeOperativa(g.sede_operativa, g.sedi_operative)}
-            ${(g.contatti || []).map(c => renderNumeroRow(c, g.id)).join('')}
+            ${sortContattiForDisplay(g.contatti || []).map(c => renderNumeroRow(c, g.id, c._classify)).join('')}
+            ${rubricaQuery && (function(){
+              // Se sto filtrando e questa UOC ha più contatti di quelli visibili, mostra un hint
+              const fullGroup = allGroups.find(x => x.id === g.id);
+              const totalContacts = fullGroup ? (fullGroup.contatti || []).length : 0;
+              const visibleContacts = (g.contatti || []).length;
+              const hidden = totalContacts - visibleContacts;
+              if (hidden > 0) {
+                return `<div style="margin-top:8px;padding:8px 10px;background:var(--bg-sink);border-radius:2px;font-size:12px;">
+                  <a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:var(--accent);text-decoration:none;">+ ${hidden} altri numeri in questa UOC →</a>
+                </div>`;
+              }
+              return '';
+            })()}
             <div class="edit-only" style="margin-top:8px;">
               <button class="btn ghost" onclick="nuovoContatto('${escapeJs(g.id)}')" style="font-size:12px;">+ Aggiungi contatto</button>
             </div>
@@ -3709,10 +3750,39 @@ function renderSedeOperativa(sede, sediArray) {
   return `<div class="sede-operativa">${rows}</div>`;
 }
 
-function renderNumeroRow(c, gruppoId) {
+function classifyContatto(c) {
+  const label = (c.etichetta || '').toLowerCase();
+  const tags = (c.tag || []).map(t => t.toLowerCase());
+  const isGuardia = tags.includes('guardia') || tags.includes('urgenza') || /\b(guardia|mdg|medico di guardia|reperibile)\b/i.test(c.etichetta || '');
+  const isReparto = /\b(reparto|guardiola|caposala|coordinat|sala medici|stanza medici|medici di reparto|\bdeg\b|degenza)\b/i.test(c.etichetta || '');
+  const isDirSegr = /\b(direttore|segreteria|segr\.|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(c.etichetta || '');
+  const isAmb = /\b(ambulator|amb\.|day hospital|\bdh\b|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '');
+  if (isGuardia) return { group: 1, kind: 'guardia' };
+  if (isReparto) return { group: 2, kind: 'reparto' };
+  if (isAmb) return { group: 3, kind: 'ambulatorio' };
+  if (isDirSegr) return { group: 4, kind: 'direzione' };
+  return { group: 3, kind: 'altro' };
+}
+
+function sortContattiForDisplay(contatti) {
+  const withClass = contatti.map((c, idx) => ({ ...c, _classify: classifyContatto(c), _origIdx: idx }));
+  // Ordine stabile: prima per gruppo, a parità mantiene ordine originale YAML
+  withClass.sort((a, b) => {
+    if (a._classify.group !== b._classify.group) return a._classify.group - b._classify.group;
+    return a._origIdx - b._origIdx;
+  });
+  return withClass;
+}
+
+function renderNumeroRow(c, gruppoId, classify) {
   const tags = c.tag || [];
+  const cls = classify || (c._classify || classifyContatto(c));
+  const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
+    : cls.kind === 'reparto' ? 'numero-row numero-row-reparto'
+    : 'numero-row';
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge">Guardia</span>` : '';
   const urgenzaBadge = tags.includes('urgenza') ? `<span class="badge" style="background:var(--danger-soft);color:var(--danger);">Urgenza</span>` : '';
+  const repartoBadge = cls.kind === 'reparto' ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
@@ -3736,9 +3806,9 @@ function renderNumeroRow(c, gruppoId) {
     <button class="btn-icon-mini" onclick="deleteContatto('${escapeJs(c.id)}')" title="Elimina">🗑</button>
   </span>` : '';
   return `
-    <div class="numero-row">
+    <div class="${rowClass}">
       <div>
-        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
+        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${repartoBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
         ${sezione}
         ${email}
         ${note}
