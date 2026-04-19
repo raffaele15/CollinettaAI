@@ -1,0 +1,945 @@
+# Rubrica telefonica Istituto Oncologico Veneto (IOV) I.R.C.C.S.
+# Generata da IOV_-_Elenco_Telefonico_Interno_2026.pdf (49 pagine)
+# Centralino interno: 99 — Centralino esterno: 049 821 1111
+
+ospedale:
+  id: iov
+  nome: Istituto Oncologico Veneto I.R.C.C.S.
+  indirizzo: "Via Gattamelata 64, 35128 Padova"
+  centralino_interno: 99
+  centralino_esterno: "049 821 1111"
+
+gruppi:
+
+  - id: direzione-generale
+    nome: Direzione Generale
+    direttore: Dr. Benazzi Francesco (Commissario)
+    email: direttore@iov.veneto.it
+    contatti:
+      - {id: dg-buratto, etichetta: Segreteria - Buratto Angela, numeri: [5849]}
+      - {id: dg-chiapponi, etichetta: Segreteria - Chiapponi Sabrina, numeri: [5674]}
+
+  - id: direzione-sanitaria
+    nome: Direzione Sanitaria
+    direttore: Dr.ssa Saieva Anna Maria
+    email: segreteria.dirsan@iov.veneto.it
+    contatti:
+      - {id: ds-barbiero, etichetta: Segreteria - Barbiero Emanuela, numeri: [5902]}
+      - {id: ds-sartorato, etichetta: Segreteria - Sartorato Elena, numeri: [5773, 5790]}
+
+  - id: direzione-amministrativa
+    nome: Direzione Amministrativa
+    direttore: Dr. Garbin Fabrizio
+    email: direzione.amministrativa@iov.veneto.it
+    contatti:
+      - {id: da-direttore, etichetta: Direttore Dr. Garbin Fabrizio, numeri: [5614]}
+      - {id: da-boaretto, etichetta: Segreteria - Boaretto Elisa, numeri: [5544]}
+
+  - id: direzione-scientifica
+    nome: Direzione Scientifica
+    ubicazione: {struttura: Palazzo Santo Stefano}
+    direttore: Prof. Rosato Antonio (f.f.)
+    email: direzionescientifica@iov.veneto.it
+    contatti:
+      - {id: dsc-direttore, etichetta: Direttore F.F. Prof. Rosato Antonio, numeri: [5991]}
+      - {id: dsc-agostini, etichetta: Segreteria - Dr.ssa Agostini Beatrice, numeri: [7418]}
+      - {id: dsc-scopelliti, etichetta: Segreteria - Scopelliti Cristina, numeri: [7418]}
+      - {id: dsc-nascimben, etichetta: Resp. Gestione Ricerca - Dr.ssa Nascimben Alessandra, numeri: [1092]}
+      - {id: dsc-cermakova, etichetta: Rendicontazione - Cermakova Jaromira, numeri: [5636]}
+      - {id: dsc-diblasio, etichetta: Rendicontazione - Dr. Diblasio Giuseppe / Pezzato Sara, numeri: [1094]}
+      - {id: dsc-rosato-doc, etichetta: Doc. Scientifica - Referente Prof. Rosato A., numeri: [5858]}
+      - {id: dsc-prevedello, etichetta: Dr.ssa Prevedello Giuliana, numeri: [5523]}
+      - {id: dsc-bozzato, etichetta: Dr.ssa Bozzato Valentina, numeri: [7410]}
+      - {id: dsc-altieri, etichetta: Servizi Informatici - Dr. Altieri Federico, numeri: [7412]}
+      - {id: dsc-costardi, etichetta: Patient Education - Dr.ssa Costardi / Gigli, numeri: [5596]}
+      - {id: dsc-bassi, etichetta: Relazioni Internaz. - Dr.ssa Bassi Anna, numeri: [5521]}
+      - {id: dsc-businaro, etichetta: Relazioni Internaz. - Dr. Businaro Lorenzo, numeri: [5187]}
+
+  - id: affari-generali-legali
+    nome: U.O.C. Affari Generali e Legali
+    direttore: Avv. Casotto Arianna Gabriella
+    email: affari.generali@iov.veneto.it
+    contatti:
+      - {id: agl-direttore, etichetta: Direttore Avv. Casotto Arianna Gabriella, numeri: [5567]}
+      - {id: agl-zanon, etichetta: Referente Segreteria - Zanon Mara, numeri: [5546]}
+      - {id: agl-dalema, etichetta: Convenzioni Scuole/Università - D'Alema Antonio, numeri: [5937]}
+      - {id: agl-stornaiuolo, etichetta: Convenzioni Attive/Passive - Dr.ssa Stornaiuolo Giulia, numeri: [1194]}
+      - {id: agl-sciuto, etichetta: Privacy - Dr. Sciuto Antonio, numeri: [5198]}
+      - {id: agl-signorini, etichetta: Protocollo - Rag. Signorini / Stefanato, numeri: [5776]}
+      - {id: agl-ciancio, etichetta: Uff. Legale - Dr.ssa Ciancio Daniela, numeri: [5998]}
+      - {id: agl-munzone, etichetta: Uff. Legale - Dr.ssa Munzone Silvia, numeri: [5998]}
+      - {id: agl-pepe, etichetta: Uff. Legale - Dr.ssa Pepe Margherita, numeri: [5990]}
+
+  - id: contabilita-bilancio
+    nome: U.O.S.D. Contabilità e Bilancio
+    ubicazione: {indirizzo: Piazza Gaetano Salvemini 13}
+    direttore: Dr.ssa Nascimben Alessandra
+    contatti:
+      - {id: cb-direttore, etichetta: Direttore Dr.ssa Nascimben Alessandra, numeri: [1092]}
+      - {id: cb-giacometti, etichetta: Bilancio - Dr.ssa Giacometti Anna, numeri: [7419], email: ufficio.bilancio@iov.veneto.it}
+      - {id: cb-manente, etichetta: Area Fiscale - Dr. Manente Alberto, numeri: [5782]}
+      - {id: cb-ballardin, etichetta: Cont. Fornitori - Rag. Ballardin Alessandra, numeri: [5593]}
+      - {id: cb-baseggio, etichetta: Cont. Fornitori - Dr. Baseggio Francesco, numeri: [5716]}
+      - {id: cb-farinea, etichetta: Cont. Fornitori - Rag. Farinea Catia, numeri: [5535]}
+      - {id: cb-illari, etichetta: Cont. Fornitori - Dr.ssa Illari Daniela, numeri: [1089]}
+      - {id: cb-moro, etichetta: Cont. Fornitori - Moro Roberta, numeri: [5572]}
+      - {id: cb-nocentini, etichetta: Cont. Fornitori - Dr.ssa Nocentini Rachele, numeri: [5186]}
+      - {id: cb-paggetta, etichetta: Cont. Fornitori - Paggetta Micaela, numeri: [5786]}
+      - {id: cb-pasco, etichetta: Cont. Fornitori - Pasco Elisa, numeri: [7419]}
+      - {id: cb-barina, etichetta: Cont. Clienti - Rag. Barina Alessandra, numeri: [5784]}
+      - {id: cb-camani, etichetta: Cont. Clienti - Rag. Camani Elisabetta, numeri: [5592]}
+      - {id: cb-celladin, etichetta: Cont. Clienti - Celladin Valentina, numeri: [5593]}
+
+  - id: formazione-iov
+    nome: Ufficio Formazione
+    direttore: Dr.ssa Facchin Stefania
+    contatti:
+      - {id: form-direttore, etichetta: Resp. Dr.ssa Facchin Stefania, numeri: [5560], cellulare: "333.4928159"}
+      - {id: form-benvegnu, etichetta: Benvegnù Laura / Dambello Giulia, numeri: [1080]}
+      - {id: form-michelotto, etichetta: Michelotto Silvia, numeri: [5987]}
+      - {id: form-novello, etichetta: Novello Elisa, numeri: [5889]}
+      - {id: form-zonzin, etichetta: Zonzin Diletta, numeri: [5298]}
+
+  - id: controllo-gestione
+    nome: U.O.S. Controllo di Gestione
+    ubicazione: {indirizzo: Piazza Gaetano Salvemini 13}
+    direttore: Dr. Giuriola Alessandro
+    contatti:
+      - {id: cg-direttore, etichetta: Direttore Dr. Giuriola Alessandro, numeri: [1192], cellulare: "340.0837666"}
+      - {id: cg-bellon, etichetta: Dr.ssa Bellon Giulia (3° P), numeri: [5547]}
+      - {id: cg-cavaliere, etichetta: Dr.ssa Cavaliere Camilla (2° P), numeri: [5860]}
+      - {id: cg-fiscon, etichetta: Dr. Fiscon Mattia (2° P), numeri: [5860]}
+      - {id: cg-gatti, etichetta: Dr.ssa Gatti Maura (3° P), numeri: [5547]}
+      - {id: cg-giraldi, etichetta: Dr.ssa Giraldi Giulia (2° P), numeri: [1192]}
+      - {id: cg-pengo, etichetta: Dr.ssa Pengo Monica (3° P), numeri: [5547]}
+
+  - id: sistemi-informativi-iov
+    nome: U.O.C. Sistemi Informativi
+    ubicazione: {struttura: Ufficio IT Ospedale Busonera e Piazza Salvemini 13}
+    direttore: Dr. Longo Andrea
+    email: help.admin@aopd.veneto.it
+    contatti:
+      - {id: si-direttore, etichetta: Direttore Dr. Longo Andrea, numeri: [1188], cellulare: "366.6473635"}
+      - {id: si-helpdesk, etichetta: Help Desk (segnalazioni guasti AOPD), numeri: [8444]}
+      - {id: si-altieri, etichetta: Altieri Federico, numeri: [7412]}
+      - {id: si-bernar, etichetta: Bernar Marco, numeri: [5723]}
+      - {id: si-mutinelli, etichetta: Mutinelli Francesco (Busonera), numeri: [5781], cellulare: "320.4370495"}
+      - {id: si-persona, etichetta: Dr. Persona Matteo (Busonera), cellulare: "339.2910274"}
+      - {id: si-pompolani, etichetta: Ing. Pompolani Anna, numeri: [5189]}
+      - {id: si-volpato, etichetta: Volpato Giulia, cellulare: "338.4912433"}
+      - {id: si-zorzi, etichetta: Zorzi Paolo, numeri: [5742]}
+
+  - id: cup-iov
+    nome: CUP IOV
+    contatti:
+      - {id: cup-int, etichetta: CUP (solo interni), numeri: [5755]}
+      - {id: cup-call, etichetta: Call Center Interaziendale (L/V 8-18, Sab 8:30-12:30), numeri: ["840 000 664", "049 784 93 14"]}
+      - {id: cup-coord-scapolo, etichetta: Coord. Centralino Scapolo Antonio (c/o AOPD), numeri: [7980]}
+
+  - id: libera-professione-iov
+    nome: Libera Professione IOV
+    contatti:
+      - {id: lp-prenot, etichetta: Prenotazione Visite Privata (L/V 8-18), numeri: ["800 583 924"]}
+
+  - id: portineria-busonera
+    nome: Portineria Ospedale Busonera
+    contatti:
+      - {id: port-busonera, etichetta: Portineria, numeri: [5600]}
+
+  - id: parcheggio-iov
+    nome: Parcheggio Via Gattamelata 60
+    contatti:
+      - {id: park-call, etichetta: Call Center Park It (Autopark Gattamelata), numeri: ["0755270429"]}
+      - {id: park-rip, etichetta: Cell. per Riparazioni/Manutenzioni, cellulare: "342.9186735"}
+
+  - id: risorse-umane-iov
+    nome: U.O.C. Risorse Umane
+    direttore: Dr.ssa Paiola Monica
+    email: risorse.umane@iov.veneto.it
+    contatti:
+      - {id: ru-direttore, etichetta: Direttore Dr.ssa Paiola Monica, numeri: [5744], cellulare: "335.8102080"}
+      - {id: ru-armellin, etichetta: Dr.ssa Armellin Vanessa, numeri: [5566]}
+      - {id: ru-boscolo, etichetta: Dr.ssa Boscolo Cappon Elisabetta (Tirocini), numeri: [1189]}
+      - {id: ru-catapano, etichetta: Dr. Catapano Tommaso, numeri: [5756]}
+      - {id: ru-favaretto, etichetta: Dr. Favaretto Pietro, numeri: [5519]}
+      - {id: ru-giraldi, etichetta: Dr.ssa Giraldi Giulia, numeri: [1091]}
+      - {id: ru-labate, etichetta: Dr.ssa Labate Elena, numeri: [5522]}
+      - {id: ru-petretto, etichetta: Dr.ssa Petretto Silvia, numeri: [5566]}
+      - {id: ru-polo, etichetta: Dr. Polo Nicolò, numeri: [5717]}
+      - {id: ru-scappin, etichetta: Dr.ssa Scappin Laura, numeri: [5768]}
+      - {id: ru-eco-avanzi, etichetta: Uff. Economico - Dr.ssa Avanzi Enrica, numeri: [5761], email: ufficioeconomico.personale@iov.veneto.it}
+      - {id: ru-eco-borille, etichetta: Uff. Economico - Dr. Borille Paride, numeri: [1186]}
+      - {id: ru-eco-calabrese, etichetta: Uff. Economico - Dr.ssa Calabrese Isabella, numeri: [5648]}
+      - {id: ru-bettiol, etichetta: Libera Prof. - Dr. Bettiol Alberto, numeri: [7411], email: libera.professione@iov.veneto.it}
+      - {id: ru-zabatta, etichetta: Libera Prof. - Dr. Zabatta Emiliano, numeri: [1185]}
+      - {id: ru-pres-armellin, etichetta: Verifica Presenze - Armellin Vanessa, numeri: [1193], email: verifica.presenze@iov.veneto.it}
+      - {id: ru-pres-bada, etichetta: Verifica Presenze - Dr.ssa Bada Silvia, numeri: [5675]}
+      - {id: ru-pres-marchioro, etichetta: Verifica Presenze - Dr.ssa Marchioro Sabrina, numeri: [1193]}
+      - {id: ru-pres-vallini, etichetta: Verifica Presenze - Dr.ssa Vallini Alberta, numeri: [1079]}
+      - {id: ru-marabita, etichetta: Comodati e Fondi - Dr.ssa Marabita Roberta, numeri: [1091]}
+
+  - id: servizi-tecnici-iov
+    nome: U.O.S.D. Servizi Tecnici e Patrimoniali
+    ubicazione: {indirizzo: Piazza G. Salvemini 13}
+    direttore: Arch. Ciaglia Filippo
+    email: segreteria.ufficiotecnico@iov.veneto.it
+    contatti:
+      - {id: st-direttore, etichetta: Resp. Arch. Ciaglia Filippo, numeri: [5558], cellulare: "348.3854025"}
+      - {id: st-baliello, etichetta: Baliello Manuela, numeri: [5559], cellulare: "339.2910271"}
+      - {id: st-levorato, etichetta: Levorato Federica, numeri: [5759]}
+      - {id: st-bacco, etichetta: P.I. Bacco Gabriele, numeri: [5901], cellulare: "328.1506097"}
+      - {id: st-cavion, etichetta: Geom. Cavion Mirko, numeri: [5901], cellulare: "339.2910146"}
+      - {id: st-dicasillati, etichetta: Arch. Dicasillati Francesco, numeri: [5901], cellulare: "339.8751702"}
+      - {id: st-gioffre, etichetta: Ing. Gioffré Silvia, numeri: [5901]}
+      - {id: st-pinato, etichetta: P.I. Pinato Giacomo, numeri: [5901]}
+      - {id: st-sartorello, etichetta: Sartorello Nicola, numeri: [5901]}
+
+  - id: comunicazione-marketing
+    nome: Ufficio Comunicazione e Marketing
+    ubicazione: {piano: 1°, struttura: Ospedale Busonera}
+    email: comunicazione.marketing@iov.veneto.it
+    contatti:
+      - {id: cm-barison, etichetta: Dr.ssa Barison Barbara, numeri: [5775]}
+      - {id: cm-fama, etichetta: Dr.ssa Fama Caterina / Dr.ssa Guarisa Alice, numeri: [5774]}
+      - {id: cm-pardi, etichetta: Dr.ssa Pardi Jessica / Savoca Ida, numeri: [5976]}
+
+  - id: urp-iov
+    nome: URP - Ufficio Relazioni con il Pubblico
+    email: urp@iov.veneto.it
+    contatti:
+      - {id: urp-ruzzante, etichetta: Dr.ssa Ruzzante Alice (interni e pazienti), numeri: [5664]}
+      - {id: urp-cutri, etichetta: Dr.ssa Cutri Letizia (solo interni), numeri: [5668]}
+
+  - id: dir-amm-ospedale-iov
+    nome: Direzione Amministrativa di Ospedale
+    direttore: Dr.ssa Canella Cristina
+    email: direzione.amministrativa.ospedale@iov.veneto.it
+    contatti:
+      - {id: dao-direttore, etichetta: Resp. Dr.ssa Canella Cristina, numeri: [7997], cellulare: "339.2910311"}
+      - {id: dao-fioravanti, etichetta: Fioravanti Giulia, cellulare: "338.4912438"}
+
+  - id: provveditorato
+    nome: U.O.C. Provveditorato Economato e Gestione Logistica
+    ubicazione: {indirizzo: Piazza Gaetano Salvemini 13}
+    direttore: Dr.ssa Zanandrea Maria
+    email: ufficioacquisti@iov.veneto.it
+    contatti:
+      - {id: prov-direttore, etichetta: Direttore Dr.ssa Zanandrea Maria, numeri: [5868], cellulare: "331.5733033"}
+      - {id: prov-dichio, etichetta: Referente Segr. - Di Chio Cristina, numeri: [1739]}
+      - {id: prov-casarin, etichetta: Ingegneria Clinica - Dr.ssa Casarin Agnese, numeri: [5297], email: sic@iov.veneto.it}
+      - {id: prov-dimaio, etichetta: Ing. Clinica - Dr.ssa Di Maio Rosa Maria, numeri: [7416]}
+      - {id: prov-panagiotako, etichetta: Ing. Clinica - Ing. Panagiotakopoulou Sofia, numeri: [7416]}
+      - {id: prov-zabini, etichetta: Ing. Clinica - Dr. Zabini Lorenzo, numeri: [7413]}
+      - {id: prov-boscolo, etichetta: Gare/Contratti - Dr.ssa Boscolo Eleonora, numeri: [7979]}
+      - {id: prov-bruncardo, etichetta: Gare - Dr.ssa Brun Cardo Silvia, numeri: [1093]}
+      - {id: prov-cavazzana, etichetta: Gare - Dr.ssa Cavazzana Claudia, numeri: [5639]}
+      - {id: prov-cesarotto, etichetta: Gare - Dr. Cesarotto Cristian, numeri: [7979]}
+      - {id: prov-cifali, etichetta: Gare - Dr.ssa Cifali Daniela, numeri: [5268]}
+      - {id: prov-giorato, etichetta: Gare - Giorato Stefania, numeri: [1190]}
+      - {id: prov-iulia, etichetta: Gare - Dr.ssa Iulia Cecilia, numeri: [1090]}
+      - {id: prov-luison, etichetta: Gare - Dr.ssa Luison Martina, numeri: [1077]}
+      - {id: prov-lupino, etichetta: Gare - Lupino Giulia, numeri: [1078]}
+      - {id: prov-monte, etichetta: Gare - Dr.ssa Monte Sofia, numeri: [7417]}
+      - {id: prov-nardo, etichetta: Gare - Nardo Fabio, numeri: [7421]}
+      - {id: prov-paponeto, etichetta: Gare - Dr.ssa Paponeto Wilma Giulia, numeri: [1191]}
+      - {id: prov-scatolone, etichetta: Gare - Dr. Scatolone E.P., numeri: [1077]}
+      - {id: prov-tortora, etichetta: Gare - Dr.ssa Tortora Angela, numeri: [5799]}
+      - {id: prov-zagon, etichetta: Gare - Dr.ssa Zagon Michela, numeri: [1187]}
+      - {id: prov-cannarella, etichetta: Controllo Servizi - Dr. Cannarella Andrea, numeri: [5785]}
+      - {id: prov-chumakiw, etichetta: Controllo Servizi - Chumakiw Filip, numeri: [1078]}
+      - {id: prov-dellantone, etichetta: Controllo Servizi - Dr.ssa Dell'Antone Elisabetta, numeri: [1078]}
+      - {id: prov-segala, etichetta: Controllo Servizi - Segala Yordanos, numeri: [5275]}
+      - {id: prov-scomparin, etichetta: Controllo Servizi - Rag. Scomparin Eleonora, cellulare: "333.4928174"}
+      - {id: prov-canetti, etichetta: Ordini - Rag. Canetti Romano, numeri: [5639]}
+      - {id: prov-iacovone, etichetta: Ordini - Ing. Iacovone Daniela, numeri: [1191]}
+      - {id: prov-pagano, etichetta: Ordini - Pagano Le Rose Marta, numeri: [1191]}
+      - {id: prov-sinigaglia, etichetta: Ordini - Dr. Sinigaglia Demis, numeri: [5531]}
+
+  - id: qualita-iov
+    nome: Qualità, Accreditamenti e Riconoscimento IRCCS
+    ubicazione: {indirizzo: Piazza Gaetano Salvemini 13}
+    direttore: Dr. Cercenà Marco
+    email: ufficio.qualita@iov.veneto.it
+    contatti:
+      - {id: qa-adore, etichetta: Dr. Adore Dario Alberto, numeri: [8696]}
+      - {id: qa-cioffredi, etichetta: Dr. Cioffredi Piero, numeri: [8693]}
+      - {id: qa-daltoso, etichetta: Dr.ssa Dal Toso Lucia, numeri: [8694]}
+      - {id: qa-imbevaro, etichetta: Dr.ssa Imbevaro Lucia, numeri: [8691], cellulare: "334.6690531"}
+      - {id: qa-pignataro, etichetta: Pignataro Michele, numeri: [8673]}
+      - {id: qa-roverato, etichetta: TSRM Dr. Roverato Lorenzo, numeri: [8698], cellulare: "345.1081631"}
+
+  - id: anticorruzione-iov
+    nome: Ufficio Trasparenza e Anticorruzione
+    direttore: Avv. Casotto Arianna Gabriella
+    email: anticorruzione@iov.veneto.it
+    contatti:
+      - {id: ac-direttore, etichetta: Resp. Avv. Casotto Arianna Gabriella, numeri: [5567]}
+      - {id: ac-ciancio, etichetta: Supporto RPCT - Dr.ssa Ciancio Daniela, numeri: [5998]}
+
+  - id: direzione-medica-iov
+    nome: U.O.C. Direzione Medica Ospedaliera
+    direttore: Dr.ssa Cappelletto Alessandra
+    contatti:
+      - {id: dmo-direttore, etichetta: Direttore Dr.ssa Cappelletto Alessandra, numeri: [5188]}
+
+  - id: documentazione-sanitaria
+    nome: Documentazione Sanitaria
+    email: documentazione.sanitaria@iov.veneto.it
+    contatti:
+      - {id: dsan-martucci, etichetta: Martucci Rosanna / Girolimetto Ylenia, numeri: [5643]}
+      - {id: dsan-polanzan, etichetta: Smaltimento Rifiuti - Polanzan / Bezzati, numeri: [5625]}
+      - {id: dsan-pegoraro, etichetta: Chiusura SDO - Dr. Pegoraro Mauro, numeri: [5534]}
+      - {id: dsan-stefanato, etichetta: Preventivi Stranieri - Dr.ssa Stefanato Maria, numeri: [6358]}
+
+  - id: servizio-appropriatezza
+    nome: Servizio Appropriatezza
+    email: servizio.appropriatezza@iov.veneto.it
+    contatti:
+      - {id: sa-boscaro, etichetta: Boscaro Gianni, numeri: [5534]}
+      - {id: sa-girolimetto, etichetta: Girolimetto Ylenia, cellulare: "348.0141286"}
+
+  - id: servizio-agende
+    nome: Servizio Gestione Agende
+    email: agende.sgp@iov.veneto.it
+    contatti:
+      - {id: sg-giacomin, etichetta: CUP Manager - Giacomin Barbara, cellulare: "339.8751938"}
+      - {id: sg-vittadello, etichetta: Vittadello Elena / Schivo Elisa, numeri: [5852]}
+      - {id: sg-fontana, etichetta: Fontana Eleonora, numeri: [6358]}
+
+  - id: dir-prof-sanitarie-iov
+    nome: U.O.C. Direzione Professioni Sanitarie Ospedaliere
+    direttore: Dr. Cacco Massimo
+    email: dir.professionisanitarie@iov.veneto.it
+    contatti:
+      - {id: dps-direttore, etichetta: Direttore Dr. Cacco Massimo, numeri: [5787], cellulare: "329.8082042"}
+      - {id: dps-segr, etichetta: Segreteria, numeri: [5281]}
+      - {id: dps-bernardi, etichetta: Dr. Bernardi Matteo, numeri: [5777]}
+
+  - id: tumori-ereditari
+    nome: Ambulatorio Tumori Ereditari
+    ubicazione: {struttura: Edificio Radioterapia}
+    direttore: Dr.ssa Zovato Stefania
+    email: segreteria.cfc@iov.veneto.it
+    contatti:
+      - {id: te-direttore, etichetta: Resp. Dr.ssa Zovato Stefania, numeri: [5569], cellulare: "345.9253824"}
+      - {id: te-segr, etichetta: Segreteria, numeri: [5503, 5502], cellulare: "345.6691719"}
+      - {id: te-segr-int, etichetta: Segreteria (solo interni), numeri: [1717]}
+      - {id: te-amb1, etichetta: Ambulatorio N°1, numeri: [5501]}
+      - {id: te-amb2, etichetta: Ambulatorio N°2, numeri: [5951]}
+      - {id: te-amb3, etichetta: Ambulatorio N°3, numeri: [5597]}
+      - {id: te-studi-int, etichetta: Studio Medici (solo interni), numeri: [5512]}
+      - {id: te-studi-med, etichetta: Studio Medici - Crivellari/Fernando/Ferrara, numeri: [5569, 5554]}
+
+  - id: anatomia-patologica-cfv
+    nome: S.S.D. Anatomia e Istologia Patologica
+    ubicazione: {indirizzo: Via dei Carpani 16/Z, 31033 Castelfranco Veneto (TV)}
+    email: segreteria.anatomia.cfv@iov.veneto.it
+    contatti:
+      - {id: ap-segr, etichetta: Segreteria, numeri: ["0423 73 22 75"]}
+
+  - id: anestesia-iov
+    nome: U.O.C. Anestesia e Rianimazione (TIPO)
+    ubicazione: {piano: 3°, struttura: Ospedale Busonera}
+    direttore: Dr.ssa Granziera Elisa
+    email: segreteria.anestesia@iov.veneto.it
+    contatti:
+      - {id: an-direttore, etichetta: Direttore Dr.ssa Granziera Elisa, numeri: [8825], breve: 97760}
+      - {id: an-segr-vescuso, etichetta: Segr. Anestesisti - Vescuso Matteo, numeri: [1715]}
+      - {id: an-coord-tridello, etichetta: Coord. Tridello Cristina, numeri: [5293], cellulare: "348.4612552"}
+      - {id: an-tipo-inf, etichetta: Infermieri TIPO, numeri: [5753], cellulare: "335.1329058"}
+      - {id: an-stanza-anest, etichetta: Stanza Anestesista, numeri: [1375]}
+      - {id: an-mdg-anest, etichetta: Medico di Guardia Anestesista, breve: 97026, tag: [guardia]}
+
+  - id: infermieri-ricerca
+    nome: Centro di Coordinamento Infermieri di Ricerca
+    ubicazione: {piano: 1°}
+    direttore: Grosso Daniela
+    email: infricerca.onc@iov.veneto.it
+    contatti:
+      - {id: ir-coord, etichetta: Coordinatore Grosso Daniela, numeri: [5921], cellulare: "342.6561655"}
+      - {id: ir-amb-prelievi, etichetta: Ambulatorio Prelievi, numeri: [5788, 5969, 5936], cellulare: "338.4912316"}
+
+  - id: chirurgia-oncologica
+    nome: U.O.C. Chirurgia Oncologica
+    ubicazione: {piano: 3°, struttura: Ospedale Busonera}
+    contatti:
+      - {id: co-segr-assist, etichetta: Segreteria Assistenziale, numeri: [4402]}
+      - {id: co-segr-rep, etichetta: Segreteria Reparto, numeri: [1693]}
+      - {id: co-coord-tridello, etichetta: Coord. Tridello Cristina, numeri: [5293], cellulare: "348.4612552"}
+      - {id: co-inf-est, etichetta: Infermieri Ala Est, numeri: [5586], cellulare: "333.4928322"}
+      - {id: co-inf-ovest, etichetta: Infermieri Ala Ovest, numeri: [1695], cellulare: "331.6743270"}
+      - {id: co-oss, etichetta: OSS Ala Est, numeri: [5584], cellulare: "333.4928100"}
+      - {id: co-mdg, etichetta: Medico di Guardia, breve: 97748, cellulare: "334.6690197", tag: [guardia]}
+      - {id: co-studi-med, etichetta: Studio Medici, numeri: [5652]}
+      - {id: co-picc, etichetta: PICC Team, breve: 97906, cellulare: "346.2893836"}
+      - {id: co-so, etichetta: Sala Operatoria (interni), numeri: [1692, 5580, 5581, 5582]}
+      - {id: co-tipo, etichetta: T.I.P.O., numeri: [5753]}
+
+  - id: chir-melanomi
+    nome: U.O.C. Chirurgia Oncologica Tessuti Molli, Peritoneo e Melanomi
+    ubicazione: {piano: 3°, struttura: Ospedale Busonera}
+    direttore: Prof. Mocellin Simone
+    email: segreteria.chirurgia@iov.veneto.it
+    contatti:
+      - {id: cm-direttore, etichetta: Direttore Prof. Mocellin Simone, cellulare: "334.1016236"}
+      - {id: cm-segr-resp, etichetta: Segreteria Responsabile, numeri: [2137]}
+      - {id: cm-segr-varvaro, etichetta: Segreteria - Varvaro Natalina, numeri: [4402]}
+      - {id: cm-segr-giunchetti, etichetta: Segreteria - Giunchetti Matteo, numeri: [1693]}
+      - {id: cm-segr-paz, etichetta: Segreteria Pazienti (L/V 9:30-12), numeri: [5757]}
+      - {id: cm-segr-rep, etichetta: Segreteria Reparto, numeri: [1693]}
+      - {id: cm-segr-pre, etichetta: Segreteria Pre-Degenze, numeri: [1755]}
+      - {id: cm-case-mgr-carraro, etichetta: Case Manager - Carraro Sabrina, numeri: [1755]}
+      - {id: cm-data-mgr, etichetta: Data Manager - Spina/Del Fiore, numeri: [5714]}
+      - {id: cm-vecchiato, etichetta: Studio Dr.ssa Vecchiato, numeri: [5574]}
+      - {id: cm-rossi, etichetta: Consulente Prof. Rossi Carlo Riccardo, numeri: [2070]}
+      - {id: cm-russano, etichetta: Studio Dr. Russano Francesco, numeri: [7420]}
+      - {id: cm-tropea, etichetta: Studio Dr.ssa Tropea Saveria, numeri: [5526]}
+      - {id: cm-rastrelli, etichetta: Studio Prof. Rastrelli, numeri: [5594]}
+      - {id: cm-studi-med, etichetta: Studio Medici, numeri: [5652]}
+      - {id: cm-amb1, etichetta: Amb. Visite N°1 Melanoma (PT), numeri: [5770]}
+      - {id: cm-amb2, etichetta: Amb. Visite N°2, numeri: [5758]}
+      - {id: cm-amb3, etichetta: Amb. Visite N°3, numeri: [5525]}
+
+  - id: chirurgia-senologica
+    nome: U.O.C. Chirurgia Senologica 1
+    ubicazione: {piano: 3°, struttura: Ospedale Busonera}
+    direttore: Dr. Marchet Alberto
+    email: segreteria.chirurgiasenologica@iov.veneto.it
+    contatti:
+      - {id: cs-direttore, etichetta: Direttore Dr. Marchet Alberto, cellulare: "334.1016002"}
+      - {id: cs-segr-sorgato, etichetta: Segreteria - Sorgato Paola, numeri: [5588]}
+      - {id: cs-ervas, etichetta: Coll. Amm. - Ervas Erica, numeri: [5194]}
+      - {id: cs-cerrutti, etichetta: Coll. Amm. - Cerrutti Ilaria, numeri: [5660]}
+      - {id: cs-case-mgr-carpentieri, etichetta: Case Manager Breast Unit - Carpentieri Sonia, numeri: [5947]}
+      - {id: cs-guardiola, etichetta: Guardiola, numeri: [5586]}
+      - {id: cs-inf, etichetta: Infermeria Reparto, numeri: [5584]}
+      - {id: cs-cucina, etichetta: Cucina, numeri: [5583]}
+      - {id: cs-amb, etichetta: Ambulatorio, numeri: [5590]}
+      - {id: cs-amb1-pt, etichetta: Amb. N°1 Piano 0, numeri: [5978]}
+      - {id: cs-amb-pt, etichetta: Amb. Piano 0, numeri: [5979]}
+      - {id: cs-mdg, etichetta: Medico di Guardia, cellulare: "335.1329058", tag: [guardia]}
+      - {id: cs-cagol, etichetta: Studio Dr. Cagol (1° P), numeri: [1720]}
+      - {id: cs-grigoletto, etichetta: Studio Dr. Grigoletto (1° P), numeri: [5928]}
+      - {id: cs-michieletto, etichetta: Studio Dr.ssa Michieletto (1° P), numeri: [1709]}
+      - {id: cs-saibene, etichetta: Studio Dr.ssa Saibene, numeri: [5550]}
+      - {id: cs-toffanin, etichetta: Studio Dr.ssa Toffanin, numeri: [5511]}
+      - {id: cs-marchet, etichetta: Studio Dr. Marchet (PT), numeri: [2776]}
+      - {id: cs-coord-1p, etichetta: Studio Coordinamento (1° P), numeri: [5660]}
+
+  - id: idmo
+    nome: U.O.C. Immunologia e Diagnostica Molecolare Oncologica
+    ubicazione: {struttura: Palazzina di Immunologia, Ospedale Busonera}
+    direttore: Prof. Rosato Antonio
+    email: idmo@iov.veneto.it
+    contatti:
+      - {id: idmo-direttore, etichetta: Direttore Prof. Rosato Antonio, numeri: [5858]}
+      - {id: idmo-gardin, etichetta: Segr. Diagnostica - Gardin Monica, numeri: [5861]}
+      - {id: idmo-segr-dir, etichetta: Segreteria Direzione, numeri: [5805]}
+      - {id: idmo-segr-dott, etichetta: Segr. Dottorato/Didattica, numeri: [4383]}
+      - {id: idmo-segr-did, etichetta: Segr. Didattica, numeri: [5865]}
+      - {id: idmo-bertorelle, etichetta: Studio Biologo Dr.ssa Bertorelle Roberta, numeri: [5866]}
+      - {id: idmo-cavallari, etichetta: Studio Biologo Dr.ssa Cavallari Ilaria, numeri: [5830]}
+      - {id: idmo-curtarello, etichetta: Studio Biologo Dr. Curtarello Matteo, numeri: [1491]}
+      - {id: idmo-martines, etichetta: Studio Biologo Dr.ssa Martines Annalisa, numeri: [5814]}
+      - {id: idmo-menin, etichetta: Studio Biologo Dr.ssa Menin Chiara, numeri: [5822]}
+      - {id: idmo-montagna, etichetta: Studio Biologo Dr. Montagna Marco, numeri: [5881]}
+      - {id: idmo-moserle, etichetta: Studio Biologo Dr.ssa Moserle Lidia, numeri: [5945]}
+      - {id: idmo-tosello, etichetta: Studio Biologo Dr.ssa Tosello Valeria, numeri: [5895]}
+      - {id: idmo-ciminale, etichetta: Studio Prof. Ciminale Vincenzo, numeri: [5885]}
+      - {id: idmo-derossi, etichetta: Studio Prof.ssa De Rossi Anita, numeri: [5894]}
+      - {id: idmo-mandruzzato, etichetta: Studio Prof.ssa Mandruzzato Susanna, numeri: [5898]}
+      - {id: idmo-pasqual, etichetta: Studio Prof.ssa Pasqual Giulia, numeri: [5891]}
+      - {id: idmo-giunco, etichetta: Studio UNIPD Dr.ssa Giunco Silvia, numeri: [5831]}
+      - {id: idmo-marigo, etichetta: Studio UNIPD Dr.ssa Marigo Ilaria, numeri: [5865]}
+      - {id: idmo-piovan, etichetta: Studio UNIPD Dr. Piovan Erich, numeri: [5895]}
+      - {id: idmo-sommaggio, etichetta: Studio UNIPD Dr. Sommaggio Roberta, numeri: [5884]}
+      - {id: idmo-dallasanta, etichetta: Studio Tec. Dr.ssa Dalla Santa Silvia, numeri: [5844]}
+      - {id: idmo-delmistro, etichetta: Studio Dr.ssa Del Mistro Annarosa, numeri: [5872]}
+      - {id: idmo-esposito, etichetta: Studio Dr. Esposito Giovanni, numeri: [5864]}
+      - {id: idmo-bonaldi, etichetta: Studio Dr.ssa Bonaldi Laura, numeri: [5865]}
+      - {id: idmo-lab-bio-mol, etichetta: Lab. Biologia Mol. e Cell. Oncol. (Prof. Ciminale), numeri: [5833]}
+      - {id: idmo-lab-cito, etichetta: Lab. Citogenetica Oncoematol. (Dr.ssa Bonaldi), numeri: [5871]}
+      - {id: idmo-lab-hpv, etichetta: Lab. Diagnostica HPV (Dr.ssa Del Mistro), numeri: [5867, 5802]}
+      - {id: idmo-lab-melanoma, etichetta: Lab. Genetica Melanoma (Dr.ssa Menin), numeri: [5855]}
+      - {id: idmo-lab-mt, etichetta: Lab. Immunol. Microambiente Tumorale (Dr.ssa Marigo), numeri: [5845]}
+      - {id: idmo-lab-mol, etichetta: Lab. Immunol. Molecolare (Dr.ssa Dalla Santa), numeri: [5844]}
+      - {id: idmo-lab-sint, etichetta: Lab. Immunol. Sintetica (Prof.ssa Pasqual), numeri: [5850]}
+      - {id: idmo-lab-um, etichetta: Lab. Immunol. Tumori Umani (Prof.ssa Mandruzzato), numeri: [5843]}
+      - {id: idmo-lab-immunoprof, etichetta: Lab. Immunoprofilazione (Dr.ssa Tosi Anna), numeri: [5847]}
+      - {id: idmo-lab-imm-1, etichetta: Lab. Immunoterapia I (Dr.ssa Sommaggio), numeri: [5842]}
+      - {id: idmo-lab-imm-2, etichetta: Lab. Immunoterapia II (Campanese/Zuccolotto), numeri: [5846]}
+      - {id: idmo-lab-onco-mol, etichetta: Lab. Oncoematol. Molecolare (Dr.ssa Bertorelle), numeri: [5835]}
+      - {id: idmo-lab-onco-mc, etichetta: Lab. Oncoematol. Molecolare e Cellulare, numeri: [1198]}
+      - {id: idmo-lab-onco-gen, etichetta: Lab. Oncogenetica (Dr. Montagna), numeri: [5854], email: lab.oncogenetica@iov.veneto.it}
+      - {id: idmo-lab-onco-virol, etichetta: Lab. Oncologia Mol. e Virologica (Prof.ssa De Rossi), numeri: [5830, 5831]}
+      - {id: idmo-lab-virol-sper, etichetta: Lab. Virologia Onc. Sperimentale (Dr.ssa Calabrò), numeri: [5834]}
+
+  - id: medicina-nucleare-iov
+    nome: Medicina Nucleare IOV
+    ubicazione: {struttura: Ospedale Busonera}
+    direttore: Dr. Gregianin Michele
+    email: medicina.nucleare@iov.veneto.it
+    contatti:
+      - {id: mn-pet-est, etichetta: Informazioni PET/CT Esterni (L/V 10-13), numeri: [1729]}
+      - {id: mn-trad-int, etichetta: Med. Nucleare Tradizionale (interni), numeri: [2953]}
+      - {id: mn-agostini, etichetta: Studio Dr.ssa Agostini Emanuela, numeri: [1728]}
+      - {id: mn-burei, etichetta: Studio Dr.ssa Burei Marta, numeri: [2955]}
+      - {id: mn-cuppari, etichetta: Studio Dr.ssa Cuppari Lea, numeri: [7994]}
+      - {id: mn-reccia, etichetta: Studio Dr. Reccia Pasquale, numeri: [5506]}
+      - {id: mn-tadayyon, etichetta: Studio Dr.ssa Tadayyon Sara, numeri: [7998]}
+      - {id: mn-telo, etichetta: Studio Dr.ssa Telo Silvi, numeri: [7996]}
+      - {id: mn-coord-carraro, etichetta: Coord. Tecnico - Dr. Carraro Alberto, numeri: [1710]}
+      - {id: mn-acc, etichetta: Accettazione/Anamnesi PET, numeri: [5505]}
+      - {id: mn-rf, etichetta: Stanza Manipolazione RF, numeri: [7995]}
+      - {id: mn-pet, etichetta: Stanza PET Philips, numeri: [8847]}
+      - {id: mn-spect, etichetta: Stanza SPECT-CT, numeri: [7937]}
+
+  - id: oncologia-1
+    nome: U.O.C. Oncologia 1
+    ubicazione: {piano: 1°-2°, struttura: Ospedale Busonera}
+    direttore: Dr.ssa Lonardi Sara
+    email: oncologia1@iov.veneto.it
+    contatti:
+      - {id: o1-direttore, etichetta: Direttore Dr.ssa Lonardi Sara, numeri: [5661]}
+      - {id: o1-segr-dalpozzo, etichetta: Segreteria - Dal Pozzo Erica, numeri: [5953]}
+      - {id: o1-info-est, etichetta: Punto Info Utenti (L/V 9-15), numeri: [5919]}
+      - {id: o1-fo-int, etichetta: Front Office (interni), numeri: [5903, 5960]}
+      - {id: o1-prelievi, etichetta: Ambulatorio Prelievi, numeri: [5934]}
+      - {id: o1-lab, etichetta: Laboratorio Analisi, numeri: [5707, 5265]}
+      - {id: o1-basso, etichetta: Studio Dr. Basso Umberto, numeri: [5930]}
+      - {id: o1-bergamo, etichetta: Studio Dr.ssa Bergamo Francesca, numeri: [5927]}
+      - {id: o1-bimbatti, etichetta: Studio Dr. Bimbatti Davide, numeri: [5579]}
+      - {id: o1-bolshinsky, etichetta: Studio Dr.ssa Bolshinsky Maital (Reparto), numeri: [4480]}
+      - {id: o1-caccese, etichetta: Studio Dr. Caccese Mario, numeri: [5579]}
+      - {id: o1-cerma, etichetta: Studio Dr.ssa Cerma Krisida, numeri: [5909]}
+      - {id: o1-chiusole, etichetta: Studio Dr.ssa Chiusole Benedetta, numeri: [5917]}
+      - {id: o1-daniel, etichetta: Studio Dr.ssa Daniel Francesca, numeri: [5917]}
+      - {id: o1-finotto, etichetta: Studio Dr.ssa Finotto Silvia, numeri: [5621]}
+      - {id: o1-intini, etichetta: Studio Dr.ssa Intini Rossana, numeri: [5917]}
+      - {id: o1-lai, etichetta: Studio Dr.ssa Lai Eleonora, numeri: [5909]}
+      - {id: o1-lombardi, etichetta: Studio Dr. Lombardi Giuseppe, numeri: [5888]}
+      - {id: o1-marino, etichetta: Studio Dr. Marino Dario, numeri: [5621]}
+      - {id: o1-maruzzo, etichetta: Studio Dr. Maruzzo Marco, numeri: [5261]}
+      - {id: o1-murgioni, etichetta: Studio Dr.ssa Murgioni Sabina, numeri: [5579, 5530]}
+      - {id: o1-nappo, etichetta: Studio Dr.ssa Nappo Floriana, numeri: [5909]}
+      - {id: o1-padova, etichetta: Studio Dr.ssa Padova Marta, numeri: [5909]}
+      - {id: o1-prete, etichetta: Studio Dr.ssa Prete Alessandra Anna, numeri: [5917]}
+      - {id: o1-procaccio, etichetta: Studio Dr.ssa Procaccio Letizia, numeri: [5577]}
+      - {id: o1-rizzato, etichetta: Studio Dr. Rizzato Mario, numeri: [5577]}
+      - {id: o1-solda, etichetta: Studio Dr.ssa Soldà Caterina, numeri: [5927]}
+      - {id: o1-studi-med, etichetta: Studio Medici, numeri: [5914]}
+      - {id: o1-stanza-med, etichetta: Stanza Medici Reparto, numeri: [2986]}
+      - {id: o1-amb1, etichetta: Ambulatorio N°1, numeri: [5899]}
+      - {id: o1-amb2, etichetta: Ambulatorio N°2, numeri: [5906]}
+      - {id: o1-amb3, etichetta: Ambulatorio N°3, numeri: [5918]}
+      - {id: o1-amb4, etichetta: Ambulatorio N°4, numeri: [5905]}
+      - {id: o1-amb7, etichetta: Ambulatorio N°7, numeri: [5195]}
+      - {id: o1-farina, etichetta: Data Manager - Farina/Bortoletto, numeri: [5908]}
+      - {id: o1-fiducia, etichetta: Biostatistico - Dr. Fiducia Pasquale, numeri: [5548]}
+      - {id: o1-zafferri, etichetta: Psicologa - Dr.ssa Zafferri Valeria, numeri: [5908]}
+      - {id: o1-inf-ricerca, etichetta: Infermiere di Ricerca, numeri: [5788, 5921]}
+      - {id: o1-prenot-esami, etichetta: Sezione Cure 2° P - Prenotazione Esami, numeri: [5907]}
+      - {id: o1-coord, etichetta: Coordinatore, numeri: [5640]}
+      - {id: o1-dh-inf, etichetta: Infermiere Day Hospital, numeri: [5925]}
+      - {id: o1-sdo, etichetta: Inserimento Dati (SDO), numeri: [5933]}
+      - {id: o1-mdg, etichetta: Medico di Guardia (8-17), numeri: [5631], breve: 97657, tag: [guardia]}
+      - {id: o1-dh-st1, etichetta: DH Stanza N°1 (interni), numeri: [5262]}
+      - {id: o1-dh-st2, etichetta: DH Stanza N°2 (interni), numeri: [5263]}
+      - {id: o1-dh-st3, etichetta: DH Stanza N°3 (interni), numeri: [5264]}
+      - {id: o1-dh-st4, etichetta: DH Stanza N°4 (interni), numeri: [5271]}
+      - {id: o1-dh-st5, etichetta: DH Stanza N°5 (interni), numeri: [5276]}
+      - {id: o1-dh-st6, etichetta: DH Stanza N°6 (interni), numeri: [5277]}
+      - {id: o1-dh-st7, etichetta: DH Stanza N°7 (interni), numeri: [5279]}
+      - {id: o1-deg-segr, etichetta: Degenze - Segreteria Amm., numeri: [1677]}
+      - {id: o1-deg-coord, etichetta: Studio Coord. - Dr.ssa Tridello Cristina, numeri: [2988]}
+      - {id: o1-deg-guardiola, etichetta: Guardiola Reparto, numeri: [2975]}
+      - {id: o1-deg-inf, etichetta: Stanza Infermieri, numeri: [2973]}
+      - {id: o1-deg-prelievi, etichetta: Stanza Prelievi, numeri: [1215]}
+      - {id: o1-deg-mdg, etichetta: Medico di Guardia (Reparto), numeri: [2942], tag: [guardia]}
+      - {id: o1-deg-bcm-a, etichetta: Stanza Bassa Carica Microbiotica A, numeri: [8290]}
+      - {id: o1-deg-bcm-b, etichetta: Stanza Bassa Carica Microbiotica B, numeri: [8291]}
+      - {id: o1-deg-bcm-inf, etichetta: Infermieri Stanze BCM, numeri: [1242]}
+
+  - id: oncologia-2
+    nome: U.O.C. Oncologia 2
+    ubicazione: {piano: 1°-2°, struttura: Ospedale Busonera}
+    direttore: Prof.ssa Guarneri Valentina
+    email: oncologia2@iov.veneto.it
+    contatti:
+      - {id: o2-direttore, etichetta: Direttore Prof.ssa Guarneri Valentina, numeri: [5291]}
+      - {id: o2-segr-salmaso, etichetta: Segreteria - Salmaso Silvia, numeri: [5931]}
+      - {id: o2-amb5, etichetta: Ambulatorio N°5, numeri: [5915]}
+      - {id: o2-amb8, etichetta: Ambulatorio N°8, numeri: [5950]}
+      - {id: o2-amb9, etichetta: Ambulatorio N°9, numeri: [5638]}
+      - {id: o2-amb10, etichetta: Ambulatorio N°10, numeri: [5958]}
+      - {id: o2-amb11, etichetta: Ambulatorio N°11, numeri: [5935]}
+      - {id: o2-amb14, etichetta: Ambulatorio N°14, numeri: [8848]}
+      - {id: o2-data-1, etichetta: Data Manager Onc. 1, numeri: [5908, 5570]}
+      - {id: o2-data-2, etichetta: Data Manager Onc. 2, numeri: [5920]}
+      - {id: o2-anile, etichetta: Studio Dr. Anile Giuseppe, numeri: [5292]}
+      - {id: o2-bonanno, etichetta: Studio Dr.ssa Bonanno Laura, numeri: [5553]}
+      - {id: o2-studio-5938, etichetta: Studio Medici (non assegnato), numeri: [5938]}
+      - {id: o2-dalmaso, etichetta: Studio Dr. Dal Maso Alessandro, numeri: [5620]}
+      - {id: o2-dieci, etichetta: Studio Dr.ssa Dieci Maria Vittoria, numeri: [5295]}
+      - {id: o2-diliso, etichetta: Studio Dr.ssa Di Liso Elisabetta (Reparto), numeri: [2972, 2974]}
+      - {id: o2-faggioni, etichetta: Studio Dr. Faggioni Giovanni, numeri: [5622]}
+      - {id: o2-falci, etichetta: Studio Dr.ssa Falci Cristina, numeri: [5949]}
+      - {id: o2-frega, etichetta: Studio Dr. Frega Stefano, numeri: [5620]}
+      - {id: o2-ghi, etichetta: Studio Dr.ssa Ghi Maria Grazia, numeri: [5292]}
+      - {id: o2-ghiotto, etichetta: Studio Dr.ssa Ghiotto Cristina, numeri: [5941]}
+      - {id: o2-giarratano, etichetta: Studio Dr. Giarratano Tommaso, numeri: [5642]}
+      - {id: o2-giorgi, etichetta: Studio Dr. Giorgi Carlo Alberto, numeri: [5609]}
+      - {id: o2-girardi, etichetta: Studio Dr. Girardi Fabio, numeri: [5941]}
+      - {id: o2-griguolo, etichetta: Studio Dr.ssa Griguolo Gaia, numeri: [7423]}
+      - {id: o2-guarneri, etichetta: Studio Prof.ssa Guarneri Valentina, numeri: [5291]}
+      - {id: o2-menichetti, etichetta: Studio Dr.ssa Menichetti Alice (Reparto), numeri: [2972, 2974]}
+      - {id: o2-miglietta, etichetta: Studio Dr.ssa Miglietta Federica, numeri: [5645]}
+      - {id: o2-mioranza, etichetta: Studio Dr.ssa Mioranza Eleonora, numeri: [5609]}
+      - {id: o2-nicoletto, etichetta: Studio Dr.ssa Nicoletto M. Ornella, numeri: [5913]}
+      - {id: o2-pasello, etichetta: Studio Dr.ssa Pasello Giulia, numeri: [5608]}
+      - {id: o2-piccin, etichetta: Studio Dr.ssa Piccin Luisa, numeri: [5641]}
+      - {id: o2-pigozzo, etichetta: Studio Dr. Pigozzo Jacopo, numeri: [5641]}
+      - {id: o2-tasca, etichetta: Studio Dr.ssa Tasca Giulia, numeri: [5642]}
+      - {id: o2-vernaci, etichetta: Studio Dr.ssa Vernaci Grazia Maria, numeri: [5949]}
+      - {id: o2-studi-med, etichetta: Studio Medici, numeri: [5260]}
+      - {id: o2-studi-radio, etichetta: Studio Medici (c/o Radioterapia), numeri: [5642]}
+      - {id: o2-spec, etichetta: Studio Medici Specializzandi, numeri: [5549]}
+      - {id: o2-rov-celestino, etichetta: Coord. Rete Oncologica ROV - Dr. Celestino Michele, numeri: [5530]}
+
+  - id: area-omogenea-degenze
+    nome: Area Omogenea Degenze (Onc. 1, Onc. 2, Radioterapia)
+    ubicazione: {piano: 2°, struttura: Ospedale Busonera}
+    email: area.omogenea@iov.veneto.it
+    contatti:
+      - {id: aod-direttore-1, etichetta: Direttore Dr.ssa Lonardi Sara (Onc. 1), numeri: [5661]}
+      - {id: aod-direttore-2, etichetta: Direttore Prof.ssa Guarneri Valentina (Onc. 2), numeri: [5291]}
+      - {id: aod-direttore-rt, etichetta: Direttore Prof. Krengli Marco (Radioterapia), numeri: [8864]}
+      - {id: aod-segr-bissacco, etichetta: Segreteria - Bissacco Francesca, numeri: [1677]}
+      - {id: aod-coord-diamanti, etichetta: Coordinatore - Diamanti Orejeta, cellulare: "339.2910286"}
+      - {id: aod-guardiola-coord, etichetta: Guardiola Coord. - Schiavon Veronica, numeri: [2975]}
+      - {id: aod-guardiola-inf, etichetta: Guardiola Infermieri, numeri: [2973]}
+      - {id: aod-galiano, etichetta: Studio Medici Onc. 1 - Dr.ssa Galiano Antonella, numeri: [2986]}
+      - {id: aod-bolshinsky, etichetta: Studio Medici Onc. 1 - Dr.ssa Bolshinsky Maital, numeri: [4480]}
+      - {id: aod-diliso, etichetta: Studio Medici Onc. 2 - Dr.ssa Di Liso Elisabetta, numeri: [2972]}
+      - {id: aod-menichetti, etichetta: Studio Medici Onc. 2 - Dr.ssa Menichetti Alice, numeri: [2974]}
+      - {id: aod-radio, etichetta: Studio Medici Radioterapia, numeri: [2944], email: radioterapia.degenza@iov.veneto.it}
+      - {id: aod-amb, etichetta: Ambulatorio Area Omogenea, numeri: [1215]}
+      - {id: aod-bcm-a, etichetta: Stanza Bassa Carica Microbica A, numeri: [8291]}
+      - {id: aod-bcm-b, etichetta: Stanza Bassa Carica Microbica B, numeri: [8290]}
+      - {id: aod-bcm-inf, etichetta: Guardiola Infermieri BCM, numeri: [1242]}
+      - {id: aod-mdg, etichetta: Medico di Guardia, numeri: [2942], cellulare: "345.8159352", tag: [guardia]}
+
+  - id: piastra-endoscopica-iov
+    nome: Piastra Endoscopica
+    ubicazione: {piano: terra, struttura: Ospedale Busonera}
+    direttore: Dr. Realdon Stefano
+    email: endoscopia@iov.veneto.it
+    contatti:
+      - {id: pe-direttore, etichetta: Resp. Dr. Realdon Stefano, numeri: [3182]}
+      - {id: pe-segr, etichetta: Segreteria, numeri: [1719]}
+      - {id: pe-acc, etichetta: Accettazione/Prenotazione (L/V 13:30-15), numeri: [3142]}
+      - {id: pe-coord, etichetta: Coordinamento Infermieristico, numeri: [3164]}
+      - {id: pe-studio, etichetta: Studio Medico, numeri: [8840]}
+      - {id: pe-amb1, etichetta: Endoscopia Amb. 1 (interni), numeri: [5538]}
+      - {id: pe-amb2, etichetta: Endoscopia Amb. 2 (interni), numeri: [5539]}
+
+  - id: radiologia-iov
+    nome: U.O.S. Radiologia (Radiodiagnostica Oncologica)
+    ubicazione: {struttura: Ospedale Busonera}
+    direttore: Dr. Di Maggio Antonio
+    email: radiologia@iov.veneto.it
+    contatti:
+      - {id: rad-direttore, etichetta: Direttore Dr. Di Maggio Antonio, numeri: [5971, 5739]}
+      - {id: rad-segr, etichetta: Segreteria, numeri: [5653]}
+      - {id: rad-acc-int, etichetta: Accettazione/Archivio (interni), numeri: [5515]}
+      - {id: rad-angio, etichetta: Angiografia Polifunzionale - Interventistica, numeri: [5518]}
+      - {id: rad-eco, etichetta: Ecografia, numeri: [5972]}
+      - {id: rad-int, etichetta: Radiologia Interventistica, numeri: [5563]}
+      - {id: rad-trad, etichetta: Radiologia Tradizionale RX, numeri: [5510], cellulare: "335.8111771"}
+      - {id: rad-rm, etichetta: Risonanza Magnetica, numeri: [5516]}
+      - {id: rad-lett-rm, etichetta: Sala Lettura RM e RX, numeri: [5513]}
+      - {id: rad-tc-lett, etichetta: TC Sala Lettura, numeri: [5517, 5954]}
+      - {id: rad-tc-edge, etichetta: TC Siemens Edge, numeri: [7999]}
+      - {id: rad-tc-evo, etichetta: TC GE Evo, numeri: [5747]}
+      - {id: rad-studio1, etichetta: Studio Medico 1, numeri: [5513]}
+      - {id: rad-studio2, etichetta: Studio Medico 2, numeri: [5971]}
+      - {id: rad-coord-tsrm, etichetta: Coord. TSRM, numeri: [5973], cellulare: "334.6834484"}
+      - {id: rad-rt-segr, etichetta: Radiodiagnostica Onc. (Radioterapia) - Segreteria, numeri: [2864]}
+      - {id: rad-rt-tac, etichetta: Sala TAC (Radioterapia), numeri: [1375]}
+
+  - id: radiologia-senologica
+    nome: U.O.C. Radiologia Senologica (ex Senologia)
+    ubicazione: {piano: terra, struttura: Ospedale Busonera}
+    direttore: Dr.ssa Caumo Francesca
+    contatti:
+      - {id: rs-direttore, etichetta: Direttore Dr.ssa Caumo Francesca, numeri: [5739]}
+      - {id: rs-segr-est, etichetta: Segreteria Esterni (L/V 10-13, no prenotazioni), numeri: [5732]}
+      - {id: rs-segr-int, etichetta: Segreteria (interni), numeri: [5731]}
+      - {id: rs-case-mgr, etichetta: Inf. Case Manager - Gesuato Patrizia, numeri: [5733]}
+      - {id: rs-fisico, etichetta: Fisico Sanitario - Dr.ssa Gennaro Gisella, numeri: [5735]}
+      - {id: rs-coord-tsrm, etichetta: Coord. TSRM Maggetto Federico, numeri: [5540], cellulare: "339.2910298"}
+      - {id: rs-studi-int, etichetta: Studio Medici (interni), numeri: [5745]}
+      - {id: rs-screening-gd, etichetta: Screening Senologico Giovani Donne (9-12, 13-15), numeri: [1199]}
+      - {id: rs-screening-int, etichetta: Screening Senologico (interni), numeri: [5741]}
+
+  - id: radioterapia
+    nome: Radioterapia
+    ubicazione: {struttura: Edificio Radioterapia e Ospedale Busonera}
+    direttore: Prof. Krengli Marco
+    email: segreteria.radioterapia@iov.veneto.it
+    contatti:
+      - {id: rt-direttore, etichetta: Direttore Prof. Krengli Marco, numeri: [8864]}
+      - {id: rt-segr, etichetta: Segreteria, numeri: [2940, 2864]}
+      - {id: rt-disfagia-studio, etichetta: Studio Disfagia, numeri: [7937]}
+      - {id: rt-disfagia-amb, etichetta: Ambulatorio Disfagia, numeri: [7975]}
+      - {id: rt-dh-guardiola, etichetta: Guardiola D.H., numeri: [1847]}
+      - {id: rt-elkhouzai, etichetta: Studio Dr. El Khouzai Badr, numeri: [1730]}
+      - {id: rt-belfontali, etichetta: Studio Dr.ssa Belfontali Stefania, numeri: [1732]}
+      - {id: rt-buzzaccarini, etichetta: Studio Dr.ssa Buzzaccarini M. Samaritana, numeri: [2937]}
+      - {id: rt-vianello, etichetta: Studio Dr.ssa Vianello F., numeri: [2959]}
+      - {id: rt-scarzello, etichetta: Studio Dr. Scarzello G., numeri: [2962]}
+      - {id: rt-lora, etichetta: Studio Dr.ssa Lora Ornella, numeri: [1744]}
+      - {id: rt-parisi, etichetta: Studio Dr. Parisi Alessandro, numeri: [2589]}
+      - {id: rt-sepulcri, etichetta: Studio Dr. Sepulcri Matteo, numeri: [2938]}
+      - {id: rt-acc-int, etichetta: Amb. Accettazione (interni), numeri: [1303]}
+      - {id: rt-acc-arch, etichetta: Amb. Accettazione - Archivio, numeri: [2946]}
+      - {id: rt-amb1, etichetta: Ambulatorio 1, numeri: [1967]}
+      - {id: rt-amb2, etichetta: Ambulatorio 2, numeri: [1966]}
+      - {id: rt-amb7, etichetta: Ambulatorio 7, numeri: [1727]}
+      - {id: rt-amb8, etichetta: Ambulatorio 8, numeri: [2947]}
+      - {id: rt-cemurni, etichetta: Centro Radiazioni Non Ionizzanti - SO - Ce.Mu.Rni, numeri: [2957]}
+      - {id: rt-coord-masiero, etichetta: Guardiola Coord. Sez. Protetta - Masiero Carla, numeri: [2943, 8495]}
+      - {id: rt-coord-inf, etichetta: Coordinatore Infermieri, numeri: [1825]}
+      - {id: rt-amb-cure, etichetta: Ambulatorio Sezione Cure, numeri: [2948]}
+      - {id: rt-amb-ped, etichetta: Ambulatorio Pediatrico, numeri: [2255]}
+      - {id: rt-coord-bacco, etichetta: Studio Coord. Trattamenti - Bacco Simonetta, numeri: [2949], cellulare: "329.9074834"}
+      - {id: rt-trat-ethos, etichetta: Trattamenti Ethos, numeri: [2939]}
+      - {id: rt-trat-tb, etichetta: Trattamenti TB, numeri: [2950]}
+      - {id: rt-trat-sim, etichetta: Trattamenti Simulatore - Centramenti, numeri: [2951]}
+      - {id: rt-portineria, etichetta: Portineria, numeri: [2960, 2961]}
+      - {id: rt-deg-segr, etichetta: Degenze 2° P - Segreteria Amm., numeri: [1677]}
+      - {id: rt-deg-coord, etichetta: Studio Coord. Dr.ssa Tridello, numeri: [2988]}
+      - {id: rt-deg-guardiola, etichetta: Guardiola Reparto, numeri: [2975]}
+      - {id: rt-deg-inf, etichetta: Stanza Infermieri, numeri: [2973]}
+      - {id: rt-deg-prelievi, etichetta: Stanza Prelievi, numeri: [1215]}
+      - {id: rt-deg-mdg, etichetta: Medico di Guardia, numeri: [2942], tag: [guardia]}
+      - {id: rt-deg-paz, etichetta: Studio Medici (contatti pazienti 13-14), numeri: [2945]}
+      - {id: rt-deg-studi, etichetta: Studio Medici, numeri: [2944]}
+
+  - id: radioterapia-schiavonia
+    nome: Radioterapia - Sede di Schiavonia
+    contatti:
+      - {id: rts-segr, etichetta: Segreteria Accettazione, numeri: [7430]}
+      - {id: rts-trat, etichetta: Apparecchi Trattamenti, numeri: [7428]}
+      - {id: rts-tomo, etichetta: Tomo, numeri: [7429]}
+      - {id: rts-loreggian, etichetta: Studio Dr. Loreggian Lucio, numeri: [7426]}
+      - {id: rts-tac, etichetta: TAC, numeri: [7427]}
+      - {id: rts-amb1, etichetta: Ambulatorio 1, numeri: [7432]}
+      - {id: rts-amb2, etichetta: Amb. 2, numeri: [7433]}
+      - {id: rts-amb3, etichetta: Amb. 3, numeri: [7434]}
+      - {id: rts-amb, etichetta: Ambulatorio, numeri: [7443]}
+
+  - id: registro-tumori
+    nome: Registro Tumori del Veneto (Azienda Zero)
+    ubicazione: {indirizzo: Via Jacopo Avanzo 35, Padova}
+    direttore: Prof. Rugge Massimo
+    contatti:
+      - {id: rtv-direttore, etichetta: Resp. Prof. Rugge Massimo, numeri: ["049 827 22 66"]}
+      - {id: rtv-segr, etichetta: Segreteria, numeri: ["049 877 81 30"]}
+
+  - id: cardiologia-iov
+    nome: Servizio di Cardiologia IOV
+    direttore: Dr. Banzato Alberto
+    contatti:
+      - {id: card-direttore, etichetta: Resp. Dr. Banzato Alberto, numeri: [5633]}
+      - {id: card-bianchi, etichetta: Dr.ssa Bianchi Alessandra, numeri: [5980]}
+      - {id: card-amb, etichetta: Ambulatorio, numeri: [5633]}
+
+  - id: farmacia-iov
+    nome: Servizio di Farmacia IOV
+    ubicazione: {piano: 1°, struttura: Ospedale Busonera}
+    direttore: Dr.ssa Coppola Marina
+    email: segreteria.farmacia@iov.veneto.it
+    contatti:
+      - {id: farm-direttore, etichetta: Direttore Dr.ssa Coppola Marina, numeri: [5840]}
+      - {id: farm-segr, etichetta: Segreteria, numeri: [5289], cellulare: "339.2910282"}
+      - {id: farm-segr-log, etichetta: Segreteria Logistica, numeri: [5946]}
+      - {id: farm-pipitone, etichetta: Studio Coord. Pipitone Francesca, numeri: [5887]}
+      - {id: farm-parlantzas, etichetta: Ass. Ricerca - Parlantzas Anna (OS), numeri: [5720]}
+      - {id: farm-busso, etichetta: Ass. Ricerca - Busso Eleonora (EV), numeri: [5943]}
+      - {id: farm-distrib, etichetta: Distribuzione Diretta Farmaci (8:30-14, 14:30-16), numeri: [5838], email: distribuzione.diretta@iov.veneto.it}
+      - {id: farm-distrib-sper, etichetta: Distrib. Diretta Sperimentazione, numeri: [5630], email: sperimentazioni.farmaci@iov.veneto.it}
+      - {id: farm-comitato, etichetta: Comitato Etico, numeri: [5172], email: comitato.etico@iov.veneto.it}
+      - {id: farm-sper, etichetta: Sperimentazioni Farmacia, numeri: [5720]}
+      - {id: farm-galenica, etichetta: Galenica Validazione EV, numeri: [5720]}
+      - {id: farm-bernardi, etichetta: Galenica Oncologica - Dr.ssa Bernardi Alessandra, numeri: [5720]}
+      - {id: farm-galenica-cl, etichetta: Galenica Clinica, numeri: [5839], email: galenicaclinica@iov.veneto.it}
+      - {id: farm-cognolato, etichetta: Produzione Galenica - Cognolato Silvia, numeri: [5662]}
+      - {id: farm-mioni, etichetta: Galenica - Dr.ssa Mioni Chiara, numeri: [5662]}
+      - {id: farm-berti, etichetta: Studio Dr.ssa Berti Elena (terapie orali), numeri: [5288]}
+      - {id: farm-aifa, etichetta: Registri AIFA, numeri: [5778], email: registriaifa@iov.veneto.it}
+      - {id: farm-disarra, etichetta: Studi Clinici - Dr.ssa Di Sarra Francesca, numeri: [5778]}
+      - {id: farm-offlabel, etichetta: Richieste Off Label / Farmacovigilanza, numeri: [5288]}
+      - {id: farm-disp, etichetta: Richieste Dispositivi Medici, numeri: [5738], breve: 97839, email: richiesta.dispositivi@iov.veneto.it}
+      - {id: farm-cazzador, etichetta: Beni Sanitari - Dr. Cazzador Flavio, numeri: [5273]}
+      - {id: farm-franzoso, etichetta: Beni Sanitari - Dr. Franzoso Gianpaolo, numeri: [5273]}
+      - {id: farm-rigamonti, etichetta: Counseling - Dr.ssa Rigamonti Nicoletta, numeri: [5273]}
+      - {id: farm-pge, etichetta: Reperibile P.G.E., cellulare: "338.4912367", tag: [reperibile]}
+
+  - id: psicologia-osp-iov
+    nome: U.O.S.D. Servizio di Psicologia Ospedaliera IOV
+    direttore: Dr.ssa Feltrin Alessandra
+    email: psiconcologia@iov.veneto.it
+    contatti:
+      - {id: psi-direttore, etichetta: Direttore Dr.ssa Feltrin Alessandra, numeri: [5910]}
+      - {id: psi-sommacal, etichetta: Studio Dr.ssa Sommacal Samuela, numeri: [2980]}
+      - {id: psi-shams, etichetta: Studio Dr.ssa Shams Malihe, numeri: [5959]}
+
+  - id: terapia-dolore-iov
+    nome: U.O.C. Terapia del Dolore e Cure Palliative IOV
+    ubicazione: {struttura: Ospedale Busonera}
+    direttore: Dr. Formaglio Fabio
+    email: terapia.antalgica@iov.veneto.it
+    contatti:
+      - {id: td-direttore, etichetta: Direttore Dr. Formaglio Fabio, numeri: [5287], cellulare: "339.2910149"}
+      - {id: td-coord, etichetta: Coord. Inf. - Michielotto Michela, numeri: [5287]}
+      - {id: td-amb, etichetta: Ambulatorio, numeri: [5287]}
+      - {id: td-pambuku, etichetta: Studio Dr. Pambuku Ardi, numeri: [5287], cellulare: "366.5653141"}
+      - {id: td-schiavon, etichetta: Studio Dr.ssa Schiavon Stefania, numeri: [5287], cellulare: "338.7831748"}
+      - {id: td-rep, etichetta: Reperibilità Dolore e Cure Palliative, cellulare: "339.2910353", tag: [reperibile]}
+
+  - id: day-hospital-iov
+    nome: Day Hospital IOV
+    ubicazione: {piano: 2°, struttura: Ospedale Busonera}
+    contatti:
+      - {id: dh-coord, etichetta: Coordinatore - Galtarossa Nicola, cellulare: "334.6532536"}
+      - {id: dh-vice-coord, etichetta: Vice Coordinatore - Zanocco Monica}
+      - {id: dh-coord-ric, etichetta: Coord. Ricerca - Grosso Daniela, cellulare: "342.6561655"}
+      - {id: dh-ancillari, etichetta: Terapie Ancillari, numeri: [5925]}
+      - {id: dh-st1, etichetta: Stanza 1 Ricerca, numeri: [5276]}
+      - {id: dh-st2, etichetta: Stanza 2 Ricerca, numeri: [5263]}
+      - {id: dh-st3, etichetta: Stanza 3, numeri: [5264]}
+      - {id: dh-st4, etichetta: Stanza 4, numeri: [5271]}
+      - {id: dh-st5, etichetta: Stanza 5, numeri: [5262]}
+      - {id: dh-st6, etichetta: Stanza 6, numeri: [5277]}
+      - {id: dh-st7, etichetta: Stanza 7, numeri: [5279]}
+      - {id: dh-mdg, etichetta: Medico di Guardia Ambulatorio, numeri: [5631], tag: [guardia]}
+      - {id: dh-coord-ric-stanza, etichetta: Stanza Coord. Ricerca, numeri: [1731]}
+      - {id: dh-prelievi, etichetta: Punto Prelievi (1° P), numeri: [5934]}
+      - {id: dh-acc, etichetta: Accettazione (1° P), numeri: [5903]}
+      - {id: dh-acc-retro, etichetta: Accettazione Retro Sportello (1° P), numeri: [5960]}
+      - {id: dh-segr-est, etichetta: Segreteria Ambulatori Esterni (L/V 9-15), numeri: [5919]}
+      - {id: dh-amb1, etichetta: Ambulatorio 1 (1° P), numeri: [5899]}
+      - {id: dh-amb2, etichetta: Ambulatorio 2 (1° P), numeri: [5906]}
+      - {id: dh-amb3, etichetta: Ambulatorio 3 (1° P), numeri: [5918]}
+      - {id: dh-amb4, etichetta: Ambulatorio 4 (1° P), numeri: [5905]}
+      - {id: dh-amb5, etichetta: Ambulatorio 5 (1° P), numeri: [5915]}
+      - {id: dh-amb6, etichetta: Ambulatorio 6 (1° P), numeri: [5536]}
+      - {id: dh-amb7, etichetta: Ambulatorio 7 (1° P), numeri: [5195]}
+      - {id: dh-amb8, etichetta: Ambulatorio 8 (1° P), numeri: [5950]}
+      - {id: dh-amb9, etichetta: Ambulatorio 9 (1° P), numeri: [5638]}
+      - {id: dh-amb10, etichetta: Ambulatorio 10 (1° P), numeri: [5958]}
+      - {id: dh-amb11, etichetta: Ambulatorio 11 (1° P), numeri: [5935]}
+      - {id: dh-amb12, etichetta: Ambulatorio 12 (1° P), numeri: [5564]}
+      - {id: dh-amb14, etichetta: Ambulatorio 14 (1° P), numeri: [8848]}
+      - {id: dh-amb16, etichetta: Ambulatorio 16 (1° P), numeri: [5283]}
+
+  - id: dietetica-iov
+    nome: Dietetica e Nutrizione Clinica IOV
+    direttore: Dr.ssa Nardi Mariateresa
+    contatti:
+      - {id: diet-ref, etichetta: Referente Dr.ssa Nardi Mariateresa, numeri: [5912], cellulare: "331.6969333"}
+
+  - id: poliambulatori-iov
+    nome: Poliambulatori IOV
+    contatti:
+      - {id: pa-resta, etichetta: Segreteria - Resta Stefania (UMS Mocellin), numeri: [5757]}
+      - {id: pa-mocellin, etichetta: Segreteria Prof. Mocellin Simone, numeri: [2137]}
+      - {id: pa-carraro, etichetta: Case Manager UMS - Carraro Sabrina, numeri: [1755], email: melanomi.sarcomi@iov.veneto.it}
+      - {id: pa-sorgato, etichetta: Segr. Chirurgia Senologica - Sorgato Paola, numeri: [5588]}
+      - {id: pa-carpentieri, etichetta: Case Manager Chir. Senologica - Carpentieri Sonia, numeri: [5947]}
+      - {id: pa-amb1-ums, etichetta: Ambulatorio 1 UMS, numeri: [5770]}
+      - {id: pa-amb2-ums, etichetta: Ambulatorio 2 UMS, numeri: [5758]}
+      - {id: pa-amb3-ums, etichetta: Ambulatorio 3 UMS, numeri: [5525]}
+      - {id: pa-amb1-cs, etichetta: Ambulatorio 1 Chir. Senologica, numeri: [5979]}
+      - {id: pa-amb2-cs, etichetta: Ambulatorio 2 Chir. Senologica, numeri: [5979]}
+      - {id: pa-amb3, etichetta: Ambulatorio 3, numeri: [5974]}
+      - {id: pa-amb4, etichetta: Ambulatorio 4, numeri: [5964]}
+      - {id: pa-amb5, etichetta: Ambulatorio 5, numeri: [5557]}
+      - {id: pa-amb6, etichetta: Ambulatorio 6, numeri: [5573]}
+
+  - id: oncologia-base
+    nome: U.O.S.D. Oncologia di Base Sperimentale e Traslazionale
+    direttore: Prof. Indraccolo Stefano
+    email: idmo@iov.veneto.it
+    contatti:
+      - {id: ob-direttore, etichetta: Direttore Prof. Indraccolo Stefano, numeri: [5875]}
+      - {id: ob-segr-savelli, etichetta: Segr. Diagnostica - Savelli Pietro / Nanin Andrea, numeri: [5861]}
+      - {id: ob-segr-gardin, etichetta: Segreteria - Gardin Monica, numeri: [5805]}
+      - {id: ob-segr-univ-carturan, etichetta: Segr. Univ. - Carturan Fiorella, numeri: [5968], email: fiorella.carturan@unipd.it}
+      - {id: ob-segr-univ-ghinatti, etichetta: Segr. Univ. - Ghinatti Antonella, numeri: [5806]}
+      - {id: ob-segr-univ-zatta, etichetta: Segr. Univ. - Zatta Antonio, numeri: [4383]}
+      - {id: ob-lab, etichetta: Lab. Oncologia di Base (Prof. Indraccolo), numeri: [5851, 5859]}
+
+  - id: fisica-sanitaria-iov
+    nome: U.O.C. Fisica Sanitaria IOV
+    ubicazione: {struttura: Palazzina Radioterapia}
+    direttore: Dr.ssa Paiusco Marta
+    email: fisica.sanitaria@iov.veneto.it
+    contatti:
+      - {id: fs-direttore, etichetta: Resp. Dr.ssa Paiusco Marta, numeri: [1738], cellulare: "333.9575342"}
+      - {id: fs-segr-rossetto, etichetta: Segreteria - Rossetto Grazia, numeri: [2964]}
+      - {id: fs-amico, etichetta: Studio Fisico Dr. Amico Antonio, numeri: [2967]}
+      - {id: fs-ceroni, etichetta: Studio Fisico Dr.ssa Ceroni Paola, numeri: [8163]}
+      - {id: fs-demonte, etichetta: Studio Fisico Dr.ssa De Monte Francesca, numeri: [2983]}
+      - {id: fs-dusi, etichetta: Studio Fisico Dr.ssa Dusi / Dr. Scaggion, numeri: [2966]}
+      - {id: fs-zorzi-a, etichetta: Studio Fisico Dr.ssa Zorzi Alessandra, numeri: [2965]}
+      - {id: fs-zandona, etichetta: Studio Fisico Dr. Zandonà Roberto, numeri: [1724]}
+      - {id: fs-spec, etichetta: Studio Fisici Specializzandi, numeri: [2977]}
+      - {id: fs-borsisti, etichetta: Borsisti, numeri: [2954, 2963]}
+      - {id: fs-tsrm-dezordi, etichetta: TSRM De Zordi Nicole, numeri: [2580]}
+      - {id: fs-tsrm-merlo, etichetta: TSRM Merlo Carlo, numeri: [2269]}
+      - {id: fs-tsrm-pivato, etichetta: TSRM Pivato Nicola, numeri: [1726]}
+      - {id: fs-tsrm-rossato, etichetta: TSRM Rossato Marco, numeri: [8162]}
+      - {id: fs-calc-tps, etichetta: Stanza Calcolatori TPS, numeri: [2969, 7932]}
+      - {id: fs-calc, etichetta: Stanza Calcolatori, numeri: [8161]}
+
+  - id: medicina-preventiva-iov
+    nome: Servizio di Medicina Preventiva e Radioprotezione Medica
+    direttore: Dr.ssa Mamprin Paola
+    contatti:
+      - {id: mp-resp, etichetta: Resp. Dr.ssa Mamprin Paola, numeri: [5617], cellulare: "338.4912418"}
+      - {id: mp-sandon, etichetta: Sandon Graziella, numeri: [5965], cellulare: "333.4928114"}
+
+  - id: torre-ricerca
+    nome: Torre della Ricerca
+    contatti:
+      - {id: tr-bli-lab, etichetta: Lato Nord - Lab. Biopsia Liquida Integrata, numeri: [1195]}
+      - {id: tr-facchinetti, etichetta: Dr.ssa Facchinetti Antonella, numeri: [1197]}
+      - {id: tr-scaini, etichetta: Dr.ssa Scaini Maria Chiara, numeri: [1196]}
+      - {id: tr-bli-studio, etichetta: Studio BLI, numeri: [5993]}
+      - {id: tr-ute-studio, etichetta: Studio UTE, numeri: [5994]}
+      - {id: tr-ute-lab, etichetta: Laboratorio UTE, numeri: [5995]}
+      - {id: tr-schiavi, etichetta: Dr.ssa Schiavi Francesca, numeri: [5996]}
+      - {id: tr-curtarello, etichetta: Lato Sud - Dr. Curtarello Matteo (Lab. RTA), numeri: [1426]}
+      - {id: tr-studi-med, etichetta: Studio Medici, numeri: [6161]}
+
+  - id: associazioni-iov
+    nome: Associazioni
+    contatti:
+      - {id: ass-ail, etichetta: A.I.L. (Ass. Italiana Leucemie), numeri: [1461]}
+      - {id: ass-avo, etichetta: A.V.O. (Ass. Volontari Ospedalieri), numeri: [3913]}
+      - {id: ass-avo-iov-segr, etichetta: A.V.O. Segreteria c/o IOV, numeri: [5669]}
+      - {id: ass-avo-iov-acc, etichetta: A.V.O. Accoglienza c/o IOV, numeri: [5670]}
+      - {id: ass-avo-osa, etichetta: A.V.O. Accoglienza c/o OSA, numeri: [5353]}
+      - {id: ass-cilla, etichetta: CILLA (Ospitalità parenti pazienti), numeri: [3914]}
+      - {id: ass-fand, etichetta: FAND (Ass. Diabetici), numeri: [3967]}
+      - {id: ass-feder-aipa, etichetta: Feder AIPA (Pazienti Anticoagulati), numeri: [5624]}
+      - {id: ass-cdsperanza, etichetta: Fondazione Città della Speranza, numeri: [8033]}
+      - {id: ass-padova-osp, etichetta: Padova Ospitale, numeri: [3256]}
+      - {id: ass-pronto-anziano, etichetta: Pronto Anziano, numeri: [7000]}
+      - {id: ass-rene, etichetta: RENE (Ass. Borsatti pazienti nefrologici), numeri: [2152]}
+      - {id: ass-farini, etichetta: Roberto Farini (Ass. Gastroenterologia), numeri: [2890]}
+      - {id: ass-salus-pueri, etichetta: Salus Pueri Fondazione, numeri: [3526]}
+      - {id: ass-trapianti-minnaia, etichetta: Trapianti Marina Minnaia (Ricerca trapianto fegato), numeri: [2635]}
+      - {id: ass-tdm, etichetta: Tribunale dei Diritti del Malato, numeri: [3904]}

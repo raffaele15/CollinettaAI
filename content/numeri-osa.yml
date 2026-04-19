@@ -1,0 +1,711 @@
+# Rubrica telefonica Ospedale Sant'Antonio (OSA)
+# Generata da OSA_-_Elenco_Telefonico_Interno_2026.pdf (130 pagine)
+# Centralino interno: 99 — Centralino esterno: 049 821 1111
+# Reperibilità OSA solo interni: 6775
+
+ospedale:
+  id: osa
+  nome: Ospedale Sant'Antonio
+  indirizzo: "Via Jacopo Facciolati 71, Padova"
+  centralino_interno: 99
+  centralino_esterno: "049 821 1111"
+  reperibilita_interno: 6775
+
+gruppi:
+
+  - id: direzione-medica-osa
+    nome: U.O.C. Direzione Medica OSA
+    ubicazione: {piano: 3°, struttura: Corpo A}
+    direttore: Dr.ssa Nesoti Maria Vittoria
+    contatti:
+      - {id: dm-segr-nardi, etichetta: Segreteria - Nardi Lina, numeri: [6516]}
+      - {id: dm-segr-salmaso, etichetta: Segreteria - Salmaso Renata, numeri: [6540]}
+      - {id: dm-segr-extra, etichetta: Segreteria, numeri: [6543, 6580]}
+      - {id: dm-sabbadin, etichetta: Sabbadin Silvia (N.A.C.), numeri: [6626]}
+      - {id: dm-pre-ricov-coord, etichetta: Coord. Pre-Ricovero Chirurgico - Gobbin Emanuela (interni), numeri: [1008], email: info.chirurgia@aopd.veneto.it}
+      - {id: dm-pre-ricov-sede, etichetta: Sede Operativa Rampa Ingresso (esterni L/V 10-14), numeri: [7517, 7518, 7516, 7515]}
+      - {id: dm-amb-anest-c, etichetta: Amb. Anestesista Stanza C (interni), numeri: [6135]}
+      - {id: dm-amb-anest-d, etichetta: Amb. Anestesista Stanza D (interni), numeri: [6225]}
+      - {id: dm-acc-prelievi, etichetta: Accettazione Corridoio Prelievi, numeri: [7532]}
+
+  - id: direzione-prof-sanitarie-osa
+    nome: U.O.C. Direzione delle Professioni Sanitarie OSA
+    ubicazione: {piano: 3°}
+    contatti:
+      - {id: dps-segr, etichetta: Segreteria, numeri: [5361, 6220, 7531]}
+
+  - id: assistenza-sociale-osa
+    nome: Assistenza Sociale OSA
+    ubicazione: {struttura: Corpo A}
+    contatti:
+      - {id: as-marega, etichetta: Marega Michelangelo, numeri: [6506], cellulare: "334.6652689"}
+
+  - id: assistenza-religiosa-osa
+    nome: Assistenza Religiosa OSA
+    ubicazione: {struttura: Casetta a fianco portineria esterna lato Via Facciolati}
+    contatti:
+      - {id: ar-don-lazzari, etichetta: Don Lazzari Massenzio, numeri: [6552], cellulare: "329.2107192"}
+
+  - id: direzione-amm-osa
+    nome: U.O.C. Direzione Amministrativa di Ospedale
+    ubicazione: {piano: 2°, struttura: Palazzina Direzione AOUP}
+    direttore: Avv. Longhini Luisa
+    contatti:
+      - {id: damm-direttore, etichetta: Direttore Avv. Longhini Luisa, numeri: [1979]}
+      - {id: damm-segr, etichetta: Segreteria, numeri: [8331]}
+      - {id: damm-area-giur-resp, etichetta: Area Giuridica - Resp. Dr. Salmaso Alberto, numeri: [8549]}
+      - {id: damm-conv-usuelli, etichetta: Uff. Convenzioni - Dr.ssa Usuelli Cristiana, numeri: [8313]}
+      - {id: damm-area-eco-resp, etichetta: Area Economica - Resp. Dr.ssa Rigato Silvia, numeri: [8915]}
+      - {id: damm-biasiolo, etichetta: Biasiolo Barbara, numeri: [8837]}
+      - {id: damm-danese, etichetta: Danese Sara, numeri: [6354]}
+      - {id: damm-schiavon, etichetta: Schiavon Nicoletta, numeri: [8914]}
+      - {id: damm-tagliamonte, etichetta: Tagliamonte Raffaele, numeri: [8915]}
+      - {id: damm-cassa-coord, etichetta: Coord. Att. Cassa - Dr.ssa Giraldo Amalia, numeri: [8911]}
+
+  - id: cassa-osa
+    nome: Cassa OSA
+    ubicazione: {piano: rialzato}
+    contatti:
+      - {id: cassa-pellegrini, etichetta: Referente Pellegrini Mirko, numeri: [6503]}
+      - {id: cassa-sportello, etichetta: Cassa Sportello (L/V 7:40-13 / 14-19), numeri: [6503, 6495]}
+
+  - id: accettazione-amm-osa
+    nome: Accettazione Amministrativa OSA
+    ubicazione: {piano: rialzato}
+    contatti:
+      - {id: aa-resp, etichetta: Resp. Crivellari Stefania (Acc./Stranieri/DEA/CUP), numeri: [3909]}
+      - {id: aa-acc-ric-dea, etichetta: Acc. Amm.va Ricoveri e Uff. DEA, numeri: [6559]}
+
+  - id: cartelle-cliniche-osa
+    nome: Cartelle Cliniche OSA
+    ubicazione: {struttura: Atrio Monoblocco}
+    email: cartellecliniche.osa@aopd.veneto.it
+    contatti:
+      - {id: cc-call, etichetta: Call Center Cartelle (L/V 8-9), numeri: [3055]}
+      - {id: cc-prenot-ritiro, etichetta: Prenotazione Ritiro Documentazione (10-12:30), numeri: [3057]}
+      - {id: cc-int, etichetta: Cartelle Cliniche (solo interni), numeri: [6435]}
+      - {id: cc-coord-riva, etichetta: Coordinatore - Riva Renata, numeri: [1750]}
+
+  - id: portineria-osa
+    nome: Portineria e Viabilità OSA
+    ubicazione: {piano: terra/rialzato}
+    contatti:
+      - {id: port-info, etichetta: Punto Informazioni OSA, numeri: [6508]}
+      - {id: port-esterna, etichetta: Portineria Esterna, numeri: [6509]}
+
+  - id: centralino-osa
+    nome: Centralino Telefonico OSA
+    ubicazione: {piano: 1°, struttura: Locali Ex Lavanderia AOPD}
+    direttore: Dr.ssa Cavallarin Maria Cristina
+    contatti:
+      - {id: cent-est, etichetta: Centralino Utenti Esterni (numero unico AOPD/OSA/IOV), numeri: ["049 821 1111"]}
+      - {id: cent-int, etichetta: Centralino Interni, numeri: [99]}
+      - {id: cent-coord-scapolo, etichetta: Coord. Scapolo Antonio (c/o AOPD), numeri: [7980]}
+      - {id: cent-rep-osa, etichetta: Reperibilità OSA (interni), numeri: [6775], tag: [reperibile]}
+
+  - id: prevenzione-protezione-osa
+    nome: U.O.S. di Prevenzione e Protezione
+    ubicazione: {indirizzo: Via Falloppio 17}
+    direttore: Ing. Casagrande Luisa
+    contatti:
+      - {id: pp-direttore, etichetta: Resp. Ing. Casagrande Luisa, numeri: [4546]}
+      - {id: pp-segr, etichetta: Segreteria, numeri: [6732]}
+      - {id: pp-penazzo, etichetta: Penazzo F., numeri: [5372]}
+      - {id: pp-hamel, etichetta: Hamel Carlo, numeri: [6734]}
+      - {id: pp-cesarotto, etichetta: Cesarotto Raffaele, numeri: [6632]}
+      - {id: pp-degasperi, etichetta: De Gasperi Luca, numeri: [1535]}
+      - {id: pp-verza, etichetta: Verza S., numeri: [5374]}
+
+  - id: servizio-tecnico-osa
+    nome: Servizio Tecnico OSA
+    ubicazione: {struttura: Palazzina Esterna}
+    contatti:
+      - {id: st-emerg-osa, etichetta: Emergenze OSA, numeri: [7559], cellulare: "329.3190788", tag: [urgenza, reperibile]}
+      - {id: st-emerg-aopd, etichetta: Emergenza Tecnica AOPD, numeri: [2525], tag: [urgenza]}
+      - {id: st-pagetta, etichetta: Perito Pagetta Mauro, numeri: [6725], cellulare: "329.9062228"}
+      - {id: st-centrale, etichetta: Centrale Termica, numeri: [6533]}
+
+  - id: sterilizzazione-psis-osa
+    nome: Centrale di Sterilizzazione PSIS (esterna)
+    ubicazione: {indirizzo: Via del Progresso 11 (Camin)}
+    contatti:
+      - {id: psis-mat, etichetta: Richieste Materiale di Consumo, numeri: ["049 816 08 51"]}
+      - {id: psis-ster-cell, etichetta: Cell. Capo Reparto Sterilizzazione, cellulare: "349.6794275"}
+      - {id: psis-trasp-zecca, etichetta: Trasporti Zecca Luca (LOG'S), cellulare: "331.6715140"}
+      - {id: psis-trasp-rep, etichetta: Reperibile Trasporti, cellulare: "335.1001010", tag: [reperibile]}
+
+  - id: sindacati-osa
+    nome: Sedi Sindacali OSA
+    ubicazione: {struttura: Rampa Ingresso Principale}
+    contatti:
+      - {id: sind-osa, etichetta: CGIL/CISL/UIL, numeri: [6684]}
+
+  - id: vari-osa
+    nome: Numeri Vari OSA
+    contatti:
+      - {id: var-aula, etichetta: Aula Riunioni 5° Piano, numeri: [6791]}
+      - {id: var-autisti, etichetta: Autisti Barellieri (interni), numeri: [6573]}
+      - {id: var-avo, etichetta: A.V.O. Piano Rialzato, numeri: [5353]}
+      - {id: var-cral, etichetta: CRAL (Ven 10:30-12:30), numeri: [6556]}
+      - {id: var-cucina-ser, etichetta: Cucina Serenissima c/o AOPD, numeri: [3984]}
+      - {id: var-guardaroba, etichetta: Guardaroba (L/V 8:30-12:30), numeri: [6523]}
+      - {id: var-mensa-ser, etichetta: Mensa Serenissima Seminterrato, numeri: [6520]}
+      - {id: var-obitorio, etichetta: Obitorio c/o AOPD, numeri: [3960], cellulare: "329.9045134"}
+      - {id: var-polizia, etichetta: Posto Polizia c/o AOPD, numeri: [2866, 2869]}
+      - {id: var-trasporti, etichetta: Trasporti Interni, numeri: [6573]}
+      - {id: var-utenti-paganti, etichetta: Utenti Paganti in Proprio (Preventivi), numeri: [8768]}
+      - {id: var-vigilanza, etichetta: Vigilanza Notturna CIVIS/Axitea, numeri: ["049 807 61 11"]}
+
+  - id: pulizie-osa
+    nome: Pulizie - Coopservice OSA
+    contatti:
+      - {id: pul-call, etichetta: Call Center H24 (codice ospedale 10), numeri: ["800 136030"]}
+      - {id: pul-rif, etichetta: Cell. Referente OSA, cellulare: "344 1880286"}
+      - {id: pul-rep, etichetta: Reperibile Guasto Call Center, cellulare: "340 9933389", tag: [reperibile]}
+
+  - id: poliambulatorio-c
+    nome: Poliambulatorio Corpo C
+    ubicazione: {piano: 2°, struttura: Corpo C}
+    contatti:
+      - {id: pol-coord-gallo, etichetta: Coord. Gallo Samuele, numeri: [6568], cellulare: "345.6535261"}
+      - {id: pol-lavoro-inf, etichetta: Lavoro Infermieristico, numeri: [6421]}
+      - {id: pol-screening-ccr, etichetta: Segr. Screening Cancro Colon-Retto, numeri: [6131]}
+      - {id: pol-amb-1p, etichetta: Amb. Dietetica-Osteoporosi (1° P, interni), numeri: [6620]}
+      - {id: pol-amb-decad-1, etichetta: Amb. Dietetica-Decad. Cogn.-Geriatria (interni), numeri: [7575]}
+      - {id: pol-amb-decad-2, etichetta: Amb. Decad. Cogn.-Geriatria (interni), numeri: [7577]}
+      - {id: pol-amb-4, etichetta: Amb. N°4 Gastro-Epato-Diabeto (interni), numeri: [6507]}
+      - {id: pol-amb-5, etichetta: Amb. N°5 Gastro-Epato-Diabeto (interni), numeri: [6661]}
+      - {id: pol-amb-6, etichetta: Amb. N°6 ORL-Allergie (interni), numeri: [6563]}
+      - {id: pol-amb-7, etichetta: Amb. N°7 Audiometrista (interni), numeri: [6598]}
+      - {id: pol-amb-8, etichetta: Amb. N°8 ORL-Allergie (interni), numeri: [6695]}
+      - {id: pol-amb-9, etichetta: Amb. N°9 Otochirurgia Dr. Comacchio (interni), numeri: [6564]}
+      - {id: pol-amb-10, etichetta: Amb. N°10 Otochirurgia Dr. Comacchio (interni), numeri: [5386]}
+      - {id: pol-amb-11, etichetta: Amb. N°11 Terapia Antalgica ISTAR Dr.ssa D'Urso (interni), numeri: [3195]}
+      - {id: pol-amb-12, etichetta: Amb. N°12 Terapia Antalgica ISTAR Prof. Freo (interni), numeri: [3278]}
+      - {id: pol-amb-13, etichetta: Amb. N°13 Medicina-Med. Urgenza (interni), numeri: [6755]}
+
+  - id: piastra-multidisciplinare
+    nome: Piastra Multidisciplinare Ambulatoriale Chirurgia/Urologia
+    ubicazione: {piano: -1, struttura: Corpo F}
+    contatti:
+      - {id: pma-coord-rigo, etichetta: Coord. Rigo Daniela, numeri: [6477]}
+      - {id: pma-amb1-flebo, etichetta: Amb. 1 Flebologia (interni), numeri: [6636]}
+      - {id: pma-amb2-uro, etichetta: Amb. 2 Urologia (interni), numeri: [6569]}
+      - {id: pma-amb3-uro, etichetta: Amb. 3 Urologia (interni), numeri: [7574]}
+      - {id: pma-amb4-chir, etichetta: Amb. 4 Chirurgia (interni), numeri: [6694]}
+      - {id: pma-amb5-chir, etichetta: Amb. 5 Chirurgia (interni), numeri: [6565]}
+      - {id: pma-amb6-misto, etichetta: Amb. 6 Chirurgia/Flebo/Urologia (interni), numeri: [6635]}
+
+  - id: orl-osa
+    nome: U.O.S.D. ORL OSA
+    ubicazione: {piano: 2°, struttura: Corpo C - Ambulatori}
+    direttore: Dr. Comacchio Francesco
+    email: orl.osa@aopd.veneto.it
+    contatti:
+      - {id: orl-amb6-poletto, etichetta: Amb. Visite N°6 - Dr.ssa Poletto Elisabetta (interni), numeri: [6563]}
+      - {id: orl-amb7-audio, etichetta: Amb. Audiometria N°7 (interni), numeri: [6598]}
+      - {id: orl-amb8-fasanaro, etichetta: Amb. Visite N°8 - Dr.ssa Fasanaro Elena (interni), numeri: [6695]}
+      - {id: orl-amb9-otochir, etichetta: Amb. Otochirurgia N°9 (interni), numeri: [6564]}
+      - {id: orl-amb10-otochir, etichetta: Amb. Otochirurgia N°10 (interni), numeri: [5386]}
+
+  - id: cup-osa
+    nome: C.U.P. OSA
+    ubicazione: {struttura: Sulla Rampa d'Ingresso Principale}
+    email: cup.osa@aopd.veneto.it
+    contatti:
+      - {id: cup-resp, etichetta: Resp. Crivellari Stefania, numeri: [3909]}
+      - {id: cup-pedron, etichetta: Referente Pedron Ilenia, numeri: [1354]}
+      - {id: cup-sp1, etichetta: Sportello N°1 (interni), numeri: [5347]}
+      - {id: cup-sp2, etichetta: Sportello N°2 (interni), numeri: [5348]}
+      - {id: cup-sp3, etichetta: Sportello N°3 (interni), numeri: [5349]}
+      - {id: cup-sp4, etichetta: Sportello N°4 (interni), numeri: [5397]}
+      - {id: cup-bo, etichetta: Back Office (interni), numeri: [5398]}
+      - {id: cup-sp5, etichetta: Sportello N°5 (interni), numeri: [7547]}
+      - {id: cup-sp6, etichetta: Sportello N°6 Cassa, numeri: [6495]}
+      - {id: cup-sp7, etichetta: Sportello N°7 Cassa, numeri: [6503]}
+      - {id: cup-sp8, etichetta: Sportello N°8 (interni), numeri: [6476]}
+      - {id: cup-sp9, etichetta: Sportello N°9 Cartelle Cliniche, numeri: [6422]}
+
+  - id: anestesia-rianimazione-osa
+    nome: U.O.C. Anestesia e Rianimazione OSA
+    ubicazione: {piano: 1°, struttura: Corpo D}
+    direttore: Dr.ssa Munari Marina
+    email: anestesiarianimazione.osa@aopd.veneto.it
+    contatti:
+      - {id: ar-direttore, etichetta: Direttore Dr.ssa Munari Marina, numeri: [6654]}
+      - {id: ar-segr, etichetta: Segreteria, numeri: [6649]}
+      - {id: ar-caposala, etichetta: Caposala Schiavolin Alessandra, numeri: [6478], cellulare: "334.6652688"}
+      - {id: ar-inf, etichetta: Lavoro Infermieri, numeri: [6468]}
+      - {id: ar-cucina, etichetta: Cucina, numeri: [6467]}
+      - {id: ar-mdg, etichetta: Medico di Guardia, numeri: [6463, 6461], tag: [guardia]}
+      - {id: ar-monitoraggio, etichetta: Centrale Monitoraggio ed Emergenze, numeri: [6738, 6739, 6473], tag: [urgenza]}
+      - {id: ar-trattamenti, etichetta: Stanza Trattamenti, numeri: [6458]}
+      - {id: ar-grimaldi, etichetta: Studio Dr. Grimaldi (5° P), numeri: [8967]}
+      - {id: ar-studi-med, etichetta: Studio Medici, numeri: [6784]}
+      - {id: ar-amb-antalgica, etichetta: Amb. Terapia Antalgica (Lun/Gio 8-13:30) - Dr. Agnoli/Palumbo/Tramarin, numeri: [6662]}
+
+  - id: istar
+    nome: U.O.C. Istituto di Anestesia e Rianimazione (ISTAR)
+    ubicazione: {piano: 2°, struttura: AOPD e OSA}
+    direttore: Prof. Navalesi Paolo
+    contatti:
+      - {id: istar-segr, etichetta: Segreteria Amb. Terapia Antalgica, numeri: [3193]}
+      - {id: istar-durso, etichetta: Dr.ssa D'Urso Giuseppina (Amb. N°11 OSA, interni), numeri: [3195]}
+      - {id: istar-freo, etichetta: Prof. Freo Ulderico (Amb. N°12 OSA, interni), numeri: [3278]}
+
+  - id: piastra-cardio-angio-orto
+    nome: Piastra Cardio/Angio/Ortopedica
+    ubicazione: {piano: rialzato, struttura: Corpo C}
+    contatti:
+      - {id: pcao-segr, etichetta: Segreteria, numeri: [6623, 6624]}
+      - {id: pcao-coord-foresti, etichetta: Coord. Foresti Dina, numeri: [7506], cellulare: "334.6652693"}
+      - {id: pcao-amb-card, etichetta: Ambulatori Cardiologia (interni), numeri: [6766, 6535, 6782]}
+      - {id: pcao-amb-angio, etichetta: Amb. Angiologia (interni), numeri: [7530]}
+      - {id: pcao-amb-orto, etichetta: Ambulatori Ortopedia (interni), numeri: [7573, 7507]}
+
+  - id: chirurgia-generale-osa
+    nome: U.O.C. Chirurgia Generale OSA
+    ubicazione: {piano: 3°, struttura: Corpo D}
+    direttore: Dr. Sarzo Giacomo
+    contatti:
+      - {id: cg-direttore, etichetta: Direttore Dr. Sarzo Giacomo, numeri: [5387]}
+      - {id: cg-segr-gobbo, etichetta: Segreteria - Gobbo Monica, numeri: [6652]}
+      - {id: cg-coord-meneghello, etichetta: Coord. Inf. - Dr.ssa Meneghello Elisa, numeri: [6777, 6412], cellulare: "366.6697870"}
+      - {id: cg-inf-3p-ord, etichetta: Inf. 3° P Ricoveri Ordinari, numeri: [6407, 6414]}
+      - {id: cg-inf-3p, etichetta: Infermieri 3° P, numeri: [6578]}
+      - {id: cg-cucina, etichetta: Cucina, numeri: [6415]}
+      - {id: cg-amb-rep, etichetta: Amb. Reparto 3° P (interni), numeri: [6485]}
+      - {id: cg-amb-visite, etichetta: Amb. Visite (interni), numeri: [6694]}
+      - {id: cg-mdg, etichetta: Medico di Guardia (10° P), numeri: [6776], cellulare: "329.2606958", tag: [guardia]}
+      - {id: cg-so, etichetta: Sala Operatoria 1° P (interni), numeri: [6689]}
+      - {id: cg-andriollo, etichetta: Studio Dr.ssa Andriollo Marta, numeri: [6606]}
+      - {id: cg-bressan, etichetta: Studio Dr.ssa Bressan / Dr. Vittadello, numeri: [5367]}
+      - {id: cg-faccio, etichetta: Studio Dr. Faccio Luca, numeri: [6748]}
+      - {id: cg-frasson, etichetta: Studio Dr. Frasson Alvise, numeri: [6137]}
+      - {id: cg-orsini, etichetta: Studio Dr. Orsini Camillo, numeri: [6542]}
+      - {id: cg-mammano, etichetta: Studio Dr. Mammano Enzo, numeri: [7596]}
+      - {id: cg-passuello, etichetta: Studio Dr. Passuello Nicola, numeri: [6607]}
+      - {id: cg-rella, etichetta: Studio Dr. Rella Antonio, numeri: [6133]}
+      - {id: cg-tessari, etichetta: Studio Dr.ssa Tessari Emanuela, numeri: [6686]}
+      - {id: cg-studi-med, etichetta: Studio Medici, numeri: [6747]}
+
+  - id: day-week-surgery
+    nome: Day Surgery / Week Surgery Multidisciplinare
+    ubicazione: {piano: 1°, struttura: Corpo D}
+    contatti:
+      - {id: dws-segr-flebo, etichetta: Segr. Day/Week Surgery (Flebologia), numeri: [5671, 5663]}
+      - {id: dws-segr-dh, etichetta: Segr. Day Hospital, numeri: [6680, 6442, 6673]}
+      - {id: dws-coord-meneghello, etichetta: Coord. Inf. Dr.ssa Meneghello Elisa, numeri: [5388]}
+      - {id: dws-inf, etichetta: Stanza Lavoro Infermieri, numeri: [6795, 6441]}
+      - {id: dws-cucina, etichetta: Cucina, numeri: [6217]}
+      - {id: dws-pavei, etichetta: Studio Dr.ssa Pavei Patrizia, numeri: [5696]}
+      - {id: dws-stimamiglio, etichetta: Studio Dr. Stimamiglio Pierluigi, numeri: [4499]}
+      - {id: dws-zingales, etichetta: Studio Dr.ssa Zingales Francesca, numeri: [5702]}
+
+  - id: emodialisi-osa
+    nome: U.O.S. Emodialisi OSA (afferente Nefrologia AOUP)
+    ubicazione: {piano: 2°, struttura: Corpo G}
+    direttore: Dr. Scaparrotta Giuseppe
+    email: dialisi.osa@aopd.veneto.it
+    contatti:
+      - {id: emo-resp, etichetta: Resp. Dr. Scaparrotta Giuseppe, numeri: [5340]}
+      - {id: emo-segr-tarallo, etichetta: Segr./Archivio - Tarallo Bianca, numeri: [5339]}
+      - {id: emo-coord-celon, etichetta: Coord. Dialisi - Dr. Celon Nicola, numeri: [5337], cellulare: "335.7766629"}
+      - {id: emo-inf-farm, etichetta: Studio Inf. e Farmacia Dialisi, numeri: [5330]}
+      - {id: emo-tec, etichetta: Studio Tecnici Dialisi, numeri: [5335], cellulare: "335.810327"}
+      - {id: emo-belvedere, etichetta: Sala Dialisi Belvedere, numeri: [5333]}
+      - {id: emo-giotto, etichetta: Sala Dialisi Giotto/Galilei, numeri: [6526]}
+      - {id: emo-nettuno, etichetta: Sala Dialisi Nettuno, numeri: [5336]}
+      - {id: emo-fragasso, etichetta: Studio Dr. Fragasso / Dr. Pini, numeri: [5341]}
+      - {id: emo-visite-aopd, etichetta: Visite Divisionali (solo in AOPD), numeri: [3273]}
+
+  - id: dietetica-osa
+    nome: U.O.C. Dietetica e Nutrizione Clinica OSA
+    ubicazione: {piano: 10°, struttura: Corpo D}
+    direttore: Dr. Francini Pesenti Francesco (f.f., c/o AOPD)
+    contatti:
+      - {id: diet-direttore, etichetta: Direttore F.F. Dr. Francini Pesenti (c/o AOPD), numeri: [2501]}
+      - {id: diet-segr, etichetta: Segr. Direzione (c/o AOPD), numeri: [2345]}
+      - {id: diet-tognana, etichetta: Studio Dr.ssa Tognana Giulia, numeri: [6529]}
+      - {id: diet-boscolo, etichetta: Studio Dietista Boscolo Momolina / Cazzola, numeri: [6527]}
+      - {id: diet-zorzin, etichetta: Studio Dietista Zorzin Chiara, numeri: [7560]}
+      - {id: diet-amb, etichetta: Ambulatorio (interni), numeri: [6620]}
+
+  - id: farmacia-osa
+    nome: Farmacia Ospedaliera OSA
+    ubicazione: {piano: 3°, struttura: Corpo A}
+    direttore: Dr.ssa Venturini Francesca
+    contatti:
+      - {id: farm-direttore, etichetta: Resp. Dr.ssa Venturini Francesca (c/o AOP), numeri: [2820]}
+      - {id: farm-segr, etichetta: Segreteria Via Giustiniani, numeri: [2820]}
+      - {id: farm-bolcato, etichetta: Distrib. Diretta/Dimissioni - Dr.ssa Bolcato Jenny, numeri: [7589]}
+      - {id: farm-mag, etichetta: Magazzino Ricevimento Merci, numeri: [7588]}
+      - {id: farm-mag-aopd, etichetta: Magazzino c/o AOPD Via Giustiniani, numeri: [2816]}
+
+  - id: gastroenterologia-osa
+    nome: U.O.C. Gastroenterologia OSA
+    ubicazione: {piano: 2° e 10°, struttura: Corpo D}
+    direttore: Dr. Rosa Rizzotto Erik
+    email: gastro.osa@aopd.veneto.it
+    contatti:
+      - {id: gastro-direttore, etichetta: Direttore Dr. Rosa Rizzotto Erik (10° P), numeri: [6456]}
+      - {id: gastro-segr-sambo, etichetta: Segreteria - Sambo Fausto (10° P), numeri: [6553]}
+      - {id: gastro-screening, etichetta: Segr. Screening Cancro Colon-Retto (Numero Verde 800 859 977), numeri: [6131], email: screening.ccr@aopd.veneto.it}
+      - {id: gastro-ancona, etichetta: Studio Dr. Ancona Fabio, numeri: [7522]}
+      - {id: gastro-caroli, etichetta: Studio Dr. Caroli Diego, numeri: [7520]}
+      - {id: gastro-giacon, etichetta: Studio Dr.ssa Giacon Gabriella, numeri: [7521]}
+      - {id: gastro-guido, etichetta: Studio Dr. Guido Ennio, numeri: [7524]}
+      - {id: gastro-peraro, etichetta: Studio Dr.ssa Peraro Laura, numeri: [7525]}
+      - {id: gastro-polato, etichetta: Studio Dr.ssa Polato Francesca, numeri: [5350]}
+      - {id: gastro-rosarizz, etichetta: Studio Dr. Rosa Rizzotto Erik, numeri: [7523]}
+      - {id: gastro-coord-bordin, etichetta: Reparto Coord. Bordin Maria Rosa, numeri: [6651], cellulare: "334.6834483"}
+      - {id: gastro-inf, etichetta: Infermieri, numeri: [6650]}
+      - {id: gastro-endo-coord, etichetta: Endoscopia 2° P - Coord. Dr. Gallo Samuele (interni), numeri: [6568], cellulare: "345.6535261"}
+      - {id: gastro-endo-inf, etichetta: Endoscopia - Lavoro Infermieristico, numeri: [6566]}
+      - {id: gastro-endo-1, etichetta: Sala Endoscopica 1 (interni), numeri: [5381]}
+      - {id: gastro-endo-2, etichetta: Sala Endoscopica 2 (interni), numeri: [5382]}
+      - {id: gastro-endo-3, etichetta: Sala Endoscopica 3 (interni), numeri: [6446]}
+      - {id: gastro-endo-risveglio, etichetta: Sala Risveglio (interni), numeri: [5380]}
+
+  - id: geriatria-osa
+    nome: U.O.C. Geriatria OSA
+    ubicazione: {piano: 7°, struttura: Corpo D}
+    direttore: Dr. Lo Storto Mario
+    email: geriatria.osa@aopd.veneto.it
+    contatti:
+      - {id: ger-direttore, etichetta: Direttore Dr. Lo Storto Mario, numeri: [5300]}
+      - {id: ger-segr-lapenda, etichetta: Segreteria - Lapenda Rosanna (10° P), numeri: [5301]}
+      - {id: ger-coord-garavello, etichetta: Coord. Garavello Laura, numeri: [5305], cellulare: "333.3333949"}
+      - {id: ger-inf, etichetta: Stanza Lavoro Infermieri, numeri: [5304], email: geriatriadegenze.osa@aopd.veneto.it}
+      - {id: ger-stanza-med-cell, etichetta: Stanza Medici Reparto, numeri: [5303], cellulare: "334.6652686"}
+      - {id: ger-stanza-med, etichetta: Stanza Medici Reparto, numeri: [6437]}
+      - {id: ger-cucina, etichetta: Cucina, numeri: [5307]}
+      - {id: ger-bano, etichetta: Studio Dr.ssa Bano Giulia, numeri: [7580]}
+      - {id: ger-catanzaro, etichetta: Studio Dr.sse Catanzaro Sara / Costa Gabriella, numeri: [6708]}
+      - {id: ger-pivetta, etichetta: Studio Dr.ssa Pivetta Botta Ilaria, numeri: [6709]}
+      - {id: ger-seresin, etichetta: Studio Dr.ssa Seresin Chiara, numeri: [5375]}
+      - {id: ger-studi-med, etichetta: Studio Medici, numeri: [6455]}
+
+  - id: clinica-geriatrica-osa
+    nome: U.O.C. Geriatria (ex Clinica Geriatrica AOPD)
+    ubicazione: {piano: 5°, struttura: Corpo D}
+    direttore: Prof. Sergi Giuseppe
+    email: clinica.geriatrica@aopd.veneto.it
+    contatti:
+      - {id: cger-direttore, etichetta: Direttore Prof. Sergi Giuseppe, numeri: [8980]}
+      - {id: cger-segr-assist, etichetta: Segreteria Assistenziale, numeri: [8956]}
+      - {id: cger-segr-univ, etichetta: Segreteria Universitaria, numeri: [2170]}
+      - {id: cger-coord-caenaro, etichetta: Coord. Caenaro Marta, numeri: [8958]}
+      - {id: cger-inf, etichetta: Infermieri, numeri: [8981]}
+      - {id: cger-bertocco, etichetta: Studio Dr.ssa Bertocco Anna (8° P OSA), numeri: [8942]}
+      - {id: cger-coin-osa, etichetta: Studio Dr.ssa Coin Alessandra (OSA), numeri: [6756]}
+      - {id: cger-coin-mb, etichetta: Studio Dr.ssa Coin Alessandra (6° MB), numeri: [8949]}
+      - {id: cger-curreri, etichetta: Studio Dr.ssa Curreri / Dr. Zanforlini, numeri: [6764]}
+      - {id: cger-derui, etichetta: Studio Dr.sse De Rui Marina / Gasparini Giulia, numeri: [8941]}
+      - {id: cger-studi-med, etichetta: Studio Medici, numeri: [6325, 6328, 8966, 1258]}
+
+  - id: gruppo-operatorio-osa
+    nome: Gruppo Operatorio OSA
+    ubicazione: {piano: 1°, struttura: Corpo D}
+    contatti:
+      - {id: go-coord-facco, etichetta: Coord. Dr.ssa Facco Claudia (interni), numeri: [6687], cellulare: "349.7569830"}
+      - {id: go-gestione, etichetta: Locale Gestione Risorse, numeri: [6687, 6438]}
+      - {id: go-gessi, etichetta: Sala Gessi, numeri: [6724]}
+      - {id: go-ster, etichetta: Sterilizzazione, numeri: [6688]}
+      - {id: go-so-ocul-orto, etichetta: SO Oculistica - Ortopedia (interni), numeri: [6692]}
+      - {id: go-reg-orto, etichetta: Sala Registrazione Interventi Ortopedia (interni), numeri: [6727]}
+      - {id: go-so-chir-uro, etichetta: SO Chirurgia - Urologia (interni), numeri: [6689]}
+
+  - id: ospedale-comunita
+    nome: Ospedale di Comunità (Ex Lungodegenza)
+    ubicazione: {piano: 8° e 9°, struttura: Corpo D}
+    direttore: Dr. Simonato Matteo
+    email: odcsegreteria.osa@aopd.veneto.it
+    contatti:
+      - {id: odc-resp, etichetta: Resp. Clinico Dr. Simonato Matteo, cellulare: "331.2632376"}
+      - {id: odc-segr-9p, etichetta: Segreteria 9° P - Indelicato Giovanni Alessio, numeri: [8968]}
+      - {id: odc-9p-coord, etichetta: 9° P - Coord. Dr.ssa Schiavolin Roberta, numeri: [8460]}
+      - {id: odc-9p-case-mgr, etichetta: 9° P - Inf. Case Manager, numeri: [8969]}
+      - {id: odc-9p-inf, etichetta: 9° P - Stanza Infermieri, numeri: [8977]}
+      - {id: odc-corradin, etichetta: Studio Dr.ssa Corradin Maria Luisa, numeri: [7566]}
+      - {id: odc-demarinis, etichetta: Studio Dr.ssa De Marinis Elisabetta, numeri: [6326]}
+      - {id: odc-dianin, etichetta: Studio Dr.ssa Dianin Marta, numeri: [8965]}
+      - {id: odc-pisent, etichetta: Studio Dr.ssa Pisent Claudia, numeri: [8969]}
+      - {id: odc-8p-coord, etichetta: 8° P - Coordinatrice, numeri: [6759]}
+      - {id: odc-8p-case-mgr, etichetta: 8° P - Inf. Case Manager, numeri: [8982]}
+      - {id: odc-8p-inf, etichetta: 8° P - Stanza Infermieri, numeri: [6715, 6716]}
+      - {id: odc-8p-studi, etichetta: 8° P - Studio Medici, numeri: [6710]}
+
+  - id: medicina-laboratorio-osa
+    nome: U.O.C. Medicina di Laboratorio OSA
+    ubicazione: {piano: 3° e PR, struttura: Corpo A}
+    direttore: Prof.ssa Montagnana Martina
+    email: osa.lab@aopd.veneto.it
+    contatti:
+      - {id: lab-segr-int, etichetta: Segreteria (3° P, interni), numeri: [7543]}
+      - {id: lab-urgenze, etichetta: Lab. Urgenze 3° P (interni), numeri: [6613], tag: [urgenza]}
+      - {id: lab-stroke, etichetta: Percorso Stroke per PS (interni), numeri: [6615], tag: [urgenza]}
+      - {id: lab-laboratorio, etichetta: Laboratorio, numeri: [6617]}
+      - {id: lab-pc, etichetta: Lab. Postazione PC (3° P), numeri: [6616]}
+      - {id: lab-giacomini, etichetta: Studio Dr.ssa Giacomini Alda, numeri: [6611]}
+      - {id: lab-studi-med, etichetta: Studio Medici, numeri: [6610]}
+      - {id: lab-prelievi-segr, etichetta: Punto Prelievi - Segreteria (L/V 12-15, Sab 11-13), numeri: [6619], email: lab.analisiosa@aopd.veneto.it}
+      - {id: lab-prelievi-int, etichetta: Segr. Punto Prelievi (interni), numeri: [6521]}
+      - {id: lab-amb1, etichetta: Amb. Prelievi N°1 (interni), numeri: [5362]}
+      - {id: lab-amb2, etichetta: Amb. Prelievi N°2 (interni), numeri: [5377]}
+      - {id: lab-pre-a, etichetta: Amb. Pre-Ricovero A (interni), numeri: [6774]}
+      - {id: lab-pre-b, etichetta: Amb. Pre-Ricovero B (interni), numeri: [5329]}
+
+  - id: medicina-urgenza-ipertensione
+    nome: U.O.C. Medicina d'Urgenza (Centro Reg. Ipertensione Arteriosa)
+    ubicazione: {piano: 2° Corpo D OSA / 8° Policlinico AOPD}
+    direttore: Prof. Ageno Walter
+    contatti:
+      - {id: mu-direttore, etichetta: Direttore Prof. Ageno Walter (8° P Policlinico), numeri: [7821]}
+      - {id: mu-segr, etichetta: Segreteria (8° P Policlinico), numeri: [2279]}
+      - {id: mu-coord, etichetta: Guardiola Caposala (2° P OSA), numeri: [6651]}
+      - {id: mu-inf, etichetta: Stanza Infermieri (2° P OSA), numeri: [6650]}
+      - {id: mu-med, etichetta: Stanza Medici (2° P OSA), numeri: [6653]}
+      - {id: mu-semi, etichetta: Degenza Semi Intensiva (2° P OSA), numeri: [6424]}
+      - {id: mu-ceolotto, etichetta: Studio Prof. Ceolotto / Dr. Rossitto (8° P Policlinico), numeri: [1748]}
+      - {id: mu-seccia, etichetta: Studio Prof.ssa Seccia Teresa Maria (8° P Policlinico), numeri: [7829]}
+      - {id: mu-lenzini, etichetta: Studio Dr.ssa Lenzini Livia (7° P Policlinico), numeri: [7806]}
+      - {id: mu-lab-ceolotto, etichetta: Laboratorio Prof. Ceolotto (Via Orus), numeri: [2263]}
+      - {id: mu-lab-faggin, etichetta: Lab. Biologia Vascolare Dr.ssa Faggin (Via Orus), numeri: [1867]}
+      - {id: mu-amb-visite, etichetta: Amb. Visite (Palazzina Amb. Policlinico PT), numeri: [7174]}
+      - {id: mu-amb-eco, etichetta: Amb. Ecocardiografia (interni, 2° P OSA), numeri: [6755]}
+
+  - id: medicina-generale-osa
+    nome: U.O.C. Medicina Generale OSA
+    ubicazione: {piano: 6° e 10°, struttura: Corpo D}
+    direttore: Dr. Saller Alois
+    email: medicina.osa@aopd.veneto.it
+    contatti:
+      - {id: mg-direttore, etichetta: Direttore Dr. Saller Alois, numeri: [6761]}
+      - {id: mg-segr-cortella, etichetta: Segreteria 10° P - Cortella Giuliana, numeri: [6763]}
+      - {id: mg-coord-nardo, etichetta: Coord. Inf. - Dr.ssa Nardo Elisa, numeri: [6742], email: medicinaosa.degenze@aopd.veneto.it}
+      - {id: mg-guardiola-inf, etichetta: Guardiola Infermieri, numeri: [6743, 7500]}
+      - {id: mg-cucina, etichetta: Cucina, numeri: [6744]}
+      - {id: mg-eco-mdg, etichetta: Amb. Ecodoppler e MdG, numeri: [6675], cellulare: "329.2606957", tag: [guardia]}
+      - {id: mg-studi-rep, etichetta: Studio Medici Reparto (6° P), numeri: [6444, 6746]}
+      - {id: mg-amabile, etichetta: Studio Dr.ssa Amabile Annalisa (10° P), numeri: [6432]}
+      - {id: mg-barban, etichetta: Studio Dr.ssa Barban Elena (10° P), numeri: [6742]}
+      - {id: mg-dipasquale, etichetta: Studio Dr.ssa Di Pasquale Irene (10° P), numeri: [7503]}
+      - {id: mg-franz, etichetta: Studio Dr.ssa Franz Francesca (10° P), numeri: [6760]}
+      - {id: mg-grimoldi, etichetta: Studio Dr. Grimoldi Federico (10° P), numeri: [6675]}
+      - {id: mg-pepiciello, etichetta: Studio Dr.ssa Pepiciello Anna Maria (10° P), numeri: [6762]}
+      - {id: mg-rigon, etichetta: Studio Dr.ssa Rigon Nicoletta (10° P), numeri: [6676]}
+      - {id: mg-rosso, etichetta: Studio Dr.ssa Rosso Federica (10° P), numeri: [6765]}
+      - {id: mg-zanin, etichetta: Studio Dr.ssa Zanin Lucia (10° P), numeri: [7504]}
+
+  - id: riabilitazione-ortopedica-osa
+    nome: U.O.C. Riabilitazione Ortopedica OSA - Servizio FKT
+    ubicazione: {piano: rialzato, struttura: Corpo D}
+    direttore: Prof. Masiero Stefano (c/o AOPD)
+    contatti:
+      - {id: rio-direttore, etichetta: Direttore Prof. Masiero Stefano (c/o AOPD), numeri: [1270]}
+      - {id: rio-acc-est, etichetta: Acc. FKT Esterni, numeri: [6582]}
+      - {id: rio-acc-int, etichetta: Acc. FKT (interni), numeri: [6583]}
+      - {id: rio-coord, etichetta: Studio Coordinatore, numeri: [7510]}
+      - {id: rio-amb1, etichetta: Ambulatorio N°1, numeri: [6581]}
+      - {id: rio-amb2-timar, etichetta: Amb. N°2 Dr.ssa Timar J., numeri: [6585]}
+      - {id: rio-amb4, etichetta: Ambulatorio N°4, numeri: [6786]}
+      - {id: rio-spec, etichetta: FKT Stanza Specializzandi, numeri: [5351, 6787]}
+      - {id: rio-pal1, etichetta: Palestra N°1, numeri: [7511]}
+      - {id: rio-pal2, etichetta: Palestra N°2, numeri: [7512]}
+      - {id: rio-pal3, etichetta: Palestra N°3, numeri: [6693]}
+      - {id: rio-pal4, etichetta: Palestra N°4, numeri: [7514]}
+      - {id: rio-pal5, etichetta: Palestra N°5, numeri: [6584]}
+      - {id: rio-piscina, etichetta: Piscina, numeri: [7513]}
+      - {id: rio-logoped, etichetta: FKT Logopedia, numeri: [6713]}
+
+  - id: suem-osa
+    nome: SUEM - Servizi Interni OSA
+    ubicazione: {piano: rialzato, struttura: Corridoio Corpo D}
+    contatti:
+      - {id: suem-int, etichetta: SUEM (solo interni), numeri: [6573]}
+
+  - id: cardiologia-2-osa
+    nome: U.O.C. Cardiologia 2 OSA
+    ubicazione: {piano: 1°, struttura: Corpo D}
+    direttore: Dr.ssa Leoni Loira
+    contatti:
+      - {id: card-segr, etichetta: Segreteria, numeri: [1332]}
+      - {id: card-coord, etichetta: Coord. Inf. Ambulatorio, numeri: [7506]}
+
+  - id: neurologia-osa
+    nome: U.O.C. Neurologia OSA
+    ubicazione: {piano: 4°}
+    direttore: Dr.ssa Basile Annamaria (f.f.)
+    contatti:
+      - {id: neuro-direttore, etichetta: Direttore F.F. Dr.ssa Basile Annamaria, numeri: [6699, 6494]}
+      - {id: neuro-segr-frasson, etichetta: Segreteria - Frasson Silvia (4° P), numeri: [5314, 5315]}
+      - {id: neuro-coord-veronese, etichetta: Coord. Veronese Mayra, numeri: [5309]}
+      - {id: neuro-inf, etichetta: Stanza Infermieri, numeri: [5308]}
+      - {id: neuro-amb-rep, etichetta: Amb. Reparto, numeri: [5326]}
+      - {id: neuro-eeg, etichetta: Amb. 1 EEG, numeri: [5323]}
+      - {id: neuro-emg, etichetta: Amb. 2 EMG, numeri: [5324]}
+      - {id: neuro-ecodoppler, etichetta: Amb. 3 Stanza Ecodoppler, numeri: [6427]}
+      - {id: neuro-amb4, etichetta: Amb. 4 Visite, numeri: [5926]}
+      - {id: neuro-stanza-med, etichetta: Stanza Medici di Reparto, numeri: [5313]}
+      - {id: neuro-mdg, etichetta: Medico di Guardia, cellulare: "334.6652687", tag: [guardia]}
+      - {id: neuro-bruno, etichetta: Studio Dr.ssa Bruno Martina / Dr. Semplicini Claudio, numeri: [5317]}
+      - {id: neuro-atzori, etichetta: Studio Dr. Atzori M., numeri: [5322]}
+      - {id: neuro-santelli, etichetta: Studio Dr. Santelli L., numeri: [5320]}
+      - {id: neuro-andrigo, etichetta: Studio Dr.ssa Andrigo C., numeri: [5354]}
+      - {id: neuro-nardetto, etichetta: Studio Dr.ssa Nardetto / Dr. Zoccarato, numeri: [5318]}
+      - {id: neuro-ferrati, etichetta: Studio Dr.ssa Ferrati C., numeri: [6494]}
+      - {id: neuro-biblio, etichetta: Biblioteca, numeri: [5327]}
+
+  - id: oculistica-osa
+    nome: U.O.C. Oculistica OSA
+    ubicazione: {piano: -1 e 2°, struttura: Corpo H}
+    direttore: Dr. Galan Alessandro
+    contatti:
+      - {id: ocu-direttore, etichetta: Direttore Dr. Galan Alessandro, numeri: [6730]}
+      - {id: ocu-segr, etichetta: Segreteria (2° P) - L 10-13, Mar/Gio/Ven 9-12, numeri: [6729]}
+      - {id: ocu-so-corpo-c, etichetta: Sala Interventi Corpo C (interni), numeri: [6685]}
+      - {id: ocu-amb-visite, etichetta: Ambulatori Visita (interni), numeri: [6622]}
+      - {id: ocu-coord-franchin, etichetta: Coord. Franchin Andrea, numeri: [6203, 6204], cellulare: "338.6510588"}
+      - {id: ocu-prenot-cataratta, etichetta: Prenotazione Visite Specialistiche Cataratta (L/V 8-11:30), numeri: [6793]}
+      - {id: ocu-info-referti, etichetta: Informazioni Utenti su Referti, numeri: [6208]}
+      - {id: ocu-oct-ps, etichetta: OCT Diagnostica PS (interni), numeri: [6209], tag: [urgenza]}
+      - {id: ocu-ortottica, etichetta: Ortottica (interni), numeri: [6660]}
+      - {id: ocu-avarello, etichetta: Studio Dr. Avarello Antonino / Dr.ssa Babighian Silvia, numeri: [6537, 6538]}
+      - {id: ocu-sala-riun, etichetta: Sala Riunioni, numeri: [6539]}
+      - {id: ocu-amb6, etichetta: Amb. N°6 (interni), numeri: [6546]}
+      - {id: ocu-amb8, etichetta: Amb. N°8 (interni), numeri: [6127]}
+      - {id: ocu-amb4, etichetta: Amb. N°4 (interni), numeri: [6202]}
+      - {id: ocu-amb2, etichetta: Amb. N°2 (interni), numeri: [7576]}
+      - {id: ocu-laser, etichetta: Laser Stanza 14 (interni), numeri: [6210]}
+      - {id: ocu-fluorangio, etichetta: Fluorangiografia Stanza 13 (interni), numeri: [6211]}
+      - {id: ocu-amb10, etichetta: Amb. N°10 (interni), numeri: [6445]}
+      - {id: ocu-amb11, etichetta: Amb. N°11 (interni), numeri: [6206]}
+      - {id: ocu-amb12, etichetta: Amb. N°12 (interni), numeri: [6205]}
+      - {id: ocu-amb-ps, etichetta: Amb. Pronto Soccorso, numeri: [6209], tag: [urgenza]}
+
+  - id: ortopedia-osa
+    nome: U.O.C. Ortopedia e Traumatologia OSA
+    ubicazione: {struttura: c/o Chirurgia, Geriatria, Day/Week Surgery, Urologia}
+    direttore: Dr. Berizzi Antonio
+    contatti:
+      - {id: ort-direttore, etichetta: Direttore Dr. Berizzi Antonio, numeri: [6758]}
+      - {id: ort-segr-est, etichetta: Segreteria (10-12), numeri: [6671]}
+      - {id: ort-segr-int, etichetta: Segreteria (interni, 5° P), numeri: [6439, 6403]}
+      - {id: ort-coord-meneghello, etichetta: Coord. Inf. - Dr.ssa Meneghello Elisa, numeri: [5388]}
+      - {id: ort-mdg-cell, etichetta: Medico di Guardia (14-20), cellulare: "334.6834453", tag: [guardia]}
+      - {id: ort-rep-breve, etichetta: Ortopedico di Reparto, breve: 97168, cellulare: "334.6059514"}
+      - {id: ort-pavan, etichetta: Studio Dr. Pavan Davide / Dr. Signori Riccardo, numeri: [6768]}
+      - {id: ort-pagliara, etichetta: Studio Dr. Pagliara Tommaso, numeri: [6797]}
+      - {id: ort-neishaboori, etichetta: Studio Dr. Neishaboori / Canapeti / Mosele, numeri: [6633]}
+      - {id: ort-romanato, etichetta: Studio Dr.ssa Romanato Giovanna, numeri: [6714]}
+      - {id: ort-salar, etichetta: Studio Dr. Salar / Dr. Concheri, numeri: [6704]}
+
+  - id: pronto-soccorso-osa
+    nome: Pronto Soccorso OSA
+    ubicazione: {piano: rialzato}
+    direttore: Dr.ssa Pizziol Alessandra
+    contatti:
+      - {id: ps-direttore, etichetta: Direttore Dr.ssa Pizziol Alessandra (interni), numeri: [6562]}
+      - {id: ps-segr-dir, etichetta: Segr. Direttore, numeri: [6588]}
+      - {id: ps-triage, etichetta: Triage Accettazione, numeri: [6571], tag: [urgenza]}
+      - {id: ps-coord-massari, etichetta: Coord. Dr. Massari Tommaso, numeri: [6575]}
+      - {id: ps-amb1, etichetta: Amb. Visite N°1 (interni), numeri: [6586]}
+      - {id: ps-amb2, etichetta: Amb. Visite N°2 (interni), numeri: [6570]}
+      - {id: ps-amb3, etichetta: Amb. Visite N°3 (interni), numeri: [6576]}
+      - {id: ps-pizziol, etichetta: Studio Dr.ssa Pizziol Alessandra, numeri: [6562]}
+      - {id: ps-area-critica, etichetta: Area Critica, numeri: [5369], tag: [urgenza]}
+      - {id: ps-gessi, etichetta: Sala Gessi, numeri: [6572], cellulare: "345.7079314"}
+
+  - id: psichiatria-osa-1
+    nome: Psichiatria OSA - Degenze 1
+    ubicazione: {piano: rialzato, struttura: Corpo H}
+    direttore: Prof.ssa Favaro Angela
+    contatti:
+      - {id: psi1-segr, etichetta: Segreteria, numeri: [5715]}
+      - {id: psi1-caposala, etichetta: Caposala Mazzocco Rosalia, numeri: [7551], cellulare: "338.6143943"}
+      - {id: psi1-inf, etichetta: Infermieri, numeri: [5718, 5719]}
+      - {id: psi1-antonielli, etichetta: Dr. Antonielli Romanini Fausto, numeri: [5724]}
+      - {id: psi1-ferranti, etichetta: Dr.ssa Ferranti Roberta, numeri: [5725]}
+      - {id: psi1-nassuato, etichetta: Dr. Nassuato Mario, numeri: [7554]}
+      - {id: psi1-amb, etichetta: Ambulatori (interni), numeri: [7552, 7553]}
+
+  - id: psichiatria-osa-2
+    nome: Psichiatria OSA - Degenze 2
+    ubicazione: {piano: 1°, struttura: Corpo H}
+    direttore: Prof.ssa Favaro Angela
+    contatti:
+      - {id: psi2-segr-maione, etichetta: Segreteria - Maione Antonia, numeri: [3801]}
+      - {id: psi2-miotto, etichetta: Dr. Miotto Giovanni, numeri: [3806]}
+      - {id: psi2-dallacosta, etichetta: Studio Dr.ssa Dalla Costa Eva, numeri: [3804]}
+      - {id: psi2-aula, etichetta: Aula Riunioni, numeri: [7562]}
+      - {id: psi2-inf, etichetta: Stanza Infermieri, numeri: [3805, 7561]}
+      - {id: psi2-caposala-mazzocco, etichetta: Capo Sala Mazzocco Rosalia, numeri: [3811]}
+      - {id: psi2-castagna, etichetta: Dr. Castagna Alberto, numeri: [7752]}
+      - {id: psi2-amb, etichetta: Ambulatori (interni), numeri: [3822, 1446]}
+
+  - id: radiologia-diagnostica-osa
+    nome: U.O.S.D. Radiologia Diagnostica OSA
+    ubicazione: {piano: rialzato}
+    direttore: Prof. Stramare Roberto
+    email: radiologia.osa@aopd.veneto.it
+    contatti:
+      - {id: rad-direttore, etichetta: Direttore Prof. Stramare Roberto, numeri: [6590]}
+      - {id: rad-acc, etichetta: Accettazione, numeri: [6591]}
+      - {id: rad-acc-int, etichetta: Accettazione Interni, numeri: [5366]}
+      - {id: rad-eco-1, etichetta: Stanza Ecografia N°1, numeri: [6597]}
+      - {id: rad-eco-2, etichetta: Stanza Ecografia N°2, numeri: [6750]}
+      - {id: rad-tac, etichetta: TAC, numeri: [6596, 5352]}
+      - {id: rad-lettura, etichetta: Sala Lettura, numeri: [5376]}
+      - {id: rad-tac-med, etichetta: TAC Medici, numeri: [6595]}
+      - {id: rad-densito, etichetta: Densitometro (Clinica Geriatrica AOPD), numeri: [8490]}
+      - {id: rad-capotec-lazzarin, etichetta: Capo Tecnico Lazzarin Damiano, numeri: [6594]}
+      - {id: rad-tec-ps, etichetta: Stanza Tecnici Diagnostica PS, numeri: [6593]}
+      - {id: rad-diag, etichetta: Diagnostica Radiologica, numeri: [6677]}
+      - {id: rad-rmn, etichetta: Risonanza Magnetica, numeri: [6587]}
+      - {id: rad-rx-ps, etichetta: Stanza RX 4 PS, numeri: [6128, 6129]}
+
+  - id: urologia-osa
+    nome: U.O.C. Urologia OSA
+    ubicazione: {piano: 3°, struttura: Corpo D}
+    direttore: Prof. Dal Moro Fabrizio (c/o AOPD)
+    contatti:
+      - {id: uro-direttore, etichetta: Direttore Prof. Dal Moro Fabrizio (c/o AOPD), numeri: [8742]}
+      - {id: uro-segr-calore, etichetta: Segreteria - Calore Patrizia, numeri: [6408]}
+      - {id: uro-segr-ciutac, etichetta: Segreteria - Ciutac Martinela, numeri: [6413]}
+      - {id: uro-coord-meneghello, etichetta: Coord. Inf. - Dr.ssa Meneghello Elisa, numeri: [6412, 6777]}
+      - {id: uro-inf, etichetta: Infermieri, numeri: [6407, 6414]}
+      - {id: uro-guardiola, etichetta: Guardiola, numeri: [6578]}
+      - {id: uro-cucina, etichetta: Cucina, numeri: [6415]}
+      - {id: uro-so-1, etichetta: Sala Operatoria 1° P (interni), numeri: [6689]}
+      - {id: uro-so-2, etichetta: Sala Operatoria 1° P (interni), numeri: [6724]}
+      - {id: uro-amb8-semi, etichetta: Amb. Visite N°8 Seminterrato (interni), numeri: [6569]}
+      - {id: uro-cs-amb, etichetta: C.S. Amb. Piano -1 - Rigo Daniela, numeri: [6477]}
+      - {id: uro-fracalanza, etichetta: Studio Dr.ssa Fracalanza S., numeri: [6410]}
+      - {id: uro-studi-med, etichetta: Studio Medici, numeri: [6405]}
+      - {id: uro-battanello, etichetta: Studio Dr. Battanello Wanni, numeri: [6406]}
+      - {id: uro-calpista, etichetta: Studio Dr. Calpista Arturo, numeri: [6419]}
+      - {id: uro-ferraro, etichetta: Studio Dr. Ferraro M., numeri: [6411]}
+      - {id: uro-meggiato, etichetta: Studio Dr. Meggiato Luca, numeri: [6452]}
+      - {id: uro-gardi, etichetta: Studio Dr. Gardi Mario, numeri: [6430]}
+
+  - id: associazioni-osa
+    nome: Associazioni OSA
+    contatti:
+      - {id: ass-ail, etichetta: A.I.L. (Ass. Italiana Leucemie), numeri: [1461]}
+      - {id: ass-avo, etichetta: A.V.O. (Ass. Volontari Ospedalieri), numeri: [3913]}
+      - {id: ass-avo-iov-segr, etichetta: A.V.O. Segreteria c/o IOV, numeri: [5669]}
+      - {id: ass-avo-iov-acc, etichetta: A.V.O. Accoglienza c/o IOV, numeri: [5670]}
+      - {id: ass-avo-osa, etichetta: A.V.O. Accoglienza c/o OSA, numeri: [5353]}
+      - {id: ass-cilla, etichetta: CILLA (Ospitalità parenti pazienti), numeri: [3914]}
+      - {id: ass-cral, etichetta: C.R.A.L. (Centro Ricreativo Aziendale), numeri: [1700]}
+      - {id: ass-fand, etichetta: FAND (Ass. Diabetici), numeri: [3967]}
+      - {id: ass-feder-aipa, etichetta: Feder AIPA (Pazienti Anticoagulati), numeri: [5624]}
+      - {id: ass-cdsperanza, etichetta: Fondazione Città della Speranza, numeri: [8033]}
+      - {id: ass-padova-osp, etichetta: Padova Ospitale, numeri: [3256]}
+      - {id: ass-pronto-anziano, etichetta: Pronto Anziano, numeri: [7000]}
+      - {id: ass-rene, etichetta: RENE (Ass. Borsatti pazienti nefrologici), numeri: [2152]}
+      - {id: ass-farini, etichetta: Roberto Farini (Ass. Gastroenterologia), numeri: [2890]}
+      - {id: ass-salus-pueri, etichetta: Salus Pueri Fondazione, numeri: [3526]}
+      - {id: ass-trapianti-minnaia, etichetta: Trapianti Marina Minnaia (Ricerca trapianto fegato), numeri: [2635]}
+      - {id: ass-tdm, etichetta: Tribunale dei Diritti del Malato, numeri: [3904]}
