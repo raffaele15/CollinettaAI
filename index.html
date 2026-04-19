@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>CollinettaAI — Manuale Neurologia</title>
+<title>CollinettaAI</title>
 <meta name="theme-color" content="#F6F2EA">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3627,25 +3627,67 @@ function renderNumeri(filter) {
 
   const rubricaQuery = (state.rubricaSearch || '').trim().toLowerCase();
   if (rubricaQuery) {
-    // Filtra i gruppi e i contatti che matchano la query
-    const matchContact = (c) => {
-      const fields = [
-        c.etichetta, c.sezione, c.email, c.cellulare, c.breve,
-        ...(c.numeri || []).map(String),
-        ...(c.tag || [])
-      ].filter(Boolean).join(' ').toLowerCase();
-      return fields.includes(rubricaQuery);
+    // Dizionario sinonimi: una parola cercata matcha anche i suoi sinonimi
+    // Il valore è la lista di ALTERNATIVE che si considerano equivalenti per la ricerca
+    const synonyms = {
+      'reparto': ['reparto', 'reparti', 'degenza', 'degenze', 'ricovero'],
+      'reparti': ['reparto', 'reparti', 'degenza', 'degenze'],
+      'degenza': ['reparto', 'reparti', 'degenza', 'degenze'],
+      'degenze': ['reparto', 'reparti', 'degenza', 'degenze'],
+      'segreteria': ['segreteria', 'segr'],
+      'ambulatorio': ['ambulatorio', 'ambulatori', 'amb'],
+      'ambulatori': ['ambulatorio', 'ambulatori', 'amb'],
+      'sala operatoria': ['sala operatoria', 'sale operatorie', 's.o.', 'so ', 'operatoria'],
+      'operatoria': ['sala operatoria', 'sale operatorie', 'operatoria', 'so '],
+      'day hospital': ['day hospital', 'dh ', 'day-hospital'],
+      'dh': ['day hospital', 'dh ', 'day-hospital'],
+      'mdg': ['mdg', 'medico di guardia', 'medico guardia'],
+      'guardia': ['guardia', 'mdg', 'medico di guardia'],
     };
-    const matchGroup = (g) => {
-      const grpFields = [g.nome, g.direttore, g.email].filter(Boolean).join(' ').toLowerCase();
-      return grpFields.includes(rubricaQuery);
+    // Divido la query in termini (parole). Ogni termine deve matchare almeno un campo (contatto o gruppo).
+    const tokens = rubricaQuery.split(/\s+/).filter(Boolean);
+    
+    const tokenMatchesText = (token, text) => {
+      if (text.includes(token)) return true;
+      // Prova sinonimi: se il token ha sinonimi, provane uno che matcha
+      const alts = synonyms[token];
+      if (alts) {
+        for (const alt of alts) {
+          if (text.includes(alt)) return true;
+        }
+      }
+      return false;
     };
+    
+    const contactText = (c) => [
+      c.etichetta, c.sezione, c.luogo, c.email, c.cellulare, c.breve,
+      ...(c.numeri || []).map(String),
+      ...(c.tag || [])
+    ].filter(Boolean).join(' ').toLowerCase();
+    
+    const groupText = (g) => {
+      const base = [g.nome, g.direttore, g.email].filter(Boolean).join(' ');
+      const sedi = (g.sedi_operative || []).map(s =>
+        `${s.tipo || ''} ${s.edificio || ''} ${s.piano || ''} ${s.area || ''}`
+      ).join(' ');
+      return (base + ' ' + sedi).toLowerCase();
+    };
+    
+    // Un contatto (o il suo gruppo) matcha se OGNI token della query è trovato
+    // almeno in uno dei campi del contatto OPPURE in uno dei campi del gruppo
+    const matchContactWithGroup = (c, gTxt) => {
+      const cTxt = contactText(c);
+      return tokens.every(tok => tokenMatchesText(tok, cTxt) || tokenMatchesText(tok, gTxt));
+    };
+    const matchGroupOnly = (gTxt) => tokens.every(tok => tokenMatchesText(tok, gTxt));
+    
     const expandedSet = state.rubricaExpandedGroups || new Set();
     filteredGruppi = filteredGruppi.map(g => {
-      // Se il gruppo è espanso manualmente o il gruppo stesso matcha (es. nome UOC), mostra tutti i contatti
-      if (expandedSet.has(g.id) || matchGroup(g)) return g;
-      // Altrimenti filtra i singoli contatti
-      const contatti = (g.contatti || []).filter(matchContact);
+      const gTxt = groupText(g);
+      // Se il gruppo è espanso manualmente o il gruppo stesso matcha completamente, mostra tutti i contatti
+      if (expandedSet.has(g.id) || matchGroupOnly(gTxt)) return g;
+      // Altrimenti filtra i singoli contatti (tenendo conto del contesto gruppo per completare i token)
+      const contatti = (g.contatti || []).filter(c => matchContactWithGroup(c, gTxt));
       return contatti.length ? { ...g, contatti } : null;
     }).filter(Boolean);
   }
