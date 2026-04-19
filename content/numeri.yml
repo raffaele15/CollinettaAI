@@ -719,6 +719,8 @@ gruppi:
     nome: U.O.C. Andrologia e Medicina della Riproduzione
     ubicazione: {piano: 2°, struttura: CCA Via Modena 9}
     direttore: Prof. Ferlin Alberto
+    sedi_operative:
+      - {tipo: segreteria, edificio: "Centro Clinico Ambulatoriale (CCA) - Via G. Modena 9", piano: "2° piano", area: C7, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: andr-direttore, etichetta: Direttore Prof. Ferlin Alberto (solo interni), numeri: [2723], sezione: Andrologia e Medicina della Riproduzione, luogo: "Via G. Modena 9 - 2° piano"}
       - {id: andr-segr, etichetta: Segreteria Amministrativa (solo interni), numeri: [8398, 2833], sezione: Andrologia e Medicina della Riproduzione, luogo: "Via G. Modena 9 - 2° piano"}
@@ -795,6 +797,8 @@ gruppi:
     nome: Coordinamento Regionale Trapianti del Veneto
     ubicazione: {piano: 2°, struttura: Giustinianeo}
     direttore: Dr. Pittarello Demetrio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: crt-resp, etichetta: Responsabile/Coord. Regionale - Dr. Pittarello Demetrio, numeri: [7652], sezione: Coordinamento Regionale Trapianti, luogo: "Giustinianeo 2° piano - Scala A Ascensore 5"}
       - {id: crt-segr-biscaro, etichetta: Segreteria - Biscaro Federica, numeri: [8125], sezione: Coordinamento Regionale Trapianti, luogo: "Giustinianeo 2° piano - Scala A Ascensore 5"}
@@ -1015,17 +1019,10 @@ gruppi:
   - id: anestesia-rianimazione
     nome: U.O.C. Anestesia e Rianimazione
     ubicazione: {piano: 3°, struttura: Monoblocco}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Monoblocco
-        piano: "3° piano"
-        fonte: https://www.aopd.veneto.it/Anestesia-e-Rianimazione
-      - tipo: ambulatori
-        edificio: Monoblocco
-        piano: "piano rialzato e 6° piano"
-        fonte: https://www.aopd.veneto.it/Anestesia-e-Rianimazione
     direttore: Dr. Tiberio Ivo
     email: anestesia.rianimaz@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "3° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ar-direttore, etichetta: Direttore Dr. Tiberio Ivo, numeri: [2740], sezione: Anestesia e Rianimazione, luogo: "Monoblocco 3° piano"}
       - {id: ar-segr-bevilacqua, etichetta: Segreteria - Bevilacqua Caterina / Zanni Angelica, numeri: [2741], sezione: Anestesia e Rianimazione, luogo: "Monoblocco 3° piano"}
@@ -1051,6 +1048,8 @@ gruppi:
     nome: U.O.C. Istituto di Anestesia e Rianimazione (ISTAR)
     ubicazione: {piano: 2°, struttura: Stabile Dipartimento Tecnico, indirizzo: Via Vincenzo Gallucci 13}
     direttore: Prof. Navalesi Paolo
+    sedi_operative:
+      - {tipo: segreteria, edificio: "Palazzina Servizi Tecnici - Via V. Gallucci 13", piano: "2° piano", area: D3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: istar-segr-bellin, etichetta: Segreteria Amm. - Bellin Nicoletta, numeri: [3090, 3095], sezione: Istituto di Anestesia e Rianimazione, luogo: "Via V. Gallucci 13 / Policlinico 6° piano"}
       - {id: istar-segr-dechecchi, etichetta: Segr. Tecnica Informatica - De Checchi Gianni / Zotti Daniele, numeri: [3091, 8850], sezione: Istituto di Anestesia e Rianimazione, luogo: "Via V. Gallucci 13 / Policlinico 6° piano"}
@@ -1073,6 +1072,8 @@ gruppi:
     nome: U.O.S.D. Anestesia e Terapia Intensiva Chirurgia Complessa e Trapiantologia
     ubicazione: {piano: 5°, struttura: Policlinico}
     direttore: Prof. Navalesi Paolo (ad interim)
+    sedi_operative:
+      - {tipo: segreteria, edificio: "Palazzina Servizi Tecnici - Via V. Gallucci 13", piano: "2° piano", area: D3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ati-ti, etichetta: Terapia Intensiva (ISTAR 4), numeri: [3100], sezione: Anestesia e T.I. Chirurgia Complessa e Trapianti (ISTAR 4), luogo: "Policlinico 5° piano"}
       - {id: ati-coord, etichetta: Coordinatore Infermieristico, numeri: [3192], sezione: Anestesia e T.I. Chirurgia Complessa e Trapianti (ISTAR 4), luogo: "Policlinico 5° piano"}
@@ -1084,6 +1085,8 @@ gruppi:
     nome: U.O.C. Terapia Intensiva Cardiochirurgica
     ubicazione: {piano: terra, struttura: Centro Gallucci}
     direttore: Dr. Pittarello Demetrio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Centro Gallucci, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: tic-segr, etichetta: Segreteria, numeri: [2429], sezione: Terapia Intensiva Cardiochirurgica, luogo: "Centro Gallucci"}
       - {id: tic-tipo, etichetta: Cardiochirurgia TIPO, numeri: [2419, 2420], sezione: Terapia Intensiva Cardiochirurgica, luogo: "Centro Gallucci"}
@@ -1091,6 +1094,8 @@ gruppi:
   - id: neuro-anestesia-rianimazione
     nome: U.O.S.D. Neuro Anestesia e Neuro Rianimazione
     direttore: Dr.ssa Munari Marina
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Neuroscienze, piano: "4° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: nanest-resp, etichetta: Studio Sostituto Responsabile Dr.ssa Munari Marina, numeri: [3696], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano"}
       - {id: nanest-sede, etichetta: U.O.S.D. Neuro Anestesia e Neurorianimazione, numeri: [3698], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano"}
@@ -1102,6 +1107,8 @@ gruppi:
     nome: U.O.C. Angiologia
     ubicazione: {struttura: Giustinianeo e Monoblocco}
     direttore: Dr. Avruscio Giampiero
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ang-segr-napoli, etichetta: Segreteria di Direzione - Napoli C. (Giustinianeo), numeri: [1248], sezione: Segreteria di Direzione, luogo: "Giustinianeo 1° piano"}
       - {id: ang-coord-contarato, etichetta: Coordinatore - Contarato Roberta, numeri: [8812], sezione: Coordinamento, luogo: "Giustinianeo 1° piano"}
@@ -1196,6 +1203,9 @@ gruppi:
     nome: U.O.C. Cardiochirurgia
     ubicazione: {struttura: Edificio Vincenzo Gallucci}
     direttore: Prof. Gerosa Gino
+    sedi_operative:
+      - {tipo: segreteria, edificio: Centro Gallucci, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Centro Gallucci, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cch-segr, etichetta: Segreteria, numeri: [2410, 2413], sezione: Segreteria, luogo: "Centro Gallucci piano terra"}
       - {id: cch-segr-ricov, etichetta: Segreteria Ricoveri, numeri: [2412], sezione: Segreteria, luogo: "Centro Gallucci piano terra"}
@@ -1247,6 +1257,8 @@ gruppi:
     ubicazione: {piano: terra, struttura: Edificio Vincenzo Gallucci}
     direttore: Prof. Vida Vladimiro
     email: cardiochirurgia.pediatrica@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Centro Gallucci, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ccp-direttore, etichetta: Direttore Prof. Vida Vladimiro, numeri: [4474], email: vladimiro.vida@unipd.it, sezione: Direzione, luogo: "Centro Gallucci piano terra"}
       - {id: ccp-segr, etichetta: Segreteria - Panepinto Sonia, numeri: [2427], sezione: Segreteria, luogo: "Centro Gallucci piano terra"}
@@ -1261,24 +1273,12 @@ gruppi:
   - id: cardiologia
     nome: U.O.C. Cardiologia
     ubicazione: {struttura: Edificio Vincenzo Gallucci}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Centro Gallucci
-        piano: "2° piano"
-        area: "C5"
-        fonte: https://www.aopd.veneto.it/Cardiologia
-      - tipo: ambulatori
-        edificio: Monoblocco
-        piano: "1° piano"
-        area: "C8"
-        fonte: https://www.aopd.veneto.it/Cardiologia
-      - tipo: segreteria
-        edificio: Centro Gallucci
-        piano: "piano terra"
-        area: "C5"
-        fonte: https://www.aopd.veneto.it/Cardiologia
     direttore: Prof. Corrado Domenico
     email: cardiologia@aopd.veneto.it
+    sedi_operative:
+      - {tipo: degenze, edificio: Centro Gallucci, piano: "2° piano", area: C5, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: ambulatori, edificio: Monoblocco, piano: "1° piano", area: C8, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: segreteria, edificio: Centro Gallucci, piano: "piano terra", area: C5, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       # RESPONSABILE E SEGRETERIA - PIANO TERRA (Centro Gallucci)
       - {id: card-direttore, etichetta: Direttore Prof. Corrado Domenico, numeri: [1844], sezione: Responsabile e Segreteria, luogo: Centro Gallucci piano terra}
@@ -1370,6 +1370,8 @@ gruppi:
     ubicazione: {struttura: Palazzo Bolis, indirizzo: Piazza B. De Claricini 12 Selvazzano Dentro}
     direttore: Prof. Corbetta Maurizio (ad interim)
     email: cric@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: "Palazzo Bolis - Piazza De Claricini 12 - Selvazzano Dentro", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cric-direttore, etichetta: Direttore Prof. Corbetta Maurizio, numeri: [7037], sezione: Centro Regionale Invecchiamento Cerebrale, luogo: "Ospedale S. Antonio"}
       - {id: cric-coord, etichetta: Coordinatrice Dr.ssa Tiso A., numeri: [7038], sezione: Centro Regionale Invecchiamento Cerebrale, luogo: "Ospedale S. Antonio"}
@@ -1401,6 +1403,10 @@ gruppi:
     ubicazione: {piano: 4°, struttura: Policlinico}
     direttore: Prof.ssa Spolverato Gaya
     email: chirurgia.generale3@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "7° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Policlinico, piano: "4° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: sala_operatoria, edificio: Policlinico, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cg3-direttore, etichetta: Direttore Prof.ssa Spolverato Gaya, numeri: [2208], sezione: Direzione, luogo: "Policlinico 7° piano"}
       - {id: cg3-segr-dir, etichetta: Segreteria Direzione (7° P), numeri: [2055], sezione: Segreteria Direzione, luogo: "Policlinico 7° piano"}
@@ -1459,6 +1465,8 @@ gruppi:
     nome: U.O.C. Endocrinochirurgia
     ubicazione: {piano: 7°, struttura: Policlinico}
     direttore: Prof. Iacobone Maurizio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "7° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ec-direttore, etichetta: Studio Direttore Prof. Iacobone Maurizio, numeri: [1815], sezione: Direzione, luogo: "Policlinico 7° piano"}
       - {id: ec-segr, etichetta: Segreteria, numeri: [2210], sezione: Segreteria, luogo: "Policlinico 7° piano"}
@@ -1471,6 +1479,8 @@ gruppi:
     ubicazione: {piano: 6°, struttura: Policlinico degenze / 2° P Palazzina Ambulatori direzione}
     direttore: Prof. Valmasoni Michele
     email: segreteria.chirurgiagenerale1@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "6° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cg1-direttore, etichetta: Direttore Prof. Valmasoni Michele (solo interni), numeri: [7641], sezione: Direzione, luogo: "Policlinico 6° piano"}
       - {id: cg1-segr-dir, etichetta: Segr. Direzione - Bazzolo Giuseppina, numeri: [6426], sezione: Segreteria Direzione, luogo: "Policlinico 6° piano"}
@@ -1526,6 +1536,8 @@ gruppi:
     nome: U.O.C. Day Surgery/Week Surgery Multidisciplinare
     direttore: Dr. Foletto Mirto
     email: daysurg@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ds-direttore, etichetta: Direttore Dr. Foletto Mirto, numeri: [8603], sezione: Direzione, luogo: "Monoblocco 2° piano"}
       - {id: ds-segr-dir, etichetta: Segreteria Direzione, numeri: [2770, 2771], sezione: Segreteria Direzione, luogo: "Monoblocco 2° piano"}
@@ -1547,6 +1559,8 @@ gruppi:
     ubicazione: {piano: 4°, struttura: Policlinico}
     direttore: Dr. Foletto Mirto
     email: chirurgia.bariatrica@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "2° piano", area: C8, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cbar-direttore, etichetta: Direttore Dr. Foletto Mirto (2° P Monoblocco), numeri: [8603], sezione: Direzione, luogo: "Monoblocco 2° piano"}
       - {id: cb-segr, etichetta: Segreteria (2° P MB, L/V 8-10), numeri: [7012], sezione: Segreteria, luogo: "Monoblocco 2° piano"}
@@ -1561,6 +1575,8 @@ gruppi:
     nome: U.O.C. Chirurgia dei Trapianti di Rene e Pancreas
     ubicazione: {piano: 2°, struttura: Policlinico e Giustinianeo}
     direttore: Prof.ssa Furian Lucrezia
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "2° piano", area: D6, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ctrp-direttore, etichetta: Direttore Prof.ssa Furian Lucrezia, numeri: [1759], sezione: Direzione, luogo: "Giustinianeo 2° piano"}
       - {id: ctrp-segr-assist, etichetta: Segr. Assistenziale, numeri: [7935], sezione: Segreteria, luogo: "Giustinianeo 2° piano"}
@@ -1583,6 +1599,10 @@ gruppi:
     ubicazione: {piano: 2°-7°, struttura: Policlinico}
     direttore: Prof. Cillo Umberto
     email: segreteria.chirepatobiliare@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "7° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Policlinico, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: sala_operatoria, edificio: Policlinico, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cg2-direttore, etichetta: Direttore Prof. Cillo Umberto, numeri: [2236], sezione: Direzione, luogo: "Policlinico 7° piano"}
       - {id: cg2-segr-univ, etichetta: Segr. Univ. Direzione - Dr.ssa Lenzo Alessandra, numeri: [1846], email: alessandra.lenzo@unipd.it, sezione: Segreteria Direzione, luogo: "Policlinico 7° piano"}
@@ -1625,6 +1645,10 @@ gruppi:
     nome: U.O.C. Chirurgia Plastica
     ubicazione: {piano: 3°, struttura: Policlinico Ala Est}
     direttore: Prof. Bassetto Franco
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "5° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Monoblocco, piano: "5° piano", area: C8, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: day_hospital, edificio: Ospedale Giustinianeo, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cplast-direttore, etichetta: Direttore Prof. Bassetto Franco, numeri: [2700, 2633], sezione: Direzione, luogo: "Monoblocco 5° piano"}
       - {id: cp-segr-favino, etichetta: Segr. Direttore Assistenziale - Favino Grazia Maria, numeri: [2701], sezione: Segreteria Direttore, luogo: "Monoblocco 5° piano"}
@@ -1668,6 +1692,9 @@ gruppi:
     nome: U.O.C. Chirurgia Toracica
     ubicazione: {piano: 1°-7°, struttura: Policlinico}
     direttore: Prof. Dell'Amore Andrea (sostituto responsabile)
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "7° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Policlinico, piano: "1° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ct-resp, etichetta: Sostituto Responsabile Prof. Dell'Amore Andrea, numeri: [2203], sezione: Direzione, luogo: "Policlinico 7° piano"}
       - {id: ct-segr, etichetta: Segreteria (7° P), numeri: [2237], sezione: Segreteria, luogo: "Policlinico 7° piano"}
@@ -1695,17 +1722,9 @@ gruppi:
   - id: chir-vascolare
     nome: U.O.C. Chirurgia Vascolare
     ubicazione: {piano: 3° Policlinico / 1° Monoblocco / 2° Giustinianeo}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Policlinico
-        piano: "3° piano"
-        area: "C3"
-        fonte: https://www.aopd.veneto.it/Chirurgia-Vascolare
-      - tipo: segreteria
-        edificio: Monoblocco
-        piano: "1° piano"
-        fonte: https://www.aopd.veneto.it/Chirurgia-Vascolare
     direttore: Prof. Grego Franco
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cv-direttore, etichetta: Direttore Prof. Grego Franco (1° MB), numeri: [1396], sezione: Direzione, luogo: "Monoblocco 1° piano"}
       - {id: cv-segr-univ, etichetta: Segreteria Univ. / Direzione - Meneghetti Luisa, numeri: [2638], sezione: Segreteria, luogo: "Monoblocco 1° piano"}
@@ -1734,6 +1753,8 @@ gruppi:
     nome: U.O.C. Chirurgia Maxillo Facciale
     ubicazione: {piano: 7°, struttura: Policlinico}
     direttore: Dr. Fusetti Stefano
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "7° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cmf-direttore, etichetta: Direttore Dr. Fusetti Stefano, numeri: [1828], sezione: Direzione, luogo: "Policlinico 7° piano"}
       - {id: cmf-segr-beltrame, etichetta: Segr. Assistenziale - Beltrame A., numeri: [2039, 8614], sezione: Segreteria Assistenziale, luogo: "Policlinico 7° piano"}
@@ -1763,6 +1784,8 @@ gruppi:
     ubicazione: {indirizzo: Via Vincenzo Gallucci 4}
     direttore: Prof. Alaibac Mauro
     email: cl.dermatologica@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio D1 Clinica Dermatologica, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: derm-segr-gasparini, etichetta: Segr. Direzione/Univ. - Gasparini C. (2° P), numeri: [8299], sezione: Segreteria Direzione, luogo: "Edificio D1 - Via V. Gallucci 4"}
       - {id: derm-acc-1p, etichetta: Accettazione (solo interni, 1° P), numeri: [2907], sezione: Ambulatori 1° piano, luogo: "Edificio D1 - Via V. Gallucci 4"}
@@ -1794,6 +1817,8 @@ gruppi:
     ubicazione: {piano: 8° Policlinico, struttura: Monoblocco 6° piano / PalaSanità}
     direttore: Prof. Busetto Luca
     email: dietetica.nutrizione.cl@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "8° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: diet-direttore, etichetta: Direttore Prof. Busetto Luca (8° P), numeri: [2501], sezione: Direzione, luogo: "Policlinico 8° piano"}
       - {id: diet-segr, etichetta: Segreteria Direzione, numeri: [2345], sezione: Direzione, luogo: "Policlinico 8° piano"}
@@ -1899,6 +1924,8 @@ gruppi:
     ubicazione: {piano: rialzato, struttura: Monoblocco e Giustinianeo}
     direttore: Prof.ssa Burra Patrizia (ad interim)
     email: piastra.endoscopica@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: eg-cup, etichetta: CUP Prenotazione Interni/Post-Degenza, numeri: [2102], sezione: CUP Prenotazioni, luogo: "Giustinianeo 2° piano"}
       - {id: eg-coord-barin, etichetta: Coord. Infermieristico - Dr. Barin Andrea (Giustinianeo), numeri: [8808, 8906], sezione: Piastra Endoscopica Giustinianeo, luogo: "Giustinianeo 2° piano"}
@@ -1940,6 +1967,8 @@ gruppi:
     ubicazione: {piano: 1° e rialzato, struttura: Policlinico}
     direttore: Prof. Vianello A.
     email: andrea.vianello@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "7° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: fr-direttore, etichetta: Direttore Prof. Vianello A., numeri: [8587], sezione: Direzione, luogo: "Policlinico 7° piano"}
       - {id: fr-segr, etichetta: Segreteria Direzione, numeri: [7792], sezione: Direzione, luogo: "Policlinico 7° piano"}
@@ -1970,6 +1999,8 @@ gruppi:
     nome: U.O.C. Gastroenterologia
     ubicazione: {piano: 5° Policlinico / 2° Giustinianeo}
     direttore: Prof.ssa Burra Patrizia
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: gastro-direttore, etichetta: Direttore Prof.ssa Burra Patrizia, numeri: [2892], sezione: Direzione, luogo: "Giustinianeo 2° piano"}
       - {id: gastro-segr-resp, etichetta: Segreteria Resp. (Giustinianeo 2° P), numeri: [2890], sezione: Direzione, luogo: "Giustinianeo 2° piano"}
@@ -2018,24 +2049,10 @@ gruppi:
   - id: geriatrica
     nome: U.O.C. Geriatrica (Clinica)
     ubicazione: {piano: 8° e 10° OSA, 6° Monoblocco, ospedale_sede: "Sant'Antonio e Policlinico"}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Ospedale S. Antonio
-        piano: "5° piano (Reparto Geriatria)"
-        fonte: https://www.aopd.veneto.it/Geriatria
-      - tipo: degenze
-        edificio: Ospedale S. Antonio
-        piano: "8° e 9° piano (Ospedale di Comunità)"
-        fonte: https://www.aopd.veneto.it/Geriatria
-      - tipo: ambulatori
-        edificio: Centro Clinico Ambulatoriale (via G. Modena 9) / Ospedale S. Antonio / Poliambulatorio dei Colli
-        fonte: https://www.aopd.veneto.it/Geriatria
-      - tipo: segreteria
-        edificio: Ospedale S. Antonio
-        piano: "10° piano"
-        fonte: https://www.aopd.veneto.it/Geriatria
     direttore: Prof. Sergi Giuseppe
     email: clinica.geriatrica@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale S. Antonio, piano: "10° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ger-sergi, etichetta: Prof. Sergi Giuseppe, numeri: [8492], sezione: Direzione, luogo: "Policlinico"}
       - {id: ger-direttore-osa, etichetta: Direttore (10° P OSA), numeri: [8980], sezione: Direzione, luogo: "Ospedale S. Antonio 10° piano"}
@@ -2065,20 +2082,11 @@ gruppi:
   - id: ematologia
     nome: U.O.C. Ematologia
     ubicazione: {piano: 2° Palazzina Ambulatori Policlinico, struttura: 2°-3° Palazzina Malattie Infettive / 1° Giustinianeo}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Palazzina Malattie Infettive
-        piano: "2° piano (Sezione Protetta Trapianti)"
-        fonte: https://www.aopd.veneto.it/Ematologia
-      - tipo: ambulatori
-        edificio: Palazzina Ambulatori Policlinico
-        piano: "2° piano"
-        fonte: https://www.aopd.veneto.it/Ematologia
-      - tipo: day_hospital
-        edificio: Ospedale Giustinianeo
-        piano: "1° piano"
-        fonte: https://www.aopd.veneto.it/Ematologia
     direttore: Prof. Trentin Livio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "1° piano ala ovest", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Palazzina Malattie Infettive, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: day_hospital, edificio: Palazzina Malattie Infettive, piano: "3° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ema-direttore, etichetta: Responsabile Prof. Trentin Livio, numeri: [1722], sezione: Direzione, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
       - {id: ema-segr-dir, etichetta: Segreteria Direzione, numeri: [2298], sezione: Direzione, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
@@ -2116,6 +2124,8 @@ gruppi:
     nome: U.O.S.D. Immunologia dei Trapianti
     ubicazione: {piano: 2°, struttura: Giustinianeo}
     direttore: Prof. Cozzi Emanuele
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: it-resp, etichetta: Responsabile Prof. Cozzi Emanuele, numeri: [8841], sezione: Immunologia dei Trapianti, luogo: "Giustinianeo 2° piano"}
       - {id: it-segr, etichetta: Segreteria, numeri: [8839], sezione: Immunologia dei Trapianti, luogo: "Giustinianeo 2° piano"}
@@ -2124,6 +2134,8 @@ gruppi:
     nome: U.O.C. Immunotrasfusionale
     ubicazione: {piano: 3°, struttura: Monoblocco}
     direttore: Dr. Lanti Alessandro
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "3° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: trasf-direttore, etichetta: Direttore Dr. Lanti Alessandro, numeri: [8710], sezione: Direzione e Segreteria, luogo: "Monoblocco 3° piano"}
       - {id: trasf-segr, etichetta: Segreteria (L/V 8-14), numeri: [2841, 7610], sezione: Direzione e Segreteria, luogo: "Monoblocco 3° piano"}
@@ -2152,6 +2164,8 @@ gruppi:
     nome: U.O.C. Malattie del Metabolismo
     ubicazione: {piano: 2° Monoblocco / Giustinianeo}
     direttore: Prof. Fadini Gian Paolo
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "8° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mm-direttore, etichetta: Direttore Prof. Fadini Gian Paolo, numeri: [2178], sezione: Direzione, luogo: "Monoblocco 8° piano"}
       - {id: mm-segr-dir, etichetta: Segreteria Direzione (8° MB), numeri: [2335], sezione: Direzione, luogo: "Monoblocco 8° piano"}
@@ -2190,6 +2204,8 @@ gruppi:
     nome: U.O.C. Malattie Metaboliche Ereditarie
     direttore: Prof. Burlina Alberto
     email: segremet@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: "Campus Biomedico Pietro d Abano (Palazzina E - Via Orus 2/B)", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mme-direttore, etichetta: Direttore Prof. Burlina Alberto, numeri: [7462], sezione: Direzione, luogo: "Edificio Pediatria"}
       - {id: mme-segr, etichetta: Segreteria, numeri: [3569], sezione: Direzione, luogo: "Edificio Pediatria"}
@@ -2211,6 +2227,8 @@ gruppi:
     nome: U.O.C. Neuropsichiatria Infantile
     ubicazione: {struttura: Edificio Pediatria}
     direttore: Prof.ssa Gatta Michela
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Pediatria, piano: "2° piano", area: B5, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: npi-direttore, etichetta: Direttrice Prof.ssa Gatta Michela, numeri: [1162], sezione: Direzione e Segreteria, luogo: "Edificio Pediatria"}
       - {id: npi-segr-amm, etichetta: Segreteria Amministrativa, numeri: [3517], sezione: Direzione e Segreteria, luogo: "Edificio Pediatria"}
@@ -2226,24 +2244,10 @@ gruppi:
   - id: malattie-infettive
     nome: U.O.C. Malattie Infettive e Tropicali
     ubicazione: {struttura: Edificio Malattie Infettive}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Edificio Malattie Infettive
-        piano: "1° piano"
-        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
-      - tipo: ambulatori
-        edificio: Edificio Malattie Infettive
-        piano: "piano terra"
-        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
-      - tipo: day_hospital
-        edificio: Edificio Malattie Infettive
-        piano: "piano terra"
-        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
-      - tipo: segreteria
-        edificio: Edificio Malattie Infettive
-        piano: "4° piano"
-        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
     direttore: Dr.ssa Cattelan A. Maria
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Malattie Infettive, piano: "4° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Palazzina Malattie Infettive, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mi-direttore, etichetta: Direttore Dr.ssa Cattelan A. Maria (4° P), numeri: [3716], sezione: Direzione e Segreteria, luogo: "Edificio Malattie Infettive 4° piano"}
       - {id: mi-segr, etichetta: Segreteria, numeri: [3741, 3767], sezione: Direzione e Segreteria, luogo: "Edificio Malattie Infettive 4° piano"}
@@ -2290,18 +2294,10 @@ gruppi:
 
   - id: clinica-medica-1-trombotiche
     nome: U.O.C. Clinica Medica 1 - Malattie Trombotiche ed Emorragiche
-    sedi_operative:
-      - tipo: degenze
-        edificio: Monoblocco
-        piano: "7° piano"
-        area: "C8"
-        fonte: https://www.aopd.veneto.it/Clinica-Medica-1
-      - tipo: ambulatori
-        edificio: Palazzina Ambulatori Policlinico / Monoblocco
-        piano: "piano terra / 10° piano"
-        fonte: https://www.aopd.veneto.it/Clinica-Medica-1
     direttore: Prof. Simioni Paolo
     email: cl.medica1@aopd.veneto.it
+    sedi_operative:
+      - {tipo: degenze, edificio: Monoblocco, piano: "7° piano (G. Braga)", area: C8, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cm1t-direttore, etichetta: Direttore Prof. Simioni Paolo, numeri: [2667], sezione: Direzione e Segreteria, luogo: "Palazzina Ambulatori Policlinico"}
       - {id: cm1t-segr-melcarne, etichetta: Segreteria - Melcarne Francesca, numeri: [2650], sezione: Direzione e Segreteria, luogo: "Palazzina Ambulatori Policlinico"}
@@ -2321,14 +2317,10 @@ gruppi:
   - id: clinica-medica-1-ori
     nome: U.O.C. Clinica Medica 1 - Osservazione Rapida Intensiva
     ubicazione: {piano: 2°, struttura: Monoblocco / Palazzina Ambulatori Policlinico}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Monoblocco
-        piano: "2° piano"
-        area: "C8"
-        fonte: https://www.aopd.veneto.it/Clinica-Medica-1
     direttore: Prof. Simioni Paolo
     email: cl.medica1@aopd.veneto.it
+    sedi_operative:
+      - {tipo: degenze, edificio: Monoblocco, piano: "2° piano", area: C8, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cm1o-direttore, etichetta: Direttore Prof. Simioni Paolo, numeri: [8692], sezione: Direzione e Segreteria, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
       - {id: cm1o-segr-bergamin, etichetta: Segreteria - Bergamin Fulvio, numeri: [2150], sezione: Direzione e Segreteria, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
@@ -2394,21 +2386,11 @@ gruppi:
   - id: clinica-medica-3
     nome: U.O.C. Clinica Medica 3
     ubicazione: {piano: 9°-10°, struttura: Monoblocco}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Monoblocco
-        piano: "9° piano"
-        fonte: https://www.aopd.veneto.it/Clinica-Medica-3
-      - tipo: ambulatori
-        edificio: Centro Clinico Ambulatoriale (via G. Modena 9) / Monoblocco
-        piano: "9° piano"
-        fonte: https://www.aopd.veneto.it/Clinica-Medica-3
-      - tipo: day_hospital
-        edificio: Monoblocco
-        piano: "9° piano"
-        fonte: https://www.aopd.veneto.it/Clinica-Medica-3
     direttore: Prof.ssa Fioretto Paola
     email: cl.med3@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "9° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Monoblocco, piano: "9° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cm3-direttore, etichetta: Direttore Prof.ssa Fioretto Paola, numeri: [2648], sezione: Direzione, luogo: "Monoblocco 9° piano"}
       - {id: cm3-segr-guarino, etichetta: Segreteria - Guarino Antonio, numeri: [2640], sezione: Direzione, luogo: "Monoblocco 9° piano"}
@@ -2448,6 +2430,9 @@ gruppi:
     ubicazione: {piano: 8°, struttura: Policlinico}
     direttore: Prof. Simioni Paolo (ad interim)
     email: cl.med5@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "8° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Policlinico, piano: "8° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cm5-direttore, etichetta: Direttore ad interim Prof. Simioni Paolo, numeri: [8216], sezione: Direzione e Segreteria, luogo: "Policlinico 8° piano"}
       - {id: cm5-segr-assist, etichetta: Segreteria Assistenziale, numeri: [2285], sezione: Direzione e Segreteria, luogo: "Policlinico 8° piano"}
@@ -2512,6 +2497,8 @@ gruppi:
     nome: U.O.C. Medicina del Lavoro
     ubicazione: {piano: 2°, struttura: Giustinianeo}
     direttore: Prof.ssa Scapellato Maria Luisa
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ml-direttore, etichetta: Direttore Prof.ssa Scapellato Maria Luisa, numeri: [2564], sezione: Direzione e Segreteria, luogo: "Giustinianeo 2° piano"}
       - {id: ml-segr, etichetta: Segreteria (12:30-14), numeri: [2541], sezione: Direzione e Segreteria, luogo: "Giustinianeo 2° piano"}
@@ -2556,6 +2543,8 @@ gruppi:
     ubicazione: {struttura: Ospedale ai Colli, piano: 1° Monoblocco}
     direttore: Prof. Ermolao Andrea
     email: med.sport@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: "Complesso Socio Sanitario ai Colli - Via dei Colli 4", piano: "Padiglione 8", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ms-direttore, etichetta: Direttore Prof. Ermolao Andrea (MB), numeri: [5676], sezione: Direzione, luogo: "Monoblocco 1° piano"}
       - {id: ms-segr-ceron, etichetta: Segreteria Univ. - Dr.ssa Ceron Sabrina (MB), numeri: [5857], sezione: Direzione, luogo: "Monoblocco 1° piano"}
@@ -2578,6 +2567,8 @@ gruppi:
     ubicazione: {piano: 7°, struttura: Monoblocco}
     direttore: Prof. Simioni Paolo
     email: cl.medica1@aopd.veneto.it
+    sedi_operative:
+      - {tipo: degenze, edificio: Monoblocco, piano: "7° piano (G. Braga)", area: C8, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cm1te-direttore, etichetta: Direttore Prof. Simioni Paolo, numeri: [2667], sezione: Direzione e Segreteria, luogo: "Monoblocco 7° piano"}
       - {id: cm1te-segr-melcarne, etichetta: Segreteria - Melcarne Francesca, numeri: [2650], sezione: Direzione e Segreteria, luogo: "Monoblocco 7° piano"}
@@ -2620,16 +2611,9 @@ gruppi:
   - id: medicina-laboratorio
     nome: U.O.C. Medicina di Laboratorio
     ubicazione: {struttura: Giustinianeo Laboratorio Centrale}
-    sedi_operative:
-      - tipo: diagnostica
-        edificio: Ospedale Giustinianeo
-        piano: "2° piano (Laboratorio)"
-        fonte: https://www.aopd.veneto.it/Medicina-di-laboratorio
-      - tipo: segreteria
-        edificio: Ospedale Giustinianeo
-        piano: "3° piano (Direzione)"
-        fonte: https://www.aopd.veneto.it/Medicina-di-laboratorio
     direttore: Prof.ssa Montagnana Martina
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mlab-segr-campigotto, etichetta: Segreteria Direzione - Campigotto Edoardo, numeri: [7933], sezione: Direzione e Segreteria, luogo: "Giustinianeo - Laboratorio Centrale"}
       - {id: mlab-segr-sanguin, etichetta: Segreteria Direzione - Sanguin Paola, numeri: [2792], sezione: Direzione e Segreteria, luogo: "Giustinianeo - Laboratorio Centrale"}
@@ -2698,6 +2682,8 @@ gruppi:
     nome: U.O.S.D. Chirurgia d'Urgenza
     ubicazione: {piano: 6°, struttura: Policlinico}
     direttore: Dr. Da Dalt Gianfranco
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "6° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cu-direttore, etichetta: Direttore Dr. Da Dalt Gianfranco, numeri: [2766], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano"}
       - {id: cu-guardiola, etichetta: Guardiola Coord. (CG1 + Chir. Urgenza), numeri: [2060], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano", tag: [guardiola]}
@@ -2711,6 +2697,8 @@ gruppi:
     ubicazione: {indirizzo: Via Gabriele Falloppio 50}
     direttore: Prof.ssa Aprile Anna
     email: med.legale@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Via Falloppio 50, piano: "piano terra", area: D10, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mleg-direttore, etichetta: Direttore Prof.ssa Aprile Anna, numeri: [8936], sezione: Direzione, luogo: "Via Falloppio 50"}
       - {id: mleg-rep, etichetta: Medico Legale Reperibile, breve: 97058, cellulare: "335.1425817", tag: [reperibile], sezione: Direzione, luogo: "Via Falloppio 50"}
@@ -2740,6 +2728,8 @@ gruppi:
     ubicazione: {piano: terra, struttura: Giustinianeo}
     direttore: Prof. Cecchin Diego
     email: medicina.nucleare@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mn-direttore, etichetta: Direttore Prof. Cecchin Diego, numeri: [8862], sezione: Medicina Nucleare, luogo: "Giustinianeo piano terra"}
       - {id: mn-direzione, etichetta: Direzione, numeri: [3020], sezione: Medicina Nucleare, luogo: "Giustinianeo piano terra"}
@@ -2767,6 +2757,8 @@ gruppi:
     ubicazione: {piano: rialzato, struttura: Giustinianeo}
     direttore: Prof. Dei Tos Angelo Paolo (f.f.)
     email: microbiologia.virologia@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Ospedale Giustinianeo, piano: "piano terra", area: D6, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mv-direttore, etichetta: Direttore F.F. Prof. Dei Tos Angelo Paolo, numeri: [3050], sezione: Direzione e Segreteria, luogo: "Giustinianeo piano terra"}
       - {id: mv-segr-nandi, etichetta: Segreteria Direzione - Dr.ssa Nandi Michela, numeri: [7604], sezione: Direzione e Segreteria, luogo: "Giustinianeo piano terra"}
@@ -2819,24 +2811,11 @@ gruppi:
   - id: nefrologia-2
     nome: U.O.C. Nefrologia 2
     ubicazione: {piano: 8°, struttura: Monoblocco}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Monoblocco
-        piano: "8° piano"
-        fonte: https://www.aopd.veneto.it/Nefrologia-2
-      - tipo: ambulatori
-        edificio: Monoblocco
-        piano: "8° piano"
-        fonte: https://www.aopd.veneto.it/Nefrologia-2
-      - tipo: day_hospital
-        edificio: Ospedale Giustinianeo
-        piano: "piano ammezzato"
-        fonte: https://www.aopd.veneto.it/Nefrologia-2
-      - tipo: ambulatori
-        edificio: Ospedale Giustinianeo (Trapianti Rene) / OSA (Dialisi) / Complesso Socio Sanitario Colli (Dialisi)
-        fonte: https://www.aopd.veneto.it/Nefrologia-2
     direttore: Prof. Nalesso Federico
     email: nefrologia2@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "8° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Monoblocco, piano: "8° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: nefro-direttore, etichetta: Direttore Prof. Nalesso Federico, numeri: [3071], sezione: Direzione e Segreteria, luogo: "Monoblocco 8° piano"}
       - {id: nefro-segr-univ, etichetta: Segreteria Universitaria, numeri: [2152], sezione: Direzione e Segreteria, luogo: "Monoblocco 8° piano"}
@@ -2884,24 +2863,9 @@ gruppi:
   - id: neurochirurgia
     nome: U.O.C. Neurochirurgia
     ubicazione: {struttura: Edificio Neurologia}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Edificio Neurochirurgia
-        piano: "3° piano"
-        fonte: https://www.aopd.veneto.it/Neurochirurgia
-      - tipo: ambulatori
-        edificio: Edificio Neurochirurgia
-        piano: "piano terra"
-        fonte: https://www.aopd.veneto.it/Neurochirurgia
-      - tipo: sala_operatoria
-        edificio: Edificio Neurochirurgia
-        piano: "4° piano (TIPO - Terapia Intensiva Post-Operatoria)"
-        fonte: https://www.aopd.veneto.it/Neurochirurgia
-      - tipo: segreteria
-        edificio: Palazzina Neuroscienze
-        piano: "piano terra"
-        fonte: https://www.aopd.veneto.it/Neurochirurgia
     direttore: Dr. Chioffi Franco
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Neuroscienze, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       # DIREZIONE E SEGRETERIA
       - {id: nch-direttore, etichetta: Direttore Dr. Chioffi Franco, numeri: [3640], sezione: Direzione, luogo: "Palazzina Neuroscienze piano terra"}
@@ -2946,6 +2910,8 @@ gruppi:
     nome: U.O.C. Neurochirurgia Pediatrica e Funzionale
     ubicazione: {struttura: Palazzina delle Neuroscienze}
     direttore: Prof. Denaro Luca
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Neuroscienze, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: nchp-direttore, etichetta: Direttore Prof. Denaro Luca, numeri: [4395], sezione: Direzione, luogo: Palazzina Neuroscienze}
       - {id: nchp-segr, etichetta: Segreteria, numeri: [3648], sezione: Segreteria, luogo: Palazzina Neuroscienze}
@@ -2956,28 +2922,12 @@ gruppi:
   - id: neurologica-clinica
     nome: U.O.C. Neurologica (Clinica)
     ubicazione: {struttura: Edificio Neurologia}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Palazzina Neuroscienze
-        piano: "1° piano"
-        area: "B1"
-        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
-      - tipo: ambulatori
-        edificio: Palazzina Neuroscienze
-        piano: "1° piano"
-        area: "B1"
-        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
-      - tipo: day_hospital
-        edificio: Palazzina Malattie Infettive
-        piano: "3° piano"
-        area: "B12"
-        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
-      - tipo: segreteria
-        edificio: Palazzina Neuroscienze
-        piano: "piano terra"
-        area: "B1"
-        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
     direttore: Prof. Corbetta Maurizio
+    sedi_operative:
+      - {tipo: segreteria, edificio: "Palazzina Neuroscienze", piano: "piano terra", area: B1, fonte: "https://www.aopd.veneto.it/Clinica-Neurologica"}
+      - {tipo: ambulatori, edificio: "Palazzina Neuroscienze", piano: "piano terra", area: B1, fonte: "https://www.aopd.veneto.it/Clinica-Neurologica"}
+      - {tipo: degenze, edificio: "Palazzina Neuroscienze", piano: "1° piano", area: B1, fonte: "https://www.aopd.veneto.it/Clinica-Neurologica"}
+      - {tipo: day_hospital, edificio: "Palazzina Malattie Infettive", piano: "3° piano ala ovest", area: B12, fonte: "https://www.aopd.veneto.it/Clinica-Neurologica"}
     contatti:
       # DIREZIONE PIANO TERRA
       - {id: ncl-direttore, etichetta: Direttore Prof. Corbetta Maurizio, sezione: Direzione, luogo: "Palazzina Neuroscienze piano terra"}
@@ -3040,11 +2990,7 @@ gruppi:
     nome: U.O.S.D. Neurofisiopatologia Clinica
     ubicazione: {piano: terra, struttura: Edificio Neurologia}
     sedi_operative:
-      - tipo: diagnostica
-        edificio: Palazzina Neuroscienze
-        piano: "piano terra"
-        area: "B1"
-        fonte: https://www.aopd.veneto.it/Neurofisiopatologia-clinica
+      - {tipo: segreteria, edificio: Palazzina Neuroscienze, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: nfc-direttore, etichetta: Direttore, numeri: [8562], sezione: Direzione, luogo: "Palazzina Neuroscienze piano terra"}
       - {id: nfc-capotec-grego, etichetta: Capo Tecnico - Dr. Grego Alberto, numeri: [3619], sezione: Coordinamento, luogo: "Palazzina Neuroscienze piano terra"}
@@ -3056,22 +3002,10 @@ gruppi:
   - id: stroke-unit
     nome: U.O.S.D. Stroke Unit
     ubicazione: {piano: terra, struttura: Edificio Neurologia}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Palazzina Neuroscienze
-        piano: "3° piano lato ovest"
-        area: "B1"
-        fonte: https://www.aopd.veneto.it/Stroke-Unit
-      - tipo: ambulatori
-        edificio: Palazzina Neuroscienze
-        piano: "piano terra"
-        area: "B1"
-        fonte: https://www.aopd.veneto.it/Stroke-Unit
-      - tipo: segreteria
-        edificio: Palazzina Neuroscienze
-        piano: "piano terra"
-        fonte: https://www.aopd.veneto.it/Stroke-Unit
     direttore: Dr. Baracchini Claudio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Neuroscienze, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Palazzina Neuroscienze, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: su-resp, etichetta: Responsabile Dr. Baracchini Claudio, numeri: [6397], sezione: Direzione, luogo: "Palazzina Neuroscienze 1° piano"}
       - {id: su-segr, etichetta: Segreteria, numeri: [3624], sezione: Segreteria, luogo: "Palazzina Neuroscienze 1° piano"}
@@ -3083,14 +3017,10 @@ gruppi:
   - id: neuroradiologia
     nome: U.O.C. Neuroradiologia
     ubicazione: {piano: terra, struttura: Edificio Neurologia}
-    sedi_operative:
-      - tipo: diagnostica
-        edificio: Palazzina Neuroscienze
-        piano: "piano terra"
-        area: "B1"
-        fonte: https://www.aopd.veneto.it/Neuroradiologia
     direttore: Dr. Causin Francesco
     email: neuroradiologia@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Neuroscienze, piano: "piano terra", area: B1, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: nrad-direttore, etichetta: Direttore Dr. Causin Francesco, numeri: [8572], sezione: Direzione, luogo: "Palazzina Neuroscienze piano terra"}
       - {id: nrad-acc, etichetta: Accettazione, numeri: [3667, 3665], sezione: Accettazione, luogo: "Palazzina Neuroscienze piano terra"}
@@ -3112,6 +3042,11 @@ gruppi:
   - id: oculistica
     nome: U.O.C. Oculistica (Clinica)
     direttore: Prof. Midena Edoardo
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Ortopedia, piano: "2° piano", area: A5, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: ambulatori, edificio: Palazzina Ambulatori Policlinico, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Policlinico, piano: "7° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: sala_operatoria, edificio: Policlinico, piano: "4° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ocul-direzione, etichetta: Direzione, numeri: ["049 875 23 50"], sezione: Direzione, luogo: "Clinica Oculistica"}
       - {id: ocul-direttore, etichetta: Direttore Prof. Midena Edoardo, numeri: [1790], sezione: Direzione, luogo: "Clinica Oculistica"}
@@ -3165,6 +3100,8 @@ gruppi:
     nome: U.O.C. Clinica di Odontostomatologia
     ubicazione: {piano: 3°, struttura: Policlinico Palazzina Ambulatori}
     direttore: Prof. Stellini Edoardo
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Azzurra Odontoiatria, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: odo-direttore, etichetta: Direttore Prof. Stellini Edoardo, numeri: [2048], sezione: Clinica di Odontostomatologia, luogo: "Policlinico Palazzina Ambulatori 3° piano"}
       - {id: odo-segr-univ, etichetta: Segreteria Universitaria, numeri: [2040, 8098], sezione: Clinica di Odontostomatologia, luogo: "Policlinico Palazzina Ambulatori 3° piano"}
@@ -3226,22 +3163,9 @@ gruppi:
   - id: clinica-ortopedica
     nome: U.O.C. Clinica Ortopedica Traumatologica
     ubicazione: {piano: 3°-4°, struttura: Edificio Ortopedia}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Padiglione Ortopedia
-        piano: "3° e 4° piano"
-        area: "A5"
-        fonte: https://www.aopd.veneto.it/Clinica-Ortopedica-Traumatologica
-      - tipo: ambulatori
-        edificio: Padiglione Ortopedia
-        piano: "piano terra"
-        area: "A5"
-        fonte: https://www.aopd.veneto.it/Clinica-Ortopedica-Traumatologica
-      - tipo: segreteria
-        edificio: Padiglione Ortopedia
-        piano: "1° piano"
-        fonte: https://www.aopd.veneto.it/Clinica-Ortopedica-Traumatologica
     direttore: Prof. Ruggieri Pietro
+    sedi_operative:
+      - {tipo: segreteria, edificio: Padiglione Ortopedia, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cort-segr-did, etichetta: Segreteria Didattica, numeri: [3312, 3355], sezione: Direzione e Segreteria, luogo: "Edificio Ortopedia 1° piano"}
       - {id: cort-segr-dir, etichetta: Segreteria Direzione, numeri: [3311], sezione: Direzione e Segreteria, luogo: "Edificio Ortopedia 1° piano"}
@@ -3290,6 +3214,8 @@ gruppi:
     ubicazione: {piano: 3° e PT, struttura: Edificio Ortopedia}
     direttore: Prof. Masiero Stefano
     email: riabilitazione.ortopedica@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Padiglione Ortopedia, piano: "1° piano", area: A5, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: riab-direttore, etichetta: Direttore Prof. Masiero Stefano, numeri: [1270], sezione: Direzione, luogo: "Edificio Ortopedia 1° piano"}
       - {id: riab-segr-univ, etichetta: Segreteria Universitaria, numeri: [2598, 3358], sezione: Direzione, luogo: "Edificio Ortopedia 1° piano"}
@@ -3319,6 +3245,8 @@ gruppi:
     nome: U.O.C. Clinica Ginecologica e Ostetrica
     ubicazione: {struttura: Edificio Clinica Ostetrica}
     direttore: Prof. Tozzi Roberto
+    sedi_operative:
+      - {tipo: segreteria, edificio: Clinica Ginecologica e Ostetrica, piano: "piano rialzato", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cgo-direttore, etichetta: Direttore Prof. Tozzi Roberto, numeri: [3441], sezione: Direzione e Segreteria, luogo: "Edificio Clinica Ostetrica"}
       - {id: cgo-segr-chiaradia, etichetta: Segr. Direzione - Chiaradia Marella, numeri: [3445], sezione: Direzione e Segreteria, luogo: "Edificio Clinica Ostetrica"}
@@ -3416,6 +3344,8 @@ gruppi:
     nome: U.O.C. Ostetricia Ginecologia
     ubicazione: {struttura: Edificio Ostetrica}
     direttore: Dr.ssa Veronese Paola
+    sedi_operative:
+      - {tipo: segreteria, edificio: Divisione Ostetrica, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: og-direttore, etichetta: Direttore Dr.ssa Veronese Paola, numeri: [1760], sezione: Direzione e Segreteria, luogo: "Edificio Ostetrica"}
       - {id: og-segr, etichetta: Segreteria, numeri: [3460], sezione: Direzione e Segreteria, luogo: "Edificio Ostetrica"}
@@ -3447,6 +3377,8 @@ gruppi:
     nome: U.O.C. Accettazione e Pronto Soccorso Pediatrico
     ubicazione: {piano: terra, struttura: Edificio Pediatria}
     direttore: Prof.ssa Bressan Silvia
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Pediatria, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: psp-direttore, etichetta: Direttore Prof.ssa Bressan Silvia, numeri: [3570], sezione: Accettazione e Pronto Soccorso Pediatrico, luogo: "Edificio Pediatria piano terra"}
       - {id: psp-segr, etichetta: Segreteria PS Pediatrico, numeri: [1406], sezione: Accettazione e Pronto Soccorso Pediatrico, luogo: "Edificio Pediatria piano terra"}
@@ -3468,6 +3400,8 @@ gruppi:
     ubicazione: {piano: 6° MB, 7°-9° Policlinico, 1° Giustinianeo}
     direttore: Prof.ssa Zanoletti Elisabetta
     email: orl.segreteriaamm@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "9° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: orl-segr-amm, etichetta: Segreteria Amm.va - Fortino M. (solo interni), numeri: [8778], sezione: Direzione e Segreteria, luogo: "Policlinico 9° piano"}
       - {id: orl-segr-borelli, etichetta: Segr. Direzione - Dr.ssa Borelli (Dir. DNS, 9° P), numeri: [1943], sezione: Direzione e Segreteria, luogo: "Policlinico 9° piano"}
@@ -3537,6 +3471,8 @@ gruppi:
     ubicazione: {indirizzo: Via Gabelli 61}
     direttore: Prof.ssa Basso Cristina
     email: pat.cardiovascolare@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Via A. Gabelli 61, piano: "piano rialzato", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: pcv-direttore, etichetta: Direttore Prof.ssa Basso Cristina, numeri: [1775, "049 827 22 86"], sezione: Patologia Cardiovascolare, luogo: "Via A. Gabelli 61 piano rialzato"}
       - {id: pcv-segr-carturan, etichetta: Segr. Direzione - Carturan Chiara, numeri: [1336, "049 827 22 80"], sezione: Patologia Cardiovascolare, luogo: "Via A. Gabelli 61 piano rialzato"}
@@ -3601,6 +3537,9 @@ gruppi:
     nome: U.O.C. Clinica Pediatrica
     ubicazione: {struttura: Edificio Pediatria}
     direttore: Prof. Sartori Stefano
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Pediatria, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: portineria, edificio: Edificio Pediatria, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cped-direttore, etichetta: Studio Direttore Prof. Sartori Stefano, numeri: [1403], sezione: Direzione, luogo: "Edificio Pediatria"}
       - {id: cp-segr-guizzardi, etichetta: Segreteria - Guizzardi G., numeri: [3500], sezione: Direzione e Segreteria, luogo: "Edificio Pediatria"}
@@ -3675,6 +3614,8 @@ gruppi:
     nome: Coordinamento Regionale Malattie Rare
     ubicazione: {indirizzo: Via Donà 11}
     direttore: Prof.ssa Cananzi Mara
+    sedi_operative:
+      - {tipo: segreteria, edificio: Dipartimento Salute Donna e Bambino, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: mr-segr-coord, etichetta: Segreteria Coordinamento, numeri: [5700], sezione: Coordinamento Regionale Malattie Rare, luogo: "Via Donà 11"}
       - {id: mr-segr-amm, etichetta: Segreteria Amm. - Dr.ssa Guarnieri Elga, numeri: [5684], sezione: Coordinamento Regionale Malattie Rare, luogo: "Via Donà 11"}
@@ -3705,6 +3646,8 @@ gruppi:
     nome: Hospice Pediatrico - Stanza dei Sogni
     ubicazione: {indirizzo: Via Ospedale 57}
     direttore: Dr.ssa Benini Franca
+    sedi_operative:
+      - {tipo: segreteria, edificio: Via Ospedale Civile 57, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: hp-direttore, etichetta: Direttore Dr.ssa Benini Franca, numeri: [3573], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
       - {id: hp-procedure, etichetta: Stanza Procedure, numeri: [1899], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
@@ -3721,6 +3664,8 @@ gruppi:
     nome: U.O.C. Nefrologia Pediatrica
     ubicazione: {piano: 1°, struttura: Edificio Pediatria}
     direttore: Prof. Vidal Enrico
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Pediatria, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: np-direttore, etichetta: Direttore Prof. Vidal Enrico, numeri: [1404], sezione: Nefrologia Pediatrica, luogo: "Edificio Pediatria 1° piano"}
       - {id: np-segr, etichetta: Segreteria, numeri: [3596], sezione: Nefrologia Pediatrica, luogo: "Edificio Pediatria 1° piano"}
@@ -3741,6 +3686,8 @@ gruppi:
     nome: U.O.S.D. Reumatologia Pediatrica
     ubicazione: {piano: 2°, struttura: Edificio Pediatria}
     direttore: Prof. Zulian Francesco
+    sedi_operative:
+      - {tipo: degenze, edificio: Edificio Pediatria, piano: "2° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: rp-direttore, etichetta: Direttore Prof. Zulian Francesco, numeri: [8484], sezione: Reumatologia Pediatrica, luogo: "Edificio Pediatria 2° piano"}
       - {id: rp-segr, etichetta: Segreteria, numeri: [3583], sezione: Reumatologia Pediatrica, luogo: "Edificio Pediatria 2° piano"}
@@ -3755,6 +3702,8 @@ gruppi:
     nome: U.O.S.D. Centro Regionale Allergie e Intolleranze Alimentari
     direttore: Prof.ssa Muraro Antonella
     email: segreteria.allergiealimetari@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Pediatria, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: aa-resp, etichetta: Responsabile Prof.ssa Muraro Antonella, numeri: [7789], sezione: Centro Allergie e Intolleranze Alimentari, luogo: "Clinica Pediatrica"}
       - {id: aa-segr-tel, etichetta: Segreteria Telefonica, numeri: [2538], sezione: Centro Allergie e Intolleranze Alimentari, luogo: "Clinica Pediatrica"}
@@ -3767,6 +3716,8 @@ gruppi:
     nome: U.O.C. Chirurgia Pediatrica
     ubicazione: {struttura: Edificio Divisione Ostetrica}
     direttore: Prof.ssa Dall'Igna Patrizia
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Divisione Ostetrica, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: cper-segr-amm, etichetta: Segr. Amm. - Dr.ssa Mancini Elisa, numeri: [3681], sezione: Direzione e Segreteria, luogo: "Edificio Divisione Ostetrica"}
       - {id: cper-segr-rep, etichetta: Segr. Reparto - Biasiolo Barbara, numeri: [7808], sezione: Direzione e Segreteria, luogo: "Edificio Divisione Ostetrica"}
@@ -3797,6 +3748,9 @@ gruppi:
     nome: U.O.C. Terapia Intensiva Neonatale e Patologia Neonatale
     ubicazione: {piano: 1°-2°, struttura: Clinica Ginecologica / Divisione Ostetrica}
     direttore: Prof. Baraldi Eugenio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Pediatria, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Edificio Clinica Ginecologica, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: tin-direttore, etichetta: Direttore Prof. Baraldi Eugenio, numeri: [3560], sezione: Direzione e Segreteria, luogo: "Edificio Clinica Ginecologica 1° piano"}
       - {id: tin-segr-pattarello, etichetta: Segreteria - Pattarello Monica, numeri: [3578], sezione: Direzione e Segreteria, luogo: "Edificio Clinica Ginecologica 1° piano"}
@@ -3825,6 +3779,8 @@ gruppi:
     nome: U.O.C. Genetica Clinica Epidemiologica
     ubicazione: {piano: 4°, struttura: Edificio Pediatria / PT Divisione Ostetrica}
     direttore: Prof. Salviati Leonardo
+    sedi_operative:
+      - {tipo: segreteria, edificio: Edificio Pediatria, piano: "4° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: gc-direttore, etichetta: Direttore Prof. Salviati Leonardo, numeri: [3572], sezione: Direzione e Segreteria, luogo: "Edificio Pediatria 4° piano"}
       - {id: gc-segr, etichetta: Segreteria (L/V 9-11), numeri: [3513], sezione: Direzione e Segreteria, luogo: "Edificio Pediatria 4° piano"}
@@ -3858,6 +3814,8 @@ gruppi:
     nome: U.O.C. Oncoematologia Pediatrica
     ubicazione: {struttura: Edificio Oncoematologia Pediatrica}
     direttore: Prof.ssa Biffi Alessandra
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Oncoematologia Pediatrica, piano: "1° piano", area: B4, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: oep-direttore, etichetta: Direttore Prof.ssa Biffi Alessandra, numeri: [1465], sezione: Direzione e Segreteria, luogo: "Edificio Oncoematologia Pediatrica"}
       - {id: oep-segr-rampazzo, etichetta: Segreteria - Rampazzo Mariagrazia, numeri: [3579], sezione: Direzione e Segreteria, luogo: "Edificio Oncoematologia Pediatrica"}
@@ -3926,33 +3884,10 @@ gruppi:
   - id: pneumologia
     nome: U.O.C. Pneumologia
     ubicazione: {piano: rialzato e 1°, struttura: Policlinico}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Policlinico
-        piano: "1° piano"
-        area: "C3"
-        fonte: https://www.aopd.veneto.it/Pneumologia
-      - tipo: ambulatori
-        edificio: Policlinico
-        piano: "piano rialzato"
-        area: "C3"
-        fonte: https://www.aopd.veneto.it/Pneumologia
-      - tipo: day_hospital
-        edificio: Policlinico
-        piano: "piano rialzato"
-        area: "C3"
-        fonte: https://www.aopd.veneto.it/Pneumologia
-      - tipo: diagnostica
-        edificio: Policlinico
-        piano: "1° piano (Endoscopia respiratoria)"
-        area: "C3"
-        fonte: https://www.aopd.veneto.it/Pneumologia
-      - tipo: segreteria
-        edificio: Policlinico
-        piano: "7° piano"
-        area: "C3"
-        fonte: https://www.aopd.veneto.it/Pneumologia
     direttore: Prof. Spagnolo Paolo
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "7° piano", area: C3, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: degenze, edificio: Policlinico, piano: "1° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: pneumo-direttore, etichetta: Direttore Prof. Spagnolo Paolo, numeri: [3704], sezione: Direzione, luogo: "Policlinico 7° piano"}
       - {id: pneumo-segr-univ, etichetta: Segreteria Universitaria (Lun/Gio 9-15), numeri: [3706], sezione: Direzione, luogo: "Policlinico 7° piano"}
@@ -3974,13 +3909,9 @@ gruppi:
   - id: pronto-soccorso
     nome: U.O.C. Pronto Soccorso
     ubicazione: {piano: terra, struttura: Monoblocco}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Monoblocco
-        piano: "piano terra"
-        area: "C9"
-        fonte: https://www.aopd.veneto.it/Accettazione-e-Pronto-Soccorso
     direttore: Dr. Cianci Vito
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "piano terra", area: C9, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ps-direttore, etichetta: Responsabile Dr. Cianci Vito, numeri: [8132], sezione: Ufficio Prestazioni Sanitarie, luogo: "2° piano Palazzina Direzione"}
       - {id: ps-segr-dir, etichetta: Segreteria Direzione, numeri: [2860], sezione: Ufficio Prestazioni Sanitarie, luogo: "2° piano Palazzina Direzione"}
@@ -4005,6 +3936,8 @@ gruppi:
     nome: U.O.C. Psichiatria 3 (Clinica)
     ubicazione: {struttura: Palazzina Ex Casa Suore}
     direttore: Prof.ssa Favaro Angela
+    sedi_operative:
+      - {tipo: segreteria, edificio: Palazzina Psichiatria, piano: "3° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: psi-direttore, etichetta: Direttore Prof.ssa Favaro Angela, numeri: [3826], sezione: Direzione e Segreteria, luogo: "Palazzina Ex Casa Suore 3° piano"}
       - {id: psi-segr-3p, etichetta: Segreteria Assistenziale (3° P), numeri: [3800, 3831, 3832], sezione: Psichiatria 3, luogo: "Palazzina Ex Casa Suore"}
@@ -4045,6 +3978,8 @@ gruppi:
     nome: U.O.C. Psicologia Ospedaliera
     direttore: Dr.ssa Schiavo Rossana (f.f.)
     email: psicologia.ospedaliera@aopd.veneto.it
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: psy-direttore, etichetta: Direttore F.F. Dr.ssa Schiavo Rossana, numeri: [2417], sezione: Psicologia Ospedaliera, luogo: "Policlinico"}
       - {id: psy-segr, etichetta: Segreteria Assistenziale, numeri: [8734], sezione: Psicologia Ospedaliera, luogo: "Policlinico"}
@@ -4053,6 +3988,8 @@ gruppi:
     nome: U.O.C. Radiologia Universitaria
     ubicazione: {piano: terra, struttura: Policlinico}
     direttore: Prof. Quaia Emilio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Policlinico, piano: "piano terra", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: ru-direttore, etichetta: Direttore Prof. Quaia Emilio, numeri: [2375], sezione: Direzione e Segreteria, luogo: "Policlinico piano terra"}
       - {id: ru-segr-amm, etichetta: Segr. Direzione Amm. Did. - Martinello M., numeri: [2357], sezione: Direzione e Segreteria, luogo: "Policlinico piano terra"}
@@ -4078,13 +4015,9 @@ gruppi:
   - id: radiologia-1
     nome: U.O.C. Radiologia 1
     ubicazione: {struttura: Monoblocco e Ortopedia}
-    sedi_operative:
-      - tipo: diagnostica
-        edificio: Monoblocco
-        piano: "1° piano"
-        area: "C8"
-        fonte: https://www.aopd.veneto.it/Radiologia
     direttore: Dr. De Conti Giorgio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "1° piano", area: C8, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: r1-direttore, etichetta: Direttore Dr. De Conti Giorgio, numeri: [1982], sezione: Direzione e Segreteria, luogo: "Istituto Radiologia Monoblocco"}
       - {id: r1-segr, etichetta: Segreteria (solo interni), numeri: [2987], sezione: Direzione e Segreteria, luogo: "Istituto Radiologia Monoblocco"}
@@ -4136,6 +4069,9 @@ gruppi:
     nome: U.O.C. Reumatologia
     ubicazione: {piano: 8°, struttura: Policlinico}
     direttore: Prof.ssa Ramonda Roberta
+    sedi_operative:
+      - {tipo: segreteria, edificio: Stabile PalaSanità, piano: "1° piano", area: C10, fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
+      - {tipo: ambulatori, edificio: Policlinico, piano: "piano rialzato", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: reu-direttore, etichetta: Direttore Prof.ssa Ramonda Roberta, numeri: [2190], sezione: Direzione, luogo: "Stabile PalaSanità 1° piano"}
       - {id: reu-segr, etichetta: Segreteria, numeri: [8691, 2190], sezione: Direzione, luogo: "Stabile PalaSanità 1° piano"}
@@ -4223,30 +4159,9 @@ gruppi:
   - id: urologia
     nome: U.O.C. Urologia
     ubicazione: {piano: 4°, struttura: Monoblocco}
-    sedi_operative:
-      - tipo: degenze
-        edificio: Monoblocco
-        piano: "4° piano"
-        area: "C8"
-        fonte: https://www.aopd.veneto.it/Urologia
-      - tipo: degenze
-        edificio: Ospedale S. Antonio
-        piano: "3° piano (Corpo D - Chirurgia / Corpo G - Week Surgery)"
-        fonte: https://www.aopd.veneto.it/Urologia
-      - tipo: ambulatori
-        edificio: Monoblocco
-        piano: "piano rialzato"
-        area: "C8"
-        fonte: https://www.aopd.veneto.it/Urologia
-      - tipo: ambulatori
-        edificio: Ospedale S. Antonio
-        piano: "piano -1 (Piastra Multidisciplinare, Corpo F)"
-        fonte: https://www.aopd.veneto.it/Urologia
-      - tipo: day_hospital
-        edificio: Ospedale S. Antonio
-        piano: "1° piano (Corpo D)"
-        fonte: https://www.aopd.veneto.it/Urologia
     direttore: Prof. Dal Moro Fabrizio
+    sedi_operative:
+      - {tipo: segreteria, edificio: Monoblocco, piano: "4° piano", fonte: "https://www.aopd.veneto.it/Unita-Operative-Sanitarie"}
     contatti:
       - {id: uro-direttore, etichetta: Responsabile Prof. Dal Moro Fabrizio, numeri: [8742], sezione: Direzione e Segreteria, luogo: "Monoblocco 4° piano"}
       - {id: uro-segr-ricov, etichetta: Segr. Ricoveri (L/V 7-14), numeri: [8108], sezione: Direzione e Segreteria, luogo: "Monoblocco 4° piano"}
