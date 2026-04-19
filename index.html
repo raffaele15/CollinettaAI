@@ -3861,7 +3861,8 @@ function renderNumeroRow(c, gruppoId, classify) {
     : 'numero-row';
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge">Guardia</span>` : '';
   const urgenzaBadge = tags.includes('urgenza') ? `<span class="badge" style="background:var(--danger-soft);color:var(--danger);">Urgenza</span>` : '';
-  const repartoBadge = cls.kind === 'reparto' ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
+  const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">🏥 Guardiola</span>` : '';
+  const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
@@ -3899,7 +3900,7 @@ function renderNumeroRow(c, gruppoId, classify) {
   return `
     <div class="${rowClass}">
       <div>
-        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${repartoBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
+        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${guardiolaBadge}${repartoBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
         ${sezione}
         ${luogo}
         ${email}
