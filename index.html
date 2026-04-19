@@ -2383,8 +2383,10 @@ async function renderProceduraEditor(slug) {
 
 async function proceedToEdit(slug, forceOverride) {
   try {
-    const file = await gh.getFile(`content/procedure/${slug}.md`);
-    if (!file) throw new Error('File non trovato');
+    const proc = state.index.procedure.find(p => p.slug === slug);
+    if (!proc) throw new Error('Procedura non in indice. Prova a fare refresh.');
+    const file = await gh.getFile(proc.path);
+    if (!file) throw new Error(`File non trovato (${proc.path})`);
     const { frontmatter, body } = parseMarkdown(file.content);
     state.editingContext = {
       type: 'procedura', slug, path: file.path, sha: file.sha,
@@ -3600,12 +3602,18 @@ function renderNavTreeNode(node, depth) {
 }
 
 function handleNavRowClick(nodeId, route, params) {
-  // Toggle expansion
-  if (navState.expanded.has(nodeId)) navState.expanded.delete(nodeId);
-  else navState.expanded.add(nodeId);
-  renderNavTree();
-  // Also navigate if route defined
-  if (route) navigate(route, params || {});
+  const wasExpanded = navState.expanded.has(nodeId);
+  if (wasExpanded) {
+    // Collapse: just remove from expanded set, do NOT navigate
+    // (otherwise the navigate handler re-adds the node to expanded)
+    navState.expanded.delete(nodeId);
+    renderNavTree();
+  } else {
+    // Expand AND navigate
+    navState.expanded.add(nodeId);
+    renderNavTree();
+    if (route) navigate(route, params || {});
+  }
 }
 
 function toggleNavNode(id) {
