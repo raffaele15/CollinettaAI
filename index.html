@@ -232,7 +232,37 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .search-result-title{font-family:var(--serif);font-size:17px;font-weight:500;margin-bottom:4px;color:var(--ink)}
 .search-result-snippet{font-size:13px;color:var(--ink-muted);line-height:1.5}
 
-@media print{body{background:white;color:black}header.topbar,aside.sidebar,.page-actions,.editor-head-actions{display:none!important}main.content{padding:0;max-width:100%}.procedura-body blockquote{background:#f4f4f4}a{color:black}}
+@media print{body{background:white;color:black}header.topbar,aside.sidebar,.page-actions,.editor-head-actions{display:none!important}main.content{padding:0;max-width:100%}.procedura-body blockquote{background:#f4f4f4}a{color:black}details.scheda-section{border:none}details.scheda-section[open] .scheda-summary::after{display:none}.scheda-summary{cursor:default}}
+
+/* SCHEDA FLESSIBILE */
+.scheda-section{margin-bottom:14px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);overflow:hidden}
+.scheda-section[open]{border-color:var(--rule-strong)}
+.scheda-summary{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;padding:14px 20px;cursor:pointer;background:var(--bg-sink);list-style:none;display:flex;align-items:center;gap:8px;transition:background .12s,color .12s}
+.scheda-summary::-webkit-details-marker{display:none}
+.scheda-summary::before{content:'▸';font-size:10px;color:var(--ink-faint);transition:transform .15s}
+.scheda-section[open] .scheda-summary::before{transform:rotate(90deg)}
+.scheda-summary:hover{background:var(--rule-soft);color:var(--ink)}
+.scheda-section[open] .scheda-summary{color:var(--ink)}
+.scheda-content{padding:18px 20px;font-size:15px;line-height:1.6}
+.scheda-subtitle{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;font-weight:500}
+.scheda-subtitle-warn{color:var(--danger)}
+.scheda-two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:600px){.scheda-two-col{grid-template-columns:1fr;gap:16px}}
+.scheda-list{margin:0 0 0 20px;padding:0}
+.scheda-list li{margin-bottom:6px;line-height:1.5}
+.scheda-checklist{list-style:none;margin-left:0}
+.scheda-checklist li{padding-left:24px;position:relative}
+.scheda-checklist li::before{content:'';position:absolute;left:0;top:7px;width:12px;height:12px;border:1.5px solid var(--rule-strong);border-radius:2px}
+.scheda-kv-table{width:100%;border-collapse:collapse;font-size:14px}
+.scheda-kv-table th{text-align:left;padding:8px 14px 8px 0;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;vertical-align:top;width:32%;border-bottom:1px solid var(--rule-soft)}
+.scheda-kv-table td{padding:8px 0;color:var(--ink-soft);border-bottom:1px solid var(--rule-soft);vertical-align:top;line-height:1.5}
+.scheda-kv-table tr:last-child th,.scheda-kv-table tr:last-child td{border-bottom:none}
+
+.nav-sub{margin-left:12px;padding-left:12px;border-left:1px solid var(--rule-soft)}
+.nav-sub .nav-item{font-size:13px;padding:5px 10px}
+.nav-group-expandable{cursor:pointer}
+.nav-caret{font-size:10px;color:var(--ink-faint);transition:transform .15s;margin-left:auto}
+.nav-group-expandable.expanded .nav-caret{transform:rotate(90deg)}
 </style>
 </head>
 <body>
@@ -495,17 +525,43 @@ function clearSession() { sessionStorage.removeItem(SESSION_KEY); state.session 
 async function buildIndex() {
   const index = { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, lastIndexed: nowIso() };
 
+  // Recursive walk through content/procedure/ tree
+  async function walkProcedure(path, depth = 0) {
+    if (depth > 3) return;
+    try {
+      const items = await gh.listDir(path);
+      for (const it of items) {
+        if (it.type === 'dir') {
+          await walkProcedure(it.path, depth + 1);
+        } else if (it.type === 'file' && it.name.endsWith('.md')) {
+          const slug = it.name.replace(/\.md$/, '');
+          const file = await gh.getFile(it.path);
+          if (!file) continue;
+          const { frontmatter, body } = parseMarkdown(file.content);
+          // Auto-derive categoria + sottocategoria from path if not in frontmatter
+          const relPath = it.path.replace(/^content\/procedure\//, '');
+          const parts = relPath.split('/');
+          const autoCategoria = parts.length >= 2 ? parts[0] : (frontmatter.categoria || 'altre');
+          const autoSottocategoria = parts.length >= 3 ? parts[1] : null;
+          // Handle 3-level nesting (e.g. richieste/imaging/neuroimaging/...)
+          const autoSottoSotto = parts.length >= 4 ? parts[2] : null;
+          index.procedure.push({
+            slug,
+            path: it.path,
+            sha: file.sha,
+            categoria: frontmatter.categoria || autoCategoria,
+            sottocategoria: frontmatter.sottocategoria || autoSottocategoria || autoSottoSotto,
+            ...frontmatter,
+            body_preview: body.substring(0, 300),
+            body
+          });
+        }
+      }
+    } catch (e) { console.warn('walk error', path, e); }
+  }
   try {
-    const files = await gh.listDir('content/procedure');
-    for (const f of files) {
-      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
-      const slug = f.name.replace(/\.md$/, '');
-      const file = await gh.getFile(f.path);
-      if (!file) continue;
-      const { frontmatter, body } = parseMarkdown(file.content);
-      index.procedure.push({ slug, path: f.path, sha: file.sha, ...frontmatter, body_preview: body.substring(0, 300), body });
-    }
-  } catch (e) { console.warn('procedure index error', e); }
+    await walkProcedure('content/procedure');
+  } catch (e) { console.warn('procedure recursive index error', e); }
 
   try {
     const files = await gh.listDir('content/moduli');
@@ -803,6 +859,7 @@ function navigate(route, params = {}) {
     case 'manuale': renderManuale(); break;
     case 'capitolo': renderCapitolo(params.id); break;
     case 'procedure': renderProcedureList(); break;
+    case 'procedure-cat': renderProcedureByCategoria(params.cat, params.sub); break;
     case 'procedura': renderProcedura(params.slug); break;
     case 'procedura-edit': renderProceduraEditor(params.slug); break;
     case 'numeri': renderNumeri(params.filter); break;
@@ -973,6 +1030,16 @@ function renderCapitolo(capId) {
 
 function renderProcedureList() {
   const procs = state.index.procedure;
+  // Group by categoria
+  const byCat = {};
+  procs.forEach(p => {
+    const c = p.categoria || 'altre';
+    if (!byCat[c]) byCat[c] = [];
+    byCat[c].push(p);
+  });
+  const catOrder = ['bedside','richieste','farmacologiche','emergenze','clinica','gestione'];
+  const cats = [...catOrder.filter(c => byCat[c]), ...Object.keys(byCat).filter(c => !catOrder.includes(c))];
+
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">Sezione</div>
@@ -981,7 +1048,64 @@ function renderProcedureList() {
         <button class="btn" onclick="nuovaProcedura()">+ Nuova procedura</button>
       </div>
     </div>
-    <div class="procedure-grid">${procs.map(p => renderProcedureCard(p)).join('') || '<p style="color:var(--ink-muted);">Nessuna procedura.</p>'}</div>`;
+    ${cats.map(cat => `
+      <div class="home-section">
+        <div class="home-section-title" style="cursor:pointer;" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})">
+          <span>${escapeHtml(CATEGORIA_LABELS[cat] || cat)}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);">${byCat[cat].length}</span>
+        </div>
+        <div class="procedure-grid">
+          ${byCat[cat].slice(0, 6).map(p => renderProcedureCard(p)).join('')}
+        </div>
+        ${byCat[cat].length > 6 ? `<div style="margin-top:10px;"><a onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})" style="font-family:var(--mono);font-size:12px;color:var(--accent);cursor:pointer;">Vedi tutte le ${byCat[cat].length} →</a></div>` : ''}
+      </div>
+    `).join('')}`;
+}
+
+function renderProcedureByCategoria(cat, subFilter) {
+  const procs = state.index.procedure.filter(p => p.categoria === cat);
+  if (procs.length === 0) return renderError('Categoria vuota', cat);
+
+  // Group by sottocategoria
+  const bySub = {};
+  procs.forEach(p => {
+    const s = p.sottocategoria || '_senza';
+    if (!bySub[s]) bySub[s] = [];
+    bySub[s].push(p);
+  });
+  const subs = Object.keys(bySub).sort();
+
+  const filtered = subFilter ? bySub[subFilter] || [] : procs;
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow" style="cursor:pointer;" onclick="navigate('procedure')">← Procedure</div>
+      <h1 class="page-title">${escapeHtml(CATEGORIA_LABELS[cat] || cat)}</h1>
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${filtered.length} procedur${filtered.length === 1 ? 'a' : 'e'}</div>
+      ${subs.length > 1 ? `
+        <div class="numeri-filters" style="margin-top:20px;">
+          <button class="filter-chip ${!subFilter ? 'active' : ''}" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})">Tutte</button>
+          ${subs.map(s => `<button class="filter-chip ${subFilter === s ? 'active' : ''}" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}', sub:'${escapeHtml(s)}'})">${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? '(senza sottocategoria)' : s))} <span style="opacity:.5;">${bySub[s].length}</span></button>`).join('')}
+        </div>
+      ` : ''}
+      <div class="page-actions">
+        <button class="btn" onclick="nuovaProcedura({categoria:'${escapeHtml(cat)}'${subFilter && subFilter !== '_senza' ? `, sottocategoria:'${escapeHtml(subFilter)}'` : ''}})">+ Nuova procedura</button>
+      </div>
+    </div>
+    ${subFilter || subs.length === 1
+      ? `<div class="procedure-grid">${filtered.map(p => renderProcedureCard(p)).join('')}</div>`
+      : subs.map(s => `
+          <div class="home-section">
+            <div class="home-section-title">
+              <span>${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? 'Senza sottocategoria' : s))}</span>
+              <span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);">${bySub[s].length}</span>
+            </div>
+            <div class="procedure-grid">
+              ${bySub[s].map(p => renderProcedureCard(p)).join('')}
+            </div>
+          </div>
+        `).join('')
+    }`;
 }
 
 /* ============================ VIEW — PROCEDURA ============================ */
@@ -989,8 +1113,178 @@ function renderProcedura(slug) {
   const proc = state.index.procedure.find(p => p.slug === slug);
   if (!proc) return renderError('Procedura non trovata', slug);
   const tagsHtml = (proc.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
-  const bodyHtml = DOMPurify.sanitize(marked.parse(proc.body || ''));
 
+  // Build category breadcrumb
+  const catLabel = proc.categoria ? CATEGORIA_LABELS[proc.categoria] || proc.categoria : 'Procedure';
+  const subLabel = proc.sottocategoria ? SOTTO_LABELS[proc.sottocategoria] || proc.sottocategoria : null;
+  const breadcrumb = proc.capitolo
+    ? `<span style="cursor:pointer;" onclick="navigate('capitolo', {id:'${escapeHtml(proc.capitolo)}'})">← ${escapeHtml((state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo)}</span> · Manuale`
+    : `<span style="cursor:pointer;" onclick="navigate('procedure-cat', {cat:'${escapeHtml(proc.categoria)}'})">${escapeHtml(catLabel)}</span>${subLabel ? ' · ' + escapeHtml(subLabel) : ''}`;
+
+  // Section renderers
+  const sections = [];
+
+  if (proc.sintesi) {
+    sections.push(schedaSection('Sintesi', `<p style="font-family:var(--serif);font-size:17px;line-height:1.55;font-style:italic;color:var(--ink-soft);">${escapeHtml(proc.sintesi)}</p>`, true));
+  }
+
+  // Two-column block: indicazioni | controindicazioni
+  if (Array.isArray(proc.indicazioni) || Array.isArray(proc.controindicazioni)) {
+    const ind = Array.isArray(proc.indicazioni) && proc.indicazioni.length
+      ? `<div><div class="scheda-subtitle">Indicazioni</div><ul class="scheda-list">${proc.indicazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>` : '';
+    const ctr = Array.isArray(proc.controindicazioni) && proc.controindicazioni.length
+      ? `<div><div class="scheda-subtitle scheda-subtitle-warn">Controindicazioni</div><ul class="scheda-list">${proc.controindicazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>` : '';
+    if (ind || ctr) sections.push(schedaSection('Indicazioni e controindicazioni', `<div class="scheda-two-col">${ind}${ctr}</div>`, true));
+  }
+
+  if (Array.isArray(proc.criteri_valutazione) && proc.criteri_valutazione.length) {
+    sections.push(schedaSection('Criteri di valutazione', `<ul class="scheda-list">${proc.criteri_valutazione.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+  if (proc.punteggio) {
+    const p = proc.punteggio;
+    const intBlock = Array.isArray(p.interpretazione) ? `<ul class="scheda-list" style="margin-top:8px;">${p.interpretazione.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>` : '';
+    sections.push(schedaSection('Punteggio', `<div><strong>Range:</strong> ${escapeHtml(p.range || '—')}</div>${intBlock}`));
+  }
+  if (proc.interpretazione && typeof proc.interpretazione === 'string') {
+    sections.push(schedaSection('Interpretazione', DOMPurify.sanitize(marked.parse(proc.interpretazione))));
+  }
+
+  if (Array.isArray(proc.prerequisiti) && proc.prerequisiti.length) {
+    sections.push(schedaSection('Prerequisiti', `<ul class="scheda-list scheda-checklist">${proc.prerequisiti.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+
+  if (proc.preparazione && typeof proc.preparazione === 'object') {
+    const p = proc.preparazione;
+    const rows = [];
+    if (p.diluizione) rows.push(['Diluizione', p.diluizione]);
+    if (p.concentrazione) rows.push(['Concentrazione', p.concentrazione]);
+    if (p.via_somministrazione) rows.push(['Via', p.via_somministrazione]);
+    if (p.compatibilita) rows.push(['Compatibilità', p.compatibilita]);
+    if (p.materiale) rows.push(['Materiale', p.materiale]);
+    if (p.note) rows.push(['Note', p.note]);
+    if (rows.length) sections.push(schedaSection('Preparazione', scheda2ColTable(rows)));
+  }
+
+  if (proc.dosaggio && typeof proc.dosaggio === 'object') {
+    const d = proc.dosaggio;
+    const rows = [];
+    if (d.carico) rows.push(['Carico', d.carico]);
+    if (d.mantenimento) rows.push(['Mantenimento', d.mantenimento]);
+    if (d.titolazione) rows.push(['Titolazione', d.titolazione]);
+    if (d.massimo) rows.push(['Dose massima', d.massimo]);
+    if (rows.length) sections.push(schedaSection('Dosaggio', scheda2ColTable(rows)));
+  }
+
+  if (proc.algoritmo_linee && typeof proc.algoritmo_linee === 'object') {
+    const lineeHtml = Object.entries(proc.algoritmo_linee).map(([key, linea]) => {
+      const nome = key.replace(/_/g, ' ').replace(/linea (\d)/, 'Linea $1');
+      const finestra = linea.finestra_temporale ? `<div style="font-family:var(--mono);font-size:11px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">⏱ ${escapeHtml(linea.finestra_temporale)}</div>` : '';
+      const cond = linea.condizione ? `<div style="font-style:italic;color:var(--ink-muted);margin-bottom:8px;font-size:14px;">${escapeHtml(linea.condizione)}</div>` : '';
+      const req = linea.richiede ? `<div style="background:var(--danger-soft);border-left:3px solid var(--danger);padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--danger);">${escapeHtml(linea.richiede)}</div>` : '';
+      const farmaci = Array.isArray(linea.farmaci) ? linea.farmaci.map(f => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--rule-soft);">
+          <div style="font-family:var(--serif);font-weight:600;font-size:15px;color:var(--ink);">${escapeHtml(f.nome)}</div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;"><strong>Dose:</strong> ${escapeHtml(f.dose || '—')}</div>
+          ${f.via ? `<div style="font-size:13px;color:var(--ink-soft);"><strong>Via:</strong> ${escapeHtml(f.via)}</div>` : ''}
+          ${f.alternative ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;">Alt: ${escapeHtml(f.alternative)}</div>` : ''}
+          ${f.note ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;">${escapeHtml(f.note)}</div>` : ''}
+          ${f.controindicazioni ? `<div style="font-size:12px;color:var(--danger);">⚠ ${escapeHtml(f.controindicazioni)}</div>` : ''}
+        </div>`).join('') : '';
+      const rip = linea.ripetibile ? `<div style="font-size:12px;color:var(--ink-muted);margin-top:8px;font-style:italic;">Ripetibile: ${escapeHtml(linea.ripetibile)}</div>` : '';
+      return `
+        <div style="margin-bottom:20px;padding:16px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;">
+          <div style="font-family:var(--serif);font-size:18px;font-weight:500;text-transform:capitalize;margin-bottom:8px;">${escapeHtml(nome)}</div>
+          ${finestra}${cond}${req}${farmaci}${rip}
+        </div>`;
+    }).join('');
+    sections.push(schedaSection('Algoritmo terapeutico', lineeHtml, true));
+  }
+
+  if (Array.isArray(proc.target_clinici) && proc.target_clinici.length) {
+    sections.push(schedaSection('Target clinici', `<ul class="scheda-list">${proc.target_clinici.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+
+  if (proc.richiesta_galileo && typeof proc.richiesta_galileo === 'object') {
+    const rg = proc.richiesta_galileo;
+    const rows = [];
+    if (rg.percorso) rows.push(['Percorso', rg.percorso]);
+    if (rg.urgenza) rows.push(['Urgenza', rg.urgenza]);
+    if (rg.note_quesito) rows.push(['Note quesito', rg.note_quesito]);
+    if (rg.allegati) rows.push(['Allegati', rg.allegati]);
+    if (rows.length) sections.push(schedaSection('Richiesta Galileo', scheda2ColTable(rows), true));
+  }
+
+  if (Array.isArray(proc.numeri_chiave) && proc.numeri_chiave.length) {
+    const numsHtml = proc.numeri_chiave.map(n => {
+      const nums = (n.numeri || []).map(num => `<button class="numero-btn" onclick="copyNumber('${escapeHtml(num)}')">${escapeHtml(num)}</button>`).join(' ');
+      return `
+        <div class="numero-row">
+          <div>
+            <div class="numero-label">${escapeHtml(n.etichetta)}${n.orari ? ` <span style="color:var(--ink-muted);font-size:12px;">· ${escapeHtml(n.orari)}</span>` : ''}</div>
+            ${n.note ? `<div class="numero-note">${escapeHtml(n.note)}</div>` : ''}
+          </div>
+          <div class="numero-nums">${nums}</div>
+        </div>`;
+    }).join('');
+    sections.push(schedaSection('Numeri chiave', numsHtml, true));
+  }
+
+  if (proc.orari || proc.tempistica || proc.durata_tipica) {
+    const rows = [];
+    if (proc.orari) rows.push(['Orari', proc.orari]);
+    if (proc.tempistica) rows.push(['Tempistica', proc.tempistica]);
+    if (proc.durata_tipica) rows.push(['Durata tipica', proc.durata_tipica]);
+    sections.push(schedaSection('Tempistiche', scheda2ColTable(rows)));
+  }
+
+  if (proc.monitoraggio && typeof proc.monitoraggio === 'object') {
+    const m = proc.monitoraggio;
+    const parts = [];
+    if (Array.isArray(m.parametri)) parts.push(`<div><strong>Parametri:</strong> ${m.parametri.map(escapeHtml).join(', ')}</div>`);
+    if (m.frequenza) parts.push(`<div><strong>Frequenza:</strong> ${escapeHtml(m.frequenza)}</div>`);
+    if (m.target) parts.push(`<div><strong>Target:</strong> ${escapeHtml(m.target)}</div>`);
+    if (Array.isArray(m.allarmi) && m.allarmi.length) parts.push(`<div style="margin-top:8px;"><strong>Allarmi</strong><ul class="scheda-list" style="margin-top:4px;">${m.allarmi.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul></div>`);
+    sections.push(schedaSection('Monitoraggio', parts.join(''), true));
+  }
+
+  if (proc.sospensione_weaning) {
+    sections.push(schedaSection('Sospensione / Weaning', `<p>${escapeHtml(proc.sospensione_weaning)}</p>`));
+  }
+  if (proc.sospensione_farmaci) {
+    sections.push(schedaSection('Sospensione farmaci', typeof proc.sospensione_farmaci === 'string' ? `<p>${escapeHtml(proc.sospensione_farmaci)}</p>` : `<p>Vedi tabella correlata.</p>`));
+  }
+
+  if (Array.isArray(proc.post_procedura) && proc.post_procedura.length) {
+    sections.push(schedaSection('Post-procedura', `<ul class="scheda-list">${proc.post_procedura.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+
+  if (Array.isArray(proc.effetti_avversi) && proc.effetti_avversi.length) {
+    sections.push(schedaSection('Effetti avversi', `<ul class="scheda-list">${proc.effetti_avversi.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+  if (Array.isArray(proc.interazioni) && proc.interazioni.length) {
+    sections.push(schedaSection('Interazioni', `<ul class="scheda-list">${proc.interazioni.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`));
+  }
+  if (proc.accesso_venoso) {
+    sections.push(schedaSection('Accesso venoso', `<p>${escapeHtml(proc.accesso_venoso)}</p>`));
+  }
+
+  if (proc.nota_diario_template) {
+    sections.push(schedaSection('Nota diario (template)',
+      `<div style="position:relative;">
+        <pre style="font-family:var(--serif);font-size:14px;line-height:1.6;background:var(--bg-sink);padding:16px 20px;border-left:3px solid var(--ink-faint);border-radius:0 2px 2px 0;white-space:pre-wrap;font-style:italic;color:var(--ink-soft);margin:0;">${escapeHtml(proc.nota_diario_template)}</pre>
+        <button class="btn sm ghost" style="position:absolute;top:8px;right:8px;" onclick="copyDiarioNote(this)" data-text="${escapeHtml(proc.nota_diario_template)}">Copia</button>
+      </div>`));
+  }
+
+  if (proc.note_libere) {
+    sections.push(schedaSection('Note libere', DOMPurify.sanitize(marked.parse(proc.note_libere))));
+  }
+
+  if (proc.riferimenti_bibliografici) {
+    sections.push(schedaSection('Riferimenti bibliografici', DOMPurify.sanitize(marked.parse(proc.riferimenti_bibliografici))));
+  }
+
+  // Related items
   const related = [];
   (proc.moduli_correlati || []).forEach(mid => {
     const m = state.index.moduli.find(x => x.slug === mid);
@@ -1000,19 +1294,30 @@ function renderProcedura(slug) {
     const t = state.index.tabelle.find(x => x.slug === tid);
     if (t) related.push({ label: 'Tabella', title: t.titolo, click: `navigate('tabella', {slug:'${t.slug}'})` });
   });
+  (proc.procedure_correlate || []).forEach(pid => {
+    const p = state.index.procedure.find(x => x.slug === pid);
+    if (p) related.push({ label: 'Procedura', title: p.titolo, click: `navigate('procedura', {slug:'${p.slug}'})` });
+  });
+  (proc.invii_campioni_correlati || []).forEach(pid => {
+    const p = state.index.procedure.find(x => x.slug === pid);
+    if (p) related.push({ label: 'Invio campione', title: p.titolo, click: `navigate('procedura', {slug:'${p.slug}'})` });
+  });
   (proc.numeri_correlati || []).forEach(nid => {
     const n = findContattoBySlug(nid);
     if (n) related.push({ label: 'Numero', title: `${n.etichetta} (${(n.numeri || []).join(', ')})`, click: `navigate('numeri', {filter:'${escapeHtml(nid)}'})` });
   });
 
+  // Fallback: free Markdown body (legacy)
+  const bodyHtml = proc.body && proc.body.trim() ? DOMPurify.sanitize(marked.parse(proc.body)) : '';
+
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${proc.capitolo ? `<span style="cursor:pointer;" onclick="navigate('capitolo', {id:'${escapeHtml(proc.capitolo)}'})">← ${escapeHtml((state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo)}</span> · Procedura` : 'Procedura'}</div>
+      <div class="page-eyebrow">${breadcrumb}</div>
       <h1 class="page-title">${escapeHtml(proc.titolo || proc.slug)}</h1>
       <div style="margin-top:12px;">${tagsHtml}</div>
       <div class="page-meta">
         <div class="page-meta-item">Aggiornata ${timeAgo(proc.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(proc.modificato_da || '—')}</strong></div>
-        ${proc.tempo_esecuzione_min ? `<div class="page-meta-item">Tempo tipico: ${escapeHtml(String(proc.tempo_esecuzione_min))} min</div>` : ''}
+        ${proc.urgenza_tipica ? `<div class="page-meta-item">Urgenza: ${escapeHtml(proc.urgenza_tipica)}</div>` : ''}
       </div>
       <div class="page-actions">
         <button class="btn" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
@@ -1021,13 +1326,75 @@ function renderProcedura(slug) {
         <button class="btn ghost" onclick="confirmDelete('procedura', '${escapeHtml(slug)}')">Elimina</button>
       </div>
     </div>
-    <article class="procedura-body">${bodyHtml}</article>
+
+    <article class="procedura-body">
+      ${sections.join('')}
+      ${bodyHtml ? `<div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--rule);">${bodyHtml}</div>` : ''}
+    </article>
+
     ${related.length ? `<div class="related-grid">${related.map(r => `
       <div class="related-card" onclick="${r.click}">
         <div class="related-card-label">${escapeHtml(r.label)}</div>
         <div class="related-card-title">${escapeHtml(r.title)}</div>
       </div>`).join('')}</div>` : ''}`;
 }
+
+function schedaSection(title, html, defaultOpen = false) {
+  const id = 'sec-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return `
+    <details class="scheda-section" ${defaultOpen ? 'open' : ''}>
+      <summary class="scheda-summary">${escapeHtml(title)}</summary>
+      <div class="scheda-content">${html}</div>
+    </details>`;
+}
+
+function scheda2ColTable(rows) {
+  return `<table class="scheda-kv-table"><tbody>${rows.map(([k, v]) => `
+    <tr><th>${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>
+  `).join('')}</tbody></table>`;
+}
+
+function copyDiarioNote(btn) {
+  const text = btn.dataset.text;
+  navigator.clipboard.writeText(text).then(
+    () => toast('Nota diario copiata', 'success', 1500),
+    () => toast('Copia fallita', 'error')
+  );
+}
+
+const CATEGORIA_LABELS = {
+  bedside: 'Bedside',
+  richieste: 'Richieste',
+  farmacologiche: 'Farmacologiche',
+  emergenze: 'Emergenze',
+  clinica: 'Clinica',
+  gestione: 'Gestione',
+  'procedure-reparto': 'Procedura reparto',
+  workflow: 'Workflow',
+  educational: 'Educational'
+};
+
+const SOTTO_LABELS = {
+  'liquorali': 'Liquorali',
+  'cardiologia': 'Cardiologia',
+  'pneumologia': 'Pneumologia',
+  'neuroimaging': 'Neuroimaging',
+  'altri-imaging': 'Altri imaging',
+  'neurofisiologia': 'Neurofisiologia',
+  'angiologia': 'Angiologia',
+  'invii-campioni': 'Invii campioni',
+  'altre-richieste': 'Altre richieste',
+  'emoderivati': 'Emoderivati',
+  'immunoterapia': 'Immunoterapia',
+  'pompe-infusione': 'Pompe infusione',
+  'somministrazioni-complesse': 'Somministrazioni complesse',
+  'monitoraggi-ematici': 'Monitoraggi ematici',
+  'prognosi': 'Prognosi',
+  'gestione-post-acuta': 'Gestione post-acuta',
+  'score-scale': 'Score e scale',
+  'dimissione': 'Dimissione',
+  'ingresso': 'Ingresso'
+};
 
 function showHistoryModal(slug) {
   const proc = state.index.procedure.find(p => p.slug === slug);
@@ -1579,26 +1946,44 @@ function nuovaProcedura(preset = {}) {
   const capOptions = (state.index.capitoli || []).map(c =>
     `<option value="${escapeHtml(c.id)}" ${preset.capitolo === c.id ? 'selected' : ''}>${escapeHtml((c.ordine ? c.ordine + '. ' : '') + c.titolo)}</option>`
   ).join('');
+  const catOptions = Object.entries(CATEGORIA_LABELS).slice(0, 6).map(([k, v]) =>
+    `<option value="${escapeHtml(k)}" ${preset.categoria === k ? 'selected' : ''}>${escapeHtml(v)}</option>`
+  ).join('');
+
+  // Collect existing sottocategorie per categoria for autocomplete
+  const subsByCat = {};
+  state.index.procedure.forEach(p => {
+    if (!p.categoria || !p.sottocategoria) return;
+    if (!subsByCat[p.categoria]) subsByCat[p.categoria] = new Set();
+    subsByCat[p.categoria].add(p.sottocategoria);
+  });
+
   showModal({
     title: 'Nuova procedura',
-    subtitle: 'Crea un file vuoto e ti apre subito l\'editor.',
+    subtitle: 'Crea un file vuoto e apre l\'editor.',
     body: `
       <div class="field">
         <label>Titolo</label>
         <input type="text" id="np-titolo" placeholder="es. Richiesta RX torace">
       </div>
       <div class="field">
-        <label>Slug (nome file, senza .md)</label>
+        <label>Slug (nome file)</label>
         <input type="text" id="np-slug" class="mono-input" placeholder="es. richiesta-rx-torace">
-        <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Solo minuscole, cifre e trattini. Deve essere unico.</div>
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Solo minuscole, cifre, trattini. Deve essere unico.</div>
       </div>
       <div class="field">
-        <label>Capitolo (opzionale)</label>
+        <label>Categoria</label>
+        <select id="np-categoria">${catOptions}</select>
+      </div>
+      <div class="field">
+        <label>Sottocategoria (opzionale)</label>
+        <input type="text" id="np-sottocategoria" class="mono-input" list="np-subs-list" placeholder="es. cardiologia" value="${escapeHtml(preset.sottocategoria || '')}">
+        <datalist id="np-subs-list"></datalist>
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Solo minuscole, cifre, trattini. Suggerimenti in base alla categoria scelta.</div>
+      </div>
+      <div class="field">
+        <label>Capitolo manuale (opzionale)</label>
         <select id="np-capitolo"><option value="">— nessuno —</option>${capOptions}</select>
-      </div>
-      <div class="field">
-        <label>Ordine nel capitolo (opzionale)</label>
-        <input type="text" id="np-ordine" class="mono-input" placeholder="1, 2, 3...">
       </div>
       <div id="np-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
     actions: [
@@ -1606,46 +1991,41 @@ function nuovaProcedura(preset = {}) {
       { label: 'Crea e apri editor', onClick: async () => {
         const titolo = $('np-titolo').value.trim();
         let slug = $('np-slug').value.trim().toLowerCase();
+        const categoria = $('np-categoria').value;
+        const sottocat = $('np-sottocategoria').value.trim().toLowerCase();
         const cap = $('np-capitolo').value;
-        const ord = $('np-ordine').value.trim();
         const err = $('np-error');
         err.style.display = 'none';
         const show = m => { err.textContent = m; err.style.display = 'block'; };
         if (!titolo) return show('Titolo obbligatorio.');
-        if (!slug) {
-          // Auto-slug from title
-          slug = titolo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-        }
-        if (!/^[a-z0-9-]+$/.test(slug)) return show('Slug non valido (solo minuscole, cifre, trattini).');
-        if (existingSlugs.has(slug)) return show('Slug già esistente. Scegline un altro.');
+        if (!slug) slug = titolo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+        if (!/^[a-z0-9-]+$/.test(slug)) return show('Slug non valido.');
+        if (existingSlugs.has(slug)) return show('Slug già esistente.');
+        if (sottocat && !/^[a-z0-9-]+$/.test(sottocat)) return show('Sottocategoria: solo minuscole, cifre, trattini.');
 
         const nf = {
-          id: slug,
-          titolo,
+          id: slug, titolo,
+          categoria,
           tag: [],
-          categoria: 'procedure-reparto',
           ultima_modifica: nowIso(),
           modificato_da: state.session.username,
           cronologia_recente: [{ data: nowIso(), utente: state.session.username, nota: 'creazione' }]
         };
+        if (sottocat) nf.sottocategoria = sottocat;
         if (cap) nf.capitolo = cap;
-        if (ord) { const n = parseInt(ord, 10); nf.ordine_nel_capitolo = isNaN(n) ? ord : n; }
 
-        const body = `## Descrizione\n\nScrivi qui la descrizione della procedura.\n`;
+        const body = '';
         const content = stringifyMarkdown(nf, body);
-        const path = `content/procedure/${slug}.md`;
+        // Build path: content/procedure/{categoria}/{sottocategoria?}/{slug}.md
+        let path = `content/procedure/${categoria}/`;
+        if (sottocat) path += `${sottocat}/`;
+        path += `${slug}.md`;
 
         try {
           const res = await gh.putFile(path, content, null, `Nuova procedura: ${slug} (by ${state.session.username})`);
           closeModal();
           toast(`Procedura "${slug}" creata`, 'success');
-          // Add to local index immediately so the editor can open it
-          state.index.procedure.push({
-            slug, path, sha: res.content.sha,
-            ...nf,
-            body_preview: body.substring(0, 300),
-            body
-          });
+          state.index.procedure.push({ slug, path, sha: res.content.sha, ...nf, body_preview: '', body });
           rebuildSearchIndex();
           updateNavCounts();
           navigate('procedura-edit', { slug });
@@ -1655,18 +2035,22 @@ function nuovaProcedura(preset = {}) {
       }}
     ]
   });
-  // Auto-fill slug from title as user types
+
   setTimeout(() => {
-    const tIn = $('np-titolo');
-    const sIn = $('np-slug');
-    if (!tIn || !sIn) return;
+    const tIn = $('np-titolo'), sIn = $('np-slug'), catIn = $('np-categoria'), subsList = $('np-subs-list');
     let userEditedSlug = false;
     sIn.addEventListener('input', () => { userEditedSlug = true; });
     tIn.addEventListener('input', () => {
       if (userEditedSlug) return;
-      const auto = tIn.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-      sIn.value = auto;
+      sIn.value = tIn.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
     });
+    function updateSubs() {
+      const cat = catIn.value;
+      const subs = subsByCat[cat] ? [...subsByCat[cat]] : [];
+      subsList.innerHTML = subs.map(s => `<option value="${escapeHtml(s)}">`).join('');
+    }
+    catIn.addEventListener('change', updateSubs);
+    updateSubs();
     tIn.focus();
   }, 50);
 }
