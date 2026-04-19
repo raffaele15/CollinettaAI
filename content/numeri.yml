@@ -1013,6 +1013,15 @@ gruppi:
   - id: anestesia-rianimazione
     nome: U.O.C. Anestesia e Rianimazione
     ubicazione: {piano: 3°, struttura: Monoblocco}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Monoblocco
+        piano: "3° piano"
+        fonte: https://www.aopd.veneto.it/Anestesia-e-Rianimazione
+      - tipo: ambulatori
+        edificio: Monoblocco
+        piano: "piano rialzato e 6° piano"
+        fonte: https://www.aopd.veneto.it/Anestesia-e-Rianimazione
     direttore: Dr. Tiberio Ivo
     email: anestesia.rianimaz@aopd.veneto.it
     contatti:
@@ -1250,6 +1259,22 @@ gruppi:
   - id: cardiologia
     nome: U.O.C. Cardiologia
     ubicazione: {struttura: Edificio Vincenzo Gallucci}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Centro Gallucci
+        piano: "2° piano"
+        area: "C5"
+        fonte: https://www.aopd.veneto.it/Cardiologia
+      - tipo: ambulatori
+        edificio: Monoblocco
+        piano: "1° piano"
+        area: "C8"
+        fonte: https://www.aopd.veneto.it/Cardiologia
+      - tipo: segreteria
+        edificio: Centro Gallucci
+        piano: "piano terra"
+        area: "C5"
+        fonte: https://www.aopd.veneto.it/Cardiologia
     direttore: Prof. Corrado Domenico
     email: cardiologia@aopd.veneto.it
     contatti:
@@ -1659,6 +1684,16 @@ gruppi:
   - id: chir-vascolare
     nome: U.O.C. Chirurgia Vascolare
     ubicazione: {piano: 3° Policlinico / 1° Monoblocco / 2° Giustinianeo}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Policlinico
+        piano: "3° piano"
+        area: "C3"
+        fonte: https://www.aopd.veneto.it/Chirurgia-Vascolare
+      - tipo: segreteria
+        edificio: Monoblocco
+        piano: "1° piano"
+        fonte: https://www.aopd.veneto.it/Chirurgia-Vascolare
     direttore: Prof. Grego Franco
     contatti:
       - {id: cv-direttore, etichetta: Direttore Prof. Grego Franco (1° MB), numeri: [1396]}
@@ -1972,6 +2007,22 @@ gruppi:
   - id: geriatrica
     nome: U.O.C. Geriatrica (Clinica)
     ubicazione: {piano: 8° e 10° OSA, 6° Monoblocco, ospedale_sede: "Sant'Antonio e Policlinico"}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Ospedale S. Antonio
+        piano: "5° piano (Reparto Geriatria)"
+        fonte: https://www.aopd.veneto.it/Geriatria
+      - tipo: degenze
+        edificio: Ospedale S. Antonio
+        piano: "8° e 9° piano (Ospedale di Comunità)"
+        fonte: https://www.aopd.veneto.it/Geriatria
+      - tipo: ambulatori
+        edificio: Centro Clinico Ambulatoriale (via G. Modena 9) / Ospedale S. Antonio / Poliambulatorio dei Colli
+        fonte: https://www.aopd.veneto.it/Geriatria
+      - tipo: segreteria
+        edificio: Ospedale S. Antonio
+        piano: "10° piano"
+        fonte: https://www.aopd.veneto.it/Geriatria
     direttore: Prof. Sergi Giuseppe
     email: clinica.geriatrica@aopd.veneto.it
     contatti:
@@ -2003,6 +2054,19 @@ gruppi:
   - id: ematologia
     nome: U.O.C. Ematologia
     ubicazione: {piano: 2° Palazzina Ambulatori Policlinico, struttura: 2°-3° Palazzina Malattie Infettive / 1° Giustinianeo}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Palazzina Malattie Infettive
+        piano: "2° piano (Sezione Protetta Trapianti)"
+        fonte: https://www.aopd.veneto.it/Ematologia
+      - tipo: ambulatori
+        edificio: Palazzina Ambulatori Policlinico
+        piano: "2° piano"
+        fonte: https://www.aopd.veneto.it/Ematologia
+      - tipo: day_hospital
+        edificio: Ospedale Giustinianeo
+        piano: "1° piano"
+        fonte: https://www.aopd.veneto.it/Ematologia
     direttore: Prof. Trentin Livio
     contatti:
       - {id: ema-direttore, etichetta: Responsabile Prof. Trentin Livio, numeri: [1722]}
@@ -2151,6 +2215,23 @@ gruppi:
   - id: malattie-infettive
     nome: U.O.C. Malattie Infettive e Tropicali
     ubicazione: {struttura: Edificio Malattie Infettive}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Edificio Malattie Infettive
+        piano: "1° piano"
+        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
+      - tipo: ambulatori
+        edificio: Edificio Malattie Infettive
+        piano: "piano terra"
+        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
+      - tipo: day_hospital
+        edificio: Edificio Malattie Infettive
+        piano: "piano terra"
+        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
+      - tipo: segreteria
+        edificio: Edificio Malattie Infettive
+        piano: "4° piano"
+        fonte: https://www.aopd.veneto.it/Malattie-infettive-e-tropicali
     direttore: Dr.ssa Cattelan A. Maria
     contatti:
       - {id: mi-direttore, etichetta: Direttore Dr.ssa Cattelan A. Maria (4° P), numeri: [3716]}
@@ -2198,6 +2279,16 @@ gruppi:
 
   - id: clinica-medica-1-trombotiche
     nome: U.O.C. Clinica Medica 1 - Malattie Trombotiche ed Emorragiche
+    sedi_operative:
+      - tipo: degenze
+        edificio: Monoblocco
+        piano: "7° piano"
+        area: "C8"
+        fonte: https://www.aopd.veneto.it/Clinica-Medica-1
+      - tipo: ambulatori
+        edificio: Palazzina Ambulatori Policlinico / Monoblocco
+        piano: "piano terra / 10° piano"
+        fonte: https://www.aopd.veneto.it/Clinica-Medica-1
     direttore: Prof. Simioni Paolo
     email: cl.medica1@aopd.veneto.it
     contatti:
@@ -2219,6 +2310,12 @@ gruppi:
   - id: clinica-medica-1-ori
     nome: U.O.C. Clinica Medica 1 - Osservazione Rapida Intensiva
     ubicazione: {piano: 2°, struttura: Monoblocco / Palazzina Ambulatori Policlinico}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Monoblocco
+        piano: "2° piano"
+        area: "C8"
+        fonte: https://www.aopd.veneto.it/Clinica-Medica-1
     direttore: Prof. Simioni Paolo
     email: cl.medica1@aopd.veneto.it
     contatti:
@@ -2286,6 +2383,19 @@ gruppi:
   - id: clinica-medica-3
     nome: U.O.C. Clinica Medica 3
     ubicazione: {piano: 9°-10°, struttura: Monoblocco}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Monoblocco
+        piano: "9° piano"
+        fonte: https://www.aopd.veneto.it/Clinica-Medica-3
+      - tipo: ambulatori
+        edificio: Centro Clinico Ambulatoriale (via G. Modena 9) / Monoblocco
+        piano: "9° piano"
+        fonte: https://www.aopd.veneto.it/Clinica-Medica-3
+      - tipo: day_hospital
+        edificio: Monoblocco
+        piano: "9° piano"
+        fonte: https://www.aopd.veneto.it/Clinica-Medica-3
     direttore: Prof.ssa Fioretto Paola
     email: cl.med3@aopd.veneto.it
     contatti:
@@ -2499,6 +2609,15 @@ gruppi:
   - id: medicina-laboratorio
     nome: U.O.C. Medicina di Laboratorio
     ubicazione: {struttura: Giustinianeo Laboratorio Centrale}
+    sedi_operative:
+      - tipo: diagnostica
+        edificio: Ospedale Giustinianeo
+        piano: "2° piano (Laboratorio)"
+        fonte: https://www.aopd.veneto.it/Medicina-di-laboratorio
+      - tipo: segreteria
+        edificio: Ospedale Giustinianeo
+        piano: "3° piano (Direzione)"
+        fonte: https://www.aopd.veneto.it/Medicina-di-laboratorio
     direttore: Prof.ssa Montagnana Martina
     contatti:
       - {id: mlab-segr-campigotto, etichetta: Segreteria Direzione - Campigotto Edoardo, numeri: [7933]}
@@ -2689,6 +2808,22 @@ gruppi:
   - id: nefrologia-2
     nome: U.O.C. Nefrologia 2
     ubicazione: {piano: 8°, struttura: Monoblocco}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Monoblocco
+        piano: "8° piano"
+        fonte: https://www.aopd.veneto.it/Nefrologia-2
+      - tipo: ambulatori
+        edificio: Monoblocco
+        piano: "8° piano"
+        fonte: https://www.aopd.veneto.it/Nefrologia-2
+      - tipo: day_hospital
+        edificio: Ospedale Giustinianeo
+        piano: "piano ammezzato"
+        fonte: https://www.aopd.veneto.it/Nefrologia-2
+      - tipo: ambulatori
+        edificio: Ospedale Giustinianeo (Trapianti Rene) / OSA (Dialisi) / Complesso Socio Sanitario Colli (Dialisi)
+        fonte: https://www.aopd.veneto.it/Nefrologia-2
     direttore: Prof. Nalesso Federico
     email: nefrologia2@aopd.veneto.it
     contatti:
@@ -2738,6 +2873,23 @@ gruppi:
   - id: neurochirurgia
     nome: U.O.C. Neurochirurgia
     ubicazione: {struttura: Edificio Neurologia}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Edificio Neurochirurgia
+        piano: "3° piano"
+        fonte: https://www.aopd.veneto.it/Neurochirurgia
+      - tipo: ambulatori
+        edificio: Edificio Neurochirurgia
+        piano: "piano terra"
+        fonte: https://www.aopd.veneto.it/Neurochirurgia
+      - tipo: sala_operatoria
+        edificio: Edificio Neurochirurgia
+        piano: "4° piano (TIPO - Terapia Intensiva Post-Operatoria)"
+        fonte: https://www.aopd.veneto.it/Neurochirurgia
+      - tipo: segreteria
+        edificio: Palazzina Neuroscienze
+        piano: "piano terra"
+        fonte: https://www.aopd.veneto.it/Neurochirurgia
     direttore: Dr. Chioffi Franco
     contatti:
       - {id: nch-direttore, etichetta: Direttore Dr. Chioffi Franco, numeri: [3640]}
@@ -2785,6 +2937,27 @@ gruppi:
   - id: neurologica-clinica
     nome: U.O.C. Neurologica (Clinica)
     ubicazione: {struttura: Edificio Neurologia}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Palazzina Neuroscienze
+        piano: "1° piano"
+        area: "B1"
+        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
+      - tipo: ambulatori
+        edificio: Palazzina Neuroscienze
+        piano: "1° piano"
+        area: "B1"
+        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
+      - tipo: day_hospital
+        edificio: Palazzina Malattie Infettive
+        piano: "3° piano"
+        area: "B12"
+        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
+      - tipo: segreteria
+        edificio: Palazzina Neuroscienze
+        piano: "piano terra"
+        area: "B1"
+        fonte: https://www.aopd.veneto.it/Clinica-Neurologica
     direttore: Prof. Corbetta Maurizio
     contatti:
       - {id: ncl-direttore, etichetta: Direttore Prof. Corbetta Maurizio, sezione: Direzione Piano Terra}
@@ -2839,6 +3012,12 @@ gruppi:
   - id: neurofisiopatologia-clinica
     nome: U.O.S.D. Neurofisiopatologia Clinica
     ubicazione: {piano: terra, struttura: Edificio Neurologia}
+    sedi_operative:
+      - tipo: diagnostica
+        edificio: Palazzina Neuroscienze
+        piano: "piano terra"
+        area: "B1"
+        fonte: https://www.aopd.veneto.it/Neurofisiopatologia-clinica
     contatti:
       - {id: nfc-direttore, etichetta: Direttore, numeri: [8562]}
       - {id: nfc-capotec-grego, etichetta: Capo Tecnico - Dr. Grego Alberto, numeri: [3619]}
@@ -2850,6 +3029,21 @@ gruppi:
   - id: stroke-unit
     nome: U.O.S.D. Stroke Unit
     ubicazione: {piano: terra, struttura: Edificio Neurologia}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Palazzina Neuroscienze
+        piano: "3° piano lato ovest"
+        area: "B1"
+        fonte: https://www.aopd.veneto.it/Stroke-Unit
+      - tipo: ambulatori
+        edificio: Palazzina Neuroscienze
+        piano: "piano terra"
+        area: "B1"
+        fonte: https://www.aopd.veneto.it/Stroke-Unit
+      - tipo: segreteria
+        edificio: Palazzina Neuroscienze
+        piano: "piano terra"
+        fonte: https://www.aopd.veneto.it/Stroke-Unit
     direttore: Dr. Baracchini Claudio
     contatti:
       - {id: su-resp, etichetta: Responsabile Dr. Baracchini Claudio, numeri: [6397]}
@@ -2862,6 +3056,12 @@ gruppi:
   - id: neuroradiologia
     nome: U.O.C. Neuroradiologia
     ubicazione: {piano: terra, struttura: Edificio Neurologia}
+    sedi_operative:
+      - tipo: diagnostica
+        edificio: Palazzina Neuroscienze
+        piano: "piano terra"
+        area: "B1"
+        fonte: https://www.aopd.veneto.it/Neuroradiologia
     direttore: Dr. Causin Francesco
     email: neuroradiologia@aopd.veneto.it
     contatti:
@@ -2999,6 +3199,21 @@ gruppi:
   - id: clinica-ortopedica
     nome: U.O.C. Clinica Ortopedica Traumatologica
     ubicazione: {piano: 3°-4°, struttura: Edificio Ortopedia}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Padiglione Ortopedia
+        piano: "3° e 4° piano"
+        area: "A5"
+        fonte: https://www.aopd.veneto.it/Clinica-Ortopedica-Traumatologica
+      - tipo: ambulatori
+        edificio: Padiglione Ortopedia
+        piano: "piano terra"
+        area: "A5"
+        fonte: https://www.aopd.veneto.it/Clinica-Ortopedica-Traumatologica
+      - tipo: segreteria
+        edificio: Padiglione Ortopedia
+        piano: "1° piano"
+        fonte: https://www.aopd.veneto.it/Clinica-Ortopedica-Traumatologica
     direttore: Prof. Ruggieri Pietro
     contatti:
       - {id: cort-segr-did, etichetta: Segreteria Didattica, numeri: [3312, 3355]}
@@ -3684,6 +3899,32 @@ gruppi:
   - id: pneumologia
     nome: U.O.C. Pneumologia
     ubicazione: {piano: rialzato e 1°, struttura: Policlinico}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Policlinico
+        piano: "1° piano"
+        area: "C3"
+        fonte: https://www.aopd.veneto.it/Pneumologia
+      - tipo: ambulatori
+        edificio: Policlinico
+        piano: "piano rialzato"
+        area: "C3"
+        fonte: https://www.aopd.veneto.it/Pneumologia
+      - tipo: day_hospital
+        edificio: Policlinico
+        piano: "piano rialzato"
+        area: "C3"
+        fonte: https://www.aopd.veneto.it/Pneumologia
+      - tipo: diagnostica
+        edificio: Policlinico
+        piano: "1° piano (Endoscopia respiratoria)"
+        area: "C3"
+        fonte: https://www.aopd.veneto.it/Pneumologia
+      - tipo: segreteria
+        edificio: Policlinico
+        piano: "7° piano"
+        area: "C3"
+        fonte: https://www.aopd.veneto.it/Pneumologia
     direttore: Prof. Spagnolo Paolo
     contatti:
       - {id: pneumo-direttore, etichetta: Direttore Prof. Spagnolo Paolo, numeri: [3704]}
@@ -3706,6 +3947,12 @@ gruppi:
   - id: pronto-soccorso
     nome: U.O.C. Pronto Soccorso
     ubicazione: {piano: terra, struttura: Monoblocco}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Monoblocco
+        piano: "piano terra"
+        area: "C9"
+        fonte: https://www.aopd.veneto.it/Accettazione-e-Pronto-Soccorso
     direttore: Dr. Cianci Vito
     contatti:
       - {id: ps-direttore, etichetta: Responsabile Dr. Cianci Vito, numeri: [8132]}
@@ -3804,6 +4051,12 @@ gruppi:
   - id: radiologia-1
     nome: U.O.C. Radiologia 1
     ubicazione: {struttura: Monoblocco e Ortopedia}
+    sedi_operative:
+      - tipo: diagnostica
+        edificio: Monoblocco
+        piano: "1° piano"
+        area: "C8"
+        fonte: https://www.aopd.veneto.it/Radiologia
     direttore: Dr. De Conti Giorgio
     contatti:
       - {id: r1-direttore, etichetta: Direttore Dr. De Conti Giorgio, numeri: [1982]}
@@ -3942,6 +4195,29 @@ gruppi:
   - id: urologia
     nome: U.O.C. Urologia
     ubicazione: {piano: 4°, struttura: Monoblocco}
+    sedi_operative:
+      - tipo: degenze
+        edificio: Monoblocco
+        piano: "4° piano"
+        area: "C8"
+        fonte: https://www.aopd.veneto.it/Urologia
+      - tipo: degenze
+        edificio: Ospedale S. Antonio
+        piano: "3° piano (Corpo D - Chirurgia / Corpo G - Week Surgery)"
+        fonte: https://www.aopd.veneto.it/Urologia
+      - tipo: ambulatori
+        edificio: Monoblocco
+        piano: "piano rialzato"
+        area: "C8"
+        fonte: https://www.aopd.veneto.it/Urologia
+      - tipo: ambulatori
+        edificio: Ospedale S. Antonio
+        piano: "piano -1 (Piastra Multidisciplinare, Corpo F)"
+        fonte: https://www.aopd.veneto.it/Urologia
+      - tipo: day_hospital
+        edificio: Ospedale S. Antonio
+        piano: "1° piano (Corpo D)"
+        fonte: https://www.aopd.veneto.it/Urologia
     direttore: Prof. Dal Moro Fabrizio
     contatti:
       - {id: uro-direttore, etichetta: Responsabile Prof. Dal Moro Fabrizio, numeri: [8742]}
