@@ -263,6 +263,39 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .nav-group-expandable{cursor:pointer}
 .nav-caret{font-size:10px;color:var(--ink-faint);transition:transform .15s;margin-left:auto}
 .nav-group-expandable.expanded .nav-caret{transform:rotate(90deg)}
+
+/* Sidebar subnav (contextual) */
+.sidebar-subnav{padding-top:4px;border-top:1px dashed var(--rule-soft);margin-top:4px}
+.nav-item-sub{font-size:13px;padding-left:16px;position:relative}
+.nav-item-sub::before{content:'';position:absolute;left:6px;top:50%;width:4px;height:4px;background:var(--rule-strong);border-radius:50%;transform:translateY(-50%)}
+.nav-item-sub.active{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.nav-item-sub.active::before{background:var(--accent)}
+
+/* Categoria collapsible blocks in main panel */
+.categoria-block{margin-bottom:14px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);overflow:hidden;transition:border-color .15s}
+.categoria-block[open]{border-color:var(--rule-strong);background:var(--bg-raised)}
+.categoria-block:hover{border-color:var(--rule-strong)}
+.categoria-summary{font-family:var(--serif);font-size:20px;font-weight:500;letter-spacing:-.01em;color:var(--ink);padding:18px 24px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:16px;transition:background .12s;background:linear-gradient(to bottom,var(--bg-paper),var(--bg-sink))}
+.categoria-summary::-webkit-details-marker{display:none}
+.categoria-summary::before{content:'+';font-family:var(--mono);font-size:20px;font-weight:400;color:var(--ink-muted);width:16px;text-align:center;transition:transform .18s ease;flex-shrink:0}
+.categoria-block[open] .categoria-summary::before{content:'−';color:var(--ink)}
+.categoria-summary:hover{background:linear-gradient(to bottom,var(--bg-raised),var(--bg-sink))}
+.categoria-title{flex:1}
+.categoria-count{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--ink-muted);padding:4px 10px;background:var(--bg-sink);border-radius:2px;letter-spacing:.04em}
+.categoria-block[open] .categoria-count{background:var(--bg-paper);border:1px solid var(--rule)}
+.categoria-content{padding:20px 24px 24px;border-top:1px solid var(--rule-soft)}
+
+/* Sottocategoria block inside a categoria */
+.sottocategoria-block{margin-bottom:28px}
+.sottocategoria-block:last-child{margin-bottom:0}
+.sottocategoria-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--rule-soft);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:color .12s}
+.sottocategoria-title:hover{color:var(--ink)}
+.sottocategoria-count{font-size:10px;color:var(--ink-faint)}
+
+/* Standalone sottocategoria (when viewing a single category page) */
+.sottocategoria-standalone{margin-bottom:10px}
+.sottocategoria-standalone .categoria-summary{font-size:17px;padding:14px 20px}
+.sottocategoria-standalone .categoria-content{padding:16px 20px 20px}
 </style>
 </head>
 <body>
@@ -319,12 +352,12 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
       <div class="nav-group">
         <div class="nav-group-label">Contenuti</div>
         <div class="nav-item" data-route="home"><span>Home</span></div>
-        <div class="nav-item" data-route="manuale"><span>Manuale</span><span class="nav-item-count" id="nav-count-capitoli">—</span></div>
         <div class="nav-item" data-route="procedure"><span>Procedure</span><span class="nav-item-count" id="nav-count-procedure">—</span></div>
         <div class="nav-item" data-route="clinica"><span>Clinica</span><span class="nav-item-count" id="nav-count-clinica">—</span></div>
         <div class="nav-item" data-route="numeri"><span>Numeri utili</span></div>
         <div class="nav-item" data-route="moduli"><span>Moduli</span><span class="nav-item-count" id="nav-count-moduli">—</span></div>
         <div class="nav-item" data-route="tabelle"><span>Tabelle</span><span class="nav-item-count" id="nav-count-tabelle">—</span></div>
+        <div class="nav-item" data-route="manuale"><span>Manuale</span><span class="nav-item-count" id="nav-count-capitoli">—</span></div>
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Sistema</div>
@@ -892,6 +925,11 @@ function navigate(route, params = {}) {
   state.currentView = route;
   window.removeEventListener('beforeunload', beforeUnloadHandler);
 
+  // Clear sidebar sub-nav unless staying in procedure-* or clinica-* tree
+  if (!['procedure', 'procedure-cat', 'clinica'].includes(route)) {
+    clearSidebarSubnav();
+  }
+
   $$('.nav-item').forEach(el => {
     el.classList.toggle('active', el.dataset.route === route || (route.startsWith(el.dataset.route + '-') && el.dataset.route));
   });
@@ -1076,7 +1114,6 @@ function renderCapitolo(capId) {
 
 function renderProcedureList() {
   const procs = state.index.procedure;
-  // Group by categoria
   const byCat = {};
   procs.forEach(p => {
     const c = p.categoria || 'altre';
@@ -1086,33 +1123,97 @@ function renderProcedureList() {
   const catOrder = ['bedside','richieste','farmacologiche','emergenze','gestione'];
   const cats = [...catOrder.filter(c => byCat[c]), ...Object.keys(byCat).filter(c => !catOrder.includes(c))];
 
+  renderSidebarSubnav(cats.map(c => ({
+    id: c,
+    label: CATEGORIA_LABELS[c] || c,
+    count: byCat[c].length,
+    onClick: `navigate('procedure-cat', {cat:'${escapeHtml(c)}'})`
+  })));
+
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">Sezione</div>
       <h1 class="page-title">Procedure</h1>
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${procs.length} schede, organizzate in ${cats.length} categorie.</div>
       <div class="page-actions">
         <button class="btn" onclick="nuovaProcedura()">+ Nuova procedura</button>
       </div>
     </div>
-    ${cats.map(cat => `
-      <div class="home-section">
-        <div class="home-section-title" style="cursor:pointer;" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})">
-          <span>${escapeHtml(CATEGORIA_LABELS[cat] || cat)}</span>
-          <span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);">${byCat[cat].length}</span>
-        </div>
-        <div class="procedure-grid">
-          ${byCat[cat].slice(0, 6).map(p => renderProcedureCard(p)).join('')}
-        </div>
-        ${byCat[cat].length > 6 ? `<div style="margin-top:10px;"><a onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})" style="font-family:var(--mono);font-size:12px;color:var(--accent);cursor:pointer;">Vedi tutte le ${byCat[cat].length} →</a></div>` : ''}
+    ${cats.map(cat => renderCategoriaBlock(cat, byCat[cat], false)).join('')}`;
+  attachCategoriaToggle();
+}
+
+function renderCategoriaBlock(cat, items, openByDefault) {
+  const label = CATEGORIA_LABELS[cat] || cat;
+  // Group by sottocategoria
+  const bySub = {};
+  items.forEach(p => {
+    const s = p.sottocategoria || '_senza';
+    if (!bySub[s]) bySub[s] = [];
+    bySub[s].push(p);
+  });
+  const subs = Object.keys(bySub).sort();
+
+  return `
+    <details class="categoria-block" ${openByDefault ? 'open' : ''} data-cat="${escapeHtml(cat)}">
+      <summary class="categoria-summary">
+        <span class="categoria-title">${escapeHtml(label)}</span>
+        <span class="categoria-count">${items.length}</span>
+      </summary>
+      <div class="categoria-content">
+        ${subs.length > 1 || (subs.length === 1 && subs[0] !== '_senza')
+          ? subs.map(s => `
+              <div class="sottocategoria-block">
+                <div class="sottocategoria-title" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}', sub:'${escapeHtml(s)}'})">
+                  ${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? 'Senza sottocategoria' : s))}
+                  <span class="sottocategoria-count">${bySub[s].length}</span>
+                </div>
+                <div class="procedure-grid">
+                  ${bySub[s].map(p => renderProcedureCard(p)).join('')}
+                </div>
+              </div>
+            `).join('')
+          : `<div class="procedure-grid">${items.map(p => renderProcedureCard(p)).join('')}</div>`
+        }
+      </div>
+    </details>`;
+}
+
+function attachCategoriaToggle() {
+  // Sync details open state to left sidebar active (optional visual enhancement)
+}
+
+function renderSidebarSubnav(items) {
+  const sidebar = document.querySelector('aside.sidebar');
+  if (!sidebar) return;
+  let wrap = document.getElementById('sidebar-subnav');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'sidebar-subnav';
+    wrap.className = 'nav-group sidebar-subnav';
+    // Insert before "Sistema" group
+    const sysGroup = sidebar.querySelectorAll('.nav-group')[1];
+    sidebar.insertBefore(wrap, sysGroup);
+  }
+  wrap.innerHTML = `
+    <div class="nav-group-label">In questa sezione</div>
+    ${items.map(it => `
+      <div class="nav-item nav-item-sub" onclick="${it.onClick}">
+        <span>${escapeHtml(it.label)}</span>
+        <span class="nav-item-count">${it.count}</span>
       </div>
     `).join('')}`;
+}
+
+function clearSidebarSubnav() {
+  const wrap = document.getElementById('sidebar-subnav');
+  if (wrap) wrap.remove();
 }
 
 function renderProcedureByCategoria(cat, subFilter) {
   const procs = state.index.procedure.filter(p => p.categoria === cat);
   if (procs.length === 0) return renderError('Categoria vuota', cat);
 
-  // Group by sottocategoria
   const bySub = {};
   procs.forEach(p => {
     const s = p.sottocategoria || '_senza';
@@ -1120,36 +1221,46 @@ function renderProcedureByCategoria(cat, subFilter) {
     bySub[s].push(p);
   });
   const subs = Object.keys(bySub).sort();
-
   const filtered = subFilter ? bySub[subFilter] || [] : procs;
+
+  // Sidebar sub-nav with sub-categories
+  const subnavItems = [
+    { id: '_all', label: 'Tutte', count: procs.length, onClick: `navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})`, active: !subFilter }
+  ];
+  subs.forEach(s => {
+    subnavItems.push({
+      id: s,
+      label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
+      count: bySub[s].length,
+      onClick: `navigate('procedure-cat', {cat:'${escapeHtml(cat)}', sub:'${escapeHtml(s)}'})`,
+      active: subFilter === s
+    });
+  });
+  renderSidebarSubnav(subnavItems);
 
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow" style="cursor:pointer;" onclick="navigate('procedure')">← Procedure</div>
       <h1 class="page-title">${escapeHtml(CATEGORIA_LABELS[cat] || cat)}</h1>
-      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${filtered.length} procedur${filtered.length === 1 ? 'a' : 'e'}</div>
-      ${subs.length > 1 ? `
-        <div class="numeri-filters" style="margin-top:20px;">
-          <button class="filter-chip ${!subFilter ? 'active' : ''}" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})">Tutte</button>
-          ${subs.map(s => `<button class="filter-chip ${subFilter === s ? 'active' : ''}" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}', sub:'${escapeHtml(s)}'})">${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? '(senza sottocategoria)' : s))} <span style="opacity:.5;">${bySub[s].length}</span></button>`).join('')}
-        </div>
-      ` : ''}
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${filtered.length} procedur${filtered.length === 1 ? 'a' : 'e'}${subFilter ? ` in ${escapeHtml(SOTTO_LABELS[subFilter] || subFilter)}` : ''}</div>
       <div class="page-actions">
         <button class="btn" onclick="nuovaProcedura({categoria:'${escapeHtml(cat)}'${subFilter && subFilter !== '_senza' ? `, sottocategoria:'${escapeHtml(subFilter)}'` : ''}})">+ Nuova procedura</button>
       </div>
     </div>
-    ${subFilter || subs.length === 1
+    ${subFilter || (subs.length === 1 && subs[0] === '_senza')
       ? `<div class="procedure-grid">${filtered.map(p => renderProcedureCard(p)).join('')}</div>`
       : subs.map(s => `
-          <div class="home-section">
-            <div class="home-section-title">
-              <span>${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? 'Senza sottocategoria' : s))}</span>
-              <span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);">${bySub[s].length}</span>
+          <details class="categoria-block sottocategoria-standalone">
+            <summary class="categoria-summary">
+              <span class="categoria-title">${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? 'Senza sottocategoria' : s))}</span>
+              <span class="categoria-count">${bySub[s].length}</span>
+            </summary>
+            <div class="categoria-content">
+              <div class="procedure-grid">
+                ${bySub[s].map(p => renderProcedureCard(p)).join('')}
+              </div>
             </div>
-            <div class="procedure-grid">
-              ${bySub[s].map(p => renderProcedureCard(p)).join('')}
-            </div>
-          </div>
+          </details>
         `).join('')
     }`;
 }
@@ -1390,34 +1501,45 @@ function renderClinicaList(subFilter) {
   const orderedSubs = [...subOrder.filter(s => bySub[s]), ...subs.filter(s => !subOrder.includes(s))];
   const filtered = subFilter ? (bySub[subFilter] || []) : items;
 
+  // Sidebar subnav
+  const subnavItems = [
+    { id: '_all', label: 'Tutte', count: items.length, onClick: `navigate('clinica')`, active: !subFilter }
+  ];
+  orderedSubs.forEach(s => {
+    subnavItems.push({
+      id: s,
+      label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
+      count: bySub[s].length,
+      onClick: `navigate('clinica', {sub:'${escapeHtml(s)}'})`,
+      active: subFilter === s
+    });
+  });
+  renderSidebarSubnav(subnavItems);
+
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">Sezione</div>
       <h1 class="page-title">Clinica</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Prognosi, gestione post-acuta, scale cliniche. Materiale di riferimento consultabile al letto.</div>
-      ${orderedSubs.length > 1 ? `
-        <div class="numeri-filters" style="margin-top:20px;">
-          <button class="filter-chip ${!subFilter ? 'active' : ''}" onclick="navigate('clinica')">Tutte</button>
-          ${orderedSubs.map(s => `<button class="filter-chip ${subFilter === s ? 'active' : ''}" onclick="navigate('clinica', {sub:'${escapeHtml(s)}'})">${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s))} <span style="opacity:.5;">${bySub[s].length}</span></button>`).join('')}
-        </div>
-      ` : ''}
       <div class="page-actions">
         <button class="btn" onclick="nuovaSchedaClinica(${subFilter && subFilter !== '_senza' ? `{sottocategoria:'${escapeHtml(subFilter)}'}` : ''})">+ Nuova scheda clinica</button>
       </div>
     </div>
     ${items.length === 0 ? '<p style="color:var(--ink-muted);">Nessuna scheda clinica ancora caricata.</p>' :
-      subFilter || orderedSubs.length === 1
+      subFilter || (orderedSubs.length === 1 && orderedSubs[0] === '_senza')
         ? `<div class="procedure-grid">${filtered.map(c => renderClinicaCard(c)).join('')}</div>`
         : orderedSubs.map(s => `
-            <div class="home-section">
-              <div class="home-section-title">
-                <span>${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? 'Senza sottocategoria' : s))}</span>
-                <span style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);">${bySub[s].length}</span>
+            <details class="categoria-block sottocategoria-standalone">
+              <summary class="categoria-summary">
+                <span class="categoria-title">${escapeHtml(SOTTO_LABELS[s] || (s === '_senza' ? 'Senza sottocategoria' : s))}</span>
+                <span class="categoria-count">${bySub[s].length}</span>
+              </summary>
+              <div class="categoria-content">
+                <div class="procedure-grid">
+                  ${bySub[s].map(c => renderClinicaCard(c)).join('')}
+                </div>
               </div>
-              <div class="procedure-grid">
-                ${bySub[s].map(c => renderClinicaCard(c)).join('')}
-              </div>
-            </div>
+            </details>
           `).join('')
     }`;
 }
