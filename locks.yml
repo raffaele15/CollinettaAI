@@ -1,4 +1,9 @@
 # Lock advisory per edit simultanei
 # Gestito dall'app, non modificare a mano
 
-locks: {}
+locks:
+  ecg:
+    utente: raffaele
+    iniziato: '2026-04-19T11:11:20.536Z'
+    scade: '2026-04-19T11:41:20.536Z'
+  
