@@ -1,9 +1,4 @@
 # Lock advisory per edit simultanei
 # Gestito dall'app, non modificare a mano
 
-locks:
-  rachicentesi:
-    utente: raffaele
-    iniziato: '2026-04-19T11:08:37.915Z'
-    scade: '2026-04-19T11:38:37.915Z'
-  
+locks: {}
