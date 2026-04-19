@@ -470,6 +470,7 @@ gruppi:
 
   - id: servizi-tecnici
     nome: U.O.C. Servizi Tecnici e Patrimoniali
+    non_clinico: true
     direttore: Ing. Spina Giovanni
     email: sr.tecnico@aopd.veneto.it
     contatti:
@@ -753,6 +754,7 @@ gruppi:
 
   - id: cartelle-cliniche
     nome: Servizio Cartelle Cliniche e Microfilm
+    non_clinico: true
     ubicazione: {struttura: Atrio Monoblocco (Sportelli 8 e 9)}
     email: cartelle.cliniche@aopd.veneto.it
     contatti:
@@ -4183,6 +4185,7 @@ gruppi:
 
   - id: trasporto-ammalati
     nome: Servizio Trasporto Ammalati
+    non_clinico: true
     ubicazione: {piano: terra, struttura: Monoblocco}
     direttore: Dr. Barin Andrea
     contatti:
