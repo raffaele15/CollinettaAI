@@ -91,6 +91,9 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 .user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:2px;border:1px solid var(--rule);cursor:pointer;transition:background .15s}
 .user-chip:hover{background:var(--bg-raised)}
 .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--bg-paper);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em}
+.rate-limit-pill{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:4px 8px;border-radius:2px;background:var(--bg-sink);color:var(--ink-muted);border:1px solid var(--rule-soft);white-space:nowrap}
+.rate-limit-pill.warning{background:var(--warning-soft);color:var(--warning);border-color:var(--warning)}
+.rate-limit-pill.danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
 .user-name{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.02em}
 
 .app-body{display:grid;grid-template-columns:240px 1fr;min-height:0}
@@ -338,6 +341,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
       <span class="search-kbd">⌘K</span>
     </div>
     <div class="topbar-actions">
+      <span id="rate-limit-indicator" class="rate-limit-pill hidden" title="GitHub API: chiamate residue / limite. Si resetta ogni ora.">— /—</span>
       <button class="icon-btn" id="btn-refresh" title="Aggiorna dal repository">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       </button>
@@ -456,6 +460,64 @@ async function decryptUserData(entry, passphrase) {
 }
 
 /* ============================ GITHUB API ============================ */
+/* ============================ IN-MEMORY CACHES ============================ */
+// Etag cache: path -> {etag, sha, content, type, lastChecked}
+// Lives in memory only (never localStorage). Session-backed via sessionStorage for intra-session speed.
+const etagCache = new Map();
+
+function saveEtagCacheToSession() {
+  try {
+    const obj = {};
+    etagCache.forEach((v, k) => { obj[k] = v; });
+    sessionStorage.setItem('collinettaai.etags', JSON.stringify({
+      _savedAt: nowIso(),
+      entries: obj
+    }));
+  } catch (e) { console.warn('etag cache persist failed', e); }
+}
+
+function loadEtagCacheFromSession() {
+  try {
+    const raw = sessionStorage.getItem('collinettaai.etags');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    // Invalidate cache older than 30 min
+    if ((new Date() - new Date(parsed._savedAt)) > 30 * 60 * 1000) {
+      sessionStorage.removeItem('collinettaai.etags');
+      return;
+    }
+    Object.entries(parsed.entries || {}).forEach(([k, v]) => etagCache.set(k, v));
+  } catch (e) { console.warn('etag cache load failed', e); }
+}
+
+// Rate limit monitor (visible to admin)
+const rateLimit = { remaining: null, limit: null, resetAt: null, updatedAt: null };
+
+function updateRateLimitFromHeaders(res) {
+  const rem = res.headers.get('x-ratelimit-remaining');
+  const lim = res.headers.get('x-ratelimit-limit');
+  const reset = res.headers.get('x-ratelimit-reset');
+  if (rem !== null) rateLimit.remaining = parseInt(rem, 10);
+  if (lim !== null) rateLimit.limit = parseInt(lim, 10);
+  if (reset !== null) rateLimit.resetAt = new Date(parseInt(reset, 10) * 1000);
+  rateLimit.updatedAt = new Date();
+  updateRateLimitIndicator();
+}
+
+function updateRateLimitIndicator() {
+  const el = document.getElementById('rate-limit-indicator');
+  if (!el) return;
+  if (rateLimit.remaining === null) return;
+  el.textContent = `API ${rateLimit.remaining}/${rateLimit.limit}`;
+  el.classList.remove('warning', 'danger');
+  if (rateLimit.remaining < 200) el.classList.add('danger');
+  else if (rateLimit.remaining < 1000) el.classList.add('warning');
+  if (rateLimit.resetAt) {
+    const minToReset = Math.max(0, Math.ceil((rateLimit.resetAt - new Date()) / 60000));
+    el.title = `GitHub API: ${rateLimit.remaining}/${rateLimit.limit} restanti. Reset tra ${minToReset} min.`;
+  }
+}
+
 const gh = {
   _headers() {
     return {
@@ -464,22 +526,59 @@ const gh = {
       'X-GitHub-Api-Version': '2022-11-28'
     };
   },
+  _headersWithEtag(path) {
+    const h = this._headers();
+    const cached = etagCache.get(path);
+    if (cached && cached.etag) h['If-None-Match'] = cached.etag;
+    return h;
+  },
   async getFile(path) {
-    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}&t=${Date.now()}`;
-    const res = await fetch(url, { headers: this._headers(), cache: 'no-store' });
-    if (res.status === 404) return null;
+    const cached = etagCache.get(path);
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}`;
+    const res = await fetch(url, { headers: this._headersWithEtag(path), cache: 'no-store' });
+    updateRateLimitFromHeaders(res);
+    if (res.status === 304 && cached) {
+      // Not modified: return cached data
+      return { content: cached.content, sha: cached.sha, path };
+    }
+    if (res.status === 404) { etagCache.delete(path); return null; }
     if (!res.ok) throw new Error(`GET ${path}: ${res.status}`);
     const data = await res.json();
     if (data.type !== 'file') return data;
     const content = data.content ? new TextDecoder().decode(base64ToBuffer(data.content.replace(/\n/g, ''))) : '';
+    const etag = res.headers.get('etag');
+    if (etag) etagCache.set(path, { etag, sha: data.sha, content, type: 'file', lastChecked: nowIso() });
     return { content, sha: data.sha, path: data.path };
   },
   async listDir(path) {
-    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}&t=${Date.now()}`;
-    const res = await fetch(url, { headers: this._headers(), cache: 'no-store' });
-    if (res.status === 404) return [];
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}`;
+    const cached = etagCache.get('dir:' + path);
+    const headers = this._headers();
+    if (cached && cached.etag) headers['If-None-Match'] = cached.etag;
+    const res = await fetch(url, { headers, cache: 'no-store' });
+    updateRateLimitFromHeaders(res);
+    if (res.status === 304 && cached) return cached.content;
+    if (res.status === 404) { etagCache.delete('dir:' + path); return []; }
     if (!res.ok) throw new Error(`LIST ${path}: ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    const etag = res.headers.get('etag');
+    if (etag) etagCache.set('dir:' + path, { etag, content: data, type: 'dir', lastChecked: nowIso() });
+    return data;
+  },
+  async getTree() {
+    // Single call: gets entire repo tree recursively
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/git/trees/${CONFIG.BRANCH}?recursive=1`;
+    const cached = etagCache.get('tree:' + CONFIG.BRANCH);
+    const headers = this._headers();
+    if (cached && cached.etag) headers['If-None-Match'] = cached.etag;
+    const res = await fetch(url, { headers, cache: 'no-store' });
+    updateRateLimitFromHeaders(res);
+    if (res.status === 304 && cached) return cached.content;
+    if (!res.ok) throw new Error(`GET TREE: ${res.status}`);
+    const data = await res.json();
+    const etag = res.headers.get('etag');
+    if (etag) etagCache.set('tree:' + CONFIG.BRANCH, { etag, content: data, type: 'tree', lastChecked: nowIso() });
+    return data;
   },
   async putFile(path, content, sha, message) {
     const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
@@ -557,133 +656,175 @@ function clearSession() { sessionStorage.removeItem(SESSION_KEY); state.session 
 
 /* ============================ INDEX BUILD ============================ */
 async function buildIndex() {
-  const index = { procedure: [], moduli: [], tabelle: [], cestino: [], numeri: null, lastIndexed: nowIso() };
+  const startTime = Date.now();
+  loadEtagCacheFromSession();
+  const index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: nowIso() };
 
-  // Recursive walk through content/procedure/ tree
-  async function walkProcedure(path, depth = 0) {
-    if (depth > 3) return;
-    try {
-      const items = await gh.listDir(path);
-      for (const it of items) {
-        if (it.type === 'dir') {
-          await walkProcedure(it.path, depth + 1);
-        } else if (it.type === 'file' && it.name.endsWith('.md')) {
-          const slug = it.name.replace(/\.md$/, '');
-          const file = await gh.getFile(it.path);
-          if (!file) continue;
-          const { frontmatter, body } = parseMarkdown(file.content);
-          // Auto-derive categoria + sottocategoria from path if not in frontmatter
-          const relPath = it.path.replace(/^content\/procedure\//, '');
-          const parts = relPath.split('/');
-          const autoCategoria = parts.length >= 2 ? parts[0] : (frontmatter.categoria || 'altre');
-          const autoSottocategoria = parts.length >= 3 ? parts[1] : null;
-          // Handle 3-level nesting (e.g. richieste/imaging/neuroimaging/...)
-          const autoSottoSotto = parts.length >= 4 ? parts[2] : null;
-          index.procedure.push({
-            slug,
-            path: it.path,
-            sha: file.sha,
-            categoria: frontmatter.categoria || autoCategoria,
-            sottocategoria: frontmatter.sottocategoria || autoSottocategoria || autoSottoSotto,
-            ...frontmatter,
-            body_preview: body.substring(0, 300),
-            body
-          });
-        }
-      }
-    } catch (e) { console.warn('walk error', path, e); }
+  // Single tree call to discover all files
+  let tree;
+  try {
+    tree = await gh.getTree();
+  } catch (e) {
+    console.warn('Tree API failed, falling back to recursive walk', e);
+    return await buildIndexFallback();
   }
-  try {
-    await walkProcedure('content/procedure');
-  } catch (e) { console.warn('procedure recursive index error', e); }
 
-  // Separate walk for content/clinica/
-  async function walkClinica(path, depth = 0) {
-    if (depth > 3) return;
-    try {
-      const items = await gh.listDir(path);
-      for (const it of items) {
-        if (it.type === 'dir') {
-          await walkClinica(it.path, depth + 1);
-        } else if (it.type === 'file' && it.name.endsWith('.md')) {
-          const slug = it.name.replace(/\.md$/, '');
-          const file = await gh.getFile(it.path);
-          if (!file) continue;
-          const { frontmatter, body } = parseMarkdown(file.content);
-          const relPath = it.path.replace(/^content\/clinica\//, '');
-          const parts = relPath.split('/');
-          const autoSottocategoria = parts.length >= 2 ? parts[0] : null;
-          index.clinica.push({
-            slug,
-            path: it.path,
-            sha: file.sha,
-            categoria: 'clinica',
-            sottocategoria: frontmatter.sottocategoria || autoSottocategoria,
-            ...frontmatter,
-            body_preview: body.substring(0, 300),
-            body
-          });
-        }
-      }
-    } catch (e) { console.warn('clinica walk error', path, e); }
+  // Filter file paths by section
+  const procPaths = [], clinicaPaths = [], moduliPaths = [], tabellePaths = [], cestinoPaths = [];
+  const specialFiles = { numeri: null, capitoli: null };
+  (tree.tree || []).forEach(item => {
+    if (item.type !== 'blob') return;
+    const p = item.path;
+    if (p === 'content/numeri.yml') specialFiles.numeri = p;
+    else if (p === 'content/capitoli.yml') specialFiles.capitoli = p;
+    else if (p.startsWith('content/procedure/') && p.endsWith('.md')) procPaths.push(p);
+    else if (p.startsWith('content/clinica/') && p.endsWith('.md')) clinicaPaths.push(p);
+    else if (p.startsWith('content/moduli/') && p.endsWith('.md')) moduliPaths.push(p);
+    else if (p.startsWith('content/tabelle/') && p.endsWith('.md')) tabellePaths.push(p);
+    else if (p.startsWith('cestino/') && p.endsWith('.md')) cestinoPaths.push(p);
+  });
+
+  // Parallel fetch all md files in batches of 10 to avoid overwhelming API
+  async function fetchBatch(paths) {
+    const results = [];
+    const batchSize = 10;
+    for (let i = 0; i < paths.length; i += batchSize) {
+      const batch = paths.slice(i, i + batchSize);
+      const batchResults = await Promise.all(batch.map(p =>
+        gh.getFile(p).catch(e => { console.warn('fetch error', p, e); return null; })
+      ));
+      results.push(...batchResults);
+    }
+    return results;
   }
-  try {
-    await walkClinica('content/clinica');
-  } catch (e) { console.warn('clinica index error', e); }
 
-  try {
-    const files = await gh.listDir('content/moduli');
-    for (const f of files) {
-      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
-      const slug = f.name.replace(/\.md$/, '');
-      const file = await gh.getFile(f.path);
-      if (!file) continue;
-      const { frontmatter, body } = parseMarkdown(file.content);
-      index.moduli.push({ slug, path: f.path, sha: file.sha, ...frontmatter, body });
-    }
-  } catch (e) { console.warn('moduli index error', e); }
+  // Fetch everything in parallel
+  const [procFiles, clinicaFiles, moduliFiles, tabelleFiles, cestinoFiles, numeriFile, capitoliFile] = await Promise.all([
+    fetchBatch(procPaths),
+    fetchBatch(clinicaPaths),
+    fetchBatch(moduliPaths),
+    fetchBatch(tabellePaths),
+    fetchBatch(cestinoPaths),
+    specialFiles.numeri ? gh.getFile(specialFiles.numeri).catch(() => null) : Promise.resolve(null),
+    specialFiles.capitoli ? gh.getFile(specialFiles.capitoli).catch(() => null) : Promise.resolve(null)
+  ]);
 
-  try {
-    const files = await gh.listDir('content/tabelle');
-    for (const f of files) {
-      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
-      const slug = f.name.replace(/\.md$/, '');
-      const file = await gh.getFile(f.path);
-      if (!file) continue;
-      const { frontmatter, body } = parseMarkdown(file.content);
-      index.tabelle.push({ slug, path: f.path, sha: file.sha, ...frontmatter, body });
-    }
-  } catch (e) { console.warn('tabelle index error', e); }
+  // Process procedure files
+  procFiles.forEach((file, i) => {
+    if (!file) return;
+    const path = procPaths[i];
+    const slug = path.split('/').pop().replace(/\.md$/, '');
+    const { frontmatter, body } = parseMarkdown(file.content);
+    const relPath = path.replace(/^content\/procedure\//, '');
+    const parts = relPath.split('/');
+    const autoCategoria = parts.length >= 2 ? parts[0] : (frontmatter.categoria || 'altre');
+    const autoSottocategoria = parts.length >= 3 ? parts[1] : null;
+    const autoSottoSotto = parts.length >= 4 ? parts[2] : null;
+    index.procedure.push({
+      slug, path, sha: file.sha,
+      categoria: frontmatter.categoria || autoCategoria,
+      sottocategoria: frontmatter.sottocategoria || autoSottocategoria || autoSottoSotto,
+      ...frontmatter,
+      body_preview: body.substring(0, 300),
+      body
+    });
+  });
 
-  try {
-    const cFiles = await gh.listDir('cestino/procedure');
-    for (const f of cFiles) {
-      if (f.type !== 'file' || !f.name.endsWith('.md')) continue;
-      const file = await gh.getFile(f.path);
-      if (!file) continue;
-      const { frontmatter } = parseMarkdown(file.content);
-      index.cestino.push({ filename: f.name, path: f.path, sha: file.sha, ...frontmatter });
-    }
-  } catch (e) { console.warn('cestino index error', e); }
+  // Process clinica files
+  clinicaFiles.forEach((file, i) => {
+    if (!file) return;
+    const path = clinicaPaths[i];
+    const slug = path.split('/').pop().replace(/\.md$/, '');
+    const { frontmatter, body } = parseMarkdown(file.content);
+    const relPath = path.replace(/^content\/clinica\//, '');
+    const parts = relPath.split('/');
+    const autoSottocategoria = parts.length >= 2 ? parts[0] : null;
+    index.clinica.push({
+      slug, path, sha: file.sha,
+      categoria: 'clinica',
+      sottocategoria: frontmatter.sottocategoria || autoSottocategoria,
+      ...frontmatter,
+      body_preview: body.substring(0, 300),
+      body
+    });
+  });
 
-  try {
-    const file = await gh.getFile('content/numeri.yml');
-    if (file) {
-      const parsed = jsyaml.load(file.content) || {};
-      index.numeri = { ...parsed, _sha: file.sha, _path: file.path };
-    }
-  } catch (e) { console.warn('numeri load error', e); }
+  // Process moduli
+  moduliFiles.forEach((file, i) => {
+    if (!file) return;
+    const path = moduliPaths[i];
+    const slug = path.split('/').pop().replace(/\.md$/, '');
+    const { frontmatter, body } = parseMarkdown(file.content);
+    index.moduli.push({ slug, path, sha: file.sha, ...frontmatter, body });
+  });
 
-  try {
-    const file = await gh.getFile('content/capitoli.yml');
-    if (file) {
-      const parsed = jsyaml.load(file.content) || {};
+  // Process tabelle
+  tabelleFiles.forEach((file, i) => {
+    if (!file) return;
+    const path = tabellePaths[i];
+    const slug = path.split('/').pop().replace(/\.md$/, '');
+    const { frontmatter, body } = parseMarkdown(file.content);
+    index.tabelle.push({ slug, path, sha: file.sha, ...frontmatter, body });
+  });
+
+  // Process cestino
+  cestinoFiles.forEach((file, i) => {
+    if (!file) return;
+    const path = cestinoPaths[i];
+    const filename = path.split('/').pop();
+    const { frontmatter } = parseMarkdown(file.content);
+    index.cestino.push({ filename, path, sha: file.sha, ...frontmatter });
+  });
+
+  // Numeri.yml
+  if (numeriFile) {
+    try {
+      const parsed = jsyaml.load(numeriFile.content) || {};
+      index.numeri = { ...parsed, _sha: numeriFile.sha, _path: numeriFile.path };
+    } catch (e) { console.warn('numeri parse error', e); }
+  }
+
+  // Capitoli.yml
+  if (capitoliFile) {
+    try {
+      const parsed = jsyaml.load(capitoliFile.content) || {};
       index.capitoli = (parsed.capitoli || []).sort((a, b) => (a.ordine || 99) - (b.ordine || 99));
-    } else {
-      index.capitoli = [];
-    }
-  } catch (e) { console.warn('capitoli load error', e); index.capitoli = []; }
+    } catch (e) { console.warn('capitoli parse error', e); }
+  }
 
+  state.index = index;
+  rebuildSearchIndex();
+  updateNavCounts();
+  saveEtagCacheToSession();
+  updateRateLimitIndicator();
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`[buildIndex] ${elapsed}s — ${index.procedure.length}p ${index.clinica.length}c ${index.moduli.length}m ${index.tabelle.length}t · rate ${rateLimit.remaining}/${rateLimit.limit}`);
+  return index;
+}
+
+// Legacy fallback in case the tree API fails
+async function buildIndexFallback() {
+  console.warn('Using legacy recursive index walk (slower)');
+  const index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: nowIso() };
+  async function walk(dir, target) {
+    try {
+      const items = await gh.listDir(dir);
+      for (const it of items) {
+        if (it.type === 'dir') await walk(it.path, target);
+        else if (it.type === 'file' && it.name.endsWith('.md')) {
+          const file = await gh.getFile(it.path);
+          if (!file) continue;
+          const { frontmatter, body } = parseMarkdown(file.content);
+          target.push({ slug: it.name.replace(/\.md$/, ''), path: it.path, sha: file.sha, ...frontmatter, body, body_preview: body.substring(0,300) });
+        }
+      }
+    } catch (e) {}
+  }
+  await walk('content/procedure', index.procedure);
+  await walk('content/clinica', index.clinica);
+  await walk('content/moduli', index.moduli);
+  await walk('content/tabelle', index.tabelle);
   state.index = index;
   rebuildSearchIndex();
   updateNavCounts();
@@ -890,6 +1031,10 @@ async function enterApp() {
     : state.session.username.substring(0, 2);
   $('user-avatar').textContent = avatarSource.toUpperCase();
   $('nav-utenti').classList.toggle('hidden', state.session.username !== 'admin');
+  // Show rate limit only to admin
+  if (state.session.username === 'admin') {
+    document.getElementById('rate-limit-indicator').classList.remove('hidden');
+  }
   renderLoading('Indicizzazione contenuti...');
   try {
     await buildIndex();
@@ -904,6 +1049,12 @@ function logout() {
   state.index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null };
   state.editingContext = null;
   if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
+  // Clear ETag cache + rate limit indicator
+  etagCache.clear();
+  try { sessionStorage.removeItem('collinettaai.etags'); } catch {}
+  rateLimit.remaining = null; rateLimit.limit = null; rateLimit.resetAt = null;
+  const rl = document.getElementById('rate-limit-indicator');
+  if (rl) { rl.classList.add('hidden'); rl.textContent = '— /—'; }
   $('app-view').classList.add('hidden');
   $('login-view').classList.remove('hidden');
   $('login-username').value = '';
