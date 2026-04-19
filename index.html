@@ -745,8 +745,7 @@ function collectAllTermini() {
 
 function collectAllContattiSuggestions() {
   const out = [];
-  if (!state.index.numeri || !state.index.numeri.gruppi) return out;
-  state.index.numeri.gruppi.forEach(g => {
+  getVisibleNumeriGroups().forEach(g => {
     (g.contatti || []).forEach(c => {
       if (c.id) out.push({ id: c.id, label: `${c.etichetta} · ${g.nome}` });
     });
@@ -1378,11 +1377,13 @@ async function buildIndex() {
 
   // Filter file paths by section
   const procPaths = [], clinicaPaths = [], moduliPaths = [], tabellePaths = [], cestinoPaths = [];
-  const specialFiles = { numeri: null, capitoli: null };
+  const specialFiles = { numeri: null, capitoli: null, numeriOsa: null, numeriIov: null };
   (tree.tree || []).forEach(item => {
     if (item.type !== 'blob') return;
     const p = item.path;
     if (p === 'content/numeri.yml') specialFiles.numeri = p;
+    else if (p === 'content/numeri-osa.yml') specialFiles.numeriOsa = p;
+    else if (p === 'content/numeri-iov.yml') specialFiles.numeriIov = p;
     else if (p === 'content/capitoli.yml') specialFiles.capitoli = p;
     else if (p.startsWith('content/procedure/') && p.endsWith('.md')) procPaths.push(p);
     else if (p.startsWith('content/clinica/') && p.endsWith('.md')) clinicaPaths.push(p);
@@ -1390,6 +1391,11 @@ async function buildIndex() {
     else if (p.startsWith('content/tabelle/') && p.endsWith('.md')) tabellePaths.push(p);
     else if (p.startsWith('cestino/') && p.endsWith('.md')) cestinoPaths.push(p);
   });
+  // Track which extended directories exist (for lazy-load toggles)
+  state.numeriExtendedAvailable = {
+    osa: !!specialFiles.numeriOsa,
+    iov: !!specialFiles.numeriIov
+  };
 
   // Parallel fetch all md files in batches of 10 to avoid overwhelming API
   async function fetchBatch(paths) {
@@ -1445,11 +1451,14 @@ async function buildIndex() {
     const { frontmatter, body } = parseMarkdown(file.content);
     const relPath = path.replace(/^content\/clinica\//, '');
     const parts = relPath.split('/');
+    // parts = [sottocategoria, ...(optional nested), filename.md]
     const autoSottocategoria = parts.length >= 2 ? parts[0] : null;
+    const autoSottoSotto = parts.length >= 3 ? parts[1] : null;
     index.clinica.push({
       slug, path, sha: file.sha,
       categoria: 'clinica',
       sottocategoria: frontmatter.sottocategoria || autoSottocategoria,
+      sotto_sottocategoria: frontmatter.sotto_sottocategoria || autoSottoSotto,
       ...frontmatter,
       body_preview: body.substring(0, 300),
       body
@@ -1483,13 +1492,18 @@ async function buildIndex() {
     index.cestino.push({ filename, path, sha: file.sha, ...frontmatter });
   });
 
-  // Numeri.yml
+  // Numeri.yml (AOPD — sempre caricato)
   if (numeriFile) {
     try {
       const parsed = jsyaml.load(numeriFile.content) || {};
+      // Tag every group with its source ospedale (default 'aopd')
+      const ospedaleId = (parsed.ospedale && parsed.ospedale.id) || 'aopd';
+      (parsed.gruppi || []).forEach(g => { g._source = ospedaleId; });
       index.numeri = { ...parsed, _sha: numeriFile.sha, _path: numeriFile.path };
     } catch (e) { console.warn('numeri parse error', e); }
   }
+  // Initialize extended numeri stash (filled on demand by loadExtendedNumeri)
+  index.numeriExtended = { osa: null, iov: null };
 
   // Capitoli.yml
   if (capitoliFile) {
@@ -1500,6 +1514,20 @@ async function buildIndex() {
   }
 
   state.index = index;
+  // Restore extended-numeri toggles from session (load in background)
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('numeri_show_ext') || '{}');
+    state.showExtendedNumeri = { osa: !!saved.osa, iov: !!saved.iov };
+    // Trigger background loads (non-blocking)
+    if (state.showExtendedNumeri.osa && state.numeriExtendedAvailable.osa) {
+      loadExtendedNumeri('osa').catch(e => console.warn('OSA load failed', e));
+    }
+    if (state.showExtendedNumeri.iov && state.numeriExtendedAvailable.iov) {
+      loadExtendedNumeri('iov').catch(e => console.warn('IOV load failed', e));
+    }
+  } catch (e) {
+    state.showExtendedNumeri = { osa: false, iov: false };
+  }
   rebuildSearchIndex();
   updateNavCounts();
   saveEtagCacheToSession();
@@ -1508,6 +1536,54 @@ async function buildIndex() {
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(`[buildIndex] ${elapsed}s — ${index.procedure.length}p ${index.clinica.length}c ${index.moduli.length}m ${index.tabelle.length}t · rate ${rateLimit.remaining}/${rateLimit.limit}`);
   return index;
+}
+
+// ---- Extended numeri (OSA / IOV) lazy loading ----------------------------
+
+async function loadExtendedNumeri(source) {
+  // source = 'osa' | 'iov'
+  if (!state.index) return null;
+  if (!state.index.numeriExtended) state.index.numeriExtended = { osa: null, iov: null };
+  if (state.index.numeriExtended[source]) return state.index.numeriExtended[source]; // already loaded
+  const path = `content/numeri-${source}.yml`;
+  try {
+    const file = await gh.getFile(path);
+    if (!file) return null;
+    const parsed = jsyaml.load(file.content) || {};
+    const ospedaleId = (parsed.ospedale && parsed.ospedale.id) || source;
+    (parsed.gruppi || []).forEach(g => { g._source = ospedaleId; });
+    state.index.numeriExtended[source] = parsed;
+    rebuildSearchIndex();
+    return parsed;
+  } catch (e) {
+    console.warn(`Errore caricamento numeri-${source}.yml`, e);
+    toast(`Impossibile caricare la rubrica ${source.toUpperCase()}`, 'error');
+    return null;
+  }
+}
+
+function getVisibleNumeriGroups() {
+  // Returns the union of AOPD groups + any toggled-on extended source.
+  const groups = [];
+  if (state.index?.numeri?.gruppi) groups.push(...state.index.numeri.gruppi);
+  const ext = state.index?.numeriExtended || {};
+  const showExt = state.showExtendedNumeri || {};
+  if (showExt.osa && ext.osa?.gruppi) groups.push(...ext.osa.gruppi);
+  if (showExt.iov && ext.iov?.gruppi) groups.push(...ext.iov.gruppi);
+  return groups;
+}
+
+async function toggleExtendedNumeri(source, on) {
+  if (!state.showExtendedNumeri) state.showExtendedNumeri = { osa: false, iov: false };
+  state.showExtendedNumeri[source] = !!on;
+  try { sessionStorage.setItem('numeri_show_ext', JSON.stringify(state.showExtendedNumeri)); } catch (e) {}
+  if (on && state.numeriExtendedAvailable?.[source] && !state.index.numeriExtended?.[source]) {
+    toast(`Caricamento rubrica ${source.toUpperCase()}...`, 'info', 1500);
+    await loadExtendedNumeri(source);
+  }
+  rebuildSearchIndex();
+  renderNavTree();
+  if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
 }
 
 // Legacy fallback in case the tree API fails
@@ -1563,18 +1639,19 @@ function rebuildSearchIndex() {
     type: 'tabella', slug: t.slug,
     titolo: t.titolo || t.slug
   }));
-  if (state.index.numeri) {
-    (state.index.numeri.gruppi || []).forEach(g => {
-      (g.contatti || []).forEach(c => {
-        docs.push({
-          type: 'numero', slug: c.id,
-          titolo: c.etichetta, gruppo: g.nome,
-          numeri: (c.numeri || []).join(' '),
-          tag: (c.tag || []).join(' ')
-        });
+  // Numeri (AOPD always + toggled extended sources)
+  getVisibleNumeriGroups().forEach(g => {
+    (g.contatti || []).forEach(c => {
+      const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
+      docs.push({
+        type: 'numero', slug: c.id,
+        titolo: c.etichetta, gruppo: g.nome,
+        numeri: numeriStr,
+        ospedale: g._source || 'aopd',
+        tag: (c.tag || []).join(' ')
       });
     });
-  }
+  });
   state.fuse = new Fuse(docs, {
     keys: [
       { name: 'titolo', weight: 3 },
@@ -1841,8 +1918,7 @@ function renderError(title, detail) {
 }
 
 function findContattoBySlug(slug) {
-  if (!state.index.numeri) return null;
-  for (const g of (state.index.numeri.gruppi || [])) {
+  for (const g of getVisibleNumeriGroups()) {
     for (const c of (g.contatti || [])) if (c.id === slug) return { ...c, _gruppo: g.nome };
   }
   return null;
@@ -1951,12 +2027,6 @@ function renderHome() {
           <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);">→</div>
         </div>
       `).join('') || '<p style="color:var(--ink-muted);">Nessuna modifica recente.</p>'}
-    </div>
-
-    <div style="text-align:center;padding:32px 0 16px;">
-      <span style="font-size:13px;color:var(--ink-muted);cursor:pointer;" onclick="navigate('manuale')">
-        Apri il manuale completo →
-      </span>
     </div>`;
 }
 
@@ -2035,16 +2105,15 @@ function renderPinnedCartella(pin) {
 }
 
 function renderPinnedContatto(id) {
-  // Find the contact across all groups
-  if (!state.index.numeri || !state.index.numeri.gruppi) return null;
+  // Find the contact across all visible groups (AOPD + extended toggled)
   let foundContact = null, foundGroup = null;
-  for (const g of state.index.numeri.gruppi) {
+  for (const g of getVisibleNumeriGroups()) {
     const c = (g.contatti || []).find(x => x.id === id);
     if (c) { foundContact = c; foundGroup = g; break; }
   }
   if (!foundContact) return null;
   const nums = (foundContact.numeri || []).map(n =>
-    `<button class="numero-btn" onclick="event.stopPropagation();copyNumber('${escapeHtml(n)}')" title="Copia">${escapeHtml(n)}</button>`
+    `<button class="numero-btn" onclick="event.stopPropagation();copyNumber('${escapeHtml(String(n))}')" title="Copia">${escapeHtml(String(n))}</button>`
   ).join(' ');
   return `<div class="pinned-contact" onclick="navigate('numeri', {filter:'${escapeJs(id)}'})" style="cursor:pointer;">
     <span class="pinned-folder-icon">☎</span>
@@ -2054,8 +2123,7 @@ function renderPinnedContatto(id) {
 }
 
 function renderPinnedGruppo(id) {
-  if (!state.index.numeri || !state.index.numeri.gruppi) return null;
-  const g = state.index.numeri.gruppi.find(x => x.id === id);
+  const g = getVisibleNumeriGroups().find(x => x.id === id);
   if (!g) return null;
   const count = (g.contatti || []).length;
   return `<div class="pinned-folder" onclick="navigate('numeri', {filter:'${escapeJs(id)}'})">
@@ -2089,7 +2157,7 @@ function renderManuale() {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Manuale</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Manuale</div>
       <h1 class="page-title">How to Survive <em>Neuro</em></h1>
       <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">Manuale completo del reparto. Ogni capitolo aggrega le procedure che vi appartengono, in ordine di lettura.</div>
     </div>
@@ -2167,7 +2235,7 @@ function renderProcedureList() {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Sezione</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
       <h1 class="page-title">Procedure</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${procs.length} schede, organizzate in ${cats.length} categorie.</div>
       <div class="page-actions">
@@ -2242,8 +2310,11 @@ function renderProcedureByCategoria(cat, subFilter) {
     ? (SOTTO_LABELS[subFilter] || subFilter)
     : (CATEGORIA_LABELS[cat] || cat);
   const breadcrumb = subFilter
-    ? `<span style="cursor:pointer;color:var(--accent);" onclick="navigate('procedure')">Procedure</span> › <span style="cursor:pointer;color:var(--accent);" onclick="navigate('procedure-cat',{cat:'${escapeJs(cat)}'})">${escapeHtml(CATEGORIA_LABELS[cat] || cat)}</span>`
-    : `<span style="cursor:pointer;color:var(--accent);" onclick="navigate('procedure')">Procedure</span>`;
+    ? buildBreadcrumb([
+        { label: 'Procedure', route: 'procedure' },
+        { label: CATEGORIA_LABELS[cat] || cat, route: 'procedure-cat', params: { cat } }
+      ])
+    : buildBreadcrumb([{ label: 'Procedure', route: 'procedure' }]);
 
   $('main-content').innerHTML = `
     <div class="page-head">
@@ -2523,8 +2594,8 @@ function renderClinicaList(subFilter) {
     ? (SOTTO_LABELS[subFilter] || subFilter)
     : 'Clinica';
   const breadcrumb = subFilter
-    ? `<span style="cursor:pointer;color:var(--accent);" onclick="navigate('clinica')">Clinica</span>`
-    : `Sezione`;
+    ? buildBreadcrumb([{ label: 'Clinica', route: 'clinica' }])
+    : buildBreadcrumb([{ label: 'Home', route: 'home' }]);
   const subtitle = subFilter
     ? `${filtered.length} schede`
     : 'Prognosi, gestione post-acuta, scale cliniche. Materiale di riferimento consultabile al letto.';
@@ -2948,6 +3019,8 @@ const SOTTO_LABELS = {
   'prognosi': 'Prognosi',
   'gestione-post-acuta': 'Gestione post-acuta',
   'scale-cliniche': 'Scale cliniche',
+  'consulenze': 'Consulenze',
+  'emergenze': 'Emergenze',
   'dimissione': 'Dimissione',
   'ingresso': 'Ingresso'
 };
@@ -3078,17 +3151,20 @@ function renderEditorUI(slug, frontmatter, body) {
             })}
             <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Una sola sottocategoria. Le opzioni dipendono dalla Categoria scelta.</div>
           </div>
+          ${frontmatter.capitolo ? `
           <div class="field">
             <label for="meta-capitolo">Capitolo del manuale</label>
             <select id="meta-capitolo">
-              <option value="">— nessuno —</option>
+              <option value="">— rimuovi dal manuale —</option>
               ${(state.index.capitoli || []).map(c => `<option value="${escapeHtml(c.id)}" ${frontmatter.capitolo === c.id ? 'selected' : ''}>${escapeHtml(c.ordine ? c.ordine + '. ' : '')}${escapeHtml(c.titolo)}</option>`).join('')}
             </select>
+            <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Questa scheda appartiene a un capitolo del manuale.</div>
           </div>
           <div class="field">
             <label for="meta-ordine-cap">Ordine nel capitolo</label>
             <input type="text" id="meta-ordine-cap" class="mono-input" value="${escapeHtml(frontmatter.ordine_nel_capitolo || '')}" placeholder="1, 2, 3...">
           </div>
+          ` : ''}
           <div class="field" style="grid-column:1/-1;">
             <label>Tag</label>
             ${renderChipsField({
@@ -3098,10 +3174,6 @@ function renderEditorUI(slug, frontmatter, body) {
               placeholder: 'cerca o crea tag…',
               allowNew: true
             })}
-          </div>
-          <div class="field">
-            <label for="meta-tempo">Tempo esecuzione (min)</label>
-            <input type="text" id="meta-tempo" class="mono-input" value="${escapeHtml(frontmatter.tempo_esecuzione_min || '')}">
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Termini equivalenti / sinonimi</label>
@@ -3221,7 +3293,11 @@ function renderEditorUI(slug, frontmatter, body) {
 
   $('meta-categoria').addEventListener('change', refreshSottocategorieChips);
 
-  ['meta-titolo','meta-categoria','meta-capitolo','meta-ordine-cap','meta-tempo','meta-note-modifica'].forEach(id => {
+  ['meta-titolo','meta-categoria','meta-note-modifica'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  });
+  // Conditional fields (capitolo/ordine) only if present
+  ['meta-capitolo','meta-ordine-cap'].forEach(id => {
     const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
   });
 
@@ -3249,16 +3325,20 @@ async function saveProcedura() {
     // Sottocategoria (chips single-value)
     const subChips = typeof chipsGet === 'function' ? chipsGet('meta-sottocategoria-chips') : [];
     if (subChips.length > 0) nf.sottocategoria = subChips[0]; else delete nf.sottocategoria;
-    const capSel = $('meta-capitolo').value;
-    if (capSel) nf.capitolo = capSel; else delete nf.capitolo;
-    const ordCap = $('meta-ordine-cap').value.trim();
-    if (ordCap) { const n = parseInt(ordCap, 10); nf.ordine_nel_capitolo = isNaN(n) ? ordCap : n; }
-    else delete nf.ordine_nel_capitolo;
+    // Capitolo + ordine (only present in DOM if scheda already belongs to a chapter)
+    const capEl = $('meta-capitolo');
+    if (capEl) {
+      const capSel = capEl.value;
+      if (capSel) nf.capitolo = capSel; else delete nf.capitolo;
+      const ordEl = $('meta-ordine-cap');
+      const ordCap = ordEl ? ordEl.value.trim() : '';
+      if (ordCap) { const n = parseInt(ordCap, 10); nf.ordine_nel_capitolo = isNaN(n) ? ordCap : n; }
+      else delete nf.ordine_nel_capitolo;
+    }
     // Tag / termini / relazioni from chips
     nf.tag = typeof chipsGet === 'function' ? chipsGet('meta-tag-chips') : [];
-    const tempo = $('meta-tempo').value.trim();
-    if (tempo) { const n = parseInt(tempo, 10); nf.tempo_esecuzione_min = isNaN(n) ? tempo : n; }
-    else delete nf.tempo_esecuzione_min;
+    // Remove deprecated tempo_esecuzione_min
+    delete nf.tempo_esecuzione_min;
     nf.termini_equivalenti = chipsGet('meta-termini-chips');
     nf.moduli_correlati = chipsGet('meta-moduli-chips');
     nf.tabelle_correlate = chipsGet('meta-tabelle-chips');
@@ -3366,20 +3446,23 @@ function renderNumeri(filter) {
   if (!data) return renderError('Rubrica non disponibile', 'Il file content/numeri.yml non è stato caricato.');
 
   const codiciGen = data.codici_generali || [];
-  const gruppi = data.gruppi || [];
+  // Pull groups from AOPD + any extended sources toggled on
+  const allGroups = getVisibleNumeriGroups();
+  const showExt = state.showExtendedNumeri || { osa: false, iov: false };
+  const ext = state.numeriExtendedAvailable || {};
 
-  let filteredGruppi = gruppi;
+  let filteredGruppi = allGroups;
   let filterLabel = null;
   if (filter === 'guardia') {
-    filteredGruppi = gruppi.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
+    filteredGruppi = allGroups.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
     filterLabel = 'Medici di Guardia';
   } else if (filter === 'urgenza') {
-    filteredGruppi = gruppi.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('urgenza') || (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
+    filteredGruppi = allGroups.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('urgenza') || (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
     filterLabel = 'Urgenze e Guardie';
   } else if (filter) {
     const c = findContattoBySlug(filter);
     if (c) {
-      filteredGruppi = gruppi.map(g => {
+      filteredGruppi = allGroups.map(g => {
         const matches = (g.contatti || []).filter(x => x.id === filter);
         return matches.length ? { ...g, contatti: matches } : null;
       }).filter(Boolean);
@@ -3387,9 +3470,32 @@ function renderNumeri(filter) {
     }
   }
 
+  // Group by ospedale source for visual sectioning
+  const bySource = { aopd: [], osa: [], iov: [] };
+  filteredGruppi.forEach(g => {
+    const src = g._source || 'aopd';
+    if (!bySource[src]) bySource[src] = [];
+    bySource[src].push(g);
+  });
+  const sourceLabels = { aopd: 'AOPD — Azienda Ospedale Università Padova', osa: "OSA — Ospedale Sant'Antonio", iov: 'IOV — Istituto Oncologico Veneto' };
+
+  const toggleHtml = (ext.osa || ext.iov) ? `
+    <div class="numeri-extra-toggles" style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;font-size:13px;">
+      ${ext.osa ? `
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" ${showExt.osa ? 'checked' : ''} onchange="toggleExtendedNumeri('osa', this.checked)">
+          <span>Mostra anche Ospedale Sant'Antonio</span>
+        </label>` : ''}
+      ${ext.iov ? `
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" ${showExt.iov ? 'checked' : ''} onchange="toggleExtendedNumeri('iov', this.checked)">
+          <span>Mostra anche Istituto Oncologico Veneto</span>
+        </label>` : ''}
+    </div>` : '';
+
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Rubrica</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Rubrica</div>
       <h1 class="page-title">Numeri <em>utili</em></h1>
       ${filterLabel ? `<div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Filtrato per: <strong>${escapeHtml(filterLabel)}</strong></div>` : ''}
       <div class="numeri-filters" style="margin-top:20px;">
@@ -3397,6 +3503,7 @@ function renderNumeri(filter) {
         <button class="filter-chip ${filter === 'guardia' ? 'active' : ''}" onclick="navigate('numeri', {filter:'guardia'})">Solo MdG guardia</button>
         <button class="filter-chip ${filter === 'urgenza' ? 'active' : ''}" onclick="navigate('numeri', {filter:'urgenza'})">Urgenze</button>
       </div>
+      ${toggleHtml}
     </div>
 
     ${!filter && codiciGen.length ? `
@@ -3412,30 +3519,82 @@ function renderNumeri(filter) {
 
     ${filteredGruppi.length === 0 ? '<p style="color:var(--ink-muted);">Nessun contatto corrisponde al filtro.</p>' : ''}
 
-    ${filteredGruppi.map(g => `
-      <div class="numeri-group">
-        <h2 class="numeri-group-title">${escapeHtml(g.nome)} ${renderPinButton('gruppo', g.id)}</h2>
-        ${(g.contatti || []).map(c => renderNumeroRow(c)).join('')}
-      </div>
-    `).join('')}`;
+    <div class="edit-only" style="margin: 16px 0;">
+      <button class="btn ghost" onclick="nuovoGruppoNumeri()" style="font-size:13px;">+ Nuovo gruppo di numeri</button>
+    </div>
+
+    ${['aopd','osa','iov'].map(src => {
+      const list = bySource[src] || [];
+      if (!list.length) return '';
+      const showHeader = src !== 'aopd' || (showExt.osa || showExt.iov);
+      return `
+        ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
+        ${list.map(g => `
+          <div class="numeri-group">
+            <h2 class="numeri-group-title">
+              ${escapeHtml(g.nome)}${renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
+              <span class="edit-only" style="margin-left:auto;display:inline-flex;gap:6px;">
+                <button class="btn-icon-mini" onclick="renameGruppoNumeri('${escapeJs(g.id)}')" title="Modifica gruppo">✎</button>
+                <button class="btn-icon-mini" onclick="deleteGruppoNumeri('${escapeJs(g.id)}')" title="Elimina gruppo">🗑</button>
+              </span>
+            </h2>
+            ${g.direttore ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
+            ${g.email ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
+            ${(g.contatti || []).map(c => renderNumeroRow(c, g.id)).join('')}
+            <div class="edit-only" style="margin-top:8px;">
+              <button class="btn ghost" onclick="nuovoContatto('${escapeJs(g.id)}')" style="font-size:12px;">+ Aggiungi contatto</button>
+            </div>
+          </div>`).join('')}
+      `;
+    }).join('')}`;
 }
 
-function renderNumeroRow(c) {
+function renderUbicazioneBadge(ub) {
+  if (!ub) return '';
+  const parts = [];
+  if (ub.struttura) parts.push(escapeHtml(ub.struttura));
+  if (ub.piano) parts.push(`${escapeHtml(ub.piano)} piano`);
+  if (ub.indirizzo) parts.push(escapeHtml(ub.indirizzo));
+  if (ub.ospedale_sede) parts.push(escapeHtml(ub.ospedale_sede));
+  if (!parts.length) return '';
+  return ` <span style="font-family:var(--mono);font-size:11px;font-weight:400;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:3px;margin-left:8px;">${parts.join(' · ')}</span>`;
+}
+
+function renderNumeroRow(c, gruppoId) {
   const tags = c.tag || [];
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge">Guardia</span>` : '';
   const urgenzaBadge = tags.includes('urgenza') ? `<span class="badge" style="background:var(--danger-soft);color:var(--danger);">Urgenza</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
-  const nums = (c.numeri || []).map(n =>
-    `<button class="numero-btn" onclick="copyNumber('${escapeHtml(n)}')" title="Copia">${escapeHtml(n)}</button>`
-  ).join('');
+  const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
+  const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
+  // Numbers: internal extensions, then mobile, then breve
+  const numBtns = [];
+  (c.numeri || []).forEach(n => {
+    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(n))}')" title="Copia interno">${escapeHtml(String(n))}</button>`);
+  });
+  if (c.cellulare) {
+    const cells = Array.isArray(c.cellulare) ? c.cellulare : [c.cellulare];
+    cells.forEach(cell => {
+      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare" style="background:var(--accent-soft);">📱 ${escapeHtml(String(cell))}</button>`);
+    });
+  }
+  if (c.breve) {
+    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(c.breve))}')" title="Numero breve" style="background:var(--rule-soft);">br ${escapeHtml(String(c.breve))}</button>`);
+  }
+  const editControls = c.id ? `<span class="edit-only" style="display:inline-flex;gap:4px;margin-left:6px;">
+    <button class="btn-icon-mini" onclick="editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
+    <button class="btn-icon-mini" onclick="deleteContatto('${escapeJs(c.id)}')" title="Elimina">🗑</button>
+  </span>` : '';
   return `
     <div class="numero-row">
       <div>
-        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}</div>
+        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
+        ${sezione}
+        ${email}
         ${note}
       </div>
-      <div class="numero-nums">${nums || '<span style="font-size:12px;color:var(--ink-muted);">—</span>'}</div>
+      <div class="numero-nums">${numBtns.join('') || '<span style="font-size:12px;color:var(--ink-muted);">—</span>'}</div>
     </div>`;
 }
 
@@ -3453,7 +3612,7 @@ function renderModuliList() {
   const moduli = state.index.moduli;
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Sezione</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
       <h1 class="page-title">Moduli</h1>
       <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
         Moduli cartacei e template. Upload immagini e editor dedicato in arrivo in v1.1.
@@ -3514,7 +3673,7 @@ function renderTabelleList() {
   const tt = state.index.tabelle;
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Sezione</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
       <h1 class="page-title">Tabelle di riferimento</h1>
     </div>
     <div class="procedure-grid">
@@ -4164,34 +4323,83 @@ function buildClinicaChildren() {
     if (!subs[s]) subs[s] = [];
     subs[s].push(c);
   });
-  const order = ['prognosi','gestione-post-acuta','scale-cliniche'];
+  const order = ['scale-cliniche','emergenze','consulenze','prognosi','gestione-post-acuta'];
   const keys = [...order.filter(s => subs[s]), ...Object.keys(subs).filter(s => !order.includes(s))];
-  return keys.map(s => ({
-    id: 'clinica-sub:' + s,
-    label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
-    count: subs[s].length,
-    action: 'navigate',
-    navTarget: { route: 'clinica', params: { sub: s } },
-    kind: 'clinica-sub',
-    slug: s,
-    children: () => subs[s].map(c => ({
-      id: 'clinica-scheda:' + c.slug,
-      label: c.titolo || c.slug,
-      count: null,
+  return keys.map(s => {
+    // Check if this sub has nested sub-subcategories
+    const nested = {};
+    const direct = [];
+    subs[s].forEach(c => {
+      if (c.sotto_sottocategoria) {
+        const ss = c.sotto_sottocategoria;
+        if (!nested[ss]) nested[ss] = [];
+        nested[ss].push(c);
+      } else {
+        direct.push(c);
+      }
+    });
+    const nestedKeys = Object.keys(nested).sort();
+    const childrenFn = nestedKeys.length > 0
+      ? () => [
+          // Nested sub-subcategories first
+          ...nestedKeys.map(ss => ({
+            id: 'clinica-subsub:' + s + ':' + ss,
+            label: SOTTO_LABELS[ss] || ss,
+            count: nested[ss].length,
+            action: 'navigate',
+            navTarget: { route: 'clinica', params: { sub: s, subsub: ss } },
+            kind: 'clinica-subsub',
+            slug: s + '/' + ss,
+            children: () => nested[ss].map(c => ({
+              id: 'clinica-scheda:' + c.slug,
+              label: c.titolo || c.slug,
+              count: null,
+              action: 'navigate',
+              navTarget: { route: 'clinica-scheda', params: { slug: c.slug } },
+              kind: 'clinica',
+              slug: c.slug,
+              children: null
+            }))
+          })),
+          // Direct children (without sub-sub) after
+          ...direct.map(c => ({
+            id: 'clinica-scheda:' + c.slug,
+            label: c.titolo || c.slug,
+            count: null,
+            action: 'navigate',
+            navTarget: { route: 'clinica-scheda', params: { slug: c.slug } },
+            kind: 'clinica',
+            slug: c.slug,
+            children: null
+          }))
+        ]
+      : () => subs[s].map(c => ({
+          id: 'clinica-scheda:' + c.slug,
+          label: c.titolo || c.slug,
+          count: null,
+          action: 'navigate',
+          navTarget: { route: 'clinica-scheda', params: { slug: c.slug } },
+          kind: 'clinica',
+          slug: c.slug,
+          children: null
+        }));
+    return {
+      id: 'clinica-sub:' + s,
+      label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
+      count: subs[s].length,
       action: 'navigate',
-      navTarget: { route: 'clinica-scheda', params: { slug: c.slug } },
-      kind: 'clinica',
-      slug: c.slug,
-      children: null
-    }))
-  }));
+      navTarget: { route: 'clinica', params: { sub: s } },
+      kind: 'clinica-sub',
+      slug: s,
+      children: childrenFn
+    };
+  });
 }
 
 function buildNumeriChildren() {
-  if (!state.index.numeri || !state.index.numeri.gruppi) return [];
-  return state.index.numeri.gruppi.map(g => ({
+  return getVisibleNumeriGroups().map(g => ({
     id: 'gruppo:' + g.id,
-    label: g.nome,
+    label: g.nome + ((g._source && g._source !== 'aopd') ? ` · ${g._source.toUpperCase()}` : ''),
     count: (g.contatti || []).length,
     action: 'navigate',
     navTarget: { route: 'numeri', params: { filter: g.id } },
@@ -4255,8 +4463,7 @@ function buildManualeChildren() {
 }
 
 function countNumeri() {
-  if (!state.index.numeri || !state.index.numeri.gruppi) return 0;
-  return state.index.numeri.gruppi.reduce((acc, g) => acc + (g.contatti || []).length, 0);
+  return getVisibleNumeriGroups().reduce((acc, g) => acc + (g.contatti || []).length, 0);
 }
 
 function renderNavTreeNode(node, depth) {
@@ -4276,8 +4483,12 @@ function renderNavTreeNode(node, depth) {
     rowClickAction = '';
   }
 
-  const editBtn = navState.editMode
-    ? `<span class="nav-edit-actions"><button class="btn-icon-mini" onclick="event.stopPropagation();showNavContextMenu(this, '${node.kind || 'top'}', '${escapeJs(node.slug || node.id)}')" title="Azioni">⋯</button></span>`
+  // Folder-kind menu only for admin; leaf-kind menu for everyone
+  const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+  const nodeKind = node.kind || 'top';
+  const showMenuBtn = navState.editMode && (!folderKinds.has(nodeKind) || isAdmin());
+  const editBtn = showMenuBtn
+    ? `<span class="nav-edit-actions"><button class="btn-icon-mini" onclick="event.stopPropagation();showNavContextMenu(this, '${nodeKind}', '${escapeJs(node.slug || node.id)}')" title="Azioni">⋯</button></span>`
     : '';
 
   return `
@@ -4315,7 +4526,16 @@ function toggleNavNode(id) {
 
 
 /* ----- Context menu (⋯) ----- */
+function isAdmin() {
+  return state.session && state.session.username === 'admin';
+}
+
 function showNavContextMenu(triggerBtn, kind, slug) {
+  // Folder/structure operations are admin-only
+  const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+  if (folderKinds.has(kind) && !isAdmin()) {
+    return; // silently no-op for non-admin
+  }
   closeContextMenu();
   const menu = document.createElement('div');
   menu.className = 'context-menu';
@@ -4375,12 +4595,14 @@ function showNavContextMenu(triggerBtn, kind, slug) {
   } else if (kind === 'modulo') {
     items = [
       { label: 'Apri', action: () => navigate('modulo', {slug}) },
-      { label: 'Modifica', action: () => toast('Modifica modulo: TODO', 'info') },
+      { label: 'Rinomina', action: () => renameModuloTabella('modulo', slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('modulo', slug) },
     ];
   } else if (kind === 'tabella') {
     items = [
       { label: 'Apri', action: () => navigate('tabella', {slug}) },
-      { label: 'Modifica', action: () => toast('Modifica tabella: TODO', 'info') },
+      { label: 'Rinomina', action: () => renameModuloTabella('tabella', slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('tabella', slug) },
     ];
   }
 
@@ -4441,13 +4663,24 @@ function showItemContextMenu(triggerBtn, kind, slug) {
       { label: 'Modifica contenuto', action: () => navigate('clinica-edit', {slug}) },
       { label: 'Rinomina', action: () => renameClinica(slug) },
     ];
-  } else if (kind === 'modulo' || kind === 'tabella') {
+  } else if (kind === 'modulo') {
     items = [
-      { label: 'Apri', action: () => navigate(kind, {slug}) },
-      { label: 'Modifica', action: () => toast('TODO: rename modulo/tabella', 'info') },
+      { label: 'Apri', action: () => navigate('modulo', {slug}) },
+      { label: 'Rinomina', action: () => renameModuloTabella('modulo', slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('modulo', slug) },
+    ];
+  } else if (kind === 'tabella') {
+    items = [
+      { label: 'Apri', action: () => navigate('tabella', {slug}) },
+      { label: 'Rinomina', action: () => renameModuloTabella('tabella', slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('tabella', slug) },
     ];
   } else if (kind === 'contatto') {
-    items = [{ label: 'TODO: edit contatto', action: () => {} }];
+    items = [
+      { label: 'Mostra nella rubrica', action: () => navigate('numeri', { filter: slug }) },
+      { label: 'Modifica contatto', action: () => editContatto(slug) },
+      { label: 'Elimina contatto', danger: true, action: () => deleteContatto(slug) },
+    ];
   }
 
   menu.innerHTML = items.map((it, idx) => `
@@ -4493,66 +4726,186 @@ async function multiCommitOperation(label, operations) {
   return { total, done, failures };
 }
 
-async function renameSottocategoria(macro, oldSub) {
-  const newSub = prompt(`Nuovo nome per la sottocategoria "${oldSub}":\n(solo minuscole, cifre, trattini)`, oldSub);
-  if (!newSub || newSub === oldSub) return;
-  if (!/^[a-z0-9-]+$/.test(newSub)) return toast('Nome non valido', 'error');
+// High-level operation with progress modal and rate-limit safety.
+// `ops` array of { putPath, putContent, deletePath, deleteSha, commitMsg, schedaSlug, schedaTitolo }
+async function executeMultiCommitOperation(label, ops) {
+  const total = ops.length * 2;
+  let done = 0;
+  const failures = [];
 
-  const procs = state.index.procedure.filter(p => p.categoria === macro && p.sottocategoria === oldSub);
-  const ops = [];
-  procs.forEach(p => {
+  // Show progress modal
+  const modal = showProgressModal(label, total);
+  try {
+    for (const op of ops) {
+      // Check rate limit mid-operation; bail out if too low
+      if (rateLimit.remaining !== null && rateLimit.remaining < 100) {
+        failures.push({ op, error: 'Rate limit GitHub quasi esaurito. Operazione interrotta per sicurezza.' });
+        break;
+      }
+      modal.setStatus(`${op.schedaTitolo}: caricamento nuovo path...`);
+      try {
+        await gh.putFile(op.putPath, op.putContent, null, op.commitMsg);
+        done++;
+        modal.update(done, total, `${op.schedaTitolo}: caricato (${done}/${total})`);
+      } catch (e) {
+        failures.push({ op, phase: 'put', error: e.message });
+        modal.update(done, total, `Errore PUT: ${e.message}`);
+        continue; // skip delete if put failed (avoid data loss)
+      }
+      modal.setStatus(`${op.schedaTitolo}: eliminazione vecchio path...`);
+      try {
+        await gh.deleteFile(op.deletePath, op.deleteSha, `Elimina ${op.schedaSlug} da vecchio path`);
+        done++;
+        modal.update(done, total, `${op.schedaTitolo}: spostato (${done}/${total})`);
+      } catch (e) {
+        failures.push({ op, phase: 'delete', error: e.message });
+        modal.update(done, total, `⚠ File duplicato (delete fallito): ${e.message}`);
+      }
+    }
+  } finally {
+    // Keep modal for 1s to show final state, then close
+    await new Promise(r => setTimeout(r, 800));
+    modal.close();
+  }
+  return { ok: failures.length === 0, total, done, failures };
+}
+
+async function checkRateLimitFor(neededCalls) {
+  if (rateLimit.remaining === null) return true; // unknown: allow
+  if (rateLimit.remaining < neededCalls) {
+    const resetMin = rateLimit.resetAt ? Math.ceil((new Date(rateLimit.resetAt) - new Date()) / 60000) : '?';
+    alert(`Rate limit GitHub insufficiente per l'operazione.\n\nChiamate necessarie: ${neededCalls}\nDisponibili: ${rateLimit.remaining}\nReset tra: ${resetMin} min\n\nRiprova dopo il reset.`);
+    return false;
+  }
+  return true;
+}
+
+function showProgressModal(title, total) {
+  // Create overlay + modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(20,18,14,.6);z-index:9998;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--bg-paper);border:1px solid var(--rule);border-radius:4px;padding:28px 32px;width:min(440px,90vw);box-shadow:0 8px 32px rgba(0,0,0,.2);">
+      <div style="font-family:var(--serif);font-size:18px;font-weight:500;color:var(--ink);margin-bottom:12px;">${escapeHtml(title)}</div>
+      <div style="height:6px;background:var(--rule-soft);border-radius:3px;overflow:hidden;margin:16px 0;">
+        <div id="prog-bar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;"></div>
+      </div>
+      <div id="prog-counter" style="font-family:var(--mono);font-size:12px;color:var(--ink-muted);margin-bottom:8px;">0 / ${total}</div>
+      <div id="prog-status" style="font-size:13px;color:var(--ink-soft);min-height:20px;">Preparazione...</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  return {
+    update(done, tot, status) {
+      const pct = Math.round(done / tot * 100);
+      const bar = overlay.querySelector('#prog-bar');
+      const counter = overlay.querySelector('#prog-counter');
+      const st = overlay.querySelector('#prog-status');
+      if (bar) bar.style.width = pct + '%';
+      if (counter) counter.textContent = `${done} / ${tot} (${pct}%)`;
+      if (st && status) st.textContent = status;
+    },
+    setStatus(status) {
+      const st = overlay.querySelector('#prog-status');
+      if (st) st.textContent = status;
+    },
+    close() {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }
+  };
+}
+
+async function renameSottocategoria(macro, oldSub) {
+  if (!isAdmin()) return toast('Solo l\'admin può rinominare sottocategorie', 'warning');
+  const newSub = prompt(`Rinomina sottocategoria "${oldSub}" in "${CATEGORIA_LABELS[macro] || macro}"\n\nNuovo slug (minuscole, cifre, trattini):`, oldSub);
+  if (!newSub || newSub === oldSub) return;
+  if (!/^[a-z0-9-]+$/.test(newSub)) return toast('Slug non valido', 'error');
+
+  const affected = state.index.procedure.filter(p => p.categoria === macro && p.sottocategoria === oldSub);
+  if (affected.length === 0) {
+    toast('Sottocategoria vuota: nulla da spostare', 'info');
+    return;
+  }
+
+  // Collision check
+  const conflicts = state.index.procedure.filter(p => p.categoria === macro && p.sottocategoria === newSub);
+  if (conflicts.length > 0) {
+    if (!confirm(`"${newSub}" contiene già ${conflicts.length} schede. Le schede saranno unite.\nProcedere?`)) return;
+  }
+
+  const neededCommits = affected.length * 2;
+  if (!await checkRateLimitFor(neededCommits + 20)) return;
+
+  const ops = affected.map(p => {
     const newPath = p.path.replace(`/${oldSub}/`, `/${newSub}/`);
     const newFm = { ...p, sottocategoria: newSub };
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     const newContent = stringifyMarkdown(newFm, p.body || '');
-    ops.push({ type: 'put', path: newPath, content: newContent, message: `Sposta ${p.slug} → ${newSub} (rename sottocategoria by ${state.session.username})` });
-    ops.push({ type: 'delete', path: p.path, sha: p.sha, message: `Rimuovi ${p.slug} da vecchia ${oldSub}` });
+    return {
+      schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
+      putPath: newPath, putContent: newContent,
+      deletePath: p.path, deleteSha: p.sha,
+      commitMsg: `Rinomina ${oldSub} → ${newSub}: ${p.slug}`
+    };
   });
 
-  if (!confirm(`Rinominare "${oldSub}" → "${newSub}"?\nVerranno fatti ${ops.length} commit (${procs.length} file × 2 operazioni).`)) return;
+  if (!confirm(`Rinominare "${oldSub}" → "${newSub}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
 
-  toast(`Operazione in corso: ${ops.length} commit...`, 'info', 5000);
-  const result = await multiCommitOperation(`Rinomina ${oldSub}`, ops);
-  if (result.failures.length === 0) {
-    toast(`Rinominata: ${result.done} commit eseguiti`, 'success');
-    await buildIndex();
-    renderNavTree();
-  } else {
-    toast(`Errori: ${result.failures.length}/${result.total}. Vedi console.`, 'error');
-    console.error('Rename errors:', result.failures);
-  }
+  const result = await executeMultiCommitOperation(`Rinomina ${oldSub} → ${newSub}`, ops);
+  if (result.ok) toast(`Rinominata: ${result.done}/${result.total}`, 'success');
+  else toast(`Rinomina parziale: ${result.done}/${result.total}`, 'warning');
+  await buildIndex();
+  renderNavTree();
 }
 
 async function moveSottocategoria(currentMacro, sub) {
+  if (!isAdmin()) return toast('Solo l\'admin può spostare sottocategorie', 'warning');
   const macroOrder = ['bedside','richieste','farmacologiche','emergenze','gestione'];
-  const dest = prompt(`Sposta sottocategoria "${sub}" da "${currentMacro}" a quale macro?\nDisponibili: ${macroOrder.join(', ')}`, '');
-  if (!dest || dest === currentMacro || !macroOrder.includes(dest)) return;
+  const destMacros = macroOrder.filter(m => m !== currentMacro);
+  const dest = prompt(`Sposta sottocategoria "${sub}" da "${CATEGORIA_LABELS[currentMacro] || currentMacro}"\n\nDestinazione (una di: ${destMacros.join(', ')}):`, destMacros[0]);
+  if (!dest || dest === currentMacro) return;
+  if (!macroOrder.includes(dest)) return toast('Destinazione non valida', 'error');
 
-  const procs = state.index.procedure.filter(p => p.categoria === currentMacro && p.sottocategoria === sub);
-  const ops = [];
-  procs.forEach(p => {
+  const affected = state.index.procedure.filter(p => p.categoria === currentMacro && p.sottocategoria === sub);
+  if (affected.length === 0) {
+    toast('Sottocategoria vuota: nulla da spostare', 'info');
+    return;
+  }
+
+  const conflicts = state.index.procedure.filter(p => p.categoria === dest && p.sottocategoria === sub);
+  if (conflicts.length > 0) {
+    if (!confirm(`In "${dest}" esiste già la sottocategoria "${sub}" con ${conflicts.length} schede. Le schede saranno unite.\nProcedere?`)) return;
+  }
+
+  const neededCommits = affected.length * 2;
+  if (!await checkRateLimitFor(neededCommits + 20)) return;
+
+  const ops = affected.map(p => {
     const newPath = p.path.replace(`procedure/${currentMacro}/${sub}/`, `procedure/${dest}/${sub}/`);
     const newFm = { ...p, categoria: dest };
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     const newContent = stringifyMarkdown(newFm, p.body || '');
-    ops.push({ type: 'put', path: newPath, content: newContent, message: `Sposta ${p.slug} in ${dest}/${sub}` });
-    ops.push({ type: 'delete', path: p.path, sha: p.sha, message: `Rimuovi ${p.slug} da ${currentMacro}` });
+    return {
+      schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
+      putPath: newPath, putContent: newContent,
+      deletePath: p.path, deleteSha: p.sha,
+      commitMsg: `Sposta ${p.slug}: ${currentMacro}/${sub} → ${dest}/${sub}`
+    };
   });
 
-  if (!confirm(`Spostare "${sub}" da "${currentMacro}" a "${dest}"?\n${ops.length} commit (${procs.length} file × 2).`)) return;
-  toast(`Spostamento: ${ops.length} commit...`, 'info', 5000);
-  const result = await multiCommitOperation(`Sposta ${sub}`, ops);
-  toast(`${result.done}/${result.total} commit ok`, result.failures.length ? 'error' : 'success');
+  if (!confirm(`Spostare "${sub}" da "${currentMacro}" a "${dest}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
+
+  const result = await executeMultiCommitOperation(`Sposta ${sub} → ${dest}`, ops);
+  if (result.ok) toast(`Spostato: ${result.done}/${result.total}`, 'success');
+  else toast(`Spostamento parziale: ${result.done}/${result.total}`, 'warning');
   await buildIndex();
   renderNavTree();
 }
 
 async function deleteSottocategoria(macro, sub) {
+  if (!isAdmin()) return toast('Solo l\'admin può eliminare sottocategorie', 'warning');
   const procs = state.index.procedure.filter(p => p.categoria === macro && p.sottocategoria === sub);
   if (procs.length > 0) return toast(`Sottocategoria non vuota (${procs.length} schede). Sposta o elimina prima i contenuti.`, 'warning', 4000);
-  toast('Sottocategoria eliminata (cartella vuota era già implicita)', 'info');
-  // For empty subs there's no actual file to delete (folder is implicit on GitHub)
-  // Just clear from local state and re-render
+  toast('Sottocategoria eliminata (cartella vuota)', 'info');
   await buildIndex();
   renderNavTree();
 }
@@ -4584,47 +4937,720 @@ async function renameProcedura(slug) {
 async function moveProcedura(slug) {
   const proc = state.index.procedure.find(p => p.slug === slug);
   if (!proc) return;
-  toast('Per spostare: usa rinomina sottocategoria o elimina + ricrea (TODO: dialog completo)', 'info', 4000);
+  const macroOrder = ['bedside','richieste','farmacologiche','emergenze','gestione'];
+  const currentCat = proc.categoria;
+  const currentSub = proc.sottocategoria || '';
+
+  const destCat = prompt(
+    `Sposta "${proc.titolo || slug}"\n\n` +
+    `Attuale: ${CATEGORIA_LABELS[currentCat] || currentCat}${currentSub ? ' / ' + currentSub : ''}\n\n` +
+    `Categoria destinazione (una di: ${macroOrder.join(', ')}):`,
+    currentCat
+  );
+  if (!destCat) return;
+  if (!macroOrder.includes(destCat)) return toast('Categoria non valida', 'error');
+
+  // Autocomplete sottocategorie per la categoria scelta
+  const subsInDest = [...new Set(state.index.procedure.filter(p => p.categoria === destCat).map(p => p.sottocategoria).filter(Boolean))].sort();
+  const destSub = prompt(
+    `Sottocategoria destinazione (opzionale).\n\n` +
+    `Esistenti in ${destCat}: ${subsInDest.join(', ') || '(nessuna)'}\n\n` +
+    `Lascia vuoto per nessuna sottocategoria:`,
+    currentSub
+  );
+  // null = cancelled, '' = no subcategory (allowed)
+  if (destSub === null) return;
+  if (destSub && !/^[a-z0-9-]+$/.test(destSub)) return toast('Slug sottocategoria non valido', 'error');
+
+  if (destCat === currentCat && destSub === currentSub) {
+    return toast('Destinazione uguale alla posizione attuale', 'info');
+  }
+
+  // Build new path
+  const newPath = `content/procedure/${destCat}/${destSub ? destSub + '/' : ''}${slug}.md`;
+  if (newPath === proc.path) return toast('Path invariato', 'info');
+
+  const newFm = { ...proc, categoria: destCat };
+  if (destSub) newFm.sottocategoria = destSub; else delete newFm.sottocategoria;
+  delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+  delete newFm.tempo_esecuzione_min;
+  const newContent = stringifyMarkdown(newFm, proc.body || '');
+
+  if (!confirm(`Spostare "${proc.slug}"?\n\nDa: ${proc.path}\nA: ${newPath}\n\n2 commit (crea + elimina vecchio).`)) return;
+  toast('Spostamento in corso...', 'info');
+  try {
+    await gh.putFile(newPath, newContent, null, `Sposta ${proc.slug} → ${destCat}/${destSub || ''}`);
+    await gh.deleteFile(proc.path, proc.sha, `Elimina vecchio ${proc.slug}`);
+    toast('Spostata', 'success');
+    await buildIndex();
+    renderNavTree();
+    if (state.currentView === 'procedura' && state.currentParams?.slug === slug) navigate('procedura', { slug });
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+async function renameModuloTabella(kind, slug) {
+  const coll = kind === 'modulo' ? state.index.moduli : state.index.tabelle;
+  const item = coll.find(x => x.slug === slug);
+  if (!item) return toast(`${kind} non trovato`, 'error');
+  const newSlug = prompt(`Rinomina ${kind} "${item.titolo || slug}"\n\nNuovo slug (minuscole, cifre, trattini):`, slug);
+  if (!newSlug || newSlug === slug) return;
+  if (!/^[a-z0-9-]+$/.test(newSlug)) return toast('Slug non valido', 'error');
+  if (coll.find(x => x.slug === newSlug)) return toast('Slug già esistente', 'error');
+
+  const newFm = { ...item, id: newSlug };
+  delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+  const newContent = stringifyMarkdown(newFm, item.body || '');
+  const newPath = item.path.replace(/[^/]+\.md$/, `${newSlug}.md`);
+
+  if (!confirm(`Rinominare "${slug}" → "${newSlug}"?\n2 commit.`)) return;
+  try {
+    await gh.putFile(newPath, newContent, null, `Rinomina ${kind} ${slug} → ${newSlug}`);
+    await gh.deleteFile(item.path, item.sha, `Elimina vecchio ${slug}`);
+    toast('Rinominato', 'success');
+    await buildIndex();
+    renderNavTree();
+    if (state.currentView === kind && state.currentParams?.slug === slug) navigate(kind, { slug: newSlug });
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+async function confirmDeleteModuloTabella(kind, slug) {
+  const coll = kind === 'modulo' ? state.index.moduli : state.index.tabelle;
+  const item = coll.find(x => x.slug === slug);
+  if (!item) return;
+  if (!confirm(`Eliminare ${kind} "${item.titolo || slug}"?\nFinirà nel cestino (recuperabile).`)) return;
+  try {
+    const cestinoPath = `cestino/${kind}/${slug}__${Date.now()}__${state.session.username}.md`;
+    const content = `---\n${jsyaml.dump({ ...item, body: undefined, body_preview: undefined, path: undefined, sha: undefined, _original_path: item.path })}---\n\n${item.body || ''}`;
+    await gh.putFile(cestinoPath, content, null, `Sposta ${kind} ${slug} in cestino`);
+    await gh.deleteFile(item.path, item.sha, `Elimina ${kind} ${slug} (spostato in cestino)`);
+    toast('Spostato nel cestino', 'success');
+    await buildIndex();
+    renderNavTree();
+    if (state.currentView === kind && state.currentParams?.slug === slug) navigate(kind === 'modulo' ? 'moduli' : 'tabelle');
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+// Helper: find which source file (aopd/osa/iov) contains a contact or group
+function findNumeriSource(target /* {contattoId} | {groupId} */) {
+  if (target.contattoId) {
+    for (const g of (state.index.numeri?.gruppi || [])) {
+      if ((g.contatti || []).find(c => c.id === target.contattoId)) return 'aopd';
+    }
+    for (const src of ['osa', 'iov']) {
+      const ext = state.index.numeriExtended?.[src];
+      if (!ext) continue;
+      for (const g of (ext.gruppi || [])) {
+        if ((g.contatti || []).find(c => c.id === target.contattoId)) return src;
+      }
+    }
+  } else if (target.groupId) {
+    if ((state.index.numeri?.gruppi || []).find(g => g.id === target.groupId)) return 'aopd';
+    for (const src of ['osa', 'iov']) {
+      if ((state.index.numeriExtended?.[src]?.gruppi || []).find(g => g.id === target.groupId)) return src;
+    }
+  }
+  return null;
+}
+
+function getNumeriDataForSource(src) {
+  if (src === 'aopd') return state.index.numeri || {};
+  return state.index.numeriExtended?.[src] || {};
+}
+
+async function saveNumeriForSource(src, data) {
+  const path = src === 'aopd' ? 'content/numeri.yml' : `content/numeri-${src}.yml`;
+  const file = await gh.getFile(path);
+  // Strip internal _-prefixed keys before serialization
+  const clean = {};
+  Object.keys(data).forEach(k => { if (!k.startsWith('_')) clean[k] = data[k]; });
+  // Strip _source from groups
+  if (clean.gruppi) {
+    clean.gruppi = clean.gruppi.map(g => {
+      const c = { ...g };
+      delete c._source;
+      return c;
+    });
+  }
+  const content = `# Rubrica telefonica ${src.toUpperCase()}\n# Gestita dall'app — modifica con cautela\n\n` +
+    jsyaml.dump(clean, { lineWidth: 120, noRefs: true, sortKeys: false });
+  await gh.putFile(path, content, file ? file.sha : null, `Aggiorna numeri-${src}.yml (by ${state.session.username})`);
+}
+
+// Open the contact editor modal. mode = 'new' | 'edit'
+function openContattoEditor({ mode, gruppoId, contatto }) {
+  const isNew = mode === 'new';
+  const c = contatto || {};
+  const numeriStr = (c.numeri || []).join(', ');
+  const cellulareStr = Array.isArray(c.cellulare) ? c.cellulare.join(', ') : (c.cellulare || '');
+  const tagStr = (c.tag || []).join(', ');
+  const body = `
+    <form id="contatto-form" onsubmit="return false;" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Etichetta <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="ce-etichetta" value="${escapeHtml(c.etichetta || '')}" placeholder="es. Medico di Guardia" required>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Numeri interni</label>
+          <input type="text" id="ce-numeri" value="${escapeHtml(numeriStr)}" class="mono-input" placeholder="es. 5314, 5315">
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Separati da virgola</div>
+        </div>
+        <div class="field">
+          <label>Numero breve</label>
+          <input type="text" id="ce-breve" value="${escapeHtml(c.breve ? String(c.breve) : '')}" class="mono-input" placeholder="es. 97928">
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">5 cifre, di solito 97xxx</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cellulare</label>
+        <input type="text" id="ce-cellulare" value="${escapeHtml(cellulareStr)}" class="mono-input" placeholder="es. 334.6652687">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="ce-email" value="${escapeHtml(c.email || '')}" class="mono-input" placeholder="es. neurologia@aopd.veneto.it">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Sezione</label>
+          <input type="text" id="ce-sezione" value="${escapeHtml(c.sezione || '')}" placeholder="es. Studi Medici 2° Piano">
+        </div>
+        <div class="field">
+          <label>Orari</label>
+          <input type="text" id="ce-orari" value="${escapeHtml(c.orari || '')}" placeholder="es. L/V 8-14">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tag (separati da virgola)</label>
+        <input type="text" id="ce-tag" value="${escapeHtml(tagStr)}" placeholder="es. guardia, urgenza">
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Tag speciali: <code>guardia</code>, <code>urgenza</code> (mostrano badge)</div>
+      </div>
+      <div class="field">
+        <label>Note</label>
+        <textarea id="ce-note" rows="2" style="width:100%;resize:vertical;font-family:var(--sans);font-size:13px;padding:8px;">${escapeHtml(c.note || '')}</textarea>
+      </div>
+    </form>`;
+  showModal({
+    title: isNew ? 'Nuovo contatto' : 'Modifica contatto',
+    subtitle: `Gruppo: ${escapeHtml(gruppoId)}`,
+    body,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+      { label: isNew ? 'Crea' : 'Salva', onClick: async () => {
+        const etichetta = $('ce-etichetta').value.trim();
+        if (!etichetta) return toast('Etichetta obbligatoria', 'warning');
+        const numeri = $('ce-numeri').value.split(',').map(s => s.trim()).filter(Boolean).map(n => /^\d+$/.test(n) ? parseInt(n, 10) : n);
+        const breveStr = $('ce-breve').value.trim();
+        const cellulareStr2 = $('ce-cellulare').value.trim();
+        const cellulareList = cellulareStr2.split(',').map(s => s.trim()).filter(Boolean);
+        const email = $('ce-email').value.trim();
+        const sezione = $('ce-sezione').value.trim();
+        const orari = $('ce-orari').value.trim();
+        const tag = $('ce-tag').value.split(',').map(s => s.trim()).filter(Boolean);
+        const note = $('ce-note').value.trim();
+        const newC = { id: c.id || (slugifyLocal(`${gruppoId}-${etichetta}`).slice(0, 60) + '-' + Date.now().toString(36).slice(-4)), etichetta };
+        if (numeri.length) newC.numeri = numeri;
+        if (cellulareList.length === 1) newC.cellulare = cellulareList[0];
+        else if (cellulareList.length > 1) newC.cellulare = cellulareList;
+        if (breveStr) { const n = parseInt(breveStr, 10); newC.breve = isNaN(n) ? breveStr : n; }
+        if (email) newC.email = email;
+        if (sezione) newC.sezione = sezione;
+        if (orari) newC.orari = orari;
+        if (tag.length) newC.tag = tag;
+        if (note) newC.note = note;
+        if (!newC.numeri && !newC.cellulare && !newC.breve) {
+          return toast('Inserire almeno un numero (interno, cellulare o breve)', 'warning');
+        }
+        // Find source and group
+        const src = findNumeriSource(isNew ? { groupId: gruppoId } : { contattoId: c.id }) || 'aopd';
+        const data = { ...getNumeriDataForSource(src) };
+        const newGruppi = (data.gruppi || []).map(g => {
+          if (g.id !== gruppoId) return g;
+          let contatti = g.contatti || [];
+          if (isNew) contatti = [...contatti, newC];
+          else contatti = contatti.map(x => x.id === c.id ? newC : x);
+          return { ...g, contatti };
+        });
+        try {
+          await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+          toast(isNew ? 'Contatto creato' : 'Contatto aggiornato', 'success');
+          closeModal();
+          await buildIndex();
+          if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
+          if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
+          renderNavTree();
+          if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
+        } catch (e) { toast('Errore: ' + e.message, 'error'); }
+      } }
+    ]
+  });
+}
+
+function slugifyLocal(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+}
+
+async function editContatto(contattoId) {
+  // Search across all visible groups to find the contact
+  for (const g of getVisibleNumeriGroups()) {
+    const c = (g.contatti || []).find(x => x.id === contattoId);
+    if (c) {
+      openContattoEditor({ mode: 'edit', gruppoId: g.id, contatto: c });
+      return;
+    }
+  }
+  toast('Contatto non trovato', 'error');
+}
+
+async function deleteContatto(contattoId) {
+  if (!isAdmin()) return toast("Solo l'admin può eliminare contatti", 'warning');
+  // Find source and group
+  let foundGroup = null, foundContact = null, src = null;
+  for (const sourceId of ['aopd','osa','iov']) {
+    const data = getNumeriDataForSource(sourceId);
+    for (const g of (data.gruppi || [])) {
+      const c = (g.contatti || []).find(x => x.id === contattoId);
+      if (c) { foundGroup = g; foundContact = c; src = sourceId; break; }
+    }
+    if (foundContact) break;
+  }
+  if (!foundContact) return;
+  if (!confirm(`Eliminare contatto "${foundContact.etichetta}"?`)) return;
+  const data = { ...getNumeriDataForSource(src) };
+  const newGruppi = (data.gruppi || []).map(g => g.id !== foundGroup.id ? g : { ...g, contatti: g.contatti.filter(c => c.id !== contattoId) });
+  try {
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+    toast('Contatto eliminato', 'success');
+    await buildIndex();
+    if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
+    if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
+    renderNavTree();
+    if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
 }
 
 async function renameMacroCategoria(macro) {
-  toast('Rinomina macro categoria — TODO (richiede aggiornare path di tutti i file)', 'warning');
+  if (!isAdmin()) return toast('Solo l\'admin può rinominare macro categorie', 'warning');
+  const label = CATEGORIA_LABELS[macro] || macro;
+
+  // Offer both rename and cross-section move options
+  const choice = prompt(
+    `Operazione su macro "${label}" (${macro}):\n\n` +
+    `1 = Rinomina (cambia slug, resta in Procedure)\n` +
+    `2 = Sposta a Clinica (diventa sottocategoria di Clinica)\n` +
+    `3 = Annulla\n\n` +
+    `Scelta:`, '1'
+  );
+  if (!choice || choice === '3') return;
+  if (choice === '2') return moveMacroToClinica(macro);
+  if (choice !== '1') return toast('Scelta non valida', 'error');
+
+  // Rename
+  const newName = prompt(`Nuovo slug per "${macro}" (minuscole, cifre, trattini):`, macro);
+  if (!newName || newName === macro) return;
+  if (!/^[a-z0-9-]+$/.test(newName)) return toast('Slug non valido', 'error');
+
+  const affected = state.index.procedure.filter(p => p.categoria === macro);
+  if (affected.length === 0) {
+    toast('Categoria vuota: rinomina locale soltanto', 'info');
+    return;
+  }
+
+  const conflicts = state.index.procedure.filter(p => p.categoria === newName);
+  if (conflicts.length > 0) {
+    if (!confirm(`La categoria "${newName}" contiene già ${conflicts.length} schede.\nLe schede spostate saranno unite.\nProcedere?`)) return;
+  }
+
+  const neededCommits = affected.length * 2;
+  if (!await checkRateLimitFor(neededCommits + 20)) return;
+
+  const ops = affected.map(p => {
+    const newPath = p.path.replace(`/procedure/${macro}/`, `/procedure/${newName}/`);
+    const newFm = { ...p, categoria: newName };
+    delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+    const newContent = stringifyMarkdown(newFm, p.body || '');
+    return {
+      schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
+      putPath: newPath, putContent: newContent,
+      deletePath: p.path, deleteSha: p.sha,
+      commitMsg: `Rinomina ${macro} → ${newName}: ${p.slug}`
+    };
+  });
+
+  if (!confirm(`Rinominare macro "${macro}" → "${newName}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
+
+  const result = await executeMultiCommitOperation(`Rinomina ${macro} → ${newName}`, ops);
+  if (result.ok) toast(`Rinomina completata: ${result.done}/${result.total}`, 'success');
+  else toast(`Rinomina parziale: ${result.done}/${result.total}`, 'warning');
+  await buildIndex();
+  renderNavTree();
+  if (state.currentView === 'procedure-cat') navigate('procedure', {});
 }
+
+// Move a procedure macro (e.g., emergenze) to become a clinica subcategory
+async function moveMacroToClinica(macro) {
+  if (!isAdmin()) return toast('Solo l\'admin può spostare macro', 'warning');
+
+  const affected = state.index.procedure.filter(p => p.categoria === macro);
+  if (affected.length === 0) {
+    toast('Macro vuota: nulla da spostare', 'info');
+    return;
+  }
+
+  // Target sottocategoria in clinica defaults to the macro's slug (emergenze -> clinica/emergenze/)
+  const targetSub = prompt(
+    `Spostare tutte le schede di "${macro}" dentro Clinica come sottocategoria.\n\n` +
+    `Nome della sottocategoria in Clinica:`, macro
+  );
+  if (!targetSub) return;
+  if (!/^[a-z0-9-]+$/.test(targetSub)) return toast('Slug non valido', 'error');
+
+  // Check collision in clinica
+  const existingClinica = (state.index.clinica || []).filter(c => c.sottocategoria === targetSub);
+  if (existingClinica.length > 0) {
+    if (!confirm(`In Clinica esiste già "${targetSub}" con ${existingClinica.length} schede. Le schede saranno unite.\nProcedere?`)) return;
+  }
+
+  const neededCommits = affected.length * 2;
+  if (!await checkRateLimitFor(neededCommits + 20)) return;
+
+  const ops = affected.map(p => {
+    const newPath = `content/clinica/${targetSub}/${p.slug}.md`;
+    const newFm = { ...p, categoria: 'clinica', sottocategoria: targetSub };
+    // Preserve capitolo if present (scheda still referenced in manuale)
+    delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+    // Clean obsolete fields
+    delete newFm.tempo_esecuzione_min;
+    const newContent = stringifyMarkdown(newFm, p.body || '');
+    return {
+      schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
+      putPath: newPath, putContent: newContent,
+      deletePath: p.path, deleteSha: p.sha,
+      commitMsg: `Sposta ${p.slug}: procedure/${macro} → clinica/${targetSub}`
+    };
+  });
+
+  const warnText = `Spostare ${affected.length} schede da "procedure/${macro}/" a "clinica/${targetSub}/"?\n\n` +
+    `• Le schede saranno riclassificate come "schede cliniche"\n` +
+    `• Useranno l'editor clinica (schema YAML avanzato per campi strutturati)\n` +
+    `• I riferimenti via slug continuano a funzionare\n` +
+    `• ${neededCommits} commit GitHub\n\n` +
+    `Proseguire?`;
+  if (!confirm(warnText)) return;
+
+  const result = await executeMultiCommitOperation(`Sposta ${macro} → clinica/${targetSub}`, ops);
+  if (result.ok) toast(`Spostamento completato: ${result.done}/${result.total}`, 'success');
+  else toast(`Spostamento parziale: ${result.done}/${result.total}. Vedi console.`, 'warning', 6000);
+  await buildIndex();
+  renderNavTree();
+  navigate('clinica', { sub: targetSub });
+}
+
 async function deleteMacroCategoria(macro) {
+  if (!isAdmin()) return toast('Solo l\'admin può eliminare macro categorie', 'warning');
   const procs = state.index.procedure.filter(p => p.categoria === macro);
-  if (procs.length > 0) return toast(`Categoria non vuota (${procs.length} schede)`, 'warning');
-  toast('Categoria vuota: nulla da fare lato GitHub (cartella implicita)', 'info');
+  if (procs.length > 0) return toast(`Categoria non vuota (${procs.length} schede). Sposta o elimina prima le schede.`, 'warning');
+  toast('Categoria vuota: nessun commit necessario. Non comparirà più nella sidebar al prossimo refresh.', 'info');
+  await buildIndex();
+  renderNavTree();
 }
+
 async function nuovaMacroCategoria() {
-  const name = prompt('Nome nuova macro categoria (minuscole, trattini):', '');
+  if (!isAdmin()) return toast('Solo l\'admin può creare nuove macro categorie', 'warning');
+  const name = prompt('Nome nuova macro categoria (minuscole, cifre, trattini):\n(es. "protocolli" o "linee-guida")', '');
   if (!name || !/^[a-z0-9-]+$/.test(name)) return toast('Nome non valido', 'error');
-  // Create a placeholder by adding to a category list — for now just show toast
-  toast(`TODO: persistere "${name}" come categoria. Per ora aggiungi una scheda con categoria:${name} dal frontmatter.`, 'info', 5000);
+  if (CATEGORIA_LABELS[name]) return toast('Categoria già esistente', 'warning');
+  // Categories are implicit: they exist when a file is in them.
+  // Create a placeholder by asking to add a scheda.
+  if (confirm(`La macro "${name}" sarà creata aggiungendo una nuova procedura al suo interno.\nProcedere?`)) {
+    nuovaProcedura({ categoria: name });
+  }
 }
+
 async function createSottocategoria(macro) {
-  const name = prompt(`Nuova sottocategoria in ${macro} (minuscole, trattini):`, '');
+  const name = prompt(`Nuova sottocategoria in "${CATEGORIA_LABELS[macro] || macro}" (minuscole, cifre, trattini):`, '');
   if (!name || !/^[a-z0-9-]+$/.test(name)) return toast('Nome non valido', 'error');
-  // Sub-categories are implicit too — they exist when a file is in them
-  toast(`Per creare la sottocategoria, crea una nuova procedura con questa sottocategoria. Click su "+ Nuova procedura qui" dopo l'apertura.`, 'info', 5000);
+  // Tutti possono creare sottocategorie (solo tramite creazione scheda)
   nuovaProcedura({ categoria: macro, sottocategoria: name });
 }
-async function renameClinicaSub(sub) { toast('TODO: rinomina clinica sottocategoria', 'info'); }
-async function createClinicaSub() { toast('TODO: crea sottocategoria clinica', 'info'); }
-async function renameClinica(slug) { toast('TODO: rinomina scheda clinica', 'info'); }
-async function nuovoCapitolo() { toast('TODO: editor capitoli', 'info'); }
-async function editCapitolo(id) { toast('TODO: editor capitolo', 'info'); }
+async function renameClinica(slug) {
+  const scheda = (state.index.clinica || []).find(c => c.slug === slug);
+  if (!scheda) return toast('Scheda clinica non trovata', 'error');
+  const newSlug = prompt(`Rinomina scheda clinica "${scheda.titolo || slug}"\n\nNuovo slug (minuscole, cifre, trattini):`, slug);
+  if (!newSlug || newSlug === slug) return;
+  if (!/^[a-z0-9-]+$/.test(newSlug)) return toast('Slug non valido', 'error');
+  if ((state.index.clinica || []).find(c => c.slug === newSlug)) return toast('Slug già esistente', 'error');
+
+  const newFm = { ...scheda, id: newSlug };
+  delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+  const newContent = stringifyMarkdown(newFm, scheda.body || '');
+  const newPath = scheda.path.replace(/[^/]+\.md$/, `${newSlug}.md`);
+
+  if (!confirm(`Rinominare "${slug}" → "${newSlug}"?\n2 commit (crea + elimina vecchio).`)) return;
+  toast('Rinomina in corso...', 'info');
+  try {
+    await gh.putFile(newPath, newContent, null, `Rinomina scheda clinica ${slug} → ${newSlug}`);
+    await gh.deleteFile(scheda.path, scheda.sha, `Elimina vecchio ${slug}`);
+    toast('Rinominata', 'success');
+    await buildIndex();
+    renderNavTree();
+    if (state.currentView === 'clinica-scheda' && state.currentParams?.slug === slug) {
+      navigate('clinica-scheda', { slug: newSlug });
+    }
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+async function renameClinicaSub(sub) {
+  if (!isAdmin()) return toast('Solo l\'admin può rinominare sottocategorie cliniche', 'warning');
+  const newSub = prompt(`Rinomina sottocategoria clinica "${sub}"\n\nNuovo slug (minuscole, cifre, trattini):`, sub);
+  if (!newSub || newSub === sub) return;
+  if (!/^[a-z0-9-]+$/.test(newSub)) return toast('Slug non valido', 'error');
+
+  const affected = (state.index.clinica || []).filter(c => c.sottocategoria === sub);
+  if (affected.length === 0) {
+    toast('Sottocategoria vuota: nulla da spostare', 'info');
+    return;
+  }
+
+  const conflicts = (state.index.clinica || []).filter(c => c.sottocategoria === newSub);
+  if (conflicts.length > 0) {
+    if (!confirm(`"${newSub}" contiene già ${conflicts.length} schede. Le schede saranno unite.\nProcedere?`)) return;
+  }
+
+  const neededCommits = affected.length * 2;
+  if (!await checkRateLimitFor(neededCommits + 20)) return;
+
+  const ops = affected.map(c => {
+    const newPath = c.path.replace(`/clinica/${sub}/`, `/clinica/${newSub}/`);
+    const newFm = { ...c, sottocategoria: newSub };
+    delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+    const newContent = stringifyMarkdown(newFm, c.body || '');
+    return {
+      schedaSlug: c.slug, schedaTitolo: c.titolo || c.slug,
+      putPath: newPath, putContent: newContent,
+      deletePath: c.path, deleteSha: c.sha,
+      commitMsg: `Rinomina clinica/${sub} → clinica/${newSub}: ${c.slug}`
+    };
+  });
+
+  if (!confirm(`Rinominare sottocategoria "${sub}" → "${newSub}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
+
+  const result = await executeMultiCommitOperation(`Rinomina ${sub} → ${newSub}`, ops);
+  if (result.ok) toast(`Rinomina completata: ${result.done}/${result.total}`, 'success');
+  else toast(`Rinomina parziale: ${result.done}/${result.total}`, 'warning');
+  await buildIndex();
+  renderNavTree();
+}
+
+async function createClinicaSub() {
+  const name = prompt('Nuova sottocategoria clinica (minuscole, cifre, trattini):', '');
+  if (!name || !/^[a-z0-9-]+$/.test(name)) return toast('Nome non valido', 'error');
+  // Trigger creating a new scheda in that subcategoria
+  nuovaSchedaClinica({ sottocategoria: name });
+}
+async function nuovoCapitolo() {
+  if (!isAdmin()) return toast('Solo l\'admin può creare nuovi capitoli', 'warning');
+  const titolo = prompt('Titolo del nuovo capitolo:\n(es. "Giornata di reparto")', '');
+  if (!titolo || !titolo.trim()) return;
+  const id = titolo.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  if (!id) return toast('Titolo non trasformabile in slug', 'error');
+  if ((state.index.capitoli || []).find(c => c.id === id)) return toast('Capitolo con questo id esiste già', 'error');
+  const ordineStr = prompt('Ordine del capitolo (numero, es. 5):', String((state.index.capitoli || []).length + 1));
+  const ordine = parseInt(ordineStr, 10);
+  if (isNaN(ordine)) return toast('Ordine non valido', 'error');
+
+  const nuovi = [...(state.index.capitoli || []), { id, titolo: titolo.trim(), ordine }];
+  nuovi.sort((a, b) => (a.ordine || 99) - (b.ordine || 99));
+
+  try {
+    await saveCapitoliFile(nuovi);
+    toast('Capitolo creato', 'success');
+    await buildIndex();
+    renderNavTree();
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+async function editCapitolo(id) {
+  if (!isAdmin()) return toast('Solo l\'admin può modificare i capitoli', 'warning');
+  const capitoli = state.index.capitoli || [];
+  const cap = capitoli.find(c => c.id === id);
+  if (!cap) return toast('Capitolo non trovato', 'error');
+  const newTitolo = prompt(`Modifica titolo capitolo:`, cap.titolo);
+  if (!newTitolo || !newTitolo.trim()) return;
+  const newOrdineStr = prompt(`Modifica ordine:`, String(cap.ordine || ''));
+  const newOrdine = parseInt(newOrdineStr, 10);
+  if (isNaN(newOrdine)) return toast('Ordine non valido', 'error');
+
+  const updated = capitoli.map(c => c.id === id ? { ...c, titolo: newTitolo.trim(), ordine: newOrdine } : c);
+  updated.sort((a, b) => (a.ordine || 99) - (b.ordine || 99));
+  try {
+    await saveCapitoliFile(updated);
+    toast('Capitolo aggiornato', 'success');
+    await buildIndex();
+    renderNavTree();
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
 async function deleteCapitolo(id) {
+  if (!isAdmin()) return toast('Solo l\'admin può eliminare capitoli', 'warning');
   const pezzi = state.index.procedure.filter(p => p.capitolo === id);
-  if (pezzi.length > 0) return toast(`Capitolo non vuoto (${pezzi.length} pezzi)`, 'warning');
-  toast('TODO: elimina capitolo da capitoli.yml', 'info');
+  if (pezzi.length > 0) return toast(`Capitolo non vuoto (${pezzi.length} pezzi). Rimuovi prima l'associazione dal frontmatter delle schede.`, 'warning', 5000);
+  const capitoli = state.index.capitoli || [];
+  const cap = capitoli.find(c => c.id === id);
+  if (!cap) return toast('Capitolo non trovato', 'error');
+  if (!confirm(`Eliminare capitolo "${cap.titolo}"?`)) return;
+  const updated = capitoli.filter(c => c.id !== id);
+  try {
+    await saveCapitoliFile(updated);
+    toast('Capitolo eliminato', 'success');
+    await buildIndex();
+    renderNavTree();
+    if (state.currentView === 'capitolo' && state.currentParams?.id === id) navigate('manuale');
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+async function saveCapitoliFile(capitoliArray) {
+  // Load current sha
+  const file = await gh.getFile('content/capitoli.yml');
+  const content = `# Capitoli del manuale "How to Survive Neuro"\n# Gestito dall'app, non modificare a mano\n\n` +
+    jsyaml.dump({ capitoli: capitoliArray }, { lineWidth: 120, noRefs: true, sortKeys: false });
+  await gh.putFile('content/capitoli.yml', content, file ? file.sha : null, `Aggiorna capitoli.yml (by ${state.session.username})`);
 }
 async function nuovoPezzoCapitolo(capId) {
   // Reuse nuovaProcedura with capitolo preset
   nuovaProcedura({ capitolo: capId });
 }
-async function nuovoGruppoNumeri() { toast('TODO: nuovo gruppo numeri', 'info'); }
-async function renameGruppoNumeri(id) { toast('TODO: rinomina gruppo', 'info'); }
-async function nuovoContatto(gruppoId) { toast('TODO: nuovo contatto in ' + gruppoId, 'info'); }
+async function nuovoGruppoNumeri() {
+  if (!isAdmin()) return toast("Solo l'admin può creare nuovi gruppi di numeri", 'warning');
+  openGruppoEditor({ mode: 'new' });
+}
+
+async function renameGruppoNumeri(id) {
+  if (!isAdmin()) return toast("Solo l'admin può modificare gruppi", 'warning');
+  // Find group across sources
+  let g = null, src = null;
+  for (const s of ['aopd','osa','iov']) {
+    const found = (getNumeriDataForSource(s).gruppi || []).find(x => x.id === id);
+    if (found) { g = found; src = s; break; }
+  }
+  if (!g) return toast('Gruppo non trovato', 'error');
+  openGruppoEditor({ mode: 'edit', gruppo: g, source: src });
+}
+
+function openGruppoEditor({ mode, gruppo, source }) {
+  const isNew = mode === 'new';
+  const g = gruppo || {};
+  const ub = g.ubicazione || {};
+  const sourceOptions = ['aopd', 'osa', 'iov'].map(s => `<option value="${s}" ${(source || 'aopd') === s ? 'selected' : ''}>${s.toUpperCase()}</option>`).join('');
+  const body = `
+    <form id="gruppo-form" onsubmit="return false;" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Nome gruppo <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="ge-nome" value="${escapeHtml(g.nome || '')}" placeholder="es. U.O.S.D. Stroke Unit" required>
+      </div>
+      <div class="field">
+        <label>Ospedale</label>
+        <select id="ge-source" ${isNew ? '' : 'disabled'}>${sourceOptions}</select>
+        ${!isNew ? '<div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Spostamento tra ospedali non supportato — eliminare e ricreare se necessario</div>' : ''}
+      </div>
+      <div class="field">
+        <label>Direttore / Responsabile</label>
+        <input type="text" id="ge-direttore" value="${escapeHtml(g.direttore || '')}" placeholder="es. Dr. Baracchini Claudio">
+      </div>
+      <div class="field">
+        <label>Email del gruppo</label>
+        <input type="text" id="ge-email" value="${escapeHtml(g.email || '')}" class="mono-input" placeholder="es. neurologia@aopd.veneto.it">
+      </div>
+      <fieldset style="border:1px solid var(--rule);border-radius:4px;padding:10px;">
+        <legend style="font-size:12px;color:var(--ink-muted);padding:0 6px;">Ubicazione</legend>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="field"><label>Struttura/Edificio</label><input type="text" id="ge-struttura" value="${escapeHtml(ub.struttura || '')}" placeholder="es. Edificio Neurologia"></div>
+          <div class="field"><label>Piano</label><input type="text" id="ge-piano" value="${escapeHtml(ub.piano || '')}" placeholder="es. terra, 1°, 2°"></div>
+          <div class="field" style="grid-column:1/-1;"><label>Indirizzo</label><input type="text" id="ge-indirizzo" value="${escapeHtml(ub.indirizzo || '')}" placeholder="es. Via Giustiniani, 2"></div>
+          <div class="field" style="grid-column:1/-1;"><label>Sede ospedale (per AOPD: Sant'Antonio se applicabile)</label><input type="text" id="ge-sede" value="${escapeHtml(ub.ospedale_sede || '')}" placeholder="opzionale"></div>
+        </div>
+      </fieldset>
+    </form>`;
+  showModal({
+    title: isNew ? 'Nuovo gruppo di numeri' : 'Modifica gruppo',
+    subtitle: isNew ? '' : `ID: ${escapeHtml(g.id)}`,
+    body,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+      { label: isNew ? 'Crea' : 'Salva', onClick: async () => {
+        const nome = $('ge-nome').value.trim();
+        if (!nome) return toast('Nome obbligatorio', 'warning');
+        const sourceSelected = isNew ? $('ge-source').value : source;
+        const data = { ...getNumeriDataForSource(sourceSelected) };
+        const gruppi = data.gruppi || [];
+        const id = g.id || slugifyLocal(nome).slice(0, 60);
+        if (isNew && gruppi.find(x => x.id === id)) return toast('Esiste già un gruppo con questo id', 'error');
+        const updatedGroup = { id, nome };
+        const direttore = $('ge-direttore').value.trim();
+        const email = $('ge-email').value.trim();
+        const struttura = $('ge-struttura').value.trim();
+        const piano = $('ge-piano').value.trim();
+        const indirizzo = $('ge-indirizzo').value.trim();
+        const sede = $('ge-sede').value.trim();
+        if (direttore) updatedGroup.direttore = direttore;
+        if (email) updatedGroup.email = email;
+        const ubicazione = {};
+        if (struttura) ubicazione.struttura = struttura;
+        if (piano) ubicazione.piano = piano;
+        if (indirizzo) ubicazione.indirizzo = indirizzo;
+        if (sede) ubicazione.ospedale_sede = sede;
+        if (Object.keys(ubicazione).length) updatedGroup.ubicazione = ubicazione;
+        // Preserve existing contatti when editing
+        updatedGroup.contatti = isNew ? [] : (g.contatti || []);
+        const newGruppi = isNew ? [...gruppi, updatedGroup] : gruppi.map(x => x.id === id ? updatedGroup : x);
+        try {
+          await saveNumeriForSource(sourceSelected, { ...data, gruppi: newGruppi });
+          toast(isNew ? 'Gruppo creato' : 'Gruppo aggiornato', 'success');
+          closeModal();
+          await buildIndex();
+          if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
+          if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
+          renderNavTree();
+          if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
+        } catch (e) { toast('Errore: ' + e.message, 'error'); }
+      } }
+    ]
+  });
+}
+
+async function nuovoContatto(gruppoId) {
+  // Open modal for new contact
+  openContattoEditor({ mode: 'new', gruppoId });
+}
+
+async function deleteGruppoNumeri(id) {
+  if (!isAdmin()) return toast("Solo l'admin può eliminare gruppi", 'warning');
+  let g = null, src = null;
+  for (const s of ['aopd','osa','iov']) {
+    const found = (getNumeriDataForSource(s).gruppi || []).find(x => x.id === id);
+    if (found) { g = found; src = s; break; }
+  }
+  if (!g) return;
+  const n = (g.contatti || []).length;
+  if (n > 0 && !confirm(`Il gruppo "${g.nome}" contiene ${n} contatti. Eliminare TUTTO?`)) return;
+  if (n === 0 && !confirm(`Eliminare gruppo "${g.nome}"?`)) return;
+  const data = { ...getNumeriDataForSource(src) };
+  const newGruppi = (data.gruppi || []).filter(x => x.id !== id);
+  try {
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+    toast('Gruppo eliminato', 'success');
+    await buildIndex();
+    if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
+    if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
+    renderNavTree();
+    if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+async function saveNumeriFile(numeriObj) {
+  // Legacy compatibility: saves to AOPD
+  return saveNumeriForSource('aopd', numeriObj);
+}
 
 
 /* ============================ SEARCH ============================ */
