@@ -94,6 +94,52 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 .rate-limit-pill{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:4px 8px;border-radius:2px;background:var(--bg-sink);color:var(--ink-muted);border:1px solid var(--rule-soft);white-space:nowrap}
 .rate-limit-pill.warning{background:var(--warning-soft);color:var(--warning);border-color:var(--warning)}
 .rate-limit-pill.danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+
+/* Edit mode */
+.edit-banner{position:sticky;top:51px;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--accent);font-size:13px;gap:12px}
+.edit-banner-text{display:inline-flex;align-items:center;gap:8px;font-weight:500}
+.icon-btn.active{background:var(--accent);color:var(--bg-paper)}
+body.edit-mode .app-body{outline:2px solid var(--accent);outline-offset:-1px}
+.edit-only{display:none !important}
+body.edit-mode .edit-only{display:revert !important}
+body.edit-mode .edit-only.btn{display:inline-flex !important}
+
+/* Nav tree (sidebar nuova) */
+.nav-tree-node{user-select:none}
+.nav-tree-row{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;font-size:14px;border-radius:2px;color:var(--ink-soft);position:relative;transition:background .1s}
+.nav-tree-row:hover{background:var(--rule-soft);color:var(--ink)}
+.nav-tree-row.active{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.nav-tree-row.expanded{font-weight:500;color:var(--ink)}
+.nav-tree-caret{display:inline-block;width:12px;font-size:10px;color:var(--ink-faint);text-align:center;flex-shrink:0;transition:transform .12s}
+.nav-tree-row.expanded > .nav-tree-caret{transform:rotate(0)}
+.nav-tree-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-tree-count{font-family:var(--mono);font-size:10px;color:var(--ink-faint);font-weight:400}
+.nav-tree-row.active .nav-tree-count{color:var(--accent)}
+.nav-tree-children{padding-left:14px;border-left:1px dashed var(--rule-soft);margin-left:10px;display:none}
+.nav-tree-node.open > .nav-tree-children{display:block}
+.nav-tree-children .nav-tree-row{font-size:13px;padding:4px 10px}
+
+/* Focus mode in sidebar */
+.nav-focus-header{padding:8px 10px 12px;border-bottom:1px solid var(--rule-soft);margin-bottom:8px}
+.nav-focus-back{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:var(--mono);color:var(--accent);cursor:pointer;letter-spacing:.04em}
+.nav-focus-back:hover{text-decoration:underline}
+.nav-focus-title{font-family:var(--serif);font-size:17px;font-weight:500;margin-top:6px;color:var(--ink)}
+.nav-focus-sub{font-size:11px;color:var(--ink-muted);margin-top:2px}
+
+/* Edit menu (⋯) */
+.nav-edit-actions{margin-left:auto;display:none;gap:2px;align-items:center}
+body.edit-mode .nav-tree-row:hover .nav-edit-actions,
+body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
+.btn-icon-mini{background:transparent;border:none;cursor:pointer;padding:2px 4px;color:var(--ink-muted);border-radius:2px;font-size:13px;line-height:1;display:inline-flex;align-items:center}
+.btn-icon-mini:hover{background:var(--rule-soft);color:var(--ink)}
+
+/* Context menu (popover) */
+.context-menu{position:absolute;background:var(--bg-paper);border:1px solid var(--rule-strong);border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.06);min-width:160px;z-index:200;padding:4px 0;font-size:13px}
+.context-menu-item{padding:7px 14px;cursor:pointer;color:var(--ink);transition:background .1s}
+.context-menu-item:hover{background:var(--accent-soft);color:var(--accent)}
+.context-menu-item.danger{color:var(--danger)}
+.context-menu-item.danger:hover{background:var(--danger-soft)}
+.context-menu-divider{height:1px;background:var(--rule-soft);margin:4px 0}
 .user-name{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.02em}
 
 .app-body{display:grid;grid-template-columns:240px 1fr;min-height:0}
@@ -342,6 +388,9 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
     </div>
     <div class="topbar-actions">
       <span id="rate-limit-indicator" class="rate-limit-pill hidden" title="GitHub API: chiamate residue / limite. Si resetta ogni ora.">— /—</span>
+      <button class="icon-btn" id="btn-edit-mode" title="Modalità modifica">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
       <button class="icon-btn" id="btn-refresh" title="Aggiorna dal repository">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       </button>
@@ -351,17 +400,19 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
       </div>
     </div>
   </header>
+  <div id="edit-mode-banner" class="edit-banner hidden">
+    <span class="edit-banner-text">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Modalità modifica attiva
+    </span>
+    <button class="btn sm" id="btn-exit-edit">Esci da modifica</button>
+  </div>
   <div class="app-body">
     <aside class="sidebar">
       <div class="nav-group">
         <div class="nav-group-label">Contenuti</div>
         <div class="nav-item" data-route="home"><span>Home</span></div>
-        <div class="nav-item" data-route="procedure"><span>Procedure</span><span class="nav-item-count" id="nav-count-procedure">—</span></div>
-        <div class="nav-item" data-route="clinica"><span>Clinica</span><span class="nav-item-count" id="nav-count-clinica">—</span></div>
-        <div class="nav-item" data-route="numeri"><span>Numeri utili</span></div>
-        <div class="nav-item" data-route="moduli"><span>Moduli</span><span class="nav-item-count" id="nav-count-moduli">—</span></div>
-        <div class="nav-item" data-route="tabelle"><span>Tabelle</span><span class="nav-item-count" id="nav-count-tabelle">—</span></div>
-        <div class="nav-item" data-route="manuale"><span>Manuale</span><span class="nav-item-count" id="nav-count-capitoli">—</span></div>
+        <div id="nav-tree"></div>
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Sistema</div>
@@ -883,12 +934,9 @@ function rebuildSearchIndex() {
 }
 
 function updateNavCounts() {
-  const c = $('nav-count-capitoli'), p = $('nav-count-procedure'), cl = $('nav-count-clinica'), m = $('nav-count-moduli'), t = $('nav-count-tabelle');
-  if (c) c.textContent = (state.index.capitoli || []).length;
-  if (p) p.textContent = state.index.procedure.length;
-  if (cl) cl.textContent = (state.index.clinica || []).length;
-  if (m) m.textContent = state.index.moduli.length;
-  if (t) t.textContent = state.index.tabelle.length;
+  // The new dynamic sidebar uses renderNavTree() instead of static counters.
+  // Keep this for backward compat (called from many places).
+  if (typeof renderNavTree === 'function') renderNavTree();
 }
 
 /* ============================ LOCKS ============================ */
@@ -1076,14 +1124,16 @@ function navigate(route, params = {}) {
   state.currentView = route;
   window.removeEventListener('beforeunload', beforeUnloadHandler);
 
-  // Clear sidebar sub-nav unless staying in procedure-* or clinica-* tree
-  if (!['procedure', 'procedure-cat', 'clinica'].includes(route)) {
-    clearSidebarSubnav();
-  }
-
+  // Highlight active nav-tree row by route
+  $$('.nav-tree-row').forEach(el => {
+    el.classList.remove('active');
+  });
   $$('.nav-item').forEach(el => {
     el.classList.toggle('active', el.dataset.route === route || (route.startsWith(el.dataset.route + '-') && el.dataset.route));
   });
+  // Save current view+params for re-render after edit toggle
+  state.currentView = route;
+  state.currentParams = params;
   if (route !== 'search') $('global-search').value = '';
 
   switch (route) {
@@ -1145,7 +1195,7 @@ function renderHome() {
       <div class="home-section-title"><span>Procedure</span></div>
       <div class="procedure-grid">
         ${procs.map(p => renderProcedureCard(p)).join('')}
-        <div class="procedure-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);" onclick="nuovaProcedura()">
+        <div class="procedure-card edit-only" style="border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);" onclick="nuovaProcedura()">
           <span style="font-family:var(--serif);font-style:italic;">+ Nuova procedura</span>
         </div>
       </div>
@@ -1274,12 +1324,9 @@ function renderProcedureList() {
   const catOrder = ['bedside','richieste','farmacologiche','emergenze','gestione'];
   const cats = [...catOrder.filter(c => byCat[c]), ...Object.keys(byCat).filter(c => !catOrder.includes(c))];
 
-  renderSidebarSubnav(cats.map(c => ({
-    id: c,
-    label: CATEGORIA_LABELS[c] || c,
-    count: byCat[c].length,
-    onClick: `navigate('procedure-cat', {cat:'${escapeHtml(c)}'})`
-  })));
+  // Auto-expand procedure node in sidebar
+  navState.expanded.add('procedure');
+  renderNavTree();
 
   $('main-content').innerHTML = `
     <div class="page-head">
@@ -1287,7 +1334,7 @@ function renderProcedureList() {
       <h1 class="page-title">Procedure</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${procs.length} schede, organizzate in ${cats.length} categorie.</div>
       <div class="page-actions">
-        <button class="btn" onclick="nuovaProcedura()">+ Nuova procedura</button>
+        <button class="btn edit-only" onclick="nuovaProcedura()">+ Nuova procedura</button>
       </div>
     </div>
     ${cats.map(cat => renderCategoriaBlock(cat, byCat[cat], false)).join('')}`;
@@ -1334,33 +1381,6 @@ function attachCategoriaToggle() {
   // Sync details open state to left sidebar active (optional visual enhancement)
 }
 
-function renderSidebarSubnav(items) {
-  const sidebar = document.querySelector('aside.sidebar');
-  if (!sidebar) return;
-  let wrap = document.getElementById('sidebar-subnav');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'sidebar-subnav';
-    wrap.className = 'nav-group sidebar-subnav';
-    // Insert before "Sistema" group
-    const sysGroup = sidebar.querySelectorAll('.nav-group')[1];
-    sidebar.insertBefore(wrap, sysGroup);
-  }
-  wrap.innerHTML = `
-    <div class="nav-group-label">In questa sezione</div>
-    ${items.map(it => `
-      <div class="nav-item nav-item-sub" onclick="${it.onClick}">
-        <span>${escapeHtml(it.label)}</span>
-        <span class="nav-item-count">${it.count}</span>
-      </div>
-    `).join('')}`;
-}
-
-function clearSidebarSubnav() {
-  const wrap = document.getElementById('sidebar-subnav');
-  if (wrap) wrap.remove();
-}
-
 function renderProcedureByCategoria(cat, subFilter) {
   const procs = state.index.procedure.filter(p => p.categoria === cat);
   if (procs.length === 0) return renderError('Categoria vuota', cat);
@@ -1374,20 +1394,10 @@ function renderProcedureByCategoria(cat, subFilter) {
   const subs = Object.keys(bySub).sort();
   const filtered = subFilter ? bySub[subFilter] || [] : procs;
 
-  // Sidebar sub-nav with sub-categories
-  const subnavItems = [
-    { id: '_all', label: 'Tutte', count: procs.length, onClick: `navigate('procedure-cat', {cat:'${escapeHtml(cat)}'})`, active: !subFilter }
-  ];
-  subs.forEach(s => {
-    subnavItems.push({
-      id: s,
-      label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
-      count: bySub[s].length,
-      onClick: `navigate('procedure-cat', {cat:'${escapeHtml(cat)}', sub:'${escapeHtml(s)}'})`,
-      active: subFilter === s
-    });
-  });
-  renderSidebarSubnav(subnavItems);
+  // Auto-expand procedure + macro in sidebar
+  navState.expanded.add('procedure');
+  navState.expanded.add('macro:' + cat);
+  renderNavTree();
 
   $('main-content').innerHTML = `
     <div class="page-head">
@@ -1395,7 +1405,7 @@ function renderProcedureByCategoria(cat, subFilter) {
       <h1 class="page-title">${escapeHtml(CATEGORIA_LABELS[cat] || cat)}</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${filtered.length} procedur${filtered.length === 1 ? 'a' : 'e'}${subFilter ? ` in ${escapeHtml(SOTTO_LABELS[subFilter] || subFilter)}` : ''}</div>
       <div class="page-actions">
-        <button class="btn" onclick="nuovaProcedura({categoria:'${escapeHtml(cat)}'${subFilter && subFilter !== '_senza' ? `, sottocategoria:'${escapeHtml(subFilter)}'` : ''}})">+ Nuova procedura</button>
+        <button class="btn edit-only" onclick="nuovaProcedura({categoria:'${escapeHtml(cat)}'${subFilter && subFilter !== '_senza' ? `, sottocategoria:'${escapeHtml(subFilter)}'` : ''}})">+ Nuova procedura</button>
       </div>
     </div>
     ${subFilter || (subs.length === 1 && subs[0] === '_senza')
@@ -1652,20 +1662,9 @@ function renderClinicaList(subFilter) {
   const orderedSubs = [...subOrder.filter(s => bySub[s]), ...subs.filter(s => !subOrder.includes(s))];
   const filtered = subFilter ? (bySub[subFilter] || []) : items;
 
-  // Sidebar subnav
-  const subnavItems = [
-    { id: '_all', label: 'Tutte', count: items.length, onClick: `navigate('clinica')`, active: !subFilter }
-  ];
-  orderedSubs.forEach(s => {
-    subnavItems.push({
-      id: s,
-      label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
-      count: bySub[s].length,
-      onClick: `navigate('clinica', {sub:'${escapeHtml(s)}'})`,
-      active: subFilter === s
-    });
-  });
-  renderSidebarSubnav(subnavItems);
+  // Auto-expand clinica node in sidebar
+  navState.expanded.add('clinica');
+  renderNavTree();
 
   $('main-content').innerHTML = `
     <div class="page-head">
@@ -1673,7 +1672,7 @@ function renderClinicaList(subFilter) {
       <h1 class="page-title">Clinica</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Prognosi, gestione post-acuta, scale cliniche. Materiale di riferimento consultabile al letto.</div>
       <div class="page-actions">
-        <button class="btn" onclick="nuovaSchedaClinica(${subFilter && subFilter !== '_senza' ? `{sottocategoria:'${escapeHtml(subFilter)}'}` : ''})">+ Nuova scheda clinica</button>
+        <button class="btn edit-only" onclick="nuovaSchedaClinica(${subFilter && subFilter !== '_senza' ? `{sottocategoria:'${escapeHtml(subFilter)}'}` : ''})">+ Nuova scheda clinica</button>
       </div>
     </div>
     ${items.length === 0 ? '<p style="color:var(--ink-muted);">Nessuna scheda clinica ancora caricata.</p>' :
@@ -2605,9 +2604,6 @@ function renderCestino() {
 /* ============================ CESTINO OPERATIONS ============================ */
 function nuovaProcedura(preset = {}) {
   const existingSlugs = new Set(state.index.procedure.map(p => p.slug));
-  const capOptions = (state.index.capitoli || []).map(c =>
-    `<option value="${escapeHtml(c.id)}" ${preset.capitolo === c.id ? 'selected' : ''}>${escapeHtml((c.ordine ? c.ordine + '. ' : '') + c.titolo)}</option>`
-  ).join('');
   const catOptions = Object.entries(CATEGORIA_LABELS).slice(0, 6).map(([k, v]) =>
     `<option value="${escapeHtml(k)}" ${preset.categoria === k ? 'selected' : ''}>${escapeHtml(v)}</option>`
   ).join('');
@@ -2620,9 +2616,12 @@ function nuovaProcedura(preset = {}) {
     subsByCat[p.categoria].add(p.sottocategoria);
   });
 
+  // If creating from a chapter context, show readonly chapter info instead of selector
+  const capInfo = preset.capitolo ? (state.index.capitoli || []).find(c => c.id === preset.capitolo) : null;
+
   showModal({
-    title: 'Nuova procedura',
-    subtitle: 'Crea un file vuoto e apre l\'editor.',
+    title: capInfo ? `Nuovo pezzo del capitolo "${capInfo.titolo}"` : 'Nuova procedura',
+    subtitle: capInfo ? 'Verrà aggiunto al capitolo del manuale.' : 'Crea un file vuoto e apre l\'editor.',
     body: `
       <div class="field">
         <label>Titolo</label>
@@ -2643,10 +2642,14 @@ function nuovaProcedura(preset = {}) {
         <datalist id="np-subs-list"></datalist>
         <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Solo minuscole, cifre, trattini. Suggerimenti in base alla categoria scelta.</div>
       </div>
-      <div class="field">
-        <label>Capitolo manuale (opzionale)</label>
-        <select id="np-capitolo"><option value="">— nessuno —</option>${capOptions}</select>
+      ${capInfo ? `<div class="field">
+        <label>Capitolo</label>
+        <div style="font-family:var(--mono);font-size:13px;color:var(--ink-soft);padding:8px 12px;background:var(--bg-sink);border-radius:2px;">${escapeHtml(capInfo.ordine + '. ' + capInfo.titolo)}</div>
       </div>
+      <div class="field">
+        <label>Ordine nel capitolo</label>
+        <input type="text" id="np-ordine-cap" class="mono-input" placeholder="1, 2, 3...">
+      </div>` : ''}
       <div id="np-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
     actions: [
       { label: 'Annulla', variant: 'ghost', onClick: closeModal },
@@ -2655,7 +2658,6 @@ function nuovaProcedura(preset = {}) {
         let slug = $('np-slug').value.trim().toLowerCase();
         const categoria = $('np-categoria').value;
         const sottocat = $('np-sottocategoria').value.trim().toLowerCase();
-        const cap = $('np-capitolo').value;
         const err = $('np-error');
         err.style.display = 'none';
         const show = m => { err.textContent = m; err.style.display = 'block'; };
@@ -2674,11 +2676,17 @@ function nuovaProcedura(preset = {}) {
           cronologia_recente: [{ data: nowIso(), utente: state.session.username, nota: 'creazione' }]
         };
         if (sottocat) nf.sottocategoria = sottocat;
-        if (cap) nf.capitolo = cap;
+        if (preset.capitolo) {
+          nf.capitolo = preset.capitolo;
+          const ordEl = $('np-ordine-cap');
+          if (ordEl && ordEl.value.trim()) {
+            const n = parseInt(ordEl.value.trim(), 10);
+            nf.ordine_nel_capitolo = isNaN(n) ? ordEl.value.trim() : n;
+          }
+        }
 
         const body = '';
         const content = stringifyMarkdown(nf, body);
-        // Build path: content/procedure/{categoria}/{sottocategoria?}/{slug}.md
         let path = `content/procedure/${categoria}/`;
         if (sottocat) path += `${sottocat}/`;
         path += `${slug}.md`;
@@ -3063,6 +3071,551 @@ function rimuoviUtente(username) {
   });
 }
 
+/* ============================ NAV TREE & EDIT MODE ============================ */
+
+const navState = {
+  expanded: new Set(),       // ids of currently-expanded sections
+  focusPath: null,           // {kind:'sub', macro:'richieste', sub:'cardiologia'} | {kind:'capitolo', id:'...'} | {kind:'gruppo', id:'...'} | null
+  editMode: false,
+  openMenu: null             // currently open context menu element
+};
+
+function toggleEditMode(force) {
+  navState.editMode = (force !== undefined) ? force : !navState.editMode;
+  document.body.classList.toggle('edit-mode', navState.editMode);
+  document.getElementById('edit-mode-banner').classList.toggle('hidden', !navState.editMode);
+  document.getElementById('btn-edit-mode').classList.toggle('active', navState.editMode);
+  renderNavTree();
+  // Re-render current view to show edit affordances in main panel
+  if (state.currentView) navigate(state.currentView, state.currentParams || {});
+}
+
+function renderNavTree() {
+  const tree = document.getElementById('nav-tree');
+  if (!tree) return;
+
+  // Focus mode: when a sub or capitolo is "focused", show only that
+  if (navState.focusPath) {
+    return renderNavFocusMode();
+  }
+
+  // Build node tree data
+  const nodes = [
+    { id: 'procedure', label: 'Procedure', count: state.index.procedure.length, route: 'procedure', children: () => buildProcedureChildren() },
+    { id: 'clinica', label: 'Clinica', count: (state.index.clinica || []).length, route: 'clinica', children: () => buildClinicaChildren() },
+    { id: 'numeri', label: 'Numeri utili', count: countNumeri(), route: 'numeri', children: () => buildNumeriChildren() },
+    { id: 'moduli', label: 'Moduli', count: state.index.moduli.length, route: 'moduli', children: () => buildModuliChildren() },
+    { id: 'tabelle', label: 'Tabelle', count: state.index.tabelle.length, route: 'tabelle', children: () => buildTabelleChildren() },
+    { id: 'manuale', label: 'Manuale', count: (state.index.capitoli || []).length, route: 'manuale', children: () => buildManualeChildren() },
+  ];
+
+  tree.innerHTML = nodes.map(n => renderNavTreeNode(n, 0)).join('');
+  attachNavTreeHandlers();
+}
+
+function renderNavFocusMode() {
+  const tree = document.getElementById('nav-tree');
+  const fp = navState.focusPath;
+  let backRoute = "navigate('home')";
+  let title = '', sub = '', items = [], itemRoute = '';
+
+  if (fp.kind === 'sub') {
+    backRoute = `navigateAndExpand('procedure', {ancestor:'${escapeJs(fp.macro)}'})`;
+    title = SOTTO_LABELS[fp.sub] || fp.sub;
+    sub = `${CATEGORIA_LABELS[fp.macro] || fp.macro} · ${state.index.procedure.filter(p => p.categoria === fp.macro && p.sottocategoria === fp.sub).length} schede`;
+    items = state.index.procedure
+      .filter(p => p.categoria === fp.macro && p.sottocategoria === fp.sub)
+      .map(p => ({ label: p.titolo || p.slug, slug: p.slug, route: `navigate('procedura',{slug:'${escapeJs(p.slug)}'})`, kind: 'procedure', meta: p }));
+  } else if (fp.kind === 'clinica-sub') {
+    backRoute = `navigateAndExpand('clinica', {ancestor:'clinica'})`;
+    title = SOTTO_LABELS[fp.sub] || fp.sub;
+    sub = `Clinica · ${(state.index.clinica||[]).filter(c => c.sottocategoria === fp.sub).length} schede`;
+    items = (state.index.clinica||[])
+      .filter(c => c.sottocategoria === fp.sub)
+      .map(c => ({ label: c.titolo || c.slug, slug: c.slug, route: `navigate('clinica-scheda',{slug:'${escapeJs(c.slug)}'})`, kind: 'clinica', meta: c }));
+  } else if (fp.kind === 'capitolo') {
+    backRoute = `navigateAndExpand('manuale', {ancestor:'manuale'})`;
+    const cap = (state.index.capitoli || []).find(c => c.id === fp.id);
+    title = cap ? cap.titolo : fp.id;
+    const pezzi = state.index.procedure.filter(p => p.capitolo === fp.id);
+    sub = `Manuale · capitolo ${cap ? cap.ordine : '?'} · ${pezzi.length} pezzi`;
+    items = pezzi
+      .sort((a,b) => (a.ordine_nel_capitolo||99) - (b.ordine_nel_capitolo||99))
+      .map(p => ({ label: p.titolo || p.slug, slug: p.slug, route: `navigate('procedura',{slug:'${escapeJs(p.slug)}'})`, kind: 'capitolo-pezzo', meta: p }));
+  } else if (fp.kind === 'gruppo') {
+    backRoute = `navigateAndExpand('numeri', {ancestor:'numeri'})`;
+    const gr = (state.index.numeri && state.index.numeri.gruppi || []).find(g => g.id === fp.id);
+    title = gr ? gr.nome : fp.id;
+    sub = gr ? `${(gr.contatti||[]).length} contatti` : '';
+    items = gr ? (gr.contatti||[]).map(c => ({ label: c.etichetta, slug: c.id || c.etichetta, route: `navigate('numeri',{filter:'${escapeJs(c.id || c.etichetta)}'})`, kind: 'contatto', meta: c })) : [];
+  } else if (fp.kind === 'moduli-flat') {
+    backRoute = `navigate('home')`;
+    title = 'Moduli';
+    sub = `${state.index.moduli.length} moduli`;
+    items = state.index.moduli.map(m => ({ label: m.titolo || m.slug, slug: m.slug, route: `navigate('modulo',{slug:'${escapeJs(m.slug)}'})`, kind: 'modulo', meta: m }));
+  } else if (fp.kind === 'tabelle-flat') {
+    backRoute = `navigate('home')`;
+    title = 'Tabelle';
+    sub = `${state.index.tabelle.length} tabelle`;
+    items = state.index.tabelle.map(t => ({ label: t.titolo || t.slug, slug: t.slug, route: `navigate('tabella',{slug:'${escapeJs(t.slug)}'})`, kind: 'tabella', meta: t }));
+  }
+
+  tree.innerHTML = `
+    <div class="nav-focus-header">
+      <div class="nav-focus-back" onclick="exitFocusMode(); ${backRoute}">← indietro</div>
+      <div class="nav-focus-title">${escapeHtml(title)}</div>
+      <div class="nav-focus-sub">${escapeHtml(sub)}</div>
+    </div>
+    ${items.map(it => `
+      <div class="nav-tree-row" onclick="${it.route}" data-slug="${escapeHtml(it.slug)}" data-kind="${it.kind}">
+        <span class="nav-tree-caret">·</span>
+        <span class="nav-tree-label">${escapeHtml(it.label)}</span>
+        ${navState.editMode ? `<span class="nav-edit-actions"><button class="btn-icon-mini" onclick="event.stopPropagation();showItemContextMenu(this, '${it.kind}', '${escapeJs(it.slug)}')" title="Azioni">⋯</button></span>` : ''}
+      </div>
+    `).join('')}
+  `;
+}
+
+function buildProcedureChildren() {
+  const byCat = {};
+  state.index.procedure.forEach(p => {
+    const c = p.categoria || 'altre';
+    if (!byCat[c]) byCat[c] = [];
+    byCat[c].push(p);
+  });
+  const order = ['bedside','richieste','farmacologiche','emergenze','gestione'];
+  const cats = [...order.filter(c => byCat[c]), ...Object.keys(byCat).filter(c => !order.includes(c))];
+  return cats.map(cat => {
+    const subs = {};
+    byCat[cat].forEach(p => {
+      const s = p.sottocategoria || '_senza';
+      if (!subs[s]) subs[s] = 0;
+      subs[s]++;
+    });
+    const subKeys = Object.keys(subs).sort();
+    return {
+      id: 'macro:' + cat,
+      label: CATEGORIA_LABELS[cat] || cat,
+      count: byCat[cat].length,
+      route: `navigate('procedure-cat',{cat:'${escapeJs(cat)}'})`,
+      kind: 'macro',
+      slug: cat,
+      children: () => subKeys.map(s => ({
+        id: 'sub:' + cat + ':' + s,
+        label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
+        count: subs[s],
+        route: `enterFocusMode({kind:'sub',macro:'${escapeJs(cat)}',sub:'${escapeJs(s)}'})`,
+        kind: 'sub',
+        slug: cat + '/' + s,
+        children: null
+      }))
+    };
+  });
+}
+
+function buildClinicaChildren() {
+  const subs = {};
+  (state.index.clinica || []).forEach(c => {
+    const s = c.sottocategoria || '_senza';
+    if (!subs[s]) subs[s] = 0;
+    subs[s]++;
+  });
+  const order = ['prognosi','gestione-post-acuta','scale-cliniche'];
+  const keys = [...order.filter(s => subs[s]), ...Object.keys(subs).filter(s => !order.includes(s))];
+  return keys.map(s => ({
+    id: 'clinica-sub:' + s,
+    label: SOTTO_LABELS[s] || (s === '_senza' ? '(senza)' : s),
+    count: subs[s],
+    route: `enterFocusMode({kind:'clinica-sub',sub:'${escapeJs(s)}'})`,
+    kind: 'clinica-sub',
+    slug: s,
+    children: null
+  }));
+}
+
+function buildNumeriChildren() {
+  if (!state.index.numeri || !state.index.numeri.gruppi) return [];
+  return state.index.numeri.gruppi.map(g => ({
+    id: 'gruppo:' + g.id,
+    label: g.nome,
+    count: (g.contatti || []).length,
+    route: `enterFocusMode({kind:'gruppo',id:'${escapeJs(g.id)}'})`,
+    kind: 'gruppo',
+    slug: g.id,
+    children: null
+  }));
+}
+
+function buildModuliChildren() {
+  return state.index.moduli.map(m => ({
+    id: 'modulo:' + m.slug,
+    label: m.titolo || m.slug,
+    count: null,
+    route: `navigate('modulo',{slug:'${escapeJs(m.slug)}'})`,
+    kind: 'modulo',
+    slug: m.slug,
+    children: null
+  }));
+}
+
+function buildTabelleChildren() {
+  return state.index.tabelle.map(t => ({
+    id: 'tabella:' + t.slug,
+    label: t.titolo || t.slug,
+    count: null,
+    route: `navigate('tabella',{slug:'${escapeJs(t.slug)}'})`,
+    kind: 'tabella',
+    slug: t.slug,
+    children: null
+  }));
+}
+
+function buildManualeChildren() {
+  return (state.index.capitoli || []).map(c => {
+    const pezzi = state.index.procedure.filter(p => p.capitolo === c.id).length;
+    return {
+      id: 'capitolo:' + c.id,
+      label: `${c.ordine || '·'}. ${c.titolo}`,
+      count: pezzi,
+      route: pezzi > 0 ? `enterFocusMode({kind:'capitolo',id:'${escapeJs(c.id)}'})` : `navigate('capitolo',{id:'${escapeJs(c.id)}'})`,
+      kind: 'capitolo',
+      slug: c.id,
+      children: null
+    };
+  });
+}
+
+function countNumeri() {
+  if (!state.index.numeri || !state.index.numeri.gruppi) return 0;
+  return state.index.numeri.gruppi.reduce((acc, g) => acc + (g.contatti || []).length, 0);
+}
+
+function renderNavTreeNode(node, depth) {
+  const expanded = navState.expanded.has(node.id);
+  const hasChildren = !!node.children;
+  const childrenList = expanded && hasChildren ? node.children() : [];
+  const editBtn = navState.editMode
+    ? `<span class="nav-edit-actions"><button class="btn-icon-mini" onclick="event.stopPropagation();showNavContextMenu(this, '${node.kind || 'top'}', '${escapeJs(node.slug || node.id)}')" title="Azioni">⋯</button></span>`
+    : '';
+  return `
+    <div class="nav-tree-node ${expanded ? 'open' : ''}" data-id="${escapeHtml(node.id)}">
+      <div class="nav-tree-row ${expanded ? 'expanded' : ''}" data-slug="${escapeHtml(node.slug || '')}" data-kind="${node.kind || 'top'}">
+        <span class="nav-tree-caret" onclick="event.stopPropagation();toggleNavNode('${escapeJs(node.id)}')">${hasChildren ? (expanded ? '▾' : '▸') : '·'}</span>
+        <span class="nav-tree-label" onclick="${node.route}">${escapeHtml(node.label)}</span>
+        ${node.count !== null && node.count !== undefined ? `<span class="nav-tree-count">${node.count}</span>` : ''}
+        ${editBtn}
+      </div>
+      ${hasChildren ? `<div class="nav-tree-children">${childrenList.map(c => renderNavTreeNode(c, depth + 1)).join('')}</div>` : ''}
+    </div>`;
+}
+
+function toggleNavNode(id) {
+  if (navState.expanded.has(id)) navState.expanded.delete(id);
+  else navState.expanded.add(id);
+  renderNavTree();
+}
+
+function attachNavTreeHandlers() {
+  // Already wired via inline onclick; nothing extra for now
+}
+
+function enterFocusMode(focusPath) {
+  navState.focusPath = focusPath;
+  renderNavTree();
+  // Also navigate the main panel
+  if (focusPath.kind === 'sub') navigate('procedure-cat', {cat: focusPath.macro, sub: focusPath.sub});
+  else if (focusPath.kind === 'clinica-sub') navigate('clinica', {sub: focusPath.sub});
+  else if (focusPath.kind === 'capitolo') navigate('capitolo', {id: focusPath.id});
+  else if (focusPath.kind === 'gruppo') navigate('numeri', {filter: focusPath.id});
+}
+
+function exitFocusMode() {
+  navState.focusPath = null;
+  renderNavTree();
+}
+
+function navigateAndExpand(route, opts) {
+  if (opts && opts.ancestor) navState.expanded.add(opts.ancestor === 'clinica' ? 'clinica' :
+    opts.ancestor === 'manuale' ? 'manuale' :
+    opts.ancestor === 'numeri' ? 'numeri' :
+    opts.ancestor);
+  renderNavTree();
+  navigate(route);
+}
+
+/* ----- Context menu (⋯) ----- */
+function showNavContextMenu(triggerBtn, kind, slug) {
+  closeContextMenu();
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  let items = [];
+
+  if (kind === 'macro') {
+    items = [
+      { label: '+ Nuova sottocategoria', action: () => createSottocategoria(slug) },
+      { label: 'Rinomina categoria', action: () => renameMacroCategoria(slug) },
+      { label: 'Elimina (se vuota)', danger: true, action: () => deleteMacroCategoria(slug) },
+    ];
+  } else if (kind === 'sub') {
+    const [cat, sub] = slug.split('/');
+    items = [
+      { label: '+ Nuova procedura qui', action: () => nuovaProcedura({categoria: cat, sottocategoria: sub}) },
+      { label: 'Rinomina sottocategoria', action: () => renameSottocategoria(cat, sub) },
+      { label: 'Sposta in altra categoria...', action: () => moveSottocategoria(cat, sub) },
+      { label: 'Elimina (se vuota)', danger: true, action: () => deleteSottocategoria(cat, sub) },
+    ];
+  } else if (kind === 'clinica-sub') {
+    items = [
+      { label: '+ Nuova scheda qui', action: () => nuovaSchedaClinica({sottocategoria: slug}) },
+      { label: 'Rinomina', action: () => renameClinicaSub(slug) },
+    ];
+  } else if (kind === 'capitolo') {
+    items = [
+      { label: '+ Aggiungi pezzo al capitolo', action: () => nuovoPezzoCapitolo(slug) },
+      { label: 'Modifica capitolo', action: () => editCapitolo(slug) },
+      { label: 'Elimina capitolo (se vuoto)', danger: true, action: () => deleteCapitolo(slug) },
+    ];
+  } else if (kind === 'gruppo') {
+    items = [
+      { label: '+ Nuovo contatto qui', action: () => nuovoContatto(slug) },
+      { label: 'Rinomina gruppo', action: () => renameGruppoNumeri(slug) },
+    ];
+  } else if (kind === 'top') {
+    if (slug === 'procedure') items = [{ label: '+ Nuova categoria di procedure', action: () => nuovaMacroCategoria() }];
+    else if (slug === 'clinica') items = [{ label: '+ Nuova sottocategoria clinica', action: () => createClinicaSub() }];
+    else if (slug === 'numeri') items = [{ label: '+ Nuovo gruppo di numeri', action: () => nuovoGruppoNumeri() }];
+    else if (slug === 'moduli') items = [{ label: '+ Nuovo modulo', action: () => nuovoModulo && nuovoModulo() }];
+    else if (slug === 'tabelle') items = [{ label: '+ Nuova tabella', action: () => nuovaTabella && nuovaTabella() }];
+    else if (slug === 'manuale') items = [{ label: '+ Nuovo capitolo', action: () => nuovoCapitolo() }];
+  }
+
+  menu.innerHTML = items.map((it, idx) => `
+    <div class="context-menu-item ${it.danger ? 'danger' : ''}" data-idx="${idx}">${escapeHtml(it.label)}</div>
+  `).join('');
+
+  // Position
+  const rect = triggerBtn.getBoundingClientRect();
+  menu.style.left = (rect.right + 4) + 'px';
+  menu.style.top = rect.top + 'px';
+
+  document.body.appendChild(menu);
+  menu.querySelectorAll('.context-menu-item').forEach((el, idx) => {
+    el.addEventListener('click', () => {
+      closeContextMenu();
+      items[idx].action();
+    });
+  });
+  navState.openMenu = menu;
+  setTimeout(() => document.addEventListener('click', closeContextMenu, { once: true }), 0);
+}
+
+function showItemContextMenu(triggerBtn, kind, slug) {
+  closeContextMenu();
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  let items = [];
+
+  if (kind === 'procedure' || kind === 'capitolo-pezzo') {
+    const proc = state.index.procedure.find(p => p.slug === slug);
+    items = [
+      { label: 'Apri', action: () => navigate('procedura', {slug}) },
+      { label: 'Modifica contenuto', action: () => navigate('procedura-edit', {slug}) },
+      { label: 'Rinomina', action: () => renameProcedura(slug) },
+      { label: 'Sposta in...', action: () => moveProcedura(slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDelete('procedura', slug) },
+    ];
+  } else if (kind === 'clinica') {
+    items = [
+      { label: 'Apri', action: () => navigate('clinica-scheda', {slug}) },
+      { label: 'Modifica contenuto', action: () => navigate('clinica-edit', {slug}) },
+      { label: 'Rinomina', action: () => renameClinica(slug) },
+    ];
+  } else if (kind === 'modulo' || kind === 'tabella') {
+    items = [
+      { label: 'Apri', action: () => navigate(kind, {slug}) },
+      { label: 'Modifica', action: () => toast('TODO: rename modulo/tabella', 'info') },
+    ];
+  } else if (kind === 'contatto') {
+    items = [{ label: 'TODO: edit contatto', action: () => {} }];
+  }
+
+  menu.innerHTML = items.map((it, idx) => `
+    <div class="context-menu-item ${it.danger ? 'danger' : ''}" data-idx="${idx}">${escapeHtml(it.label)}</div>
+  `).join('');
+  const rect = triggerBtn.getBoundingClientRect();
+  menu.style.left = (rect.right + 4) + 'px';
+  menu.style.top = rect.top + 'px';
+  document.body.appendChild(menu);
+  menu.querySelectorAll('.context-menu-item').forEach((el, idx) => {
+    el.addEventListener('click', () => { closeContextMenu(); items[idx].action(); });
+  });
+  navState.openMenu = menu;
+  setTimeout(() => document.addEventListener('click', closeContextMenu, { once: true }), 0);
+}
+
+function closeContextMenu() {
+  if (navState.openMenu && navState.openMenu.parentNode) {
+    navState.openMenu.parentNode.removeChild(navState.openMenu);
+  }
+  navState.openMenu = null;
+}
+
+function escapeJs(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '\\"'); }
+
+/* ----- Folder operations (multi-commit) ----- */
+
+async function multiCommitOperation(label, operations) {
+  // Each operation is { type: 'put'|'delete', path, content?, sha?, message }
+  // Returns total + executed counts
+  const total = operations.length;
+  let done = 0;
+  const failures = [];
+  for (const op of operations) {
+    try {
+      if (op.type === 'put') await gh.putFile(op.path, op.content, op.sha || null, op.message);
+      else if (op.type === 'delete') await gh.deleteFile(op.path, op.sha, op.message);
+      done++;
+    } catch (e) {
+      failures.push({ op, error: e.message });
+    }
+  }
+  return { total, done, failures };
+}
+
+async function renameSottocategoria(macro, oldSub) {
+  const newSub = prompt(`Nuovo nome per la sottocategoria "${oldSub}":\n(solo minuscole, cifre, trattini)`, oldSub);
+  if (!newSub || newSub === oldSub) return;
+  if (!/^[a-z0-9-]+$/.test(newSub)) return toast('Nome non valido', 'error');
+
+  const procs = state.index.procedure.filter(p => p.categoria === macro && p.sottocategoria === oldSub);
+  const ops = [];
+  procs.forEach(p => {
+    const newPath = p.path.replace(`/${oldSub}/`, `/${newSub}/`);
+    const newFm = { ...p, sottocategoria: newSub };
+    delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+    const newContent = stringifyMarkdown(newFm, p.body || '');
+    ops.push({ type: 'put', path: newPath, content: newContent, message: `Sposta ${p.slug} → ${newSub} (rename sottocategoria by ${state.session.username})` });
+    ops.push({ type: 'delete', path: p.path, sha: p.sha, message: `Rimuovi ${p.slug} da vecchia ${oldSub}` });
+  });
+
+  if (!confirm(`Rinominare "${oldSub}" → "${newSub}"?\nVerranno fatti ${ops.length} commit (${procs.length} file × 2 operazioni).`)) return;
+
+  toast(`Operazione in corso: ${ops.length} commit...`, 'info', 5000);
+  const result = await multiCommitOperation(`Rinomina ${oldSub}`, ops);
+  if (result.failures.length === 0) {
+    toast(`Rinominata: ${result.done} commit eseguiti`, 'success');
+    await buildIndex();
+    renderNavTree();
+  } else {
+    toast(`Errori: ${result.failures.length}/${result.total}. Vedi console.`, 'error');
+    console.error('Rename errors:', result.failures);
+  }
+}
+
+async function moveSottocategoria(currentMacro, sub) {
+  const macroOrder = ['bedside','richieste','farmacologiche','emergenze','gestione'];
+  const dest = prompt(`Sposta sottocategoria "${sub}" da "${currentMacro}" a quale macro?\nDisponibili: ${macroOrder.join(', ')}`, '');
+  if (!dest || dest === currentMacro || !macroOrder.includes(dest)) return;
+
+  const procs = state.index.procedure.filter(p => p.categoria === currentMacro && p.sottocategoria === sub);
+  const ops = [];
+  procs.forEach(p => {
+    const newPath = p.path.replace(`procedure/${currentMacro}/${sub}/`, `procedure/${dest}/${sub}/`);
+    const newFm = { ...p, categoria: dest };
+    delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+    const newContent = stringifyMarkdown(newFm, p.body || '');
+    ops.push({ type: 'put', path: newPath, content: newContent, message: `Sposta ${p.slug} in ${dest}/${sub}` });
+    ops.push({ type: 'delete', path: p.path, sha: p.sha, message: `Rimuovi ${p.slug} da ${currentMacro}` });
+  });
+
+  if (!confirm(`Spostare "${sub}" da "${currentMacro}" a "${dest}"?\n${ops.length} commit (${procs.length} file × 2).`)) return;
+  toast(`Spostamento: ${ops.length} commit...`, 'info', 5000);
+  const result = await multiCommitOperation(`Sposta ${sub}`, ops);
+  toast(`${result.done}/${result.total} commit ok`, result.failures.length ? 'error' : 'success');
+  await buildIndex();
+  renderNavTree();
+}
+
+async function deleteSottocategoria(macro, sub) {
+  const procs = state.index.procedure.filter(p => p.categoria === macro && p.sottocategoria === sub);
+  if (procs.length > 0) return toast(`Sottocategoria non vuota (${procs.length} schede). Sposta o elimina prima i contenuti.`, 'warning', 4000);
+  toast('Sottocategoria eliminata (cartella vuota era già implicita)', 'info');
+  // For empty subs there's no actual file to delete (folder is implicit on GitHub)
+  // Just clear from local state and re-render
+  await buildIndex();
+  renderNavTree();
+}
+
+async function renameProcedura(slug) {
+  const proc = state.index.procedure.find(p => p.slug === slug);
+  if (!proc) return;
+  const newSlug = prompt(`Nuovo slug per "${proc.titolo}":\n(solo minuscole, cifre, trattini, sarà il nome del file)`, proc.slug);
+  if (!newSlug || newSlug === proc.slug) return;
+  if (!/^[a-z0-9-]+$/.test(newSlug)) return toast('Slug non valido', 'error');
+  if (state.index.procedure.find(p => p.slug === newSlug)) return toast('Slug già esistente', 'error');
+
+  const newFm = { ...proc, id: newSlug };
+  delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
+  const newContent = stringifyMarkdown(newFm, proc.body || '');
+  const newPath = proc.path.replace(/[^/]+\.md$/, `${newSlug}.md`);
+
+  if (!confirm(`Rinominare "${proc.slug}" → "${newSlug}"?\n2 commit (crea nuovo + elimina vecchio).`)) return;
+  toast('Rinomina in corso...', 'info');
+  try {
+    await gh.putFile(newPath, newContent, null, `Rinomina ${proc.slug} → ${newSlug}`);
+    await gh.deleteFile(proc.path, proc.sha, `Elimina vecchio ${proc.slug} (rinomina)`);
+    toast('Rinominata', 'success');
+    await buildIndex();
+    renderNavTree();
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+async function moveProcedura(slug) {
+  const proc = state.index.procedure.find(p => p.slug === slug);
+  if (!proc) return;
+  toast('Per spostare: usa rinomina sottocategoria o elimina + ricrea (TODO: dialog completo)', 'info', 4000);
+}
+
+async function renameMacroCategoria(macro) {
+  toast('Rinomina macro categoria — TODO (richiede aggiornare path di tutti i file)', 'warning');
+}
+async function deleteMacroCategoria(macro) {
+  const procs = state.index.procedure.filter(p => p.categoria === macro);
+  if (procs.length > 0) return toast(`Categoria non vuota (${procs.length} schede)`, 'warning');
+  toast('Categoria vuota: nulla da fare lato GitHub (cartella implicita)', 'info');
+}
+async function nuovaMacroCategoria() {
+  const name = prompt('Nome nuova macro categoria (minuscole, trattini):', '');
+  if (!name || !/^[a-z0-9-]+$/.test(name)) return toast('Nome non valido', 'error');
+  // Create a placeholder by adding to a category list — for now just show toast
+  toast(`TODO: persistere "${name}" come categoria. Per ora aggiungi una scheda con categoria:${name} dal frontmatter.`, 'info', 5000);
+}
+async function createSottocategoria(macro) {
+  const name = prompt(`Nuova sottocategoria in ${macro} (minuscole, trattini):`, '');
+  if (!name || !/^[a-z0-9-]+$/.test(name)) return toast('Nome non valido', 'error');
+  // Sub-categories are implicit too — they exist when a file is in them
+  toast(`Per creare la sottocategoria, crea una nuova procedura con questa sottocategoria. Click su "+ Nuova procedura qui" dopo l'apertura.`, 'info', 5000);
+  nuovaProcedura({ categoria: macro, sottocategoria: name });
+}
+async function renameClinicaSub(sub) { toast('TODO: rinomina clinica sottocategoria', 'info'); }
+async function createClinicaSub() { toast('TODO: crea sottocategoria clinica', 'info'); }
+async function renameClinica(slug) { toast('TODO: rinomina scheda clinica', 'info'); }
+async function nuovoCapitolo() { toast('TODO: editor capitoli', 'info'); }
+async function editCapitolo(id) { toast('TODO: editor capitolo', 'info'); }
+async function deleteCapitolo(id) {
+  const pezzi = state.index.procedure.filter(p => p.capitolo === id);
+  if (pezzi.length > 0) return toast(`Capitolo non vuoto (${pezzi.length} pezzi)`, 'warning');
+  toast('TODO: elimina capitolo da capitoli.yml', 'info');
+}
+async function nuovoPezzoCapitolo(capId) {
+  // Reuse nuovaProcedura with capitolo preset
+  nuovaProcedura({ capitolo: capId });
+}
+async function nuovoGruppoNumeri() { toast('TODO: nuovo gruppo numeri', 'info'); }
+async function renameGruppoNumeri(id) { toast('TODO: rinomina gruppo', 'info'); }
+async function nuovoContatto(gruppoId) { toast('TODO: nuovo contatto in ' + gruppoId, 'info'); }
+
+
 /* ============================ SEARCH ============================ */
 function renderSearchResults(query) {
   if (!state.fuse || !query || query.length < 2) {
@@ -3164,6 +3717,9 @@ function initEventListeners() {
   });
 
   $('brand-home').addEventListener('click', () => navigate('home'));
+
+  $('btn-edit-mode').addEventListener('click', () => toggleEditMode());
+  $('btn-exit-edit').addEventListener('click', () => toggleEditMode(false));
 
   $('btn-refresh').addEventListener('click', async () => {
     if (state.editingContext && state.editingContext.isDirty) {
