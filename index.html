@@ -178,7 +178,12 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 
 /* PAGE HEADERS */
 .page-head{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--rule)}
-.page-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px}
+.page-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bc-back{background:transparent;border:1px solid var(--rule);color:var(--ink-soft);width:24px;height:24px;border-radius:2px;cursor:pointer;font-size:13px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s,color .12s}
+.bc-back:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.bc-segment{cursor:pointer;color:var(--ink-muted);transition:color .12s}
+.bc-segment:hover{color:var(--accent);text-decoration:underline}
+.bc-sep{color:var(--ink-faint);margin:0 2px}
 .page-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);line-height:1.05;letter-spacing:-.02em;color:var(--ink)}
 .page-title em{font-style:italic;font-weight:300}
 .page-meta{margin-top:16px;font-size:13px;color:var(--ink-muted);display:flex;gap:20px;flex-wrap:wrap}
@@ -226,7 +231,9 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .procedure-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent);transform:scaleY(0);transform-origin:top;transition:transform .2s}
 .procedure-card:hover{border-color:var(--ink);box-shadow:var(--shadow-raised)}
 .procedure-card:hover::before{transform:scaleY(1)}
-.procedure-card-title{font-family:var(--serif);font-size:19px;font-weight:500;line-height:1.2;margin-bottom:8px;color:var(--ink)}
+.procedure-card-title{font-family:var(--serif);font-size:19px;font-weight:500;line-height:1.2;margin-bottom:8px;color:var(--ink);display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.card-edit-btn{flex-shrink:0;margin-top:2px;opacity:.6;transition:opacity .15s}
+.card-edit-btn:hover{opacity:1}
 .procedure-card-meta{font-size:12px;color:var(--ink-muted);display:flex;align-items:center;gap:10px;margin-top:12px}
 .procedure-card-tags{margin-top:10px}
 
@@ -493,6 +500,33 @@ function timeAgo(iso) {
 }
 
 function nowIso() { return new Date().toISOString(); }
+
+// In-memory navigation history for back button
+const navHistory = [];
+function pushHistory(route, params) {
+  // Don't push if same as current top
+  const top = navHistory[navHistory.length - 1];
+  if (top && top.route === route && JSON.stringify(top.params || {}) === JSON.stringify(params || {})) return;
+  navHistory.push({ route, params: params || {} });
+  if (navHistory.length > 50) navHistory.shift();
+}
+function goBack() {
+  if (navHistory.length < 2) return navigate('home');
+  navHistory.pop(); // current
+  const prev = navHistory.pop(); // previous (will be re-pushed by navigate)
+  navigate(prev.route, prev.params);
+}
+
+// Standardized breadcrumb: ← Level1 › Level2 › Level3
+// segments: [{label, route, params?}]
+function buildBreadcrumb(segments) {
+  if (!segments || segments.length === 0) return '';
+  const parts = segments.map((s) => {
+    const params = s.params ? JSON.stringify(s.params).replace(/"/g, '&quot;') : '{}';
+    return `<span class="bc-segment" onclick="navigate('${escapeJs(s.route)}', ${params})">${escapeHtml(s.label)}</span>`;
+  });
+  return `<button class="bc-back" onclick="goBack()" title="Indietro">←</button> ${parts.join(' <span class="bc-sep">›</span> ')}`;
+}
 
 /* ============================ IMAGE HELPERS ============================ */
 
@@ -1336,6 +1370,7 @@ function navigate(route, params = {}) {
   // Save current view+params for re-render after edit toggle
   state.currentView = route;
   state.currentParams = params;
+  pushHistory(route, params);
   if (route !== 'search') $('global-search').value = '';
 
   switch (route) {
@@ -1437,7 +1472,9 @@ function renderProcedureCard(p) {
   const tagsHtml = (p.tag || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
   return `
     <div class="procedure-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
-      <div class="procedure-card-title">${escapeHtml(p.titolo || p.slug)}</div>
+      <div class="procedure-card-title">${escapeHtml(p.titolo || p.slug)}
+        <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'procedure', '${escapeJs(p.slug)}')" title="Azioni">⋯</button>
+      </div>
       <div class="procedure-card-tags">${tagsHtml}</div>
       <div class="procedure-card-meta"><span>Aggiornato ${timeAgo(p.ultima_modifica)}</span></div>
     </div>`;
@@ -1494,12 +1531,11 @@ function renderCapitolo(capId) {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow" style="cursor:pointer;" onclick="navigate('manuale')">← Manuale · Capitolo ${cap.ordine}</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Manuale', route:'manuale'}])} · Capitolo ${cap.ordine || ''}</div>
       <h1 class="page-title">${escapeHtml(cap.titolo)}</h1>
       ${cap.descrizione ? `<div style="margin-top:12px;font-size:14px;color:var(--ink-muted);font-style:italic;font-family:var(--serif);">${escapeHtml(cap.descrizione)}</div>` : ''}
       <div class="page-actions">
-        <button class="btn" onclick="nuovaProcedura({capitolo:'${escapeHtml(capId)}'})">+ Aggiungi pezzo al capitolo</button>
-        <button class="btn ghost" onclick="window.print()">Stampa capitolo</button>
+        <button class="btn edit-only" onclick="nuovaProcedura({capitolo:'${escapeHtml(capId)}'})">+ Aggiungi pezzo al capitolo</button>
       </div>
     </div>
     ${pezzi.length === 0 ? '<p style="color:var(--ink-muted);">Nessun pezzo assegnato a questo capitolo. Assegna procedure con <code>capitolo: ' + escapeHtml(capId) + '</code> nel frontmatter.</p>' : tocHtml + pezzi.map(p => {
@@ -1508,7 +1544,7 @@ function renderCapitolo(capId) {
         <article id="p-${escapeHtml(p.slug)}" style="margin-bottom:56px;padding-bottom:32px;border-bottom:1px solid var(--rule);">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:16px;">
             <h2 style="font-family:var(--serif);font-weight:500;font-size:26px;line-height:1.15;letter-spacing:-.01em;color:var(--ink);">${escapeHtml(p.titolo || p.slug)}</h2>
-            <button class="btn ghost sm" onclick="event.stopPropagation();navigate('procedura-edit', {slug:'${escapeHtml(p.slug)}'})">Modifica</button>
+            <button class="btn ghost sm edit-only" onclick="event.stopPropagation();navigate('procedura-edit', {slug:'${escapeHtml(p.slug)}'})">Modifica</button>
           </div>
           <div class="procedura-body" style="font-size:15px;">${bodyHtml}</div>
         </article>`;
@@ -1832,8 +1868,15 @@ function renderProcedura(slug) {
   const catLabel = proc.categoria ? CATEGORIA_LABELS[proc.categoria] || proc.categoria : 'Procedure';
   const subLabel = proc.sottocategoria ? SOTTO_LABELS[proc.sottocategoria] || proc.sottocategoria : null;
   const breadcrumb = proc.capitolo
-    ? `<span style="cursor:pointer;" onclick="navigate('capitolo', {id:'${escapeHtml(proc.capitolo)}'})">← ${escapeHtml((state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo)}</span> · Manuale`
-    : `<span style="cursor:pointer;" onclick="navigate('procedure-cat', {cat:'${escapeHtml(proc.categoria)}'})">${escapeHtml(catLabel)}</span>${subLabel ? ' · ' + escapeHtml(subLabel) : ''}`;
+    ? buildBreadcrumb([
+        { label: 'Manuale', route: 'manuale' },
+        { label: (state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo, route: 'capitolo', params: { id: proc.capitolo } }
+      ])
+    : buildBreadcrumb([
+        { label: 'Procedure', route: 'procedure' },
+        { label: catLabel, route: 'procedure-cat', params: { cat: proc.categoria } },
+        ...(subLabel ? [{ label: subLabel, route: 'procedure-cat', params: { cat: proc.categoria, sub: proc.sottocategoria } }] : [])
+      ]);
 
   const bodyHtml = proc.body && proc.body.trim() ? renderMarkdownWithImages(proc.body, proc.path) : '';
 
@@ -1847,10 +1890,9 @@ function renderProcedura(slug) {
         ${proc.urgenza_tipica ? `<div class="page-meta-item">Urgenza: ${escapeHtml(proc.urgenza_tipica)}</div>` : ''}
       </div>
       <div class="page-actions">
-        <button class="btn" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
-        <button class="btn ghost" onclick="window.print()">Stampa</button>
-        <button class="btn ghost" onclick="showHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
-        <button class="btn ghost" onclick="confirmDelete('procedura', '${escapeHtml(slug)}')">Elimina</button>
+        <button class="btn edit-only" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
+        <button class="btn ghost edit-only" onclick="showHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
+        <button class="btn ghost edit-only" onclick="confirmDelete('procedura', '${escapeHtml(slug)}')">Elimina</button>
       </div>
     </div>
     <article class="procedura-body">
@@ -1920,7 +1962,9 @@ function renderClinicaCard(c) {
   const tagsHtml = (c.tag || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
   return `
     <div class="procedure-card" onclick="navigate('clinica-scheda', {slug:'${escapeHtml(c.slug)}'})">
-      <div class="procedure-card-title">${escapeHtml(c.titolo || c.slug)}</div>
+      <div class="procedure-card-title">${escapeHtml(c.titolo || c.slug)}
+        <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'clinica', '${escapeJs(c.slug)}')" title="Azioni">⋯</button>
+      </div>
       <div class="procedure-card-tags">${tagsHtml}</div>
       <div class="procedure-card-meta"><span>Aggiornata ${timeAgo(c.ultima_modifica)}</span></div>
     </div>`;
@@ -1931,7 +1975,10 @@ function renderSchedaClinica(slug) {
   if (!scheda) return renderError('Scheda clinica non trovata', slug);
   const tagsHtml = (scheda.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
   const subLabel = scheda.sottocategoria ? SOTTO_LABELS[scheda.sottocategoria] || scheda.sottocategoria : null;
-  const breadcrumb = `<span style="cursor:pointer;" onclick="navigate('clinica')">Clinica</span>${subLabel ? ' · <span style="cursor:pointer;" onclick="navigate(\'clinica\', {sub:\'' + escapeHtml(scheda.sottocategoria) + '\'})">' + escapeHtml(subLabel) + '</span>' : ''}`;
+  const breadcrumb = buildBreadcrumb([
+    { label: 'Clinica', route: 'clinica' },
+    ...(subLabel ? [{ label: subLabel, route: 'clinica', params: { sub: scheda.sottocategoria } }] : [])
+  ]);
   const bodyHtml = scheda.body && scheda.body.trim() ? renderMarkdownWithImages(scheda.body, scheda.path) : '';
 
   $('main-content').innerHTML = `
@@ -1943,9 +1990,8 @@ function renderSchedaClinica(slug) {
         <div class="page-meta-item">Aggiornata ${timeAgo(scheda.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(scheda.modificato_da || '—')}</strong></div>
       </div>
       <div class="page-actions">
-        <button class="btn" onclick="navigate('clinica-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
-        <button class="btn ghost" onclick="window.print()">Stampa</button>
-        <button class="btn ghost" onclick="showClinicaHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
+        <button class="btn edit-only" onclick="navigate('clinica-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
+        <button class="btn ghost edit-only" onclick="showClinicaHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
       </div>
     </div>
     <article class="procedura-body">
@@ -2740,14 +2786,13 @@ function renderModulo(slug) {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Modulo</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Moduli', route:'moduli'}])}</div>
       <h1 class="page-title">${escapeHtml(m.titolo || slug)}</h1>
       <div class="page-meta">
         <div class="page-meta-item">Tipo: ${escapeHtml(m.tipo || '—')}</div>
         <div class="page-meta-item">Aggiornato ${timeAgo(m.ultima_modifica)}</div>
       </div>
       <div class="page-actions">
-        <button class="btn ghost" onclick="window.print()">Stampa</button>
         ${imgUrl ? `<a class="btn ghost" href="${imgUrl}" target="_blank" rel="noopener">Apri immagine</a>` : ''}
       </div>
     </div>
@@ -2796,13 +2841,12 @@ function renderTabella(slug) {
   const relatedProcs = (t.procedure_correlate || []).map(pid => state.index.procedure.find(p => p.slug === pid)).filter(Boolean);
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">Tabella</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Tabelle', route:'tabelle'}])}</div>
       <h1 class="page-title">${escapeHtml(t.titolo || slug)}</h1>
       <div class="page-meta">
         <div class="page-meta-item">Aggiornata ${timeAgo(t.ultima_modifica)} da <span style="font-family:var(--mono);color:var(--ink-soft);">${escapeHtml(t.modificato_da || '—')}</span></div>
       </div>
       <div class="page-actions">
-        <button class="btn ghost" onclick="window.print()">Stampa</button>
       </div>
     </div>
     <article class="procedura-body">${bodyHtml}</article>
@@ -3615,20 +3659,60 @@ function showNavContextMenu(triggerBtn, kind, slug) {
     else if (slug === 'moduli') items = [{ label: '+ Nuovo modulo', action: () => nuovoModulo && nuovoModulo() }];
     else if (slug === 'tabelle') items = [{ label: '+ Nuova tabella', action: () => nuovaTabella && nuovaTabella() }];
     else if (slug === 'manuale') items = [{ label: '+ Nuovo capitolo', action: () => nuovoCapitolo() }];
+  } else if (kind === 'procedure') {
+    items = [
+      { label: 'Apri', action: () => navigate('procedura', {slug}) },
+      { label: 'Modifica contenuto', action: () => navigate('procedura-edit', {slug}) },
+      { label: 'Rinomina', action: () => renameProcedura(slug) },
+      { label: 'Sposta in...', action: () => moveProcedura(slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDelete('procedura', slug) },
+    ];
+  } else if (kind === 'clinica') {
+    items = [
+      { label: 'Apri', action: () => navigate('clinica-scheda', {slug}) },
+      { label: 'Modifica contenuto', action: () => navigate('clinica-edit', {slug}) },
+      { label: 'Rinomina', action: () => renameClinica(slug) },
+    ];
+  } else if (kind === 'modulo') {
+    items = [
+      { label: 'Apri', action: () => navigate('modulo', {slug}) },
+      { label: 'Modifica', action: () => toast('Modifica modulo: TODO', 'info') },
+    ];
+  } else if (kind === 'tabella') {
+    items = [
+      { label: 'Apri', action: () => navigate('tabella', {slug}) },
+      { label: 'Modifica', action: () => toast('Modifica tabella: TODO', 'info') },
+    ];
+  }
+
+  // Fallback if no items
+  if (items.length === 0) {
+    items = [{ label: 'Nessuna azione disponibile', action: () => {} }];
   }
 
   menu.innerHTML = items.map((it, idx) => `
     <div class="context-menu-item ${it.danger ? 'danger' : ''}" data-idx="${idx}">${escapeHtml(it.label)}</div>
   `).join('');
 
-  // Position
-  const rect = triggerBtn.getBoundingClientRect();
-  menu.style.left = (rect.right + 4) + 'px';
-  menu.style.top = rect.top + 'px';
-
   document.body.appendChild(menu);
+  // Position with viewport overflow protection
+  const rect = triggerBtn.getBoundingClientRect();
+  let left = rect.right + 4;
+  let top = rect.top;
+  // Allow menu to be measured first
+  const menuRect = menu.getBoundingClientRect();
+  if (left + menuRect.width > window.innerWidth - 8) {
+    left = Math.max(8, rect.left - menuRect.width - 4);
+  }
+  if (top + menuRect.height > window.innerHeight - 8) {
+    top = Math.max(8, window.innerHeight - menuRect.height - 8);
+  }
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+
   menu.querySelectorAll('.context-menu-item').forEach((el, idx) => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
       closeContextMenu();
       items[idx].action();
     });
