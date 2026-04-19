@@ -605,7 +605,7 @@ gruppi:
     nome: Ricoveri a Pagamento
     ubicazione: {piano: 10°, struttura: Monoblocco}
     contatti:
-      - {id: rp-coord, etichetta: Guardiola Coordinatrice Martin Barbara, numeri: [2600, 8765], sezione: Ricoveri a Pagamento, luogo: "Monoblocco 10° piano"}
+      - {id: rp-coord, etichetta: Guardiola Coordinatrice Martin Barbara, numeri: [2600, 8765], sezione: Ricoveri a Pagamento, luogo: "Monoblocco 10° piano", tag: [guardiola]}
       - {id: rp-inf, etichetta: Stanza Infermieri, numeri: [2603], sezione: Ricoveri a Pagamento, luogo: "Monoblocco 10° piano"}
       - {id: rp-cucina, etichetta: Cucina, numeri: [8766], sezione: Ricoveri a Pagamento, luogo: "Monoblocco 10° piano"}
 
@@ -1094,7 +1094,7 @@ gruppi:
     contatti:
       - {id: nanest-resp, etichetta: Studio Sostituto Responsabile Dr.ssa Munari Marina, numeri: [3696], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano"}
       - {id: nanest-sede, etichetta: U.O.S.D. Neuro Anestesia e Neurorianimazione, numeri: [3698], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano"}
-      - {id: nanest-guardiola, etichetta: Guardiola Coordinatrice Infermieristica, numeri: [3695], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano"}
+      - {id: nanest-guardiola, etichetta: Guardiola Coordinatrice Infermieristica, numeri: [3695], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano", tag: [guardiola]}
       - {id: nanest-recovery, etichetta: Recovery Room, numeri: [7727], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano"}
       - {id: nanest-mdg, etichetta: Medico di Guardia Anestesista, breve: 97012, cellulare: "335.8205385", tag: [guardia, urgenza], sezione: Neuro Anestesia e Neuro Rianimazione, luogo: "Edificio Neurochirurgia 4° piano"}
 
@@ -1201,7 +1201,7 @@ gruppi:
       - {id: cch-segr-ricov, etichetta: Segreteria Ricoveri, numeri: [2412], sezione: Segreteria, luogo: "Centro Gallucci piano terra"}
       - {id: cch-calcolo, etichetta: Centro di Calcolo, numeri: [2030], sezione: Centro di Calcolo, luogo: "Centro Gallucci piano terra"}
       - {id: cch-deg-1p, etichetta: Stanza Degenze 1° Piano, numeri: [4457], sezione: Degenze, luogo: "Centro Gallucci 1° piano"}
-      - {id: cch-coord-tiso, etichetta: Guardiola Coord. - Dr.ssa Tiso Luana, numeri: [2316, 2422], sezione: Degenze, luogo: "Centro Gallucci 1° piano"}
+      - {id: cch-coord-tiso, etichetta: Guardiola Coord. - Dr.ssa Tiso Luana, numeri: [2316, 2422], sezione: Degenze, luogo: "Centro Gallucci 1° piano", tag: [guardiola]}
       - {id: cch-inf, etichetta: Stanza Infermieri, numeri: [2460, 2414], sezione: Degenze, luogo: "Centro Gallucci piano terra"}
       - {id: cch-studi-med, etichetta: Studio Medici, numeri: [2406], sezione: Cardiochirurgia, luogo: "Centro Gallucci piano terra"}
       - {id: cch-amb-medic, etichetta: Ambulatorio Medicazioni, numeri: [2405], sezione: Degenze, luogo: "Centro Gallucci 1° piano"}
@@ -1232,11 +1232,11 @@ gruppi:
       - {id: cch-pradegan, etichetta: Studio Dr. Pradegan Nicola, numeri: [6343], sezione: Studi Medici, luogo: "Centro Gallucci piano terra"}
       - {id: cch-toscano, etichetta: Studio Dr. Toscano Giuseppe, numeri: [6342], sezione: Studi Medici, luogo: "Centro Gallucci piano terra"}
       - {id: cch-perfus-mdg, etichetta: Perfusionista di Guardia Emergenze, breve: 97014, tag: [urgenza, guardia], sezione: Fisiopatologia Cardiocircolatoria, luogo: "Centro Gallucci 1° piano"}
-      - {id: cch-perfus-coord, etichetta: Guardiola Coord. - Zanella Fabio, numeri: [7856], sezione: Degenze, luogo: "Centro Gallucci piano terra"}
+      - {id: cch-perfus-coord, etichetta: Guardiola Coord. - Zanella Fabio, numeri: [7856], sezione: Degenze, luogo: "Centro Gallucci piano terra", tag: [guardiola]}
       - {id: cch-perfus-stanza, etichetta: Stanza Perfusionisti, numeri: [2449], sezione: Fisiopatologia Cardiocircolatoria, luogo: "Centro Gallucci piano terra"}
       - {id: cch-perfus-box, etichetta: Box Sanificazioni e Deposito, numeri: [2457], sezione: Cardiochirurgia, luogo: "Centro Gallucci piano terra"}
       - {id: cch-perfus-arch, etichetta: Archivio Circolazione Extracorporea, numeri: [1294], sezione: Fisiopatologia Cardiocircolatoria, luogo: "Centro Gallucci piano terra"}
-      - {id: cch-piastra-coord, etichetta: Piastra Operatoria Gallucci - Guardiola Coord. Berton Monica, numeri: [8280], sezione: Degenze, luogo: "Centro Gallucci piano terra"}
+      - {id: cch-piastra-coord, etichetta: Piastra Operatoria Gallucci - Guardiola Coord. Berton Monica, numeri: [8280], sezione: Degenze, luogo: "Centro Gallucci piano terra", tag: [guardiola]}
       - {id: cch-piastra-so1, etichetta: Sala Operatoria Gallucci, numeri: [2452], sezione: Piastra Operatoria Gallucci, luogo: "Centro Gallucci piano terra"}
       - {id: cch-piastra-so2, etichetta: Sala Operatoria Gallucci, numeri: [4468], sezione: Piastra Operatoria Gallucci, luogo: "Centro Gallucci piano terra"}
       - {id: cch-piastra-referto, etichetta: Refertazione, numeri: [4469], sezione: Piastra Operatoria Gallucci, luogo: "Centro Gallucci piano terra"}
@@ -1254,7 +1254,7 @@ gruppi:
       - {id: ccp-scattolin, etichetta: Studio Dr. Scattolin Fabio, numeri: [2421], sezione: Studi Medici, luogo: "Centro Gallucci piano terra"}
       - {id: ccp-vida, etichetta: Studio Prof. Vida Vladimiro, numeri: [2407], sezione: Direzione, luogo: "Centro Gallucci piano terra"}
       - {id: ccp-prenot, etichetta: Prenotazione Visite e Consulenze Cardiopatie Congenite, numeri: ["840 000 664"], sezione: Prenotazioni Cardiopatie Congenite, luogo: "Centro Gallucci piano terra"}
-      - {id: ccp-ti-guardiola, etichetta: TI Piano Terra - Guardiola Coord. Favero Valter, numeri: [2418], sezione: Terapia Intensiva, luogo: "Centro Gallucci piano terra"}
+      - {id: ccp-ti-guardiola, etichetta: TI Piano Terra - Guardiola Coord. Favero Valter, numeri: [2418], sezione: Terapia Intensiva, luogo: "Centro Gallucci piano terra", tag: [guardiola]}
       - {id: ccp-ti-rianim-inf, etichetta: Sala Rianimazione Infermieri, numeri: [2419, 2420], sezione: Terapia Intensiva, luogo: "Centro Gallucci piano terra"}
       - {id: ccp-clin-ped-3p, etichetta: Clinica Pediatrica 3° Piano, numeri: [3550], sezione: Clinica Pediatrica, luogo: "Centro Gallucci piano terra"}
 
@@ -1410,7 +1410,7 @@ gruppi:
       - {id: cg3-predeg, etichetta: Predegenze, numeri: [3854, 3855, 3856], sezione: Pre-Degenze, luogo: "Policlinico 7° piano"}
       - {id: cg3-audio-brighenti, etichetta: Tecnici Audiovideo - Brighenti Carla, numeri: [2226], sezione: Laboratorio Audiovisivi, luogo: "Policlinico 7° piano"}
       - {id: cg3-rep-coord, etichetta: Coord. Area Degenza 4° P (solo interni), numeri: [7622], sezione: Reparto, luogo: "Policlinico 4° piano"}
-      - {id: cg3-rep-guardiola, etichetta: Guardiola Reparto 4° P, numeri: [2215], sezione: Reparto, luogo: "Policlinico 4° piano"}
+      - {id: cg3-rep-guardiola, etichetta: Guardiola Reparto 4° P, numeri: [2215], sezione: Reparto, luogo: "Policlinico 4° piano", tag: [guardiola]}
       - {id: cg3-rep-prenot-visite, etichetta: Reparto - Prenotazione Visite ai Degenti, numeri: [8809], sezione: Reparto, luogo: "Policlinico 4° piano"}
       - {id: cg3-rep-studi-spec, etichetta: Studio Medici Specializzandi, numeri: [1923, 2231], sezione: Studi Medici, luogo: "Policlinico 4° piano"}
       - {id: cg3-rep-interni, etichetta: Reparto (solo interni), numeri: [2214], sezione: Reparto, luogo: "Policlinico 4° piano"}
@@ -1478,7 +1478,7 @@ gruppi:
       - {id: cg1-gest-ricoveri, etichetta: Gestione Ricoveri (medico), numeri: [8822], sezione: Gestione Ricoveri, luogo: "Policlinico 6° piano"}
       - {id: cg1-case-mgr, etichetta: Case Manager - Romanato Laura, numeri: [8265], sezione: Gestione Ricoveri, luogo: "Policlinico 6° piano"}
       - {id: cg1-audio, etichetta: Lab. Audiovisivi - Brighenti Carla, numeri: [2226], sezione: Laboratorio Audiovisivi, luogo: "Policlinico 6° piano"}
-      - {id: cg1-rep-coord, etichetta: Guardiola Coord. (CG1 + Chir. Urg.), numeri: [2060], sezione: Reparto, luogo: "Policlinico 6° piano"}
+      - {id: cg1-rep-coord, etichetta: Guardiola Coord. (CG1 + Chir. Urg.), numeri: [2060], sezione: Reparto, luogo: "Policlinico 6° piano", tag: [guardiola]}
       - {id: cg1-rep-corsia, etichetta: Corsia, numeri: [2058], sezione: Reparto, luogo: "Policlinico 6° piano"}
       - {id: cg1-rep-spec, etichetta: Studio Medici Specializzandi, numeri: [2206, 3155], sezione: Reparto, luogo: "Policlinico 6° piano"}
       - {id: cg1-arch, etichetta: Archivio Cartelle (solo esami istologici), numeri: [3163], sezione: Archivio Cartelle, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
@@ -1550,7 +1550,7 @@ gruppi:
     contatti:
       - {id: cbar-direttore, etichetta: Direttore Dr. Foletto Mirto (2° P Monoblocco), numeri: [8603], sezione: Direzione, luogo: "Monoblocco 2° piano"}
       - {id: cb-segr, etichetta: Segreteria (2° P MB, L/V 8-10), numeri: [7012], sezione: Segreteria, luogo: "Monoblocco 2° piano"}
-      - {id: cb-guardiola, etichetta: Guardiola Capo Sala, numeri: [7013], email: chirurgiabariatrica.reparto@aopd.veneto.it, sezione: Reparto, luogo: "Policlinico 4° piano"}
+      - {id: cb-guardiola, etichetta: Guardiola Capo Sala, numeri: [7013], email: chirurgiabariatrica.reparto@aopd.veneto.it, sezione: Reparto, luogo: "Policlinico 4° piano", tag: [guardiola]}
       - {id: cb-inf, etichetta: Infermieri, numeri: [7382], sezione: Reparto, luogo: "Policlinico 4° piano"}
       - {id: cb-polese, etichetta: Studio Prof. Polese Lino, numeri: [7102], sezione: Studi Medici, luogo: "Policlinico 4° piano"}
       - {id: cb-prevedello, etichetta: Studio Dr. Prevedello Luca, numeri: [7893], sezione: Studi Medici, luogo: "Policlinico 4° piano"}
@@ -1575,7 +1575,7 @@ gruppi:
       - {id: ctrp-deg-rep, etichetta: Reparto, numeri: [8106], sezione: Degenze, luogo: "Giustinianeo 2° piano"}
       - {id: ctrp-deg-amb, etichetta: Ambulatorio di Reparto, numeri: [7006], sezione: Degenze, luogo: "Giustinianeo 2° piano"}
       - {id: ctrp-deg-studi, etichetta: Studio Medici, numeri: [7009], sezione: Degenze, luogo: "Giustinianeo 2° piano"}
-      - {id: ctrp-sem-int, etichetta: Sezione Semi Intensiva - Guardiola, numeri: [3126], sezione: Semi Intensiva, luogo: "Giustinianeo 2° piano"}
+      - {id: ctrp-sem-int, etichetta: Sezione Semi Intensiva - Guardiola, numeri: [3126], sezione: Semi Intensiva, luogo: "Giustinianeo 2° piano", tag: [guardiola]}
       - {id: ctrp-amb-int, etichetta: Ambulatorio (solo interni), numeri: [3277], sezione: Ambulatorio, luogo: "Giustinianeo 2° piano"}
 
   - id: chir-gen-2-trapianti-fegato
@@ -1608,7 +1608,7 @@ gruppi:
       - {id: cg2-sperti, etichetta: Studio Prof. Sperti Cosimo, numeri: [8823], sezione: Studi Medici, luogo: "Policlinico 7° piano"}
       - {id: cg2-srsen, etichetta: Studio Dr.ssa Srsen Nela, numeri: [8622], sezione: Studi Medici, luogo: "Policlinico 7° piano"}
       - {id: cg2-vitale, etichetta: Studio Prof. Vitale Alessandro, numeri: [2071], sezione: Studi Medici, luogo: "Policlinico 7° piano"}
-      - {id: cg2-guardiola, etichetta: Guardiola, numeri: [7001], sezione: Degenze, luogo: "Policlinico 2° piano"}
+      - {id: cg2-guardiola, etichetta: Guardiola, numeri: [7001], sezione: Degenze, luogo: "Policlinico 2° piano", tag: [guardiola]}
       - {id: cg2-rep, etichetta: Reparto, numeri: [7003], email: chirurgiatrapiantiaddominali.degenze@aopd.veneto.it, sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: cg2-coord-lessi, etichetta: Coord. Lessi Lara, numeri: [1855], sezione: Degenze, luogo: "Policlinico 2° piano"}
       - {id: cg2-amb-rep, etichetta: Ambulatorio di Reparto, numeri: [7006], sezione: Degenze, luogo: "Giustinianeo"}
@@ -1632,7 +1632,7 @@ gruppi:
       - {id: cp-segr-ust, etichetta: Segreteria Grandi Ustioni, numeri: [2712], sezione: Segreteria Grandi Ustioni, luogo: "Monoblocco 5° piano"}
       - {id: cp-segr-univ, etichetta: Segreteria Universitaria, numeri: [2022], sezione: Segreteria Universitaria, luogo: "Monoblocco 5° piano"}
       - {id: cp-predeg, etichetta: Pre Degenza / Gestione Cartelle, numeri: [8080], sezione: Pre Degenza, luogo: "Monoblocco 5° piano"}
-      - {id: cp-guardiola, etichetta: Guardiola, numeri: [2705], sezione: Reparto, luogo: "Monoblocco 5° piano"}
+      - {id: cp-guardiola, etichetta: Guardiola, numeri: [2705], sezione: Reparto, luogo: "Monoblocco 5° piano", tag: [guardiola]}
       - {id: cp-coord-sorgato, etichetta: Coord. Dr.ssa Sorgato Silvia, numeri: [2718], sezione: Reparto, luogo: "Monoblocco 5° piano"}
       - {id: cp-inf-1, etichetta: Stanza Infermieri, numeri: [2813], sezione: Reparto, luogo: "Monoblocco 5° piano"}
       - {id: cp-inf-2, etichetta: Stanza Infermieri, numeri: [2704], sezione: Reparto, luogo: "Monoblocco 5° piano"}
@@ -1676,7 +1676,7 @@ gruppi:
       - {id: ct-so-corr, etichetta: Sala Operatoria Corridoio, numeri: [4468], sezione: Sala Operatoria Corridoio, luogo: "Policlinico 7° piano"}
       - {id: ct-amb-caposala, etichetta: Amb. Caposala Giustinianeo, numeri: [8604], sezione: Ambulatorio, luogo: "Policlinico 7° piano"}
       - {id: ct-amb-visite, etichetta: Amb. Visite Giustinianeo, numeri: [2229, 8619], sezione: Ambulatorio, luogo: "Policlinico 7° piano"}
-      - {id: ct-guardiola, etichetta: Guardiola Caposala, numeri: [2447], sezione: Degenze, luogo: "Policlinico 7° piano"}
+      - {id: ct-guardiola, etichetta: Guardiola Caposala, numeri: [2447], sezione: Degenze, luogo: "Policlinico 7° piano", tag: [guardiola]}
       - {id: ct-corsia, etichetta: Corsia Reparto, numeri: [1244, 2450], sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: ct-amb-1p, etichetta: Amb. Visite 1° P Policlinico, numeri: [1860], sezione: Ambulatorio Visite, luogo: "Policlinico 7° piano"}
       - {id: ct-mdg, etichetta: Medico di Guardia, breve: 97667, tag: [guardia], sezione: Guardia/Consulenze, luogo: "Policlinico 7° piano"}
@@ -1725,7 +1725,7 @@ gruppi:
       - {id: cv-deg-inf, etichetta: Degenze - Infermieri, numeri: [2753], sezione: Degenze, luogo: "Monoblocco 1° piano"}
       - {id: cv-deg-amb, etichetta: Ambulatorio Reparto, numeri: [8154], sezione: Degenze, luogo: "Monoblocco 1° piano"}
       - {id: cv-deg-cucina, etichetta: Cucina Reparto, numeri: [2757], sezione: Degenze, luogo: "Monoblocco 1° piano"}
-      - {id: cv-so-coord, etichetta: SO - Guardiola Caposala, numeri: [2772], sezione: Sala Operatoria, luogo: "Monoblocco 1° piano"}
+      - {id: cv-so-coord, etichetta: SO - Guardiola Caposala, numeri: [2772], sezione: Sala Operatoria, luogo: "Monoblocco 1° piano", tag: [guardiola]}
       - {id: cv-so-1, etichetta: Sala Operatoria, numeri: [2762, 2761], sezione: Sala Operatoria, luogo: "Monoblocco 1° piano"}
       - {id: cv-so-ibrida, etichetta: Sala Operatoria Ibrida, numeri: [2750], sezione: Sala Operatoria, luogo: "Monoblocco 1° piano"}
       - {id: cv-so-anest, etichetta: Studio Anestesisti SO, numeri: [2763], sezione: Sala Operatoria, luogo: "Monoblocco 1° piano"}
@@ -1739,9 +1739,9 @@ gruppi:
       - {id: cmf-segr-beltrame, etichetta: Segr. Assistenziale - Beltrame A., numeri: [2039, 8614], sezione: Segreteria Assistenziale, luogo: "Policlinico 7° piano"}
       - {id: cmf-segr-didattica, etichetta: Segreteria Didattica, numeri: [2041], sezione: Segreteria Didattica, luogo: "Policlinico 7° piano"}
       - {id: cmf-caposala, etichetta: Caposala - Cesaro Elisabetta, numeri: [7881], sezione: Reparto, luogo: "Policlinico 7° piano"}
-      - {id: cmf-guardiola, etichetta: Guardiola Reparto, numeri: [2020], sezione: Reparto, luogo: "Policlinico 7° piano"}
+      - {id: cmf-guardiola, etichetta: Guardiola Reparto, numeri: [2020], sezione: Reparto, luogo: "Policlinico 7° piano", tag: [guardiola]}
       - {id: cmf-inf-ovest, etichetta: Stanza Infermieri Ala Ovest, numeri: [2018], sezione: Reparto, luogo: "Policlinico 7° piano"}
-      - {id: cmf-amb-guardiola, etichetta: Guardiola Ambulatori 4° P, numeri: [2042], sezione: Reparto, luogo: "Policlinico 7° piano"}
+      - {id: cmf-amb-guardiola, etichetta: Guardiola Ambulatori 4° P, numeri: [2042], sezione: Reparto, luogo: "Policlinico 7° piano", tag: [guardiola]}
       - {id: cmf-ps-amb, etichetta: PS Amb. Visite 4° P, numeri: [4483], tag: [urgenza], sezione: Ambulatori, luogo: "Policlinico 7° piano"}
       - {id: cmf-bedogni, etichetta: Studio Dr. Bedogni A., numeri: [2003], sezione: Studi Medici, luogo: "Policlinico 7° piano"}
       - {id: cmf-saia, etichetta: Studio Dr.ssa Saia Giorgia, numeri: [2038], sezione: Studi Medici, luogo: "Policlinico 7° piano"}
@@ -1781,7 +1781,7 @@ gruppi:
       - {id: derm-amb-chir, etichetta: Amb. Chirurgico (L/V 8-9), numeri: [2582], sezione: Chirurgia Dermatologica, luogo: "Edificio D1 - Via V. Gallucci 4"}
       - {id: derm-amb-prechir, etichetta: Amb. Pre-Chirurgico, numeri: [2906], sezione: Chirurgia Dermatologica, luogo: "Edificio D1 - Via V. Gallucci 4"}
       - {id: derm-so, etichetta: Amb. Sala Operatoria (solo interni), numeri: [8896], sezione: Chirurgia Dermatologica, luogo: "Edificio D1 - Via V. Gallucci 4"}
-      - {id: derm-guardiola, etichetta: Guardiola Infermieri (3° P), numeri: [2910], sezione: Reparto 3° piano, luogo: "Edificio D1 - Via V. Gallucci 4"}
+      - {id: derm-guardiola, etichetta: Guardiola Infermieri (3° P), numeri: [2910], sezione: Reparto 3° piano, luogo: "Edificio D1 - Via V. Gallucci 4", tag: [guardiola]}
       - {id: derm-amb-rep, etichetta: Ambulatorio Reparto (3° P), numeri: [2911], sezione: Reparto 3° piano, luogo: "Edificio D1 - Via V. Gallucci 4"}
       - {id: derm-spec, etichetta: Studio Specializzandi (3° P), numeri: [6378], sezione: Reparto 3° piano, luogo: "Edificio D1 - Via V. Gallucci 4"}
       - {id: derm-lab-coltur, etichetta: Laboratorio Colturali Miceti (4° P, L/V 8:30-11:30), numeri: [2924, 2922], sezione: Laboratori, luogo: "Edificio D1 - Via V. Gallucci 4"}
@@ -1860,7 +1860,7 @@ gruppi:
       - {id: endo-segr-michelon, etichetta: Segr. Direzione - Michelon R., numeri: [3000], sezione: Direzione e Segreteria, luogo: "Monoblocco 2° piano"}
       - {id: endo-segr-francescon, etichetta: Segr. Direzione - Francescon L., numeri: [3001], sezione: Direzione e Segreteria, luogo: "Monoblocco 2° piano"}
       - {id: endo-arch, etichetta: Archivio Cartelle (Mar/Gio), numeri: [3002], sezione: Direzione e Segreteria, luogo: "Monoblocco 2° piano"}
-      - {id: endo-rep-guardiola, etichetta: Guardiola Reparto (2° MB), numeri: [2165], sezione: Reparto, luogo: "Monoblocco 2° piano"}
+      - {id: endo-rep-guardiola, etichetta: Guardiola Reparto (2° MB), numeri: [2165], sezione: Reparto, luogo: "Monoblocco 2° piano", tag: [guardiola]}
       - {id: endo-studi-mb, etichetta: Studio Medici (2° MB), numeri: [8273], sezione: Reparto, luogo: "Monoblocco 2° piano"}
       - {id: endo-densito, etichetta: Densitometria c/o Ist. Radiologia, numeri: [8392], sezione: Densitometria, luogo: "Istituto Radiologia"}
       - {id: endo-amb-int, etichetta: Amb. Integrato Endocrinologia Prenotazioni (11-13:30, Giustinianeo), numeri: [3029, 3010], sezione: Ambulatori, luogo: "Giustinianeo Chiostro"}
@@ -1946,7 +1946,7 @@ gruppi:
       - {id: fr-amb-acc, etichetta: Accettazione Amb. Piastra PT (L/V 12-14), numeri: [8581, 3732], sezione: Ambulatori, luogo: "Policlinico 7° piano"}
       - {id: fr-deg-coord-ovest, etichetta: Coord. Ala Ovest (1° P), numeri: [8585, 8586], sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: fr-deg-coord-semi, etichetta: Coord. Semintensiva Ala Est, numeri: [2196], sezione: Degenze, luogo: "Policlinico 7° piano"}
-      - {id: fr-guardiola, etichetta: Guardiola Infermieri, numeri: [7793], sezione: Degenze, luogo: "Policlinico 7° piano"}
+      - {id: fr-guardiola, etichetta: Guardiola Infermieri, numeri: [7793], sezione: Degenze, luogo: "Policlinico 7° piano", tag: [guardiola]}
       - {id: fr-med-est, etichetta: Medici Ala Est, numeri: [4408], sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: fr-med-ovest, etichetta: Medici Ala Ovest, numeri: [3723], sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: fr-arch, etichetta: Archivio Cartelle, numeri: [1222], sezione: Degenze, luogo: "Policlinico 7° piano"}
@@ -1976,7 +1976,7 @@ gruppi:
       - {id: gastro-segr-did, etichetta: Segreteria Didattica, numeri: [2891], sezione: Segreteria, luogo: "Giustinianeo 2° piano"}
       - {id: gastro-arch-cart, etichetta: Archivio Cartelle, numeri: [2886], sezione: Segreteria, luogo: "Giustinianeo 2° piano"}
       - {id: gastro-segr-arch, etichetta: Segr. Archivio (solo interni), numeri: [7068], sezione: Segreteria, luogo: "Giustinianeo 2° piano"}
-      - {id: gastro-coord-volpato, etichetta: Guardiola Coord. Dr.ssa Volpato Giorgia (5° P Policlinico), numeri: [2885, 1395], sezione: Reparto, luogo: "Policlinico 5° piano"}
+      - {id: gastro-coord-volpato, etichetta: Guardiola Coord. Dr.ssa Volpato Giorgia (5° P Policlinico), numeri: [2885, 1395], sezione: Reparto, luogo: "Policlinico 5° piano", tag: [guardiola]}
       - {id: gastro-inf, etichetta: Stanza Infermieri (solo interni), numeri: [6105], sezione: Reparto, luogo: "Policlinico 5° piano"}
       - {id: gastro-spec, etichetta: Studio Medici Specializzandi, numeri: [2889], sezione: Reparto, luogo: "Policlinico 5° piano"}
       - {id: gastro-dh, etichetta: Day Hospital (5° P), numeri: [2510], sezione: Day Hospital, luogo: "Policlinico 5° piano"}
@@ -2042,7 +2042,7 @@ gruppi:
       - {id: ger-segr-assist, etichetta: Segr. Assistenziale (6° MB), numeri: [8956], sezione: Segreteria, luogo: "Monoblocco 6° piano"}
       - {id: ger-segr-univ, etichetta: Segr. Universitaria (6° MB), numeri: [2170], sezione: Segreteria, luogo: "Monoblocco 6° piano"}
       - {id: ger-coord-caenaro, etichetta: Coord. Dr.ssa Caenaro Marta (5° OSA), numeri: [8958], sezione: Reparto, luogo: "Ospedale S. Antonio 5° piano"}
-      - {id: ger-guardiola-osa, etichetta: Guardiola (5° OSA), numeri: [8981], sezione: Reparto, luogo: "Ospedale S. Antonio 5° piano"}
+      - {id: ger-guardiola-osa, etichetta: Guardiola (5° OSA), numeri: [8981], sezione: Reparto, luogo: "Ospedale S. Antonio 5° piano", tag: [guardiola]}
       - {id: ger-coin-osa, etichetta: Studio Dr.ssa Coin Alessandra (OSA), numeri: [6756], sezione: Studi Medici, luogo: "Ospedale S. Antonio"}
       - {id: ger-coin-mb, etichetta: Studio Dr.ssa Coin Alessandra (6° MB), numeri: [8949], sezione: Segreteria, luogo: "Monoblocco 6° piano"}
       - {id: ger-miotto, etichetta: Dietista Dr.ssa Miotto Fabrizia, numeri: [8960], sezione: Dietisti, luogo: "Ospedale S. Antonio"}
@@ -2057,7 +2057,7 @@ gruppi:
     contatti:
       - {id: hosp-centralino, etichetta: Centralino O.I.C. Mandria, numeri: ["049 867 23 00"], sezione: Hospice Paolo VI, luogo: "O.I.C. Mandria - Via Gemona 8"}
       - {id: hosp-resp, etichetta: Responsabile Dr. Zago M., numeri: ["049 867 23 01"], sezione: Hospice Paolo VI, luogo: "O.I.C. Mandria - Via Gemona 8"}
-      - {id: hosp-guardiola, etichetta: Guardiola Reparto, numeri: ["049 867 24 30"], sezione: Hospice Paolo VI, luogo: "O.I.C. Mandria - Via Gemona 8"}
+      - {id: hosp-guardiola, etichetta: Guardiola Reparto, numeri: ["049 867 24 30"], sezione: Hospice Paolo VI, luogo: "O.I.C. Mandria - Via Gemona 8", tag: [guardiola]}
       - {id: hosp-favretto, etichetta: Infermiere - Favretto Tiziano, numeri: ["049 867 24 33"], sezione: Hospice Paolo VI, luogo: "O.I.C. Mandria - Via Gemona 8"}
       - {id: hosp-mdg, etichetta: Medico di Guardia, numeri: ["049 867 23 03"], tag: [guardia], sezione: Hospice Paolo VI, luogo: "O.I.C. Mandria - Via Gemona 8"}
       - {id: hosp-mariggio, etichetta: Dr.ssa Mariggiò A. L., numeri: ["049 867 24 21"], sezione: Hospice Paolo VI, luogo: "O.I.C. Mandria - Via Gemona 8"}
@@ -2279,7 +2279,7 @@ gruppi:
       - {id: mi-amb-int-9, etichetta: Amb. Integrato N°9, numeri: [8503], sezione: Ambulatorio Integrato, luogo: "Edificio Malattie Infettive piano terra"}
       - {id: mi-amb-int-10, etichetta: Amb. Integrato N°10, numeri: [7100], sezione: Ambulatorio Integrato, luogo: "Edificio Malattie Infettive piano terra"}
       - {id: mi-amb-int-11, etichetta: Amb. Integrato N°11, numeri: [8505], sezione: Ambulatorio Integrato, luogo: "Edificio Malattie Infettive piano terra"}
-      - {id: mi-rep-coord, etichetta: Reparto - Guardiola Caposala (1° P), numeri: [3755], sezione: Reparto, luogo: "Edificio Malattie Infettive 1° piano"}
+      - {id: mi-rep-coord, etichetta: Reparto - Guardiola Caposala (1° P), numeri: [3755], sezione: Reparto, luogo: "Edificio Malattie Infettive 1° piano", tag: [guardiola]}
       - {id: mi-rep-inf-est, etichetta: Stanza Inf. Sezione Est, numeri: [3756], sezione: Reparto, luogo: "Edificio Malattie Infettive 1° piano"}
       - {id: mi-rep-inf-ovest, etichetta: Stanza Inf. Sezione Ovest, numeri: [3749], sezione: Reparto, luogo: "Edificio Malattie Infettive 1° piano"}
       - {id: mi-rep-amb, etichetta: Ambulatorio Reparto, numeri: [7795], sezione: Reparto, luogo: "Edificio Malattie Infettive 1° piano"}
@@ -2337,7 +2337,7 @@ gruppi:
       - {id: cm1o-segr-dimed, etichetta: Segreteria Amm. DIMED, numeri: [1792], sezione: Direzione e Segreteria, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
       - {id: cm1o-aula, etichetta: Aula Didattica Castellino, numeri: [1873], sezione: Direzione e Segreteria, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
       - {id: cm1o-deg-caposala, etichetta: Degenze 2° MB - Caposala, numeri: [1885], email: clinicamedica1.piano2@aopd.veneto.it, sezione: Degenze, luogo: "Monoblocco 2° piano"}
-      - {id: cm1o-deg-guardiola, etichetta: Guardiola Reparto/Accettazione, numeri: [8635, 2165], sezione: Degenze, luogo: "Monoblocco 2° piano"}
+      - {id: cm1o-deg-guardiola, etichetta: Guardiola Reparto/Accettazione, numeri: [8635, 2165], sezione: Degenze, luogo: "Monoblocco 2° piano", tag: [guardiola]}
       - {id: cm1o-deg-corsia-ovest, etichetta: Corsia Ala Ovest, numeri: [2162], sezione: Degenze, luogo: "Monoblocco 2° piano"}
       - {id: cm1o-deg-corsia-est, etichetta: Corsia Ala Est, numeri: [8636], sezione: Degenze, luogo: "Monoblocco 2° piano"}
       - {id: cm1o-mdg, etichetta: Medico di Guardia, breve: 97729, tag: [guardia], sezione: Degenze, luogo: "Monoblocco 2° piano"}
@@ -2347,9 +2347,9 @@ gruppi:
       - {id: cm1o-eco-previato, etichetta: Stanza Ecocardio Dr. Previato Lorenzo, numeri: [2177], sezione: Studi Medici, luogo: "Palazzina Ambulatori Policlinico 2° piano"}
       - {id: cm1o-mdg-amb, etichetta: Stanza MdG/Ambulatorio, numeri: [2174], sezione: Degenze, luogo: "Monoblocco 2° piano"}
       - {id: cm1o-arch, etichetta: Archivio Cartelle Cliniche, numeri: [2153], sezione: Degenze, luogo: "Monoblocco 2° piano"}
-      - {id: cm1o-guardiola-amb, etichetta: Guardiola Palazzina Amb. Policlinico PT, numeri: [7174], sezione: Ambulatori Piastra, luogo: "Policlinico piano rialzato"}
+      - {id: cm1o-guardiola-amb, etichetta: Guardiola Palazzina Amb. Policlinico PT, numeri: [7174], sezione: Ambulatori Piastra, luogo: "Policlinico piano rialzato", tag: [guardiola]}
       - {id: cm1o-coord-cavestro, etichetta: Coord. Piastra Amb. - Dr.ssa Cavestro Martina, numeri: [7886], sezione: Ambulatori Piastra, luogo: "Policlinico piano rialzato"}
-      - {id: cm1o-guardiola-piastra, etichetta: Guardiola Piastra Piano Rialzato Policlinico, numeri: [1230], sezione: Ambulatori Piastra, luogo: "Policlinico piano rialzato"}
+      - {id: cm1o-guardiola-piastra, etichetta: Guardiola Piastra Piano Rialzato Policlinico, numeri: [1230], sezione: Ambulatori Piastra, luogo: "Policlinico piano rialzato", tag: [guardiola]}
       - {id: cm1o-amb-allerg, etichetta: Amb. Allergologia (Piastra PR), numeri: [7148], sezione: Ambulatori Piastra, luogo: "Policlinico piano rialzato"}
       - {id: cm1o-dh-amb-int, etichetta: DH Amb. - Amb. Integrato N°6, numeri: [2163], sezione: DH / Ambulatorio Integrato, luogo: "Policlinico piano rialzato"}
       - {id: cm1o-amb-7, etichetta: Amb. Visite N°7, numeri: [2228], sezione: Ambulatori Piastra, luogo: "Policlinico piano rialzato"}
@@ -2415,7 +2415,7 @@ gruppi:
       - {id: cm3-segr-pavanello, etichetta: Segr. Assistenziale - Pavanello Monica (L/V 10-13), numeri: [1252], sezione: Direzione, luogo: "Monoblocco 9° piano"}
       - {id: cm3-segr-saiu, etichetta: Segr. Didattica - Saiu Alessandra, numeri: [3333], email: direzionecl.med3@unipd.it, sezione: Direzione, luogo: "Monoblocco 9° piano"}
       - {id: cm3-arch-bortolami, etichetta: Archivio - Bortolami Tiziana, numeri: [2641], sezione: Direzione, luogo: "Monoblocco 9° piano"}
-      - {id: cm3-deg-9p-coord, etichetta: 9° MB - Guardiola Caposala, numeri: [2578, 2645], sezione: Reparto, luogo: "Monoblocco 9° piano"}
+      - {id: cm3-deg-9p-coord, etichetta: 9° MB - Guardiola Caposala, numeri: [2578, 2645], sezione: Reparto, luogo: "Monoblocco 9° piano", tag: [guardiola]}
       - {id: cm3-deg-9p-inf, etichetta: 9° MB - Stanza Infermieri, numeri: [2644], sezione: Reparto, luogo: "Monoblocco 9° piano"}
       - {id: cm3-mdg, etichetta: Medico di Guardia, numeri: [2647], tag: [guardia], sezione: Reparto, luogo: "Monoblocco 9° piano"}
       - {id: cm3-deg-10p-inf, etichetta: 10° MB - Stanza Infermieri, numeri: [2602, 2662], sezione: Reparto, luogo: "Monoblocco 10° piano"}
@@ -2452,7 +2452,7 @@ gruppi:
       - {id: cm5-direttore, etichetta: Direttore ad interim Prof. Simioni Paolo, numeri: [8216], sezione: Direzione e Segreteria, luogo: "Policlinico 8° piano"}
       - {id: cm5-segr-assist, etichetta: Segreteria Assistenziale, numeri: [2285], sezione: Direzione e Segreteria, luogo: "Policlinico 8° piano"}
       - {id: cm5-segr-did, etichetta: Segreteria Didattica, numeri: [2291], sezione: Direzione e Segreteria, luogo: "Policlinico 8° piano"}
-      - {id: cm5-deg-guardiola, etichetta: Guardiola Reparto/Accettazione (8° P), numeri: [2290, 2266], email: clmed5.degenza@aopd.veneto.it, sezione: Degenze, luogo: "Policlinico 8° piano"}
+      - {id: cm5-deg-guardiola, etichetta: Guardiola Reparto/Accettazione (8° P), numeri: [2290, 2266], email: clmed5.degenza@aopd.veneto.it, sezione: Degenze, luogo: "Policlinico 8° piano", tag: [guardiola]}
       - {id: cm5-coord, etichetta: Studio Coordinatrice (8° P), numeri: [4465], sezione: Degenze, luogo: "Policlinico 8° piano"}
       - {id: cm5-arch, etichetta: Archivio Cartelle/Post Degenza, numeri: [1866], sezione: Degenze, luogo: "Policlinico 8° piano"}
       - {id: cm5-inf-est, etichetta: Infermieri Ala Est (8° P), numeri: [2289], sezione: Degenze, luogo: "Policlinico 8° piano"}
@@ -2463,7 +2463,7 @@ gruppi:
       - {id: cm5-ecg-psicom, etichetta: ECG-Test Psicometrici, numeri: [1849, 8677], sezione: Ambulatori, luogo: "Policlinico 8° piano"}
       - {id: cm5-amb-epatiti, etichetta: Amb. Visite Epatiti Virali - FibroScan, numeri: [7884], sezione: Ambulatori, luogo: "Policlinico 8° piano"}
       - {id: cm5-piastra-coord, etichetta: Coord. Piastra Amb. - Dr.ssa Cavestro Martina, numeri: [7886], sezione: Degenze, luogo: "Policlinico 8° piano"}
-      - {id: cm5-piastra-dh, etichetta: Guardiola Piastra DH/Amb. Integrati, numeri: [1230], sezione: DH e Ambulatori Integrati, luogo: "Policlinico 8° piano"}
+      - {id: cm5-piastra-dh, etichetta: Guardiola Piastra DH/Amb. Integrati, numeri: [1230], sezione: DH e Ambulatori Integrati, luogo: "Policlinico 8° piano", tag: [guardiola]}
       - {id: cm5-amb-eco, etichetta: Amb. Ecografico, numeri: [2297], sezione: DH e Ambulatori Integrati, luogo: "Policlinico 8° piano"}
       - {id: cm5-amb-ecocardio, etichetta: Amb. Ecocardiografia, numeri: [1863], sezione: DH e Ambulatori Integrati, luogo: "Policlinico 8° piano"}
       - {id: cm5-amb-int, etichetta: Amb. Integrato (L/V 10-13), numeri: [2275, 2276], sezione: DH e Ambulatori Integrati, luogo: "Policlinico 8° piano"}
@@ -2584,7 +2584,7 @@ gruppi:
       - {id: cm1te-segr-paccagnan, etichetta: Segreteria - Paccagnan Marina, numeri: [2671], sezione: Direzione e Segreteria, luogo: "Monoblocco 7° piano"}
       - {id: cm1te-segr-billato, etichetta: Segr. UniPD - Dr.ssa Billato Sabrina, numeri: [7956], sezione: Direzione e Segreteria, luogo: "Monoblocco 7° piano"}
       - {id: cm1te-coord, etichetta: Coordinatrice - Dr.ssa Marangon Martina, numeri: [7946], sezione: Reparto, luogo: "Monoblocco 7° piano"}
-      - {id: cm1te-guardiola, etichetta: Guardiola - Bazzolo Luana, numeri: [2675], email: clinicamedica1.piano7@aopd.veneto.it, sezione: Reparto, luogo: "Monoblocco 7° piano"}
+      - {id: cm1te-guardiola, etichetta: Guardiola - Bazzolo Luana, numeri: [2675], email: clinicamedica1.piano7@aopd.veneto.it, sezione: Reparto, luogo: "Monoblocco 7° piano", tag: [guardiola]}
       - {id: cm1te-coord-studio, etichetta: Studio Coordinatore, numeri: [7947], sezione: Reparto, luogo: "Monoblocco 7° piano"}
       - {id: cm1te-dim-protette, etichetta: Dimissioni Protette, numeri: [2656], sezione: Reparto, luogo: "Monoblocco 7° piano"}
       - {id: cm1te-inf-est, etichetta: Stanza Infermieri Est, numeri: [2674], sezione: Reparto, luogo: "Monoblocco 7° piano"}
@@ -2700,8 +2700,8 @@ gruppi:
     direttore: Dr. Da Dalt Gianfranco
     contatti:
       - {id: cu-direttore, etichetta: Direttore Dr. Da Dalt Gianfranco, numeri: [2766], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano"}
-      - {id: cu-guardiola, etichetta: Guardiola Coord. (CG1 + Chir. Urgenza), numeri: [2060], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano"}
-      - {id: cu-inf-int, etichetta: Guardiola Infermieri (solo interni), numeri: [1901], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano"}
+      - {id: cu-guardiola, etichetta: Guardiola Coord. (CG1 + Chir. Urgenza), numeri: [2060], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano", tag: [guardiola]}
+      - {id: cu-inf-int, etichetta: Guardiola Infermieri (solo interni), numeri: [1901], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano", tag: [guardiola]}
       - {id: cu-inf-est, etichetta: Infermieri Lato Est, numeri: [1904], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano"}
       - {id: cu-mdg, etichetta: Medico di Guardia / Infermiere c/o PS Chirurgico, breve: 97411, tag: [guardia, urgenza], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano"}
       - {id: cu-spec, etichetta: Studio Medico Specializzandi, numeri: [1907], sezione: Chirurgia d'Urgenza, luogo: "Policlinico 6° piano"}
@@ -2842,7 +2842,7 @@ gruppi:
       - {id: nefro-segr-univ, etichetta: Segreteria Universitaria, numeri: [2152], sezione: Direzione e Segreteria, luogo: "Monoblocco 8° piano"}
       - {id: nefro-auletta, etichetta: Auletta, numeri: [3120], sezione: Direzione e Segreteria, luogo: "Monoblocco 8° piano"}
       - {id: nefro-segr, etichetta: Segreteria, numeri: [3070, 3084], sezione: Direzione e Segreteria, luogo: "Monoblocco 8° piano"}
-      - {id: nefro-guardiola, etichetta: Guardiola Nefrologia / Coordinatore (8° MB), numeri: [3075, 3167], sezione: Degenze, luogo: "Monoblocco 8° piano"}
+      - {id: nefro-guardiola, etichetta: Guardiola Nefrologia / Coordinatore (8° MB), numeri: [3075, 3167], sezione: Degenze, luogo: "Monoblocco 8° piano", tag: [guardiola]}
       - {id: nefro-inf-deg, etichetta: Stanza Infermieri Degenze, numeri: [3074], sezione: Degenze, luogo: "Monoblocco 8° piano"}
       - {id: nefro-acuti, etichetta: Stanza Trattamenti Acuti, numeri: [3073], sezione: Degenze, luogo: "Monoblocco 8° piano"}
       - {id: nefro-urgenze, etichetta: Stanza Urgenze, numeri: [3128], tag: [urgenza], sezione: Degenze, luogo: "Monoblocco 8° piano"}
@@ -2913,7 +2913,7 @@ gruppi:
       - {id: nch-amb-visite-int, etichetta: Amb. Visite (solo interni), numeri: [3660], sezione: Ambulatori, luogo: "Edificio Neurochirurgia piano terra"}
       # DEGENZE / REPARTO
       - {id: nch-coord-studio, etichetta: Studio Coordinatore, numeri: [7442], sezione: Degenze, luogo: "Edificio Neurochirurgia 3° piano"}
-      - {id: nch-coord-guardiola, etichetta: Guardiola Coordinatore Esterni, numeri: [3646], sezione: Degenze, luogo: "Edificio Neurochirurgia 3° piano"}
+      - {id: nch-coord-guardiola, etichetta: Guardiola Coordinatore Esterni, numeri: [3646], sezione: Degenze, luogo: "Edificio Neurochirurgia 3° piano", tag: [guardiola]}
       - {id: nch-inf-ovest, etichetta: Stanza Infermieri Ovest (solo interni), numeri: [3655], sezione: Degenze, luogo: "Edificio Neurochirurgia 3° piano"}
       - {id: nch-inf-est, etichetta: Stanza Infermieri Est (solo interni), numeri: [3650], sezione: Degenze, luogo: "Edificio Neurochirurgia 3° piano"}
       - {id: nch-medici-rep, etichetta: Medici di Reparto (esterni), numeri: [3654], sezione: Degenze, luogo: "Edificio Neurochirurgia 3° piano"}
@@ -2933,9 +2933,9 @@ gruppi:
       - {id: nch-battaggia-rossi, etichetta: Studio Dr. Battaggia / Dr. Rossi, numeri: [3658], sezione: Studi Medici, luogo: Edificio Neurochirurgia}
       # SALA OPERATORIA
       - {id: nch-so, etichetta: Sala Operatoria, numeri: [3643], sezione: Sala Operatoria, luogo: "Edificio Neurochirurgia 4° piano"}
-      - {id: nch-so-guardiola, etichetta: SO Guardiola, numeri: [3644], sezione: Sala Operatoria, luogo: "Edificio Neurochirurgia 4° piano"}
+      - {id: nch-so-guardiola, etichetta: SO Guardiola, numeri: [3644], sezione: Sala Operatoria, luogo: "Edificio Neurochirurgia 4° piano", tag: [guardiola]}
       # TIPO (Terapia Intensiva Post-Operatoria)
-      - {id: nch-tipo-guardiola, etichetta: TIPO Guardiola Caposala, numeri: [3695, 3698], sezione: TIPO - Terapia Intensiva Post-Operatoria, luogo: "Edificio Neurochirurgia 4° piano"}
+      - {id: nch-tipo-guardiola, etichetta: TIPO Guardiola Caposala, numeri: [3695, 3698], sezione: TIPO - Terapia Intensiva Post-Operatoria, luogo: "Edificio Neurochirurgia 4° piano", tag: [guardiola]}
       - {id: nch-tipo-med, etichetta: TIPO Studio Medici, numeri: [3696], sezione: TIPO - Terapia Intensiva Post-Operatoria, luogo: "Edificio Neurochirurgia 4° piano"}
       - {id: nch-tipo-anest, etichetta: TIPO Anestesista di Guardia Notturno, numeri: [6371], breve: 97012, cellulare: "335.8205385", tag: [guardia, reperibile], sezione: TIPO - Terapia Intensiva Post-Operatoria, luogo: "Edificio Neurochirurgia 4° piano"}
       - {id: nch-recovery, etichetta: Recovery Room, numeri: [7727], sezione: TIPO - Terapia Intensiva Post-Operatoria, luogo: "Edificio Neurochirurgia 4° piano"}
@@ -2996,7 +2996,7 @@ gruppi:
       # LABORATORI PIANO TERRA
       - {id: ncl-lab, etichetta: Laboratorio, numeri: [3607, 3608], sezione: Laboratori, luogo: "Palazzina Neuroscienze piano terra"}
       # DEGENZE PRIMO PIANO
-      - {id: ncl-deg-coord, etichetta: Guardiola Caposala, numeri: [3615], sezione: Degenze, luogo: "Palazzina Neuroscienze 1° piano"}
+      - {id: ncl-deg-coord, etichetta: Guardiola Caposala, numeri: [3615], sezione: Degenze, luogo: "Palazzina Neuroscienze 1° piano", tag: [guardiola]}
       - {id: ncl-deg-inf-donne, etichetta: Stanza Infermieri Donne, numeri: [3613], sezione: Degenze, luogo: "Palazzina Neuroscienze 1° piano"}
       - {id: ncl-deg-inf-uomini, etichetta: Stanza Infermieri Uomini, numeri: [3614], sezione: Degenze, luogo: "Palazzina Neuroscienze 1° piano"}
       - {id: ncl-deg-cucina, etichetta: Cucina, numeri: [1949], sezione: Degenze, luogo: "Palazzina Neuroscienze 1° piano"}
@@ -3249,9 +3249,9 @@ gruppi:
       - {id: cort-segr-sci, etichetta: Segreteria Scientifica, numeri: [3372], sezione: Direzione e Segreteria, luogo: "Edificio Ortopedia 1° piano"}
       - {id: cort-uff-cart, etichetta: Ufficio Chiusura Cartelle (1° P), numeri: [3347], sezione: Direzione e Segreteria, luogo: "Edificio Ortopedia 1° piano"}
       - {id: cort-audio, etichetta: Sala Audiovisivi, numeri: [3359], sezione: Direzione e Segreteria, luogo: "Edificio Ortopedia 1° piano"}
-      - {id: cort-3p-guardiola, etichetta: Guardiola 3° P, numeri: [3370, 8173], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 3° piano"}
+      - {id: cort-3p-guardiola, etichetta: Guardiola 3° P, numeri: [3370, 8173], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 3° piano", tag: [guardiola]}
       - {id: cort-3p-inf, etichetta: Stanza Infermieri 3° P, numeri: [3338, 1839], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 3° piano"}
-      - {id: cort-4p-guardiola, etichetta: Guardiola Coordinatore 4° P, numeri: [3335], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 4° piano"}
+      - {id: cort-4p-guardiola, etichetta: Guardiola Coordinatore 4° P, numeri: [3335], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 4° piano", tag: [guardiola]}
       - {id: cort-4p-inf, etichetta: Stanza Infermieri 4° P, numeri: [3337, 3341], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 4° piano"}
       - {id: cort-3p-studi, etichetta: Studio Medici 3° P, numeri: [3340], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 3° piano"}
       - {id: cort-3p-studi-amb, etichetta: Studio Medici 3° P + Amb., numeri: [3392], sezione: Reparto Degenze, luogo: "Edificio Ortopedia 3° piano"}
@@ -3421,7 +3421,7 @@ gruppi:
       - {id: og-segr, etichetta: Segreteria, numeri: [3460], sezione: Direzione e Segreteria, luogo: "Edificio Ostetrica"}
       - {id: og-segr-int, etichetta: Segreteria (solo interni), numeri: [7383], sezione: Direzione e Segreteria, luogo: "Edificio Ostetrica"}
       - {id: og-arch, etichetta: Archivio Cartelle Cliniche, numeri: [3485], sezione: Direzione e Segreteria, luogo: "Edificio Ostetrica"}
-      - {id: og-2p-coord, etichetta: Guardiola Caposala (2° P), numeri: [3480], sezione: Degenze Ostetricia, luogo: "Edificio Ostetrica 2° piano"}
+      - {id: og-2p-coord, etichetta: Guardiola Caposala (2° P), numeri: [3480], sezione: Degenze Ostetricia, luogo: "Edificio Ostetrica 2° piano", tag: [guardiola]}
       - {id: og-2p-inf, etichetta: Stanza Infermieri (2° P), numeri: [3478], sezione: Degenze Ostetricia, luogo: "Edificio Ostetrica 2° piano"}
       - {id: og-2p-amb-rep, etichetta: Ambulatorio Reparto (2° P), numeri: [3477], sezione: Degenze Ostetricia, luogo: "Edificio Ostetrica 2° piano"}
       - {id: og-2p-cucina, etichetta: Cucina (2° P), numeri: [3479], sezione: Degenze Ostetricia, luogo: "Edificio Ostetrica 2° piano"}
@@ -3510,7 +3510,7 @@ gruppi:
       - {id: orl-so-1p, etichetta: SO 1° Piano, numeri: [1989], sezione: Sala Operatoria, luogo: "Giustinianeo"}
       - {id: orl-deg-coord, etichetta: Degenze 7° P - Studio Coord. Cesaro Elisabetta, numeri: [7881], sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: orl-deg-acc, etichetta: Accettazione Degenze, numeri: [2020], sezione: Degenze, luogo: "Policlinico 7° piano"}
-      - {id: orl-deg-guardiola, etichetta: Guardiola, numeri: [7741], sezione: Degenze, luogo: "Policlinico 7° piano"}
+      - {id: orl-deg-guardiola, etichetta: Guardiola, numeri: [7741], sezione: Degenze, luogo: "Policlinico 7° piano", tag: [guardiola]}
       - {id: orl-mdg, etichetta: Medico di Guardia, numeri: [2021], breve: 97521, tag: [guardia], sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: orl-deg-corsia-est, etichetta: Corsia Lato Est, numeri: [2118, 8630], sezione: Degenze, luogo: "Policlinico 7° piano"}
       - {id: orl-deg-corsia-ovest, etichetta: Corsia Lato Ovest, numeri: [2018], sezione: Degenze, luogo: "Policlinico 7° piano"}
@@ -3711,7 +3711,7 @@ gruppi:
       - {id: hp-studi-med-1, etichetta: Studio Medici - Agosto/Rusalen/Zanin, numeri: [5458], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
       - {id: hp-studi-med-2, etichetta: Studio Medici - Avagnina/Divisic, numeri: [5450], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
       - {id: hp-coord-ballotta, etichetta: Coord. Inf. - Dr.ssa Ballotta Pamela, numeri: [7371], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
-      - {id: hp-guardiola, etichetta: Guardiola, numeri: [1628], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
+      - {id: hp-guardiola, etichetta: Guardiola, numeri: [1628], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57", tag: [guardiola]}
       - {id: hp-amb-inf, etichetta: Amb. Infermieristico, numeri: [1625], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
       - {id: hp-amb-psi, etichetta: Amb. Psicologhe, numeri: [1627], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
       - {id: hp-studi, etichetta: Studio Medici e Psicologi, numeri: [1626], sezione: Hospice Pediatrico - Stanza dei Sogni, luogo: "Via Ospedale 57"}
@@ -3771,7 +3771,7 @@ gruppi:
       - {id: cper-segr-amm, etichetta: Segr. Amm. - Dr.ssa Mancini Elisa, numeri: [3681], sezione: Direzione e Segreteria, luogo: "Edificio Divisione Ostetrica"}
       - {id: cper-segr-rep, etichetta: Segr. Reparto - Biasiolo Barbara, numeri: [7808], sezione: Direzione e Segreteria, luogo: "Edificio Divisione Ostetrica"}
       - {id: cper-segr-spec, etichetta: Segr. Specializzazione - Dr.ssa Cassol Magda, numeri: [3680], sezione: Direzione e Segreteria, luogo: "Edificio Divisione Ostetrica"}
-      - {id: cper-rep-guardiola, etichetta: Reparto - Guardiola, numeri: [3675], sezione: Reparto, luogo: "Edificio Divisione Ostetrica"}
+      - {id: cper-rep-guardiola, etichetta: Reparto - Guardiola, numeri: [3675], sezione: Reparto, luogo: "Edificio Divisione Ostetrica", tag: [guardiola]}
       - {id: cper-rep-coord, etichetta: Coordinatrice - Dr.ssa Petrova Natalia, numeri: [3637], sezione: Reparto, luogo: "Edificio Divisione Ostetrica"}
       - {id: cper-rep-inf, etichetta: Stanza Infermieri, numeri: [3677], sezione: Reparto, luogo: "Edificio Divisione Ostetrica"}
       - {id: cper-rep-studi, etichetta: Studio Medici Reparto, numeri: [8047], sezione: Reparto, luogo: "Edificio Divisione Ostetrica"}
@@ -3801,13 +3801,13 @@ gruppi:
       - {id: tin-direttore, etichetta: Direttore Prof. Baraldi Eugenio, numeri: [3560], sezione: Direzione e Segreteria, luogo: "Edificio Clinica Ginecologica 1° piano"}
       - {id: tin-segr-pattarello, etichetta: Segreteria - Pattarello Monica, numeri: [3578], sezione: Direzione e Segreteria, luogo: "Edificio Clinica Ginecologica 1° piano"}
       - {id: tin-caposala, etichetta: TIN - Caposala Lolli Elisabetta, numeri: [8021], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
-      - {id: tin-guardiola, etichetta: TIN - Guardiola Reparto, numeri: [3548, 8535], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
+      - {id: tin-guardiola, etichetta: TIN - Guardiola Reparto, numeri: [3548, 8535], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano", tag: [guardiola]}
       - {id: tin-trasporto, etichetta: TIN - Servizio Trasporto Neonatale, numeri: [3548, 8535], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
       - {id: tin-studi, etichetta: TIN - Studio Medici, numeri: [3547], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
       - {id: tin-mdg, etichetta: Medico di Guardia per Urgenze (interni), breve: 97082, tag: [guardia, urgenza], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
-      - {id: tin-pat-guardiola, etichetta: Patologia Neonatale - Guardiola/Postazione Inf., numeri: [3545, 3546], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
+      - {id: tin-pat-guardiola, etichetta: Patologia Neonatale - Guardiola/Postazione Inf., numeri: [3545, 3546], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano", tag: [guardiola]}
       - {id: tin-nido-coord, etichetta: Nido (Divisione Ostetrica 2° P) - Coord. Tedeschi Elisabetta, numeri: [7790], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
-      - {id: tin-nido-guardiola, etichetta: Nido - Guardiola, numeri: [3484], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
+      - {id: tin-nido-guardiola, etichetta: Nido - Guardiola, numeri: [3484], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano", tag: [guardiola]}
       - {id: tin-nido-rep, etichetta: Nido - Reparto Degenze, numeri: [3426], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
       - {id: tin-nido-inf, etichetta: Nido - Stanza Infermieri, numeri: [3483], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
       - {id: tin-nido-studi, etichetta: Nido - Studio Medici, numeri: [3498], sezione: Terapia Intensiva Neonatale, luogo: "Edificio Clinica Ginecologica 1° piano"}
@@ -3966,7 +3966,7 @@ gruppi:
       - {id: pneumo-bio, etichetta: Studio Biologi, numeri: [3449], sezione: Pneumologia, luogo: "Policlinico"}
       - {id: pneumo-dott, etichetta: Dottorandi di Ricerca, numeri: [3724], sezione: Pneumologia, luogo: "Policlinico"}
       - {id: pneumo-deg-coord, etichetta: Coord. Ala Ovest, numeri: [8586], sezione: Degenze, luogo: "Policlinico 1° piano"}
-      - {id: pneumo-deg-guardiola, etichetta: Guardiola Infermieri, numeri: [8585], sezione: Degenze, luogo: "Policlinico 1° piano"}
+      - {id: pneumo-deg-guardiola, etichetta: Guardiola Infermieri, numeri: [8585], sezione: Degenze, luogo: "Policlinico 1° piano", tag: [guardiola]}
       - {id: pneumo-deg-studi, etichetta: Studio Medici - Dr.ssa Cocconcelli Elisabetta, numeri: [4405], sezione: Degenze, luogo: "Policlinico 1° piano"}
       - {id: pneumo-deg-mdg, etichetta: Medico di Guardia, numeri: [8593], breve: 97068, cellulare: "335.7766991", tag: [guardia], sezione: Degenze, luogo: "Policlinico 1° piano"}
       - {id: pneumo-arch, etichetta: Archivio, numeri: [1222], sezione: Degenze, luogo: "Policlinico 1° piano"}
@@ -4140,7 +4140,7 @@ gruppi:
       - {id: reu-direttore, etichetta: Direttore Prof.ssa Ramonda Roberta, numeri: [2190], sezione: Direzione, luogo: "Stabile PalaSanità 1° piano"}
       - {id: reu-segr, etichetta: Segreteria, numeri: [8691, 2190], sezione: Direzione, luogo: "Stabile PalaSanità 1° piano"}
       - {id: reu-arch, etichetta: Archivio, numeri: [2336], sezione: Direzione, luogo: "Stabile PalaSanità 1° piano"}
-      - {id: reu-guardiola, etichetta: Guardiola Reparto, numeri: [2290, 2266], sezione: Reparto, luogo: "Stabile PalaSanità 1° piano"}
+      - {id: reu-guardiola, etichetta: Guardiola Reparto, numeri: [2290, 2266], sezione: Reparto, luogo: "Stabile PalaSanità 1° piano", tag: [guardiola]}
       - {id: reu-spec, etichetta: Studio Medici Specializzandi (Pre/Post Degenze), numeri: [2195], sezione: Studi Medici, luogo: "Stabile PalaSanità 1° piano"}
       - {id: reu-amb-pr, etichetta: Amb. Reumatologia (PR Policlinico), numeri: [2197], sezione: Ambulatori, luogo: "Policlinico piano rialzato"}
       - {id: reu-bindoli, etichetta: Studio Dr.ssa Bindoli Sara, numeri: [2083], sezione: Studi Medici, luogo: "Stabile PalaSanità 1° piano"}
@@ -4166,7 +4166,7 @@ gruppi:
     contatti:
       - {id: nchpb-direttore, etichetta: Direttore Prof. Denaro Luca, numeri: [4395], sezione: Neurochirurgia Pediatrica e Funzionale, luogo: "Palazzina Neuroscienze"}
       - {id: nchpb-segr-boran, etichetta: Segr. UOC e Spec. - Dr.ssa Boran Chiara, numeri: [8863], sezione: Neurochirurgia Pediatrica e Funzionale, luogo: "Palazzina Neuroscienze"}
-      - {id: nchpb-guardiola, etichetta: Guardiola c/o Chirurgia Pediatrica, numeri: [3675, 3677], sezione: Neurochirurgia Pediatrica e Funzionale, luogo: "Palazzina Neuroscienze"}
+      - {id: nchpb-guardiola, etichetta: Guardiola c/o Chirurgia Pediatrica, numeri: [3675, 3677], sezione: Neurochirurgia Pediatrica e Funzionale, luogo: "Palazzina Neuroscienze", tag: [guardiola]}
       - {id: nchpb-mdg, etichetta: Medico Reperibile, breve: 97067, tag: [reperibile], sezione: Neurochirurgia Pediatrica e Funzionale, luogo: "Palazzina Neuroscienze"}
       - {id: nchpb-baro, etichetta: Studio Dr.ssa Baro Valentina, numeri: [4361], sezione: Neurochirurgia Pediatrica e Funzionale, luogo: "Palazzina Neuroscienze"}
       - {id: nchpb-damico, etichetta: Studio Dr. D'Amico Alberto, numeri: [3648], sezione: Neurochirurgia Pediatrica e Funzionale, luogo: "Palazzina Neuroscienze"}
@@ -4177,7 +4177,7 @@ gruppi:
     nome: Ricoveri Libera Professione Intramuraria (10° Monoblocco)
     ubicazione: {piano: 10°, struttura: Monoblocco}
     contatti:
-      - {id: rlp-coord, etichetta: Guardiola Caposala, numeri: [2600, 8765], sezione: Ricoveri LP, luogo: "Monoblocco 10° piano"}
+      - {id: rlp-coord, etichetta: Guardiola Caposala, numeri: [2600, 8765], sezione: Ricoveri LP, luogo: "Monoblocco 10° piano", tag: [guardiola]}
       - {id: rlp-inf-ovest, etichetta: Stanza Infermieri Ovest, numeri: [2602], sezione: Ricoveri LP, luogo: "Monoblocco 10° piano"}
       - {id: rlp-inf-est, etichetta: Stanza Infermieri Est, numeri: [2603], sezione: Ricoveri LP, luogo: "Monoblocco 10° piano"}
       - {id: rlp-cucina, etichetta: Cucina, numeri: [8766], sezione: Ricoveri LP, luogo: "Monoblocco 10° piano"}
@@ -4252,7 +4252,7 @@ gruppi:
       - {id: uro-segr-ricov, etichetta: Segr. Ricoveri (L/V 7-14), numeri: [8108], sezione: Direzione e Segreteria, luogo: "Monoblocco 4° piano"}
       - {id: uro-arch, etichetta: Archivio Cartelle, numeri: [2722], sezione: Direzione e Segreteria, luogo: "Monoblocco 4° piano"}
       - {id: uro-caposala, etichetta: Caposala - Dr.ssa Fontana Simonetta, numeri: [2729], sezione: Urologia, luogo: "Monoblocco 4° piano"}
-      - {id: uro-guardiola, etichetta: Guardiola, numeri: [2730], sezione: Reparto, luogo: "Monoblocco 4° piano"}
+      - {id: uro-guardiola, etichetta: Guardiola, numeri: [2730], sezione: Reparto, luogo: "Monoblocco 4° piano", tag: [guardiola]}
       - {id: uro-cucina, etichetta: Cucina, numeri: [1928], sezione: Reparto, luogo: "Monoblocco 4° piano"}
       - {id: uro-inf-ovest, etichetta: Stanza Infermieri Ovest, numeri: [2728], sezione: Reparto, luogo: "Monoblocco 4° piano"}
       - {id: uro-inf-est, etichetta: Stanza Infermieri Est, numeri: [2727], sezione: Reparto, luogo: "Monoblocco 4° piano"}
