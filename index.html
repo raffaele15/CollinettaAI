@@ -49,7 +49,7 @@ code{font-family:var(--mono);font-size:.92em;background:var(--bg-sink);padding:2
 .login-card{max-width:440px;width:100%;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:48px 40px;box-shadow:var(--shadow-raised);position:relative}
 .login-card::before{content:'';position:absolute;top:-1px;left:-1px;right:-1px;height:3px;background:var(--ink)}
 .login-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:14px}
-.login-title{font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.05;letter-spacing:-.02em;margin-bottom:6px}
+.login-title{font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.05;letter-spacing:-.02em;margin-bottom:36px}
 .login-title em{font-style:italic;font-weight:300}
 .login-subtitle{font-family:var(--serif);font-style:italic;font-weight:300;font-size:16px;color:var(--ink-muted);margin-bottom:36px}
 .field{margin-bottom:20px}
@@ -473,9 +473,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 
 <div id="login-view">
   <div class="login-card">
-    <div class="login-eyebrow">Clinica Neurologica · AOPD</div>
-    <h1 class="login-title">Collinetta<em>AI</em></h1>
-    <p class="login-subtitle">Manuale di reparto per specializzandi</p>
+    <h1 class="login-title">CollinettaAI</h1>
     <div id="login-error" class="login-error"></div>
     <form id="login-form">
       <div class="field">
@@ -483,7 +481,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
         <input type="text" id="login-username" class="mono-input" autocomplete="username" required>
       </div>
       <div class="field">
-        <label for="login-passphrase">Passphrase</label>
+        <label for="login-passphrase">Password</label>
         <input type="password" id="login-passphrase" autocomplete="current-password" required>
       </div>
       <button type="submit" class="btn full" id="login-submit"><span id="login-submit-text">Accedi</span></button>
@@ -1678,7 +1676,8 @@ function rebuildSearchIndex() {
     (g.contatti || []).forEach(c => {
       const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
       const sedi = g.sedi_operative && g.sedi_operative.length ? g.sedi_operative : (g.sede_operativa ? [g.sede_operativa] : []);
-      const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');      docs.push({
+      const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');
+      docs.push({
         type: 'numero', slug: c.id,
         titolo: c.etichetta,
         gruppo: g.nome,
@@ -1702,7 +1701,7 @@ function rebuildSearchIndex() {
       { name: 'numeri', weight: 1 },
       { name: 'body', weight: 0.5 }
     ],
-    threshold: 0.35, includeMatches: true, includeScore: true, minMatchCharLength: 2,
+    threshold: 0.35, includeMatches: true, includeScore: true, minMatchCharLength: 1,
     ignoreLocation: true,
     useExtendedSearch: true
   });
@@ -1985,10 +1984,7 @@ function renderHome() {
     else if (p.type === 'gruppo') pinsByType.gruppi.push(p);
   });
 
-  // Detect guardia group
-  const guardiaGroup = (state.index.numeri?.gruppi || []).find(g =>
-    /guardia|medici di guardia|mdg/i.test(g.nome) || /guardia|mdg/i.test(g.id || '')
-  );
+  // Detect emergenze count
   const emergenzeCount = procs.filter(p => p.categoria === 'emergenze').length;
   const username = state.session?.username || '';
 
@@ -2010,13 +2006,13 @@ function renderHome() {
           </div>
         </div>
 
-        <div class="quickaccess-card quickaccess-guardia" onclick="${guardiaGroup ? `navigate('numeri', {filter:'${escapeJs(guardiaGroup.id)}'})` : `navigate('numeri')`}">
+        <div class="quickaccess-card quickaccess-guardia" onclick="openGuardieRubrica()">
           <div class="quickaccess-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           </div>
           <div class="quickaccess-text">
             <div class="quickaccess-title">Medici di guardia</div>
-            <div class="quickaccess-sub">${guardiaGroup ? `${(guardiaGroup.contatti || []).length} contatti` : 'Rubrica telefonica'}</div>
+            <div class="quickaccess-sub">Tutte le UOC · cerca per reparto</div>
           </div>
         </div>
       </div>
@@ -3483,6 +3479,45 @@ async function handleConflict(ctx, ourNewContent, commitMsg) {
 
 
 /* ============================ VIEW — NUMERI ============================ */
+let rubricaSearchDebounce = null;
+function onRubricaSearchInput(value) {
+  state.rubricaSearch = value;
+  if (rubricaSearchDebounce) clearTimeout(rubricaSearchDebounce);
+  rubricaSearchDebounce = setTimeout(() => {
+    // Ri-render preservando focus e cursore
+    const input = document.getElementById('rubrica-search-input');
+    const selStart = input ? input.selectionStart : null;
+    const selEnd = input ? input.selectionEnd : null;
+    const params = state.currentParams || {};
+    renderNumeri(params.filter);
+    const newInput = document.getElementById('rubrica-search-input');
+    if (newInput) {
+      newInput.focus();
+      if (selStart !== null) {
+        try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
+      }
+    }
+  }, 120);
+}
+
+function clearRubricaSearch() {
+  state.rubricaSearch = '';
+  const params = state.currentParams || {};
+  renderNumeri(params.filter);
+  const input = document.getElementById('rubrica-search-input');
+  if (input) input.focus();
+}
+
+function openGuardieRubrica() {
+  state.rubricaSearch = '';
+  navigate('numeri', { filter: 'guardia' });
+  // Focus sull'input di ricerca dopo il render
+  setTimeout(() => {
+    const input = document.getElementById('rubrica-search-input');
+    if (input) input.focus();
+  }, 50);
+}
+
 function renderNumeri(filter) {
   const data = state.index.numeri;
   if (!data) return renderError('Rubrica non disponibile', 'Il file content/numeri.yml non è stato caricato.');
@@ -3499,8 +3534,11 @@ function renderNumeri(filter) {
     filteredGruppi = allGroups.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
     filterLabel = 'Medici di Guardia';
   } else if (filter === 'urgenza') {
-    filteredGruppi = allGroups.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('urgenza') || (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
-    filterLabel = 'Urgenze e Guardie';
+    filteredGruppi = allGroups
+      .filter(g => !g.non_clinico)
+      .map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('urgenza') || (c.tag || []).includes('guardia')) }))
+      .filter(g => g.contatti.length);
+    filterLabel = 'Urgenze cliniche';
   } else if (filter) {
     const c = findContattoBySlug(filter);
     if (c) {
@@ -3510,6 +3548,30 @@ function renderNumeri(filter) {
       }).filter(Boolean);
       filterLabel = `Contatto: ${c.etichetta}`;
     }
+  }
+
+  const rubricaQuery = (state.rubricaSearch || '').trim().toLowerCase();
+  if (rubricaQuery) {
+    // Filtra i gruppi e i contatti che matchano la query
+    const matchContact = (c) => {
+      const fields = [
+        c.etichetta, c.sezione, c.email, c.cellulare, c.breve,
+        ...(c.numeri || []).map(String),
+        ...(c.tag || [])
+      ].filter(Boolean).join(' ').toLowerCase();
+      return fields.includes(rubricaQuery);
+    };
+    const matchGroup = (g) => {
+      const grpFields = [g.nome, g.direttore, g.email].filter(Boolean).join(' ').toLowerCase();
+      return grpFields.includes(rubricaQuery);
+    };
+    filteredGruppi = filteredGruppi.map(g => {
+      // Se il gruppo stesso matcha (es. nome UOC), mostra tutti i contatti
+      if (matchGroup(g)) return g;
+      // Altrimenti filtra i singoli contatti
+      const contatti = (g.contatti || []).filter(matchContact);
+      return contatti.length ? { ...g, contatti } : null;
+    }).filter(Boolean);
   }
 
   // Group by ospedale source for visual sectioning
@@ -3535,6 +3597,8 @@ function renderNumeri(filter) {
         </label>` : ''}
     </div>` : '';
 
+  const totalContattiVisibili = filteredGruppi.reduce((s, g) => s + (g.contatti || []).length, 0);
+
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Rubrica</div>
@@ -3548,7 +3612,16 @@ function renderNumeri(filter) {
       ${toggleHtml}
     </div>
 
-    ${!filter && codiciGen.length ? `
+    <div class="rubrica-search" style="margin-bottom:24px;display:flex;align-items:center;gap:10px;">
+      <input type="text" id="rubrica-search-input" placeholder="Cerca in rubrica: nome, interno, reparto…"
+        value="${escapeHtml(state.rubricaSearch || '')}"
+        oninput="onRubricaSearchInput(this.value)"
+        style="flex:1;font-family:var(--sans);font-size:14px;padding:10px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);">
+      ${rubricaQuery ? `<button class="btn ghost" onclick="clearRubricaSearch()" style="font-size:12px;">✕ Pulisci</button>` : ''}
+      ${rubricaQuery ? `<span style="font-size:12px;color:var(--ink-muted);font-family:var(--mono);">${filteredGruppi.length} UOC · ${totalContattiVisibili} contatti</span>` : ''}
+    </div>
+
+    ${!filter && !rubricaQuery && codiciGen.length ? `
       <div class="codici-banner">
         ${codiciGen.map(c => `
           <div class="codici-banner-item">
@@ -3559,7 +3632,7 @@ function renderNumeri(filter) {
       </div>
     ` : ''}
 
-    ${filteredGruppi.length === 0 ? '<p style="color:var(--ink-muted);">Nessun contatto corrisponde al filtro.</p>' : ''}
+    ${filteredGruppi.length === 0 ? `<p style="color:var(--ink-muted);">${rubricaQuery ? `Nessun risultato per "${escapeHtml(rubricaQuery)}".` : 'Nessun contatto corrisponde al filtro.'}</p>` : ''}
 
     <div class="edit-only" style="margin: 16px 0;">
       <button class="btn ghost" onclick="nuovoGruppoNumeri()" style="font-size:13px;">+ Nuovo gruppo di numeri</button>
@@ -5773,11 +5846,24 @@ function renderSearchResults(query) {
     return;
   }
 
-  const terms = query.trim().split(/\s+/).filter(t => t.length >= 2);
+  const terms = query.trim().split(/\s+/).filter(t => t.length >= 1);
   let rawResults;
   if (terms.length > 1) {
-    const extendedQuery = terms.map(t => `'${t}`).join(' ');
+    // Per termini corti (1 car) uso prefix match (^); per gli altri include-match (')
+    const extendedQuery = terms
+      .filter(t => t.length >= 1)
+      .map(t => t.length <= 2 ? `^${t}` : `'${t}`)
+      .join(' ');
     rawResults = state.fuse.search(extendedQuery);
+    // Se pochi risultati, prova con tutti i termini come include-match (più tollerante)
+    if (rawResults.length < 3) {
+      const allInclude = terms.filter(t => t.length >= 2).map(t => `'${t}`).join(' ');
+      if (allInclude) {
+        const fallback = state.fuse.search(allInclude);
+        if (fallback.length > rawResults.length) rawResults = fallback;
+      }
+    }
+    // Ultimo fallback: ricerca fuzzy standard sulla query completa
     if (rawResults.length < 3) rawResults = state.fuse.search(query);
   } else {
     rawResults = state.fuse.search(query);
@@ -5821,23 +5907,44 @@ function renderSearchResults(query) {
     const allContatti = full ? (full.contatti || []) : u.contatti.map(r => r.item);
     const matchedIds = new Set(u.contatti.map(r => r.item.slug));
 
-    const contatti = allContatti.map(c => {
+    const classifyContact = (c) => {
       const label = (c.etichetta || '').toLowerCase();
       const tags = (c.tag || []).join(' ').toLowerCase();
       const isGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/.test(label + ' ' + tags);
+      // Direttore, Segreteria, Studio medico, Coordinatore Reparto direzione = in fondo
+      const isDirSegr = /\b(direttore|segreteria|segr\.|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(label);
+      // Reparto / caposala / medico di reparto
+      const isReparto = /\b(reparto|caposala|guardiola|sala medici|infermier|stanza|deg\.|degenz)\b/i.test(label);
+      // Ambulatori / DH / prestazioni
+      const isAmb = /\b(ambulator|amb\.|day hospital|dh\b|polisonno|eco|rmn|tac|endoscop)\b/i.test(label);
+      if (isGuardia) return { group: 1, isGuardia: true };
+      if (isReparto) return { group: 2, isGuardia: false };
+      if (isAmb) return { group: 3, isGuardia: false };
+      if (isDirSegr) return { group: 4, isGuardia: false };
+      return { group: 3, isGuardia: false }; // altro → default medio
+    };
+
+    const contatti = allContatti.map(c => {
+      const label = (c.etichetta || '').toLowerCase();
+      const tags = (c.tag || []).join(' ').toLowerCase();
+      const cls = classifyContact(c);
       const matched = matchedIds.has(c.id);
       let relevance = 0;
       if (matched) relevance += 10;
-      if (isGuardia && wantsGuardia) relevance += 20;
-      if (isGuardia) relevance += 3;
+      if (cls.isGuardia && wantsGuardia) relevance += 20;
+      if (cls.isGuardia) relevance += 3;
       queryTerms.forEach(t => {
         if (label.includes(t)) relevance += 5;
         if (tags.includes(t)) relevance += 3;
       });
-      return { ...c, _isGuardia: isGuardia, _matched: matched, _relevance: relevance };
+      return { ...c, _isGuardia: cls.isGuardia, _group: cls.group, _matched: matched, _relevance: relevance };
     });
 
-    contatti.sort((a, b) => b._relevance - a._relevance);
+    // Ordinamento: prima per gruppo (1=guardia, 2=reparto, 3=amb, 4=dir/segr), poi per relevance
+    contatti.sort((a, b) => {
+      if (a._group !== b._group) return a._group - b._group;
+      return b._relevance - a._relevance;
+    });
     const hasMatchedGuardia = contatti.some(c => c._isGuardia && c._matched);
     const scoreAdjusted = u.bestScore - (hasMatchedGuardia ? 0.2 : 0) - (wantsGuardia && hasMatchedGuardia ? 0.15 : 0);
 
@@ -5847,7 +5954,8 @@ function renderSearchResults(query) {
       scoreAdjusted,
       hasMatchedGuardia,
       totalContatti: allContatti.length,
-      matchedCount: matchedIds.size
+      matchedCount: matchedIds.size,
+      fullGroup: full
     };
   });
 
@@ -5889,19 +5997,14 @@ function renderSearchResults(query) {
     const topContatti = u.contatti.slice(0, u.hasMatchedGuardia ? 6 : 5);
     const restCount = u.totalContatti - topContatti.length;
     const ospBadge = `<span class="sr-uoc-badge sr-uoc-badge-${u.ospedale}">${osp[u.ospedale] || u.ospedale.toUpperCase()}</span>`;
-    const direttore = u.direttore ? `Dir. ${escapeHtml(u.direttore)}` : '';
-    const sedeHtml = u.sede
-      ? `<div class="sr-uoc-sede">
-          <div class="sr-uoc-sede-label">${u.sede.split('·')[0] || 'Sede'}</div>
-          <div class="sr-uoc-sede-value">${escapeHtml(u.sede)}</div>
-        </div>`
+    const sedeHtml = u.fullGroup
+      ? renderSedeOperativa(u.fullGroup.sede_operativa, u.fullGroup.sedi_operative)
       : '';
     return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
       <div class="sr-uoc-head">
         ${ospBadge}
       </div>
       <div class="sr-uoc-title">${escapeHtml(u.gruppo)}</div>
-      ${direttore ? `<div class="sr-uoc-sub">${direttore}</div>` : ''}
       ${sedeHtml}
       <div class="sr-uoc-contatti">
         ${topContatti.map(renderContatto).join('')}
