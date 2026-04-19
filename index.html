@@ -368,6 +368,41 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .search-result-title{font-family:var(--serif);font-size:17px;font-weight:500;margin-bottom:4px;color:var(--ink)}
 .search-result-snippet{font-size:13px;color:var(--ink-muted);line-height:1.5}
 
+.sr-section-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.sr-section-title:first-child{margin-top:8px}
+.sr-uoc-list{display:grid;gap:12px;margin-bottom:18px}
+.sr-uoc{padding:16px 18px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);cursor:pointer;transition:border-color .15s}
+.sr-uoc:hover{border-color:var(--rule-strong)}
+.sr-uoc-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sr-uoc-badge{font-size:10px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:2px;font-weight:500}
+.sr-uoc-badge-aopd{background:var(--accent-soft);color:var(--accent)}
+.sr-uoc-badge-osa{background:var(--bg-sink);color:var(--ink-soft)}
+.sr-uoc-badge-iov{background:var(--bg-sink);color:var(--ink-soft)}
+.sr-uoc-title{font-family:var(--serif);font-size:18px;font-weight:500;color:var(--ink);margin-bottom:3px}
+.sr-uoc-sub{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
+.sr-uoc-sede{padding:8px 10px;background:var(--bg-sink);border-radius:2px;margin-bottom:10px}
+.sr-uoc-sede-label{font-size:10px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:2px}
+.sr-uoc-sede-value{font-size:13px;color:var(--ink)}
+.sr-uoc-contatti{display:grid;gap:5px}
+.sr-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:2px;cursor:pointer;transition:background .1s}
+.sr-contact:hover{background:var(--bg-sink)}
+.sr-contact-label{font-size:13px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-contact-num{font-family:var(--mono);font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.sr-contact-guardia{background:#fef0ef;padding:9px 10px;border-left:3px solid var(--danger);border-radius:0 2px 2px 0}
+.sr-contact-guardia:hover{background:#fce4e2}
+.sr-contact-left{flex:1;min-width:0}
+.sr-contact-label{font-weight:500}
+.sr-contact-guardia .sr-contact-label{color:var(--danger);font-weight:500}
+.sr-contact-meta{font-size:10px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--danger);opacity:.85;margin-top:2px}
+.sr-contact-num-guardia{color:var(--danger);font-weight:500;font-size:13px}
+.sr-uoc-more{font-size:12px;color:var(--ink-muted);padding:6px 10px 0;font-style:italic}
+.sede-operativa{display:flex;flex-direction:column;gap:4px;padding:7px 11px;background:var(--bg-sink);border-radius:3px;margin-bottom:12px;font-size:13px}
+.sede-operativa-row{display:flex;align-items:baseline;gap:10px}
+.sede-operativa-label{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;min-width:80px;flex-shrink:0}
+.sede-operativa-value{color:var(--ink);font-weight:400}
+.sede-fonte{font-size:10px;color:var(--accent);margin-left:8px;font-family:var(--mono);text-decoration:none;opacity:.7}
+.sede-fonte:hover{opacity:1;text-decoration:underline}
+
 @media print{body{background:white;color:black}header.topbar,aside.sidebar,.page-actions,.editor-head-actions{display:none!important}main.content{padding:0;max-width:100%}.procedura-body blockquote{background:#f4f4f4}a{color:black}details.scheda-section{border:none}details.scheda-section[open] .scheda-summary::after{display:none}.scheda-summary{cursor:default}}
 
 /* SCHEDA FLESSIBILE */
@@ -1639,13 +1674,17 @@ function rebuildSearchIndex() {
     type: 'tabella', slug: t.slug,
     titolo: t.titolo || t.slug
   }));
-  // Numeri (AOPD always + toggled extended sources)
   getVisibleNumeriGroups().forEach(g => {
     (g.contatti || []).forEach(c => {
       const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
-      docs.push({
+      const sedi = g.sedi_operative && g.sedi_operative.length ? g.sedi_operative : (g.sede_operativa ? [g.sede_operativa] : []);
+      const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');      docs.push({
         type: 'numero', slug: c.id,
-        titolo: c.etichetta, gruppo: g.nome,
+        titolo: c.etichetta,
+        gruppo: g.nome,
+        gruppoId: g.id,
+        direttore: g.direttore || '',
+        sede: sedeStr,
         numeri: numeriStr,
         ospedale: g._source || 'aopd',
         tag: (c.tag || []).join(' ')
@@ -1654,15 +1693,18 @@ function rebuildSearchIndex() {
   });
   state.fuse = new Fuse(docs, {
     keys: [
+      { name: 'gruppo', weight: 4 },
       { name: 'titolo', weight: 3 },
       { name: 'termini', weight: 2 },
-      { name: 'tag', weight: 1.5 },
-      { name: 'gruppo', weight: 1 },
+      { name: 'tag', weight: 2 },
+      { name: 'direttore', weight: 1.5 },
+      { name: 'sede', weight: 1 },
       { name: 'numeri', weight: 1 },
       { name: 'body', weight: 0.5 }
     ],
-    threshold: 0.35, includeMatches: true, minMatchCharLength: 2,
-    ignoreLocation: true
+    threshold: 0.35, includeMatches: true, includeScore: true, minMatchCharLength: 2,
+    ignoreLocation: true,
+    useExtendedSearch: true
   });
 }
 
@@ -3496,7 +3538,7 @@ function renderNumeri(filter) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Rubrica</div>
-      <h1 class="page-title">Numeri <em>utili</em></h1>
+      <h1 class="page-title">Rubrica</h1>
       ${filterLabel ? `<div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Filtrato per: <strong>${escapeHtml(filterLabel)}</strong></div>` : ''}
       <div class="numeri-filters" style="margin-top:20px;">
         <button class="filter-chip ${!filter ? 'active' : ''}" onclick="navigate('numeri')">Tutti</button>
@@ -3540,6 +3582,7 @@ function renderNumeri(filter) {
             </h2>
             ${g.direttore ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
             ${g.email ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
+            ${renderSedeOperativa(g.sede_operativa, g.sedi_operative)}
             ${(g.contatti || []).map(c => renderNumeroRow(c, g.id)).join('')}
             <div class="edit-only" style="margin-top:8px;">
               <button class="btn ghost" onclick="nuovoContatto('${escapeJs(g.id)}')" style="font-size:12px;">+ Aggiungi contatto</button>
@@ -3558,6 +3601,39 @@ function renderUbicazioneBadge(ub) {
   if (ub.ospedale_sede) parts.push(escapeHtml(ub.ospedale_sede));
   if (!parts.length) return '';
   return ` <span style="font-family:var(--mono);font-size:11px;font-weight:400;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:3px;margin-left:8px;">${parts.join(' · ')}</span>`;
+}
+
+function renderSedeOperativa(sede, sediArray) {
+  // Supporta sia `sede_operativa` (singola, legacy) sia `sedi_operative` (array)
+  const sedi = sediArray && sediArray.length ? sediArray : (sede ? [sede] : []);
+  if (!sedi.length) return '';
+  const tipoLabels = {
+    degenze: 'Degenze',
+    sala_operatoria: 'Sala operatoria',
+    diagnostica: 'Esami',
+    ambulatori: 'Ambulatori',
+    day_hospital: 'Day Hospital',
+    segreteria: 'Segreteria'
+  };
+  const renderSingle = (s) => {
+    if (!s || !s.edificio) return '';
+    const label = tipoLabels[s.tipo] || 'Sede';
+    const parts = [];
+    if (s.edificio) parts.push(escapeHtml(s.edificio));
+    if (s.piano) parts.push(escapeHtml(s.piano));
+    if (s.area) parts.push(escapeHtml(s.area));
+    const value = parts.join(' · ');
+    const fonte = s.fonte
+      ? `<a href="${escapeHtml(s.fonte)}" target="_blank" rel="noopener" class="sede-fonte" title="Sorgente: ${escapeHtml(s.fonte)}">fonte ↗</a>`
+      : '';
+    return `<div class="sede-operativa-row">
+      <div class="sede-operativa-label">${escapeHtml(label)}</div>
+      <div class="sede-operativa-value">${value}${fonte}</div>
+    </div>`;
+  };
+  const rows = sedi.map(renderSingle).filter(Boolean).join('');
+  if (!rows) return '';
+  return `<div class="sede-operativa">${rows}</div>`;
 }
 
 function renderNumeroRow(c, gruppoId) {
@@ -4238,7 +4314,7 @@ function renderNavTree() {
   const nodes = [
     { id: 'procedure', label: 'Procedure', count: state.index.procedure.length, kind: 'top', slug: 'procedure', children: () => buildProcedureChildren() },
     { id: 'clinica', label: 'Clinica', count: (state.index.clinica || []).length, kind: 'top', slug: 'clinica', children: () => buildClinicaChildren() },
-    { id: 'numeri', label: 'Numeri utili', count: countNumeri(), kind: 'top', slug: 'numeri', children: () => buildNumeriChildren() },
+    { id: 'numeri', label: 'Rubrica', count: countNumeri(), kind: 'top', slug: 'numeri', navTarget: { route: 'numeri', params: {} } },
     { id: 'moduli', label: 'Moduli', count: state.index.moduli.length, kind: 'top', slug: 'moduli', children: () => buildModuliChildren() },
     { id: 'tabelle', label: 'Tabelle', count: state.index.tabelle.length, kind: 'top', slug: 'tabelle', children: () => buildTabelleChildren() },
     { id: 'manuale', label: 'Manuale', count: (state.index.capitoli || []).length, kind: 'top', slug: 'manuale', children: () => buildManualeChildren() },
@@ -5696,40 +5772,181 @@ function renderSearchResults(query) {
       <p style="color:var(--ink-muted);">Digita almeno 2 caratteri nella barra in alto.</p>`;
     return;
   }
-  const results = state.fuse.search(query).slice(0, 40);
+
+  const terms = query.trim().split(/\s+/).filter(t => t.length >= 2);
+  let rawResults;
+  if (terms.length > 1) {
+    const extendedQuery = terms.map(t => `'${t}`).join(' ');
+    rawResults = state.fuse.search(extendedQuery);
+    if (rawResults.length < 3) rawResults = state.fuse.search(query);
+  } else {
+    rawResults = state.fuse.search(query);
+  }
+
+  const nonNumeri = rawResults.filter(r => r.item.type !== 'numero').slice(0, 20);
+  const numeriRaw = rawResults.filter(r => r.item.type === 'numero');
+
+  const lowerQuery = query.toLowerCase();
+  const queryTerms = terms.map(t => t.toLowerCase());
+  const wantsGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/i.test(query);
+
+  const byGruppo = new Map();
+  numeriRaw.forEach(r => {
+    const gid = r.item.gruppoId;
+    if (!byGruppo.has(gid)) {
+      byGruppo.set(gid, {
+        gruppoId: gid,
+        gruppo: r.item.gruppo,
+        ospedale: r.item.ospedale,
+        direttore: r.item.direttore,
+        sede: r.item.sede,
+        contatti: [],
+        bestScore: 1
+      });
+    }
+    const g = byGruppo.get(gid);
+    g.contatti.push(r);
+    if (r.score < g.bestScore) g.bestScore = r.score;
+  });
+
+  const getFullGroup = (gid) => {
+    for (const g of getVisibleNumeriGroups()) {
+      if (g.id === gid) return g;
+    }
+    return null;
+  };
+
+  const uocResults = Array.from(byGruppo.values()).map(u => {
+    const full = getFullGroup(u.gruppoId);
+    const allContatti = full ? (full.contatti || []) : u.contatti.map(r => r.item);
+    const matchedIds = new Set(u.contatti.map(r => r.item.slug));
+
+    const contatti = allContatti.map(c => {
+      const label = (c.etichetta || '').toLowerCase();
+      const tags = (c.tag || []).join(' ').toLowerCase();
+      const isGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/.test(label + ' ' + tags);
+      const matched = matchedIds.has(c.id);
+      let relevance = 0;
+      if (matched) relevance += 10;
+      if (isGuardia && wantsGuardia) relevance += 20;
+      if (isGuardia) relevance += 3;
+      queryTerms.forEach(t => {
+        if (label.includes(t)) relevance += 5;
+        if (tags.includes(t)) relevance += 3;
+      });
+      return { ...c, _isGuardia: isGuardia, _matched: matched, _relevance: relevance };
+    });
+
+    contatti.sort((a, b) => b._relevance - a._relevance);
+    const hasMatchedGuardia = contatti.some(c => c._isGuardia && c._matched);
+    const scoreAdjusted = u.bestScore - (hasMatchedGuardia ? 0.2 : 0) - (wantsGuardia && hasMatchedGuardia ? 0.15 : 0);
+
+    return {
+      ...u,
+      contatti,
+      scoreAdjusted,
+      hasMatchedGuardia,
+      totalContatti: allContatti.length,
+      matchedCount: matchedIds.size
+    };
+  });
+
+  uocResults.sort((a, b) => {
+    if (wantsGuardia) {
+      if (a.hasMatchedGuardia !== b.hasMatchedGuardia) return a.hasMatchedGuardia ? -1 : 1;
+    }
+    return a.scoreAdjusted - b.scoreAdjusted;
+  });
+
+  const osp = { aopd: 'AOPD', osa: 'OSA', iov: 'IOV' };
+
+  const renderContatto = (c) => {
+    const nums = [];
+    if (c.numeri) nums.push(...c.numeri);
+    const numsStr = nums.join(' · ');
+    const breveStr = c.breve ? `br. ${c.breve}` : '';
+    const cellStr = c.cellulare || '';
+    const displayNum = [numsStr, breveStr, cellStr].filter(Boolean).join(' · ');
+    const tagsLower = (c.tag || []).map(t => t.toLowerCase());
+    const isGuardia = c._isGuardia;
+
+    if (isGuardia) {
+      return `<div class="sr-contact sr-contact-guardia" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
+        <div class="sr-contact-left">
+          <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+          <div class="sr-contact-meta">${c.tag && c.tag.length ? escapeHtml(c.tag.join(' · ')) : 'guardia'}</div>
+        </div>
+        <div class="sr-contact-num sr-contact-num-guardia">${escapeHtml(displayNum || '—')}</div>
+      </div>`;
+    }
+    return `<div class="sr-contact" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
+      <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+      <div class="sr-contact-num">${escapeHtml(displayNum || '—')}</div>
+    </div>`;
+  };
+
+  const renderUoc = (u) => {
+    const topContatti = u.contatti.slice(0, u.hasMatchedGuardia ? 6 : 5);
+    const restCount = u.totalContatti - topContatti.length;
+    const ospBadge = `<span class="sr-uoc-badge sr-uoc-badge-${u.ospedale}">${osp[u.ospedale] || u.ospedale.toUpperCase()}</span>`;
+    const direttore = u.direttore ? `Dir. ${escapeHtml(u.direttore)}` : '';
+    const sedeHtml = u.sede
+      ? `<div class="sr-uoc-sede">
+          <div class="sr-uoc-sede-label">${u.sede.split('·')[0] || 'Sede'}</div>
+          <div class="sr-uoc-sede-value">${escapeHtml(u.sede)}</div>
+        </div>`
+      : '';
+    return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
+      <div class="sr-uoc-head">
+        ${ospBadge}
+      </div>
+      <div class="sr-uoc-title">${escapeHtml(u.gruppo)}</div>
+      ${direttore ? `<div class="sr-uoc-sub">${direttore}</div>` : ''}
+      ${sedeHtml}
+      <div class="sr-uoc-contatti">
+        ${topContatti.map(renderContatto).join('')}
+        ${restCount > 0 ? `<div class="sr-uoc-more">+ ${restCount} altri numeri nella UOC →</div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  const renderOther = (r) => {
+    const item = r.item;
+    let click = '';
+    if (item.type === 'procedura') click = `navigate('procedura', {slug:'${escapeJs(item.slug)}'})`;
+    else if (item.type === 'clinica') click = `navigate('clinica-scheda', {slug:'${escapeJs(item.slug)}'})`;
+    else if (item.type === 'modulo') click = `navigate('modulo', {slug:'${escapeJs(item.slug)}'})`;
+    else if (item.type === 'tabella') click = `navigate('tabella', {slug:'${escapeJs(item.slug)}'})`;
+    const typeLabel = item.type === 'procedura' ? 'Procedura'
+      : item.type === 'clinica' ? 'Scheda clinica'
+      : item.type === 'modulo' ? 'Modulo'
+      : item.type === 'tabella' ? 'Tabella' : item.type;
+    const snippet = (item.body || '').substring(0, 140) + ((item.body || '').length > 140 ? '…' : '');
+    return `<div class="search-result-item" onclick="${click}">
+      <div class="search-result-type">${typeLabel}</div>
+      <div class="search-result-title">${escapeHtml(item.titolo)}</div>
+      ${snippet ? `<div class="search-result-snippet">${escapeHtml(snippet)}</div>` : ''}
+    </div>`;
+  };
+
+  const totalContatti = uocResults.reduce((s, u) => s + u.matchedCount, 0);
+  const totalResults = uocResults.length + nonNumeri.length;
+
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">Risultati</div>
       <h1 class="page-title">Ricerca: <em>${escapeHtml(query)}</em></h1>
-      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${results.length} risultati</div>
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">
+        ${uocResults.length > 0 ? `${uocResults.length} UOC · ${totalContatti} contatti${nonNumeri.length > 0 ? ' · ' : ''}` : ''}
+        ${nonNumeri.length > 0 ? `${nonNumeri.length} documenti` : ''}
+        ${totalResults === 0 ? 'nessun risultato' : ''}
+      </div>
     </div>
-    <div class="search-results">
-      ${results.length === 0 ? `<p style="color:var(--ink-muted);">Nessun risultato per "${escapeHtml(query)}".</p>` :
-        results.map(r => {
-          const item = r.item;
-          let click = '';
-          if (item.type === 'procedura') click = `navigate('procedura', {slug:'${escapeHtml(item.slug)}'})`;
-          else if (item.type === 'clinica') click = `navigate('clinica-scheda', {slug:'${escapeHtml(item.slug)}'})`;
-          else if (item.type === 'modulo') click = `navigate('modulo', {slug:'${escapeHtml(item.slug)}'})`;
-          else if (item.type === 'tabella') click = `navigate('tabella', {slug:'${escapeHtml(item.slug)}'})`;
-          else if (item.type === 'numero') click = `navigate('numeri', {filter:'${escapeHtml(item.slug)}'})`;
-          const typeLabel = item.type === 'procedura' ? 'Procedura'
-            : item.type === 'clinica' ? 'Scheda clinica'
-            : item.type === 'modulo' ? 'Modulo'
-            : item.type === 'tabella' ? 'Tabella'
-            : item.type === 'numero' ? `Numero · ${escapeHtml(item.gruppo || '')}` : item.type;
-          const snippet = item.type === 'numero' && item.numeri
-            ? `Numeri: ${escapeHtml(item.numeri)}`
-            : (item.body || '').substring(0, 140) + ((item.body || '').length > 140 ? '…' : '');
-          return `
-            <div class="search-result-item" onclick="${click}">
-              <div class="search-result-type">${typeLabel}</div>
-              <div class="search-result-title">${escapeHtml(item.titolo)}</div>
-              ${snippet ? `<div class="search-result-snippet">${escapeHtml(snippet)}</div>` : ''}
-            </div>`;
-        }).join('')
-      }
-    </div>`;
+    ${uocResults.length > 0 ? `<div class="sr-section-title">Rubrica</div>
+    <div class="sr-uoc-list">${uocResults.map(renderUoc).join('')}</div>` : ''}
+    ${nonNumeri.length > 0 ? `<div class="sr-section-title">Documenti</div>
+    <div class="search-results">${nonNumeri.map(renderOther).join('')}</div>` : ''}
+    ${totalResults === 0 ? `<p style="color:var(--ink-muted);padding:24px 0;">Nessun risultato per "${escapeHtml(query)}".</p>` : ''}`;
 }
 
 /* ============================ MODAL ============================ */
