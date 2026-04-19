@@ -184,6 +184,65 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .bc-segment{cursor:pointer;color:var(--ink-muted);transition:color .12s}
 .bc-segment:hover{color:var(--accent);text-decoration:underline}
 .bc-sep{color:var(--ink-faint);margin:0 2px}
+
+/* CHIPS MULTI-SELECT */
+.chips-wrap{position:relative}
+.chips-list{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;min-height:40px;cursor:text}
+.chips-list:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--accent);font-family:var(--mono);font-size:12px;padding:3px 4px 3px 8px;border-radius:2px;border:1px solid transparent}
+.chip-label{line-height:1.4}
+.chip-remove{background:transparent;border:none;cursor:pointer;color:var(--accent);font-size:14px;line-height:1;padding:0 4px;border-radius:2px;transition:background .12s}
+.chip-remove:hover{background:rgba(43,74,111,.15)}
+.chips-input{flex:1;min-width:80px;border:none;outline:none;background:transparent;font-family:var(--sans);font-size:13px;color:var(--ink);padding:2px 0}
+.chips-suggest{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--bg-paper);border:1px solid var(--rule-strong);border-radius:2px;max-height:240px;overflow-y:auto;display:none;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.chips-suggest.open{display:block}
+.chip-suggest-item{padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;transition:background .1s}
+.chip-suggest-item:hover{background:var(--accent-soft)}
+.chip-suggest-id{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.04em}
+.chip-suggest-new{border-top:1px dashed var(--rule);color:var(--accent);font-style:italic}
+.chip-suggest-empty{padding:12px;font-size:13px;color:var(--ink-muted);font-style:italic}
+
+/* Tag clickability in scheda */
+.tag.clickable{cursor:pointer;transition:background .12s}
+.tag.clickable:hover{background:var(--accent-soft);color:var(--accent)}
+
+/* HOME quick access cards (emergency / guardia) */
+.home-quickaccess{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px}
+@media (max-width:640px){.home-quickaccess{grid-template-columns:1fr}}
+.quickaccess-card{display:flex;align-items:center;gap:16px;padding:20px 24px;border-radius:4px;cursor:pointer;border:1px solid var(--rule);background:var(--bg-paper);transition:background .15s,border-color .15s,transform .15s}
+.quickaccess-card:hover{border-color:var(--rule-strong);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.quickaccess-card:active{transform:translateY(0)}
+.quickaccess-icon{flex-shrink:0;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg-sink)}
+.quickaccess-text{flex:1;min-width:0}
+.quickaccess-title{font-family:var(--serif);font-size:19px;font-weight:500;color:var(--ink);line-height:1.2}
+.quickaccess-sub{font-size:12px;color:var(--ink-muted);margin-top:4px;font-family:var(--mono);letter-spacing:.02em}
+.quickaccess-emergency .quickaccess-icon{background:rgba(180,50,50,.08);color:#b43232}
+.quickaccess-emergency:hover{border-color:rgba(180,50,50,.5);background:rgba(180,50,50,.02)}
+.quickaccess-guardia .quickaccess-icon{background:var(--accent-soft);color:var(--accent)}
+.quickaccess-guardia:hover{border-color:var(--accent);background:rgba(43,74,111,.02)}
+
+/* Pin star button */
+.pin-star{background:transparent;border:none;cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;color:var(--ink-faint);transition:color .12s,transform .12s}
+.pin-star:hover{color:#d4a017;transform:scale(1.1)}
+.pin-star.pinned{color:#d4a017}
+.pin-star.pinned:hover{color:var(--ink-muted)}
+.pin-star.inline{font-size:16px;padding:0 4px;vertical-align:middle}
+.page-title .pin-star{font-size:22px;vertical-align:middle;margin-left:6px}
+.numeri-group-title .pin-star,.numero-label .pin-star{font-size:15px;vertical-align:middle}
+
+/* Home sections for personal pins */
+.home-pins-group{margin-bottom:24px}
+.home-pins-group:empty{display:none}
+.pinned-folder{display:flex;align-items:center;gap:10px;padding:12px 16px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);cursor:pointer;transition:background .12s,border-color .12s;margin-bottom:6px}
+.pinned-folder:hover{border-color:var(--accent);background:var(--accent-soft)}
+.pinned-folder-icon{font-family:var(--mono);font-size:14px;color:var(--ink-faint);flex-shrink:0}
+.pinned-folder-text{flex:1;min-width:0}
+.pinned-folder-label{font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink)}
+.pinned-folder-sub{font-size:11px;color:var(--ink-muted);margin-top:2px;font-family:var(--mono)}
+.pinned-contact{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--rule-soft);border-radius:2px;background:var(--bg-paper);margin-bottom:4px}
+.pinned-contact-num{font-family:var(--mono);font-size:14px;color:var(--accent);cursor:pointer;flex:1;text-align:right}
+.pinned-contact-label{font-family:var(--serif);font-size:15px;color:var(--ink);flex:1}
+.empty-pins{padding:24px;text-align:center;color:var(--ink-muted);font-size:13px;font-style:italic;border:1px dashed var(--rule);border-radius:2px}
 .page-title{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);line-height:1.05;letter-spacing:-.02em;color:var(--ink)}
 .page-title em{font-style:italic;font-weight:300}
 .page-meta{margin-top:16px;font-size:13px;color:var(--ink-muted);display:flex;gap:20px;flex-wrap:wrap}
@@ -386,19 +445,14 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
     <form id="login-form">
       <div class="field">
         <label for="login-username">Username</label>
-        <input type="text" id="login-username" class="mono-input" placeholder="es. dr.rossi" autocomplete="username" required>
+        <input type="text" id="login-username" class="mono-input" autocomplete="username" required>
       </div>
       <div class="field">
         <label for="login-passphrase">Passphrase</label>
-        <input type="password" id="login-passphrase" placeholder="••••••••" autocomplete="current-password" required>
+        <input type="password" id="login-passphrase" autocomplete="current-password" required>
       </div>
       <button type="submit" class="btn full" id="login-submit"><span id="login-submit-text">Accedi</span></button>
     </form>
-    <div class="login-help">
-      <strong>Nuovo dispositivo?</strong> La sessione non viene mai memorizzata tra aperture del browser. Dovrai reinserire la passphrase ad ogni sessione.
-      <br><br>
-      <strong>Passphrase dimenticata?</strong> Chiedi a un admin di rigenerare il tuo blob cifrato.
-    </div>
   </div>
 </div>
 
@@ -526,6 +580,370 @@ function buildBreadcrumb(segments) {
     return `<span class="bc-segment" onclick="navigate('${escapeJs(s.route)}', ${params})">${escapeHtml(s.label)}</span>`;
   });
   return `<button class="bc-back" onclick="goBack()" title="Indietro">←</button> ${parts.join(' <span class="bc-sep">›</span> ')}`;
+}
+
+/* ============================ CHIPS MULTI-SELECT ============================ */
+// Component: type to filter existing values, click to add as chip, type new + Enter to create.
+// State stored on the container element via dataset.values (JSON array)
+
+function renderChipsField(opts) {
+  // opts: { id, values:[], suggestions:[{id,label}], placeholder, allowNew:true }
+  const valuesAttr = JSON.stringify(opts.values || []).replace(/"/g, '&quot;');
+  const initialChips = (opts.values || []).map(v => {
+    const sugg = (opts.suggestions || []).find(s => s.id === v);
+    const label = sugg ? sugg.label : v;
+    return `<span class="chip" data-value="${escapeHtml(v)}">
+      <span class="chip-label">${escapeHtml(label)}</span>
+      <button type="button" class="chip-remove" onclick="event.stopPropagation();chipsRemove('${escapeJs(opts.id)}','${escapeJs(v)}')" aria-label="Rimuovi">×</button>
+    </span>`;
+  }).join('');
+
+  return `
+    <div class="chips-wrap" id="${opts.id}" data-values="${valuesAttr}" data-allow-new="${opts.allowNew !== false ? '1' : '0'}">
+      <div class="chips-list">${initialChips}<input type="text" class="chips-input" id="${opts.id}-input" placeholder="${escapeHtml(opts.placeholder || 'aggiungi…')}" autocomplete="off"></div>
+      <div class="chips-suggest" id="${opts.id}-suggest"></div>
+    </div>`;
+}
+
+function chipsInit(id, suggestions) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  const input = document.getElementById(id + '-input');
+  const suggestBox = document.getElementById(id + '-suggest');
+  // Store suggestions on the container for later
+  container._suggestions = suggestions || [];
+
+  function getValues() { return JSON.parse(container.dataset.values || '[]'); }
+  function setValues(arr) {
+    container.dataset.values = JSON.stringify(arr);
+    if (state.editingContext) state.editingContext.isDirty = true;
+  }
+
+  function showSuggestions() {
+    const q = input.value.trim().toLowerCase();
+    const taken = new Set(getValues());
+    const allowNew = container.dataset.allowNew === '1';
+    const matches = container._suggestions
+      .filter(s => !taken.has(s.id))
+      .filter(s => !q || s.label.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+      .slice(0, 8);
+    if (matches.length === 0 && (!q || !allowNew)) {
+      suggestBox.innerHTML = q && !allowNew ? '<div class="chip-suggest-empty">Nessuna corrispondenza</div>' : '';
+      suggestBox.classList.remove('open');
+      return;
+    }
+    let html = matches.map(m => `<div class="chip-suggest-item" onmousedown="event.preventDefault();chipsAdd('${escapeJs(id)}','${escapeJs(m.id)}','${escapeJs(m.label)}')">
+      <span>${escapeHtml(m.label)}</span>
+      <span class="chip-suggest-id">${escapeHtml(m.id)}</span>
+    </div>`).join('');
+    if (q && allowNew && !container._suggestions.find(s => s.id === q || s.label.toLowerCase() === q.toLowerCase())) {
+      // Allow creating a new value (sanitized to slug)
+      const newId = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'');
+      if (newId) {
+        html += `<div class="chip-suggest-item chip-suggest-new" onmousedown="event.preventDefault();chipsAdd('${escapeJs(id)}','${escapeJs(newId)}','${escapeJs(q)}')">
+          <span>+ Crea "${escapeHtml(q)}"</span>
+          <span class="chip-suggest-id">${escapeHtml(newId)}</span>
+        </div>`;
+      }
+    }
+    suggestBox.innerHTML = html;
+    suggestBox.classList.add('open');
+  }
+
+  function hideSuggestions() {
+    setTimeout(() => suggestBox.classList.remove('open'), 150);
+  }
+
+  input.addEventListener('focus', showSuggestions);
+  input.addEventListener('input', showSuggestions);
+  input.addEventListener('blur', hideSuggestions);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (!q) return;
+      // Try exact match first, otherwise create new (if allowed)
+      const exact = container._suggestions.find(s => s.label.toLowerCase() === q.toLowerCase() || s.id.toLowerCase() === q.toLowerCase());
+      if (exact) chipsAdd(id, exact.id, exact.label);
+      else if (container.dataset.allowNew === '1') {
+        const newId = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'');
+        if (newId) chipsAdd(id, newId, q);
+      }
+    } else if (e.key === 'Backspace' && input.value === '') {
+      // Remove last chip
+      const values = getValues();
+      if (values.length > 0) chipsRemove(id, values[values.length - 1]);
+    } else if (e.key === 'Escape') {
+      input.value = '';
+      hideSuggestions();
+    }
+  });
+}
+
+function chipsAdd(id, value, label) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  const values = JSON.parse(container.dataset.values || '[]');
+  if (values.includes(value)) return;
+  values.push(value);
+  container.dataset.values = JSON.stringify(values);
+  // Re-render chips
+  const list = container.querySelector('.chips-list');
+  const input = document.getElementById(id + '-input');
+  const chip = document.createElement('span');
+  chip.className = 'chip';
+  chip.dataset.value = value;
+  chip.innerHTML = `<span class="chip-label">${escapeHtml(label || value)}</span>
+    <button type="button" class="chip-remove" onclick="event.stopPropagation();chipsRemove('${escapeJs(id)}','${escapeJs(value)}')" aria-label="Rimuovi">×</button>`;
+  list.insertBefore(chip, input);
+  input.value = '';
+  input.focus();
+  document.getElementById(id + '-suggest').innerHTML = '';
+  document.getElementById(id + '-suggest').classList.remove('open');
+  if (state.editingContext) state.editingContext.isDirty = true;
+}
+
+function chipsRemove(id, value) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  const values = JSON.parse(container.dataset.values || '[]').filter(v => v !== value);
+  container.dataset.values = JSON.stringify(values);
+  const chip = container.querySelector(`.chip[data-value="${CSS.escape(value)}"]`);
+  if (chip) chip.remove();
+  if (state.editingContext) state.editingContext.isDirty = true;
+}
+
+function chipsGet(id) {
+  const container = document.getElementById(id);
+  if (!container) return [];
+  return JSON.parse(container.dataset.values || '[]');
+}
+
+// Helper: build suggestions for an existing free-form sub-categoria input
+function buildSottocategorieForCategoria(cat) {
+  const subs = new Set();
+  state.index.procedure.forEach(p => {
+    if (p.categoria === cat && p.sottocategoria) subs.add(p.sottocategoria);
+  });
+  return [...subs].sort().map(s => ({ id: s, label: SOTTO_LABELS[s] || s }));
+}
+
+// Helper: collect all unique tags across procedure + clinica
+function collectAllTags() {
+  const tags = new Set();
+  state.index.procedure.forEach(p => (p.tag || []).forEach(t => tags.add(t)));
+  (state.index.clinica || []).forEach(c => (c.tag || []).forEach(t => tags.add(t)));
+  return [...tags].sort().map(t => ({ id: t, label: t }));
+}
+
+function collectAllTermini() {
+  const terms = new Set();
+  state.index.procedure.forEach(p => (p.termini_equivalenti || []).forEach(t => terms.add(t)));
+  (state.index.clinica || []).forEach(c => (c.termini_equivalenti || []).forEach(t => terms.add(t)));
+  return [...terms].sort().map(t => ({ id: t, label: t }));
+}
+
+function collectAllContattiSuggestions() {
+  const out = [];
+  if (!state.index.numeri || !state.index.numeri.gruppi) return out;
+  state.index.numeri.gruppi.forEach(g => {
+    (g.contatti || []).forEach(c => {
+      if (c.id) out.push({ id: c.id, label: `${c.etichetta} · ${g.nome}` });
+    });
+  });
+  return out.sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/* ============================ USER PREFERENCES ============================ */
+// Per-user home pins stored in content/user-prefs/{username}.yml
+// pins: array of {type, ...keys}
+//   {type:'procedura', slug}
+//   {type:'clinica', slug}
+//   {type:'modulo', slug}
+//   {type:'tabella', slug}
+//   {type:'capitolo', id}
+//   {type:'sottocategoria', cat, sub}     // procedure subcategory
+//   {type:'clinica-sub', sub}             // clinica subcategory
+//   {type:'categoria', cat}               // procedure macro category
+//   {type:'contatto', id}
+//   {type:'gruppo', id}
+
+const userPrefs = {
+  async load() {
+    if (!state.session || !state.session.username) return;
+    const path = `content/user-prefs/${state.session.username}.yml`;
+    state.userPrefsPath = path;
+    try {
+      const file = await gh.getFile(path);
+      if (!file) {
+        state.userPrefs = { pins: [], _sha: null };
+        return;
+      }
+      const parsed = jsyaml.load(file.content) || {};
+      state.userPrefs = {
+        pins: Array.isArray(parsed.pins) ? parsed.pins : [],
+        _sha: file.sha
+      };
+    } catch (e) {
+      console.warn('[userPrefs] load failed:', e);
+      state.userPrefs = { pins: [], _sha: null };
+    }
+  },
+
+  // Debounced save: collects multiple toggles in 2 seconds
+  scheduleSave() {
+    if (!state.userPrefs) return;
+    if (state.userPrefs._saveTimer) clearTimeout(state.userPrefs._saveTimer);
+    state.userPrefs._pending = true;
+    state.userPrefs._saveTimer = setTimeout(() => {
+      userPrefs.persist().catch(e => console.error('[userPrefs] save failed', e));
+    }, 2000);
+  },
+
+  async persist() {
+    if (!state.userPrefs || !state.session) return;
+    state.userPrefs._pending = false;
+    const path = state.userPrefsPath;
+    const data = {
+      pins: state.userPrefs.pins,
+      ultima_modifica: nowIso(),
+      modificato_da: state.session.username
+    };
+    const content = `# Preferenze home personali per ${state.session.username}\n# Gestite dall'app, non modificare a mano\n\n` +
+      jsyaml.dump(data, { lineWidth: 120, noRefs: true, sortKeys: false });
+    try {
+      const res = await gh.putFile(path, content, state.userPrefs._sha, `chore: preferenze home di ${state.session.username}`);
+      state.userPrefs._sha = res.content.sha;
+    } catch (e) {
+      if (e.code === 'CONFLICT') {
+        // Reload and retry once
+        await userPrefs.load();
+        const res2 = await gh.putFile(path, content, state.userPrefs._sha, `chore: preferenze home di ${state.session.username} (retry)`);
+        state.userPrefs._sha = res2.content.sha;
+      } else {
+        throw e;
+      }
+    }
+  },
+
+  // Check if a pin exists
+  has(pin) {
+    if (!state.userPrefs) return false;
+    return state.userPrefs.pins.some(p => userPrefs.pinEquals(p, pin));
+  },
+
+  pinEquals(a, b) {
+    if (!a || !b || a.type !== b.type) return false;
+    switch (a.type) {
+      case 'procedura':
+      case 'clinica':
+      case 'modulo':
+      case 'tabella':
+        return a.slug === b.slug;
+      case 'capitolo':
+      case 'contatto':
+      case 'gruppo':
+        return a.id === b.id;
+      case 'sottocategoria':
+        return a.cat === b.cat && a.sub === b.sub;
+      case 'clinica-sub':
+        return a.sub === b.sub;
+      case 'categoria':
+        return a.cat === b.cat;
+    }
+    return false;
+  },
+
+  // Toggle: add if not present, remove if present. Returns new state (true=pinned).
+  toggle(pin) {
+    if (!state.userPrefs) return false;
+    const idx = state.userPrefs.pins.findIndex(p => userPrefs.pinEquals(p, pin));
+    let nowPinned;
+    if (idx >= 0) {
+      state.userPrefs.pins.splice(idx, 1);
+      nowPinned = false;
+    } else {
+      state.userPrefs.pins.push(pin);
+      nowPinned = true;
+    }
+    userPrefs.scheduleSave();
+    // Visual feedback
+    if (typeof toast === 'function') {
+      toast(nowPinned ? 'Aggiunto in home' : 'Rimosso dalla home', 'info', 1500);
+    }
+    return nowPinned;
+  }
+};
+
+// Convenience global for HTML onclick handlers
+function togglePin(type, ...args) {
+  let pin;
+  switch (type) {
+    case 'procedura':
+    case 'clinica':
+    case 'modulo':
+    case 'tabella':
+      pin = { type, slug: args[0] }; break;
+    case 'capitolo':
+    case 'contatto':
+    case 'gruppo':
+      pin = { type, id: args[0] }; break;
+    case 'sottocategoria':
+      pin = { type, cat: args[0], sub: args[1] }; break;
+    case 'clinica-sub':
+      pin = { type, sub: args[0] }; break;
+    case 'categoria':
+      pin = { type, cat: args[0] }; break;
+    default: return;
+  }
+  userPrefs.toggle(pin);
+  // Re-render current view for updated star state, and home-tree if on home
+  if (state.currentView === 'home') renderHome();
+  else {
+    // Re-render just the star buttons on the current view
+    document.querySelectorAll(`[data-pin-key]`).forEach(btn => {
+      const key = btn.dataset.pinKey;
+      if (key === pinKey(pin)) {
+        const isPinned = userPrefs.has(pin);
+        btn.classList.toggle('pinned', isPinned);
+        btn.innerHTML = isPinned ? '★' : '☆';
+        btn.setAttribute('title', isPinned ? 'Rimuovi dalla home' : 'Aggiungi alla home');
+      }
+    });
+  }
+}
+
+function pinKey(pin) {
+  switch (pin.type) {
+    case 'procedura': case 'clinica': case 'modulo': case 'tabella':
+      return `${pin.type}:${pin.slug}`;
+    case 'capitolo': case 'contatto': case 'gruppo':
+      return `${pin.type}:${pin.id}`;
+    case 'sottocategoria': return `sottocategoria:${pin.cat}:${pin.sub}`;
+    case 'clinica-sub': return `clinica-sub:${pin.sub}`;
+    case 'categoria': return `categoria:${pin.cat}`;
+  }
+  return pin.type;
+}
+
+function renderPinButton(type, ...args) {
+  let pin;
+  switch (type) {
+    case 'procedura': case 'clinica': case 'modulo': case 'tabella':
+      pin = { type, slug: args[0] }; break;
+    case 'capitolo': case 'contatto': case 'gruppo':
+      pin = { type, id: args[0] }; break;
+    case 'sottocategoria':
+      pin = { type, cat: args[0], sub: args[1] }; break;
+    case 'clinica-sub':
+      pin = { type, sub: args[0] }; break;
+    case 'categoria':
+      pin = { type, cat: args[0] }; break;
+    default: return '';
+  }
+  const pinned = userPrefs.has(pin);
+  const argStrs = args.map(a => `'${escapeJs(a)}'`).join(',');
+  return `<button class="pin-star ${pinned ? 'pinned' : ''}" data-pin-key="${escapeHtml(pinKey(pin))}" onclick="event.stopPropagation();togglePin('${type}',${argStrs})" title="${pinned ? 'Rimuovi dalla home' : 'Aggiungi alla home'}" aria-label="Fissa in home">${pinned ? '★' : '☆'}</button>`;
 }
 
 /* ============================ IMAGE HELPERS ============================ */
@@ -928,7 +1346,9 @@ const state = {
   currentView: 'home',
   editorInstance: null,
   editingContext: null,
-  fuse: null
+  fuse: null,
+  userPrefs: null,          // {pins: [...], _sha: null, _saveTimer: null, _pending: false}
+  userPrefsPath: null
 };
 
 const SESSION_KEY = 'collinettaai.session';
@@ -1272,7 +1692,7 @@ async function attemptLogin(username, passphrase) {
   const btnText = $('login-submit-text');
   loginError.classList.remove('visible');
   btn.disabled = true;
-  btnText.innerHTML = '<span class="spinner" style="margin:0;width:14px;height:14px;border-width:2px;border-top-color:currentColor;"></span> Decifratura...';
+  btnText.innerHTML = '<span class="spinner" style="margin:0;width:14px;height:14px;border-width:2px;border-top-color:currentColor;"></span>';
 
   try {
     if (!state.tokensFile) state.tokensFile = await loadTokensFile();
@@ -1322,6 +1742,7 @@ async function enterApp() {
   renderLoading('Indicizzazione contenuti...');
   try {
     await buildIndex();
+    await userPrefs.load();
     navigate('home');
   } catch (e) {
     renderError('Errore caricamento indice', e.message);
@@ -1329,9 +1750,16 @@ async function enterApp() {
 }
 
 function logout() {
+  // Flush any pending pin saves before losing session
+  if (state.userPrefs && state.userPrefs._pending) {
+    if (state.userPrefs._saveTimer) clearTimeout(state.userPrefs._saveTimer);
+    userPrefs.persist().catch(() => {}); // fire-and-forget
+  }
   clearSession();
   state.index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null };
   state.editingContext = null;
+  state.userPrefs = null;
+  state.userPrefsPath = null;
   if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
   // Clear ETag cache + rate limit indicator
   etagCache.clear();
@@ -1392,6 +1820,7 @@ function navigate(route, params = {}) {
     case 'cestino': renderCestino(); break;
     case 'utenti': renderGestioneUtenti(); break;
     case 'search': renderSearchResults(params.query); break;
+    case 'tag': renderTagPage(params.tag); break;
     default: renderHome();
   }
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1423,20 +1852,94 @@ function findContattoBySlug(slug) {
 function renderHome() {
   const procs = state.index.procedure;
   const recent = [...procs].sort((a, b) => new Date(b.ultima_modifica || 0) - new Date(a.ultima_modifica || 0)).slice(0, 6);
+
+  const pins = (state.userPrefs && state.userPrefs.pins) || [];
+  const pinsByType = {
+    schede: [],      // procedura, clinica, modulo, tabella
+    cartelle: [],    // categoria, sottocategoria, clinica-sub, capitolo
+    contatti: [],
+    gruppi: []
+  };
+  pins.forEach(p => {
+    if (['procedura','clinica','modulo','tabella'].includes(p.type)) pinsByType.schede.push(p);
+    else if (['categoria','sottocategoria','clinica-sub','capitolo'].includes(p.type)) pinsByType.cartelle.push(p);
+    else if (p.type === 'contatto') pinsByType.contatti.push(p);
+    else if (p.type === 'gruppo') pinsByType.gruppi.push(p);
+  });
+
+  // Detect guardia group
+  const guardiaGroup = (state.index.numeri?.gruppi || []).find(g =>
+    /guardia|medici di guardia|mdg/i.test(g.nome) || /guardia|mdg/i.test(g.id || '')
+  );
+  const emergenzeCount = procs.filter(p => p.categoria === 'emergenze').length;
+  const username = state.session?.username || '';
+
   $('main-content').innerHTML = `
-    <div class="home-hero">
-      <h1 class="home-title">Manuale di <em>reparto</em></h1>
-      <p class="home-lead">Procedure, moduli e numeri utili per gli specializzandi di Neurologia. Mantenuto collettivamente, aggiornato in continuo.</p>
+    <div class="home-hero" style="padding-bottom:16px;">
+      <h1 class="home-title">Home di <em>${escapeHtml(username)}</em></h1>
+      <p class="home-lead">Accesso rapido alle tue risorse fissate. Usa ⭐ su qualsiasi pagina per aggiungere alla home.</p>
     </div>
+
     <div class="home-section">
-      <div class="home-section-title"><span>Procedure</span></div>
-      <div class="procedure-grid">
-        ${procs.map(p => renderProcedureCard(p)).join('')}
-        <div class="procedure-card edit-only" style="border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);" onclick="nuovaProcedura()">
-          <span style="font-family:var(--serif);font-style:italic;">+ Nuova procedura</span>
+      <div class="home-quickaccess">
+        <div class="quickaccess-card quickaccess-emergency" onclick="navigate('procedure-cat', {cat:'emergenze'})">
+          <div class="quickaccess-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="quickaccess-text">
+            <div class="quickaccess-title">Emergenze</div>
+            <div class="quickaccess-sub">${emergenzeCount === 0 ? 'Nessuna procedura' : `${emergenzeCount} procedur${emergenzeCount === 1 ? 'a' : 'e'}`}</div>
+          </div>
+        </div>
+
+        <div class="quickaccess-card quickaccess-guardia" onclick="${guardiaGroup ? `navigate('numeri', {filter:'${escapeJs(guardiaGroup.id)}'})` : `navigate('numeri')`}">
+          <div class="quickaccess-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <div class="quickaccess-text">
+            <div class="quickaccess-title">Medici di guardia</div>
+            <div class="quickaccess-sub">${guardiaGroup ? `${(guardiaGroup.contatti || []).length} contatti` : 'Rubrica telefonica'}</div>
+          </div>
         </div>
       </div>
     </div>
+
+    ${pinsByType.schede.length > 0 ? `
+      <div class="home-section home-pins-group">
+        <div class="home-section-title"><span>Schede fissate</span></div>
+        <div class="procedure-grid">${pinsByType.schede.map(p => renderPinnedSchedaCard(p)).filter(Boolean).join('')}</div>
+      </div>
+    ` : ''}
+
+    ${pinsByType.cartelle.length > 0 ? `
+      <div class="home-section home-pins-group">
+        <div class="home-section-title"><span>Cartelle fissate</span></div>
+        ${pinsByType.cartelle.map(p => renderPinnedCartella(p)).filter(Boolean).join('')}
+      </div>
+    ` : ''}
+
+    ${pinsByType.contatti.length > 0 ? `
+      <div class="home-section home-pins-group">
+        <div class="home-section-title"><span>Contatti fissati</span></div>
+        ${pinsByType.contatti.map(p => renderPinnedContatto(p.id)).filter(Boolean).join('')}
+      </div>
+    ` : ''}
+
+    ${pinsByType.gruppi.length > 0 ? `
+      <div class="home-section home-pins-group">
+        <div class="home-section-title"><span>Gruppi fissati</span></div>
+        ${pinsByType.gruppi.map(p => renderPinnedGruppo(p.id)).filter(Boolean).join('')}
+      </div>
+    ` : ''}
+
+    ${pins.length === 0 ? `
+      <div class="home-section">
+        <div class="empty-pins">
+          Nessuna risorsa fissata. Apri una scheda, una cartella o un contatto e clicca ☆ per aggiungerli qui.
+        </div>
+      </div>
+    ` : ''}
+
     <div class="home-section">
       <div class="home-section-title"><span>Modificate di recente</span></div>
       ${recent.map(p => `
@@ -1449,23 +1952,119 @@ function renderHome() {
         </div>
       `).join('') || '<p style="color:var(--ink-muted);">Nessuna modifica recente.</p>'}
     </div>
-    <div class="home-section">
-      <div class="home-section-title"><span>Accesso rapido</span></div>
-      <div class="procedure-grid">
-        <div class="procedure-card" onclick="navigate('numeri')">
-          <div class="procedure-card-title">Numeri utili</div>
-          <div class="procedure-card-meta">Rubrica telefonica del reparto</div>
-        </div>
-        <div class="procedure-card" onclick="navigate('numeri', {filter:'guardia'})">
-          <div class="procedure-card-title">MdG di guardia</div>
-          <div class="procedure-card-meta">Medici di guardia delle specialità</div>
-        </div>
-        <div class="procedure-card" onclick="navigate('numeri', {filter:'urgenza'})">
-          <div class="procedure-card-title">Urgenze</div>
-          <div class="procedure-card-meta">Contatti per emergenze e urgenze</div>
-        </div>
+
+    <div style="text-align:center;padding:32px 0 16px;">
+      <span style="font-size:13px;color:var(--ink-muted);cursor:pointer;" onclick="navigate('manuale')">
+        Apri il manuale completo →
+      </span>
+    </div>`;
+}
+
+function renderPinnedSchedaCard(pin) {
+  if (pin.type === 'procedura') {
+    const p = state.index.procedure.find(x => x.slug === pin.slug);
+    return p ? renderProcedureCard(p) : null;
+  }
+  if (pin.type === 'clinica') {
+    const c = (state.index.clinica || []).find(x => x.slug === pin.slug);
+    return c ? renderClinicaCard(c) : null;
+  }
+  if (pin.type === 'modulo') {
+    const m = state.index.moduli.find(x => x.slug === pin.slug);
+    if (!m) return null;
+    return `<div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeJs(m.slug)}'})">
+      <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}</div>
+      <div class="procedure-card-meta"><span>Modulo</span></div>
+    </div>`;
+  }
+  if (pin.type === 'tabella') {
+    const t = state.index.tabelle.find(x => x.slug === pin.slug);
+    if (!t) return null;
+    return `<div class="procedure-card" onclick="navigate('tabella', {slug:'${escapeJs(t.slug)}'})">
+      <div class="procedure-card-title">${escapeHtml(t.titolo || t.slug)}</div>
+      <div class="procedure-card-meta"><span>Tabella</span></div>
+    </div>`;
+  }
+  return null;
+}
+
+function renderPinnedCartella(pin) {
+  if (pin.type === 'categoria') {
+    const count = state.index.procedure.filter(p => p.categoria === pin.cat).length;
+    return `<div class="pinned-folder" onclick="navigate('procedure-cat', {cat:'${escapeJs(pin.cat)}'})">
+      <span class="pinned-folder-icon">›</span>
+      <div class="pinned-folder-text">
+        <div class="pinned-folder-label">${escapeHtml(CATEGORIA_LABELS[pin.cat] || pin.cat)}</div>
+        <div class="pinned-folder-sub">${count} procedur${count === 1 ? 'a' : 'e'} · categoria</div>
       </div>
     </div>`;
+  }
+  if (pin.type === 'sottocategoria') {
+    const count = state.index.procedure.filter(p => p.categoria === pin.cat && p.sottocategoria === pin.sub).length;
+    return `<div class="pinned-folder" onclick="navigate('procedure-cat', {cat:'${escapeJs(pin.cat)}', sub:'${escapeJs(pin.sub)}'})">
+      <span class="pinned-folder-icon">›</span>
+      <div class="pinned-folder-text">
+        <div class="pinned-folder-label">${escapeHtml(SOTTO_LABELS[pin.sub] || pin.sub)}</div>
+        <div class="pinned-folder-sub">${escapeHtml(CATEGORIA_LABELS[pin.cat] || pin.cat)} · ${count} sched${count === 1 ? 'a' : 'e'}</div>
+      </div>
+    </div>`;
+  }
+  if (pin.type === 'clinica-sub') {
+    const count = (state.index.clinica || []).filter(c => c.sottocategoria === pin.sub).length;
+    return `<div class="pinned-folder" onclick="navigate('clinica', {sub:'${escapeJs(pin.sub)}'})">
+      <span class="pinned-folder-icon">›</span>
+      <div class="pinned-folder-text">
+        <div class="pinned-folder-label">${escapeHtml(SOTTO_LABELS[pin.sub] || pin.sub)}</div>
+        <div class="pinned-folder-sub">Clinica · ${count} sched${count === 1 ? 'a' : 'e'}</div>
+      </div>
+    </div>`;
+  }
+  if (pin.type === 'capitolo') {
+    const cap = (state.index.capitoli || []).find(c => c.id === pin.id);
+    if (!cap) return null;
+    const pezzi = state.index.procedure.filter(p => p.capitolo === pin.id).length;
+    return `<div class="pinned-folder" onclick="navigate('capitolo', {id:'${escapeJs(pin.id)}'})">
+      <span class="pinned-folder-icon">›</span>
+      <div class="pinned-folder-text">
+        <div class="pinned-folder-label">${escapeHtml(cap.titolo)}</div>
+        <div class="pinned-folder-sub">Manuale · Capitolo ${cap.ordine || '·'} · ${pezzi} pezzi</div>
+      </div>
+    </div>`;
+  }
+  return null;
+}
+
+function renderPinnedContatto(id) {
+  // Find the contact across all groups
+  if (!state.index.numeri || !state.index.numeri.gruppi) return null;
+  let foundContact = null, foundGroup = null;
+  for (const g of state.index.numeri.gruppi) {
+    const c = (g.contatti || []).find(x => x.id === id);
+    if (c) { foundContact = c; foundGroup = g; break; }
+  }
+  if (!foundContact) return null;
+  const nums = (foundContact.numeri || []).map(n =>
+    `<button class="numero-btn" onclick="event.stopPropagation();copyNumber('${escapeHtml(n)}')" title="Copia">${escapeHtml(n)}</button>`
+  ).join(' ');
+  return `<div class="pinned-contact" onclick="navigate('numeri', {filter:'${escapeJs(id)}'})" style="cursor:pointer;">
+    <span class="pinned-folder-icon">☎</span>
+    <div class="pinned-contact-label">${escapeHtml(foundContact.etichetta)}<div style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);margin-top:2px;">${escapeHtml(foundGroup.nome)}</div></div>
+    <div class="pinned-contact-num">${nums || '—'}</div>
+  </div>`;
+}
+
+function renderPinnedGruppo(id) {
+  if (!state.index.numeri || !state.index.numeri.gruppi) return null;
+  const g = state.index.numeri.gruppi.find(x => x.id === id);
+  if (!g) return null;
+  const count = (g.contatti || []).length;
+  return `<div class="pinned-folder" onclick="navigate('numeri', {filter:'${escapeJs(id)}'})">
+    <span class="pinned-folder-icon">📞</span>
+    <div class="pinned-folder-text">
+      <div class="pinned-folder-label">${escapeHtml(g.nome)}</div>
+      <div class="pinned-folder-sub">${count} contatt${count === 1 ? 'o' : 'i'}</div>
+    </div>
+  </div>`;
 }
 
 function renderProcedureCard(p) {
@@ -1532,7 +2131,7 @@ function renderCapitolo(capId) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Manuale', route:'manuale'}])} · Capitolo ${cap.ordine || ''}</div>
-      <h1 class="page-title">${escapeHtml(cap.titolo)}</h1>
+      <h1 class="page-title">${escapeHtml(cap.titolo)} ${renderPinButton('capitolo', capId)}</h1>
       ${cap.descrizione ? `<div style="margin-top:12px;font-size:14px;color:var(--ink-muted);font-style:italic;font-family:var(--serif);">${escapeHtml(cap.descrizione)}</div>` : ''}
       <div class="page-actions">
         <button class="btn edit-only" onclick="nuovaProcedura({capitolo:'${escapeHtml(capId)}'})">+ Aggiungi pezzo al capitolo</button>
@@ -1649,7 +2248,7 @@ function renderProcedureByCategoria(cat, subFilter) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${breadcrumb}</div>
-      <h1 class="page-title">${escapeHtml(pageTitle)}</h1>
+      <h1 class="page-title">${escapeHtml(pageTitle)} ${subFilter ? renderPinButton('sottocategoria', cat, subFilter) : renderPinButton('categoria', cat)}</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${filtered.length} procedur${filtered.length === 1 ? 'a' : 'e'}</div>
       <div class="page-actions">
         <button class="btn edit-only" onclick="nuovaProcedura({categoria:'${escapeHtml(cat)}'${subFilter && subFilter !== '_senza' ? `, sottocategoria:'${escapeHtml(subFilter)}'` : ''}})">+ Nuova procedura</button>
@@ -1863,7 +2462,7 @@ function renderSchedaRelated(scheda, isClinica) {
 function renderProcedura(slug) {
   const proc = state.index.procedure.find(p => p.slug === slug);
   if (!proc) return renderError('Procedura non trovata', slug);
-  const tagsHtml = (proc.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
+  const tagsHtml = (proc.tag || []).map(t => `<span class="tag tag-procedura clickable" onclick="navigate('tag', {tag:'${escapeJs(t)}'})">${escapeHtml(t)}</span>`).join('');
 
   const catLabel = proc.categoria ? CATEGORIA_LABELS[proc.categoria] || proc.categoria : 'Procedure';
   const subLabel = proc.sottocategoria ? SOTTO_LABELS[proc.sottocategoria] || proc.sottocategoria : null;
@@ -1883,7 +2482,7 @@ function renderProcedura(slug) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${breadcrumb}</div>
-      <h1 class="page-title">${escapeHtml(proc.titolo || proc.slug)}</h1>
+      <h1 class="page-title">${escapeHtml(proc.titolo || proc.slug)} ${renderPinButton('procedura', proc.slug)}</h1>
       <div style="margin-top:12px;">${tagsHtml}</div>
       <div class="page-meta">
         <div class="page-meta-item">Aggiornata ${timeAgo(proc.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(proc.modificato_da || '—')}</strong></div>
@@ -1933,7 +2532,7 @@ function renderClinicaList(subFilter) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${breadcrumb}</div>
-      <h1 class="page-title">${escapeHtml(pageTitle)}</h1>
+      <h1 class="page-title">${escapeHtml(pageTitle)} ${subFilter ? renderPinButton('clinica-sub', subFilter) : ''}</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${subtitle}</div>
       <div class="page-actions">
         <button class="btn edit-only" onclick="nuovaSchedaClinica(${subFilter && subFilter !== '_senza' ? `{sottocategoria:'${escapeHtml(subFilter)}'}` : ''})">+ Nuova scheda clinica</button>
@@ -1973,7 +2572,7 @@ function renderClinicaCard(c) {
 function renderSchedaClinica(slug) {
   const scheda = (state.index.clinica || []).find(c => c.slug === slug);
   if (!scheda) return renderError('Scheda clinica non trovata', slug);
-  const tagsHtml = (scheda.tag || []).map(t => `<span class="tag tag-procedura">${escapeHtml(t)}</span>`).join('');
+  const tagsHtml = (scheda.tag || []).map(t => `<span class="tag tag-procedura clickable" onclick="navigate('tag', {tag:'${escapeJs(t)}'})">${escapeHtml(t)}</span>`).join('');
   const subLabel = scheda.sottocategoria ? SOTTO_LABELS[scheda.sottocategoria] || scheda.sottocategoria : null;
   const breadcrumb = buildBreadcrumb([
     { label: 'Clinica', route: 'clinica' },
@@ -1984,7 +2583,7 @@ function renderSchedaClinica(slug) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${breadcrumb}</div>
-      <h1 class="page-title">${escapeHtml(scheda.titolo || scheda.slug)}</h1>
+      <h1 class="page-title">${escapeHtml(scheda.titolo || scheda.slug)} ${renderPinButton('clinica', scheda.slug)}</h1>
       <div style="margin-top:12px;">${tagsHtml}</div>
       <div class="page-meta">
         <div class="page-meta-item">Aggiornata ${timeAgo(scheda.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(scheda.modificato_da || '—')}</strong></div>
@@ -2089,12 +2688,24 @@ function renderEditorUIClinica(slug, frontmatter, body) {
             </select>
           </div>
           <div class="field" style="grid-column:1/-1;">
-            <label>Tag (separati da virgola)</label>
-            <input type="text" id="meta-tag" value="${escapeHtml((frontmatter.tag || []).join(', '))}">
+            <label>Tag</label>
+            ${renderChipsField({
+              id: 'meta-tag-chips',
+              values: frontmatter.tag || [],
+              suggestions: collectAllTags(),
+              placeholder: 'cerca o crea tag…',
+              allowNew: true
+            })}
           </div>
           <div class="field" style="grid-column:1/-1;">
-            <label>Termini equivalenti (separati da virgola)</label>
-            <input type="text" id="meta-termini" value="${escapeHtml((frontmatter.termini_equivalenti || []).join(', '))}">
+            <label>Termini equivalenti</label>
+            ${renderChipsField({
+              id: 'meta-termini-chips',
+              values: frontmatter.termini_equivalenti || [],
+              suggestions: collectAllTermini(),
+              placeholder: 'cerca o crea sinonimo…',
+              allowNew: true
+            })}
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Nota modifica (va in cronologia)</label>
@@ -2141,7 +2752,11 @@ function renderEditorUIClinica(slug, frontmatter, body) {
   // Image upload handler for clinica editor
   attachImageUploadHandler('img-file-input-clinica', 'img-upload-status-clinica');
 
-  ['meta-titolo','meta-sottocategoria','meta-tag','meta-termini','meta-note-modifica','meta-advanced-yaml'].forEach(id => {
+  // Init chips
+  chipsInit('meta-tag-chips', collectAllTags());
+  chipsInit('meta-termini-chips', collectAllTermini());
+
+  ['meta-titolo','meta-sottocategoria','meta-note-modifica','meta-advanced-yaml'].forEach(id => {
     const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
   });
 
@@ -2174,8 +2789,8 @@ async function saveSchedaClinica() {
       titolo: $('meta-titolo').value.trim() || ctx.slug,
       categoria: 'clinica',
       sottocategoria: $('meta-sottocategoria').value,
-      tag: $('meta-tag').value.split(',').map(s => s.trim()).filter(Boolean),
-      termini_equivalenti: $('meta-termini').value.split(',').map(s => s.trim()).filter(Boolean),
+      tag: chipsGet('meta-tag-chips'),
+      termini_equivalenti: chipsGet('meta-termini-chips'),
       ...advancedFm,
       ultima_modifica: nowIso(),
       modificato_da: state.session.username
@@ -2410,6 +3025,15 @@ function beforeUnloadHandler(e) {
   }
 }
 
+// Best-effort flush of pending pin saves when tab closes.
+// Uses synchronous-style approach by firing a non-awaited persist().
+window.addEventListener('beforeunload', () => {
+  if (state.userPrefs && state.userPrefs._pending) {
+    if (state.userPrefs._saveTimer) clearTimeout(state.userPrefs._saveTimer);
+    userPrefs.persist().catch(() => {});
+  }
+});
+
 function renderEditorUI(slug, frontmatter, body) {
   const moduliOpts = state.index.moduli.map(m => m.slug);
   const tabelleOpts = state.index.tabelle.map(t => t.slug);
@@ -2438,13 +3062,24 @@ function renderEditorUI(slug, frontmatter, body) {
           <div class="field">
             <label for="meta-categoria">Categoria</label>
             <select id="meta-categoria">
-              <option value="procedure-reparto" ${frontmatter.categoria === 'procedure-reparto' ? 'selected' : ''}>Procedura di reparto</option>
-              <option value="workflow" ${frontmatter.categoria === 'workflow' ? 'selected' : ''}>Workflow / Guida</option>
-              <option value="educational" ${frontmatter.categoria === 'educational' ? 'selected' : ''}>Educational</option>
+              ${['bedside','richieste','farmacologiche','emergenze','gestione'].map(k =>
+                `<option value="${k}" ${frontmatter.categoria === k ? 'selected' : ''}>${escapeHtml(CATEGORIA_LABELS[k] || k)}</option>`
+              ).join('')}
             </select>
           </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Sottocategoria</label>
+            ${renderChipsField({
+              id: 'meta-sottocategoria-chips',
+              values: frontmatter.sottocategoria ? [frontmatter.sottocategoria] : [],
+              suggestions: [],
+              placeholder: 'cerca o crea una sottocategoria…',
+              allowNew: true
+            })}
+            <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Una sola sottocategoria. Le opzioni dipendono dalla Categoria scelta.</div>
+          </div>
           <div class="field">
-            <label for="meta-capitolo">Capitolo</label>
+            <label for="meta-capitolo">Capitolo del manuale</label>
             <select id="meta-capitolo">
               <option value="">— nessuno —</option>
               ${(state.index.capitoli || []).map(c => `<option value="${escapeHtml(c.id)}" ${frontmatter.capitolo === c.id ? 'selected' : ''}>${escapeHtml(c.ordine ? c.ordine + '. ' : '')}${escapeHtml(c.titolo)}</option>`).join('')}
@@ -2454,17 +3089,29 @@ function renderEditorUI(slug, frontmatter, body) {
             <label for="meta-ordine-cap">Ordine nel capitolo</label>
             <input type="text" id="meta-ordine-cap" class="mono-input" value="${escapeHtml(frontmatter.ordine_nel_capitolo || '')}" placeholder="1, 2, 3...">
           </div>
-          <div class="field">
-            <label for="meta-tag">Tag (separati da virgola)</label>
-            <input type="text" id="meta-tag" value="${escapeHtml((frontmatter.tag || []).join(', '))}">
+          <div class="field" style="grid-column:1/-1;">
+            <label>Tag</label>
+            ${renderChipsField({
+              id: 'meta-tag-chips',
+              values: frontmatter.tag || [],
+              suggestions: collectAllTags(),
+              placeholder: 'cerca o crea tag…',
+              allowNew: true
+            })}
           </div>
           <div class="field">
             <label for="meta-tempo">Tempo esecuzione (min)</label>
             <input type="text" id="meta-tempo" class="mono-input" value="${escapeHtml(frontmatter.tempo_esecuzione_min || '')}">
           </div>
           <div class="field" style="grid-column:1/-1;">
-            <label for="meta-termini">Termini equivalenti / sinonimi (separati da virgola)</label>
-            <input type="text" id="meta-termini" value="${escapeHtml((frontmatter.termini_equivalenti || []).join(', '))}">
+            <label>Termini equivalenti / sinonimi</label>
+            ${renderChipsField({
+              id: 'meta-termini-chips',
+              values: frontmatter.termini_equivalenti || [],
+              suggestions: collectAllTermini(),
+              placeholder: 'cerca o crea sinonimo…',
+              allowNew: true
+            })}
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label for="meta-note-modifica">Nota breve su questa modifica (appare in cronologia)</label>
@@ -2478,21 +3125,45 @@ function renderEditorUI(slug, frontmatter, body) {
       <div class="editor-section-head"><div class="editor-section-title">Relazioni</div></div>
       <div class="editor-section-body">
         <div class="meta-grid">
-          <div class="field">
-            <label>Moduli correlati (slug, separati da virgola)</label>
-            <input type="text" id="meta-moduli" class="mono-input" value="${escapeHtml((frontmatter.moduli_correlati || []).join(', '))}" placeholder="es. ${moduliOpts.slice(0,2).join(', ')}">
-          </div>
-          <div class="field">
-            <label>Tabelle correlate</label>
-            <input type="text" id="meta-tabelle" class="mono-input" value="${escapeHtml((frontmatter.tabelle_correlate || []).join(', '))}" placeholder="es. ${tabelleOpts.slice(0,2).join(', ')}">
-          </div>
-          <div class="field">
+          <div class="field" style="grid-column:1/-1;">
             <label>Procedure correlate</label>
-            <input type="text" id="meta-procedure" class="mono-input" value="${escapeHtml((frontmatter.procedure_correlate || []).join(', '))}" placeholder="es. ${proceduraOpts.slice(0,2).join(', ')}">
+            ${renderChipsField({
+              id: 'meta-procedure-chips',
+              values: frontmatter.procedure_correlate || [],
+              suggestions: state.index.procedure.filter(p => p.slug !== slug).map(p => ({ id: p.slug, label: p.titolo || p.slug })),
+              placeholder: 'cerca procedure…',
+              allowNew: false
+            })}
           </div>
-          <div class="field">
-            <label>Numeri correlati (id contatti)</label>
-            <input type="text" id="meta-numeri" class="mono-input" value="${escapeHtml((frontmatter.numeri_correlati || []).join(', '))}" placeholder="es. lab-neurologia, mdg-neurologia">
+          <div class="field" style="grid-column:1/-1;">
+            <label>Moduli correlati</label>
+            ${renderChipsField({
+              id: 'meta-moduli-chips',
+              values: frontmatter.moduli_correlati || [],
+              suggestions: state.index.moduli.map(m => ({ id: m.slug, label: m.titolo || m.slug })),
+              placeholder: 'cerca moduli…',
+              allowNew: false
+            })}
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Tabelle correlate</label>
+            ${renderChipsField({
+              id: 'meta-tabelle-chips',
+              values: frontmatter.tabelle_correlate || [],
+              suggestions: state.index.tabelle.map(t => ({ id: t.slug, label: t.titolo || t.slug })),
+              placeholder: 'cerca tabelle…',
+              allowNew: false
+            })}
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Numeri correlati</label>
+            ${renderChipsField({
+              id: 'meta-numeri-chips',
+              values: frontmatter.numeri_correlati || [],
+              suggestions: collectAllContattiSuggestions(),
+              placeholder: 'cerca contatto…',
+              allowNew: false
+            })}
           </div>
         </div>
       </div>
@@ -2534,7 +3205,23 @@ function renderEditorUI(slug, frontmatter, body) {
   // Image upload handler for procedure editor
   attachImageUploadHandler('img-file-input-proc', 'img-upload-status-proc');
 
-  ['meta-titolo','meta-categoria','meta-capitolo','meta-ordine-cap','meta-tag','meta-tempo','meta-termini','meta-note-modifica','meta-moduli','meta-tabelle','meta-procedure','meta-numeri'].forEach(id => {
+  // Initialize chips fields
+  function refreshSottocategorieChips() {
+    const cat = $('meta-categoria').value;
+    const c = document.getElementById('meta-sottocategoria-chips');
+    if (c) c._suggestions = buildSottocategorieForCategoria(cat);
+  }
+  chipsInit('meta-sottocategoria-chips', buildSottocategorieForCategoria(frontmatter.categoria || 'bedside'));
+  chipsInit('meta-tag-chips', collectAllTags());
+  chipsInit('meta-termini-chips', collectAllTermini());
+  chipsInit('meta-procedure-chips', state.index.procedure.filter(p => p.slug !== slug).map(p => ({ id: p.slug, label: p.titolo || p.slug })));
+  chipsInit('meta-moduli-chips', state.index.moduli.map(m => ({ id: m.slug, label: m.titolo || m.slug })));
+  chipsInit('meta-tabelle-chips', state.index.tabelle.map(t => ({ id: t.slug, label: t.titolo || t.slug })));
+  chipsInit('meta-numeri-chips', collectAllContattiSuggestions());
+
+  $('meta-categoria').addEventListener('change', refreshSottocategorieChips);
+
+  ['meta-titolo','meta-categoria','meta-capitolo','meta-ordine-cap','meta-tempo','meta-note-modifica'].forEach(id => {
     const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
   });
 
@@ -2559,20 +3246,24 @@ async function saveProcedura() {
     const nf = { ...ctx.originalFrontmatter };
     nf.titolo = $('meta-titolo').value.trim() || ctx.slug;
     nf.categoria = $('meta-categoria').value;
+    // Sottocategoria (chips single-value)
+    const subChips = typeof chipsGet === 'function' ? chipsGet('meta-sottocategoria-chips') : [];
+    if (subChips.length > 0) nf.sottocategoria = subChips[0]; else delete nf.sottocategoria;
     const capSel = $('meta-capitolo').value;
     if (capSel) nf.capitolo = capSel; else delete nf.capitolo;
     const ordCap = $('meta-ordine-cap').value.trim();
     if (ordCap) { const n = parseInt(ordCap, 10); nf.ordine_nel_capitolo = isNaN(n) ? ordCap : n; }
     else delete nf.ordine_nel_capitolo;
-    nf.tag = $('meta-tag').value.split(',').map(s => s.trim()).filter(Boolean);
+    // Tag / termini / relazioni from chips
+    nf.tag = typeof chipsGet === 'function' ? chipsGet('meta-tag-chips') : [];
     const tempo = $('meta-tempo').value.trim();
     if (tempo) { const n = parseInt(tempo, 10); nf.tempo_esecuzione_min = isNaN(n) ? tempo : n; }
     else delete nf.tempo_esecuzione_min;
-    nf.termini_equivalenti = $('meta-termini').value.split(',').map(s => s.trim()).filter(Boolean);
-    nf.moduli_correlati = $('meta-moduli').value.split(',').map(s => s.trim()).filter(Boolean);
-    nf.tabelle_correlate = $('meta-tabelle').value.split(',').map(s => s.trim()).filter(Boolean);
-    nf.procedure_correlate = $('meta-procedure').value.split(',').map(s => s.trim()).filter(Boolean);
-    nf.numeri_correlati = $('meta-numeri').value.split(',').map(s => s.trim()).filter(Boolean);
+    nf.termini_equivalenti = chipsGet('meta-termini-chips');
+    nf.moduli_correlati = chipsGet('meta-moduli-chips');
+    nf.tabelle_correlate = chipsGet('meta-tabelle-chips');
+    nf.procedure_correlate = chipsGet('meta-procedure-chips');
+    nf.numeri_correlati = chipsGet('meta-numeri-chips');
     nf.ultima_modifica = nowIso();
     nf.modificato_da = state.session.username;
 
@@ -2723,7 +3414,7 @@ function renderNumeri(filter) {
 
     ${filteredGruppi.map(g => `
       <div class="numeri-group">
-        <h2 class="numeri-group-title">${escapeHtml(g.nome)}</h2>
+        <h2 class="numeri-group-title">${escapeHtml(g.nome)} ${renderPinButton('gruppo', g.id)}</h2>
         ${(g.contatti || []).map(c => renderNumeroRow(c)).join('')}
       </div>
     `).join('')}`;
@@ -2741,7 +3432,7 @@ function renderNumeroRow(c) {
   return `
     <div class="numero-row">
       <div>
-        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${escapeHtml(c.etichetta)}${orari}</div>
+        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}</div>
         ${note}
       </div>
       <div class="numero-nums">${nums || '<span style="font-size:12px;color:var(--ink-muted);">—</span>'}</div>
@@ -2789,7 +3480,7 @@ function renderModulo(slug) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Moduli', route:'moduli'}])}</div>
-      <h1 class="page-title">${escapeHtml(m.titolo || slug)}</h1>
+      <h1 class="page-title">${escapeHtml(m.titolo || slug)} ${renderPinButton('modulo', slug)}</h1>
       <div class="page-meta">
         <div class="page-meta-item">Tipo: ${escapeHtml(m.tipo || '—')}</div>
         <div class="page-meta-item">Aggiornato ${timeAgo(m.ultima_modifica)}</div>
@@ -2844,7 +3535,7 @@ function renderTabella(slug) {
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Tabelle', route:'tabelle'}])}</div>
-      <h1 class="page-title">${escapeHtml(t.titolo || slug)}</h1>
+      <h1 class="page-title">${escapeHtml(t.titolo || slug)} ${renderPinButton('tabella', slug)}</h1>
       <div class="page-meta">
         <div class="page-meta-item">Aggiornata ${timeAgo(t.ultima_modifica)} da <span style="font-family:var(--mono);color:var(--ink-soft);">${escapeHtml(t.modificato_da || '—')}</span></div>
       </div>
@@ -3937,6 +4628,38 @@ async function nuovoContatto(gruppoId) { toast('TODO: nuovo contatto in ' + grup
 
 
 /* ============================ SEARCH ============================ */
+function renderTagPage(tagName) {
+  if (!tagName) return navigate('home');
+  const tagLower = tagName.toLowerCase();
+  const matchingProcs = state.index.procedure.filter(p => (p.tag || []).some(t => t.toLowerCase() === tagLower));
+  const matchingClinica = (state.index.clinica || []).filter(c => (c.tag || []).some(t => t.toLowerCase() === tagLower));
+  const total = matchingProcs.length + matchingClinica.length;
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Tag</div>
+      <h1 class="page-title">#${escapeHtml(tagName)}</h1>
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${total} sched${total === 1 ? 'a' : 'e'} con questo tag</div>
+    </div>
+    ${matchingProcs.length > 0 ? `
+      <div class="home-section">
+        <div class="home-section-title"><span>Procedure (${matchingProcs.length})</span></div>
+        <div class="procedure-grid">
+          ${matchingProcs.map(p => renderProcedureCard(p)).join('')}
+        </div>
+      </div>
+    ` : ''}
+    ${matchingClinica.length > 0 ? `
+      <div class="home-section">
+        <div class="home-section-title"><span>Clinica (${matchingClinica.length})</span></div>
+        <div class="procedure-grid">
+          ${matchingClinica.map(c => renderClinicaCard(c)).join('')}
+        </div>
+      </div>
+    ` : ''}
+    ${total === 0 ? `<p style="color:var(--ink-muted);padding:24px 0;">Nessuna scheda usa il tag "${escapeHtml(tagName)}".</p>` : ''}`;
+}
+
 function renderSearchResults(query) {
   if (!state.fuse || !query || query.length < 2) {
     $('main-content').innerHTML = `
