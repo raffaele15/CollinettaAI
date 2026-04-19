@@ -309,6 +309,16 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .numero-row-guardia .numero-label{color:var(--danger);font-weight:500}
 .numero-row-reparto{background:linear-gradient(to right,var(--accent-soft) 0%,transparent 100%);border-left:3px solid var(--accent);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
 .numero-row-reparto .numero-label{color:var(--accent);font-weight:500}
+.uoc-compact-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-top:4px}
+.uoc-compact-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;cursor:pointer;text-align:left;font-family:inherit;transition:border-color .12s,background .12s;width:100%}
+.uoc-compact-item:hover{border-color:var(--rule-strong);background:var(--bg-sink)}
+.uoc-compact-name{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);line-height:1.25;flex:1;min-width:0}
+.uoc-compact-meta{font-family:var(--mono);font-size:11px;color:var(--ink-muted);white-space:nowrap;letter-spacing:.02em}
+.kind-chip{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:11px;background:var(--bg-paper);color:var(--ink-soft);border:1px solid var(--rule);cursor:pointer;transition:all .12s;white-space:nowrap;line-height:1.4}
+.kind-chip:hover{border-color:var(--chip-color,var(--ink-soft));color:var(--chip-color,var(--ink))}
+.kind-chip.active{background:var(--chip-bg,var(--accent-soft));color:var(--chip-color,var(--accent));border-color:var(--chip-color,var(--accent));font-weight:500}
+.kind-chip-reset{font-family:var(--mono);font-size:10px;padding:3px 6px;border:none;background:transparent;color:var(--ink-muted);cursor:pointer;opacity:.6;transition:opacity .12s}
+.kind-chip-reset:hover{opacity:1;color:var(--danger)}
 .numero-label{font-size:14px;color:var(--ink-soft);line-height:1.4}
 .numero-label .badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;margin-right:6px;border-radius:2px;background:var(--warning-soft);color:var(--warning)}
 .numero-nums{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -1681,6 +1691,19 @@ function rebuildSearchIndex() {
       const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
       const sedi = g.sedi_operative && g.sedi_operative.length ? g.sedi_operative : (g.sede_operativa ? [g.sede_operativa] : []);
       const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');
+      // Classifica il contatto per permettere la ricerca per "reparto", "guardia", "ambulatorio", "direzione"
+      const kind = (typeof classifyContatto === 'function') ? classifyContatto(c).kind : '';
+      const kindAliases = {
+        guardia: 'guardia mdg reperibile urgenza',
+        reparto: 'reparto degenza degenze infermieri guardiola caposala coordinatore ucic utic terapia intensiva emodinamica elettrofisiologia bancone',
+        ambulatorio: 'ambulatorio amb dh day hospital',
+        direzione: 'direttore direzione segreteria'
+      };
+      const termini = [
+        c.sezione || '',
+        kind,
+        kindAliases[kind] || ''
+      ].filter(Boolean).join(' ');
       docs.push({
         type: 'numero', slug: c.id,
         titolo: c.etichetta,
@@ -1690,7 +1713,8 @@ function rebuildSearchIndex() {
         sede: sedeStr,
         numeri: numeriStr,
         ospedale: g._source || 'aopd',
-        tag: (c.tag || []).join(' ')
+        tag: (c.tag || []).join(' '),
+        termini: termini
       });
     });
   });
@@ -3485,6 +3509,10 @@ async function handleConflict(ctx, ourNewContent, commitMsg) {
 /* ============================ VIEW — NUMERI ============================ */
 let rubricaSearchDebounce = null;
 function onRubricaSearchInput(value) {
+  // Se la query è cambiata, resetta i gruppi espansi manualmente
+  if ((state.rubricaSearch || '') !== value) {
+    if (state.rubricaExpandedGroups) state.rubricaExpandedGroups.clear();
+  }
   state.rubricaSearch = value;
   if (rubricaSearchDebounce) clearTimeout(rubricaSearchDebounce);
   rubricaSearchDebounce = setTimeout(() => {
@@ -3506,6 +3534,7 @@ function onRubricaSearchInput(value) {
 
 function clearRubricaSearch() {
   state.rubricaSearch = '';
+  if (state.rubricaExpandedGroups) state.rubricaExpandedGroups.clear();
   const params = state.currentParams || {};
   renderNumeri(params.filter);
   const input = document.getElementById('rubrica-search-input');
@@ -3523,24 +3552,37 @@ function openGuardieRubrica() {
 }
 
 function showAllFromGroup(groupId) {
-  // Resetta la ricerca e rimuove eventuali filtri per mostrare il gruppo intero
-  state.rubricaSearch = '';
-  navigate('numeri');
-  // Dopo il render, scrolla al gruppo
-  setTimeout(() => {
-    const groups = document.querySelectorAll('.numeri-group');
-    for (const el of groups) {
-      // Il titolo contiene il nome del gruppo; trovo matchando con onclick dei bottoni edit
-      const delBtn = el.querySelector(`[onclick*="deleteGruppoNumeri('${groupId}')"]`);
-      if (delBtn) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        el.style.transition = 'background-color 0.3s';
-        el.style.backgroundColor = 'rgba(43,74,111,0.06)';
-        setTimeout(() => { el.style.backgroundColor = ''; }, 1200);
-        break;
+  // Espande inline il gruppo (mostra tutti i contatti anche se la ricerca è attiva)
+  if (!state.rubricaExpandedGroups) state.rubricaExpandedGroups = new Set();
+  state.rubricaExpandedGroups.add(groupId);
+  const params = state.currentParams || {};
+  const savedScroll = window.scrollY;
+  renderNumeri(params.filter);
+  // Dopo il re-render scrolla al gruppo
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedScroll, behavior: 'instant' });
+    setTimeout(() => {
+      const groups = document.querySelectorAll('.numeri-group');
+      for (const el of groups) {
+        const delBtn = el.querySelector(`[onclick*="deleteGruppoNumeri('${groupId}')"]`);
+        if (delBtn) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.style.transition = 'background-color 0.3s';
+          el.style.backgroundColor = 'rgba(43,74,111,0.06)';
+          setTimeout(() => { el.style.backgroundColor = ''; }, 1200);
+          break;
+        }
       }
-    }
-  }, 80);
+    }, 30);
+  });
+}
+
+function collapseGroup(groupId) {
+  if (state.rubricaExpandedGroups) state.rubricaExpandedGroups.delete(groupId);
+  const params = state.currentParams || {};
+  const savedScroll = window.scrollY;
+  renderNumeri(params.filter);
+  requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
 }
 
 function renderNumeri(filter) {
@@ -3565,13 +3607,21 @@ function renderNumeri(filter) {
       .filter(g => g.contatti.length);
     filterLabel = 'Urgenze cliniche';
   } else if (filter) {
-    const c = findContattoBySlug(filter);
-    if (c) {
-      filteredGruppi = allGroups.map(g => {
-        const matches = (g.contatti || []).filter(x => x.id === filter);
-        return matches.length ? { ...g, contatti: matches } : null;
-      }).filter(Boolean);
-      filterLabel = `Contatto: ${c.etichetta}`;
+    // Prima prova: filter è un gruppoId → mostra solo quella UOC
+    const gruppoMatch = allGroups.find(g => g.id === filter);
+    if (gruppoMatch) {
+      filteredGruppi = [gruppoMatch];
+      filterLabel = `UOC: ${gruppoMatch.nome}`;
+    } else {
+      // Fallback: filter è un contatto slug
+      const c = findContattoBySlug(filter);
+      if (c) {
+        filteredGruppi = allGroups.map(g => {
+          const matches = (g.contatti || []).filter(x => x.id === filter);
+          return matches.length ? { ...g, contatti: matches } : null;
+        }).filter(Boolean);
+        filterLabel = `Contatto: ${c.etichetta}`;
+      }
     }
   }
 
@@ -3590,9 +3640,10 @@ function renderNumeri(filter) {
       const grpFields = [g.nome, g.direttore, g.email].filter(Boolean).join(' ').toLowerCase();
       return grpFields.includes(rubricaQuery);
     };
+    const expandedSet = state.rubricaExpandedGroups || new Set();
     filteredGruppi = filteredGruppi.map(g => {
-      // Se il gruppo stesso matcha (es. nome UOC), mostra tutti i contatti
-      if (matchGroup(g)) return g;
+      // Se il gruppo è espanso manualmente o il gruppo stesso matcha (es. nome UOC), mostra tutti i contatti
+      if (expandedSet.has(g.id) || matchGroup(g)) return g;
       // Altrimenti filtra i singoli contatti
       const contatti = (g.contatti || []).filter(matchContact);
       return contatti.length ? { ...g, contatti } : null;
@@ -3667,25 +3718,45 @@ function renderNumeri(filter) {
       const list = bySource[src] || [];
       if (!list.length) return '';
       const showHeader = src !== 'aopd' || (showExt.osa || showExt.iov);
+      const compactMode = !rubricaQuery && !filter;
+      if (compactMode) {
+        // Modalità compatta: solo titoli cliccabili
+        return `
+          ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
+          <div class="uoc-compact-list">
+            ${list.map(g => {
+              const contactCount = (g.contatti || []).length;
+              return `<button class="uoc-compact-item" onclick="navigate('numeri', {filter:'${escapeJs(g.id)}'})">
+                <span class="uoc-compact-name">${escapeHtml(g.nome)}</span>
+                <span class="uoc-compact-meta">${contactCount} numeri</span>
+              </button>`;
+            }).join('')}
+          </div>`;
+      }
       return `
         ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
-        ${list.map(g => `
+        ${list.map(g => {
+          const isManuallyExpanded = rubricaQuery && (state.rubricaExpandedGroups || new Set()).has(g.id);
+          return `
           <div class="numeri-group">
             <h2 class="numeri-group-title">
               ${rubricaQuery
                 ? `<a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Mostra tutti i numeri di questa UOC">${escapeHtml(g.nome)}</a>`
                 : escapeHtml(g.nome)
               }${renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
-              <span class="edit-only" style="margin-left:auto;display:inline-flex;gap:6px;">
-                <button class="btn-icon-mini" onclick="renameGruppoNumeri('${escapeJs(g.id)}')" title="Modifica gruppo">✎</button>
-                <button class="btn-icon-mini" onclick="deleteGruppoNumeri('${escapeJs(g.id)}')" title="Elimina gruppo">🗑</button>
+              <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center;">
+                ${isManuallyExpanded ? `<button class="btn-icon-mini" onclick="collapseGroup('${escapeJs(g.id)}')" title="Nascondi tutti i numeri di questa UOC" style="font-size:11px;color:var(--ink-muted);">↕ nascondi</button>` : ''}
+                <span class="edit-only" style="display:inline-flex;gap:6px;">
+                  <button class="btn-icon-mini" onclick="renameGruppoNumeri('${escapeJs(g.id)}')" title="Modifica gruppo">✎</button>
+                  <button class="btn-icon-mini" onclick="deleteGruppoNumeri('${escapeJs(g.id)}')" title="Elimina gruppo">🗑</button>
+                </span>
               </span>
             </h2>
             ${g.direttore ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
             ${g.email ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
             ${renderSedeOperativa(g.sede_operativa, g.sedi_operative)}
             ${sortContattiForDisplay(g.contatti || []).map(c => renderNumeroRow(c, g.id, c._classify)).join('')}
-            ${rubricaQuery && (function(){
+            ${rubricaQuery && !isManuallyExpanded && (function(){
               // Se sto filtrando e questa UOC ha più contatti di quelli visibili, mostra un hint
               const fullGroup = allGroups.find(x => x.id === g.id);
               const totalContacts = fullGroup ? (fullGroup.contatti || []).length : 0;
@@ -3701,7 +3772,8 @@ function renderNumeri(filter) {
             <div class="edit-only" style="margin-top:8px;">
               <button class="btn ghost" onclick="nuovoContatto('${escapeJs(g.id)}')" style="font-size:12px;">+ Aggiungi contatto</button>
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       `;
     }).join('')}`;
 }
@@ -3751,10 +3823,17 @@ function renderSedeOperativa(sede, sediArray) {
 }
 
 function classifyContatto(c) {
+  // Se il contatto ha un kind esplicito, usa quello (override utente)
+  if (c.kind) {
+    const kindToGroup = { guardia: 1, reparto: 2, ambulatorio: 3, direzione: 4 };
+    const g = kindToGroup[c.kind];
+    if (g) return { group: g, kind: c.kind };
+  }
   const label = (c.etichetta || '').toLowerCase();
   const tags = (c.tag || []).map(t => t.toLowerCase());
   const isGuardia = tags.includes('guardia') || tags.includes('urgenza') || /\b(guardia|mdg|medico di guardia|reperibile)\b/i.test(c.etichetta || '');
-  const isReparto = /\b(reparto|guardiola|caposala|coordinat|sala medici|stanza medici|medici di reparto|\bdeg\b|degenza)\b/i.test(c.etichetta || '');
+  // Reparto / aree cliniche operative. Uso prefix match per degenz/infermier (no \b finale).
+  const isReparto = /\b(reparto|guardiola|caposala|coordinat|sala medici|sala operatoria|medici di reparto|degenz|infermier|\bdeg\b|front office|u\.?c\.?i\.?c|u\.?t\.?i\.?c|unità coronarica|terapia intensiva|subintensiva|sub-intensiva|emodinamica|elettrofisiologia|bancone|area infermieri|stud(io|i) medici)/i.test(c.etichetta || '');
   const isDirSegr = /\b(direttore|segreteria|segr\.|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(c.etichetta || '');
   const isAmb = /\b(ambulator|amb\.|day hospital|\bdh\b|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '');
   if (isGuardia) return { group: 1, kind: 'guardia' };
@@ -3786,6 +3865,7 @@ function renderNumeroRow(c, gruppoId, classify) {
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
+  const luogo = c.luogo ? `<div style="font-size:10px;color:var(--ink-muted);margin-top:1px;opacity:.75;">📍 ${escapeHtml(c.luogo)}</div>` : '';
   const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
   // Numbers: internal extensions, then mobile, then breve
   const numBtns = [];
@@ -3805,13 +3885,26 @@ function renderNumeroRow(c, gruppoId, classify) {
     <button class="btn-icon-mini" onclick="editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
     <button class="btn-icon-mini" onclick="deleteContatto('${escapeJs(c.id)}')" title="Elimina">🗑</button>
   </span>` : '';
+  // Kind selector: chip inline per cambiare classificazione senza aprire editor
+  const currentKind = c.kind || cls.kind; // kind esplicito se c'è, altrimenti autodetect
+  const isAuto = !c.kind; // true se kind è autodetect (non salvato nel YAML)
+  const kindSelector = c.id ? `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
+    <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
+    <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">🔴 Guardia</button>
+    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">🔵 Reparto</button>
+    <button class="kind-chip ${currentKind === 'ambulatorio' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','ambulatorio')" title="Ambulatorio / DH" style="--chip-color:var(--ink-soft);--chip-bg:var(--bg-sink);">Amb.</button>
+    <button class="kind-chip ${currentKind === 'direzione' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','direzione')" title="Direttore / Segreteria / Studio" style="--chip-color:var(--ink-muted);--chip-bg:var(--rule-soft);">Dir.</button>
+    ${c.kind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
+  </div>` : '';
   return `
     <div class="${rowClass}">
       <div>
         <div class="numero-label">${guardiaBadge}${urgenzaBadge}${repartoBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
         ${sezione}
+        ${luogo}
         ${email}
         ${note}
+        ${kindSelector}
       </div>
       <div class="numero-nums">${numBtns.join('') || '<span style="font-size:12px;color:var(--ink-muted);">—</span>'}</div>
     </div>`;
@@ -4448,7 +4541,13 @@ function toggleEditMode(force) {
   document.getElementById('edit-mode-banner').classList.toggle('hidden', !navState.editMode);
   document.getElementById('btn-edit-mode').classList.toggle('active', navState.editMode);
   renderNavTree();
-  if (state.currentView) navigate(state.currentView, state.currentParams || {});
+  if (state.currentView) {
+    // Preserva posizione scroll durante re-render edit mode
+    const savedScroll = window.scrollY;
+    navigate(state.currentView, state.currentParams || {});
+    // Ripristina scroll dopo il re-render
+    requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+  }
 }
 
 function renderNavTree() {
@@ -5330,13 +5429,17 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="field">
-          <label>Sezione</label>
-          <input type="text" id="ce-sezione" value="${escapeHtml(c.sezione || '')}" placeholder="es. Studi Medici 2° Piano">
+          <label>Sezione (ruolo)</label>
+          <input type="text" id="ce-sezione" value="${escapeHtml(c.sezione || '')}" placeholder="es. Studi Medici">
         </div>
         <div class="field">
-          <label>Orari</label>
-          <input type="text" id="ce-orari" value="${escapeHtml(c.orari || '')}" placeholder="es. L/V 8-14">
+          <label>Luogo (ubicazione)</label>
+          <input type="text" id="ce-luogo" value="${escapeHtml(c.luogo || '')}" placeholder="es. Monoblocco 2° piano">
         </div>
+      </div>
+      <div class="field">
+        <label>Orari</label>
+        <input type="text" id="ce-orari" value="${escapeHtml(c.orari || '')}" placeholder="es. L/V 8-14">
       </div>
       <div class="field">
         <label>Tag (separati da virgola)</label>
@@ -5363,6 +5466,7 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         const cellulareList = cellulareStr2.split(',').map(s => s.trim()).filter(Boolean);
         const email = $('ce-email').value.trim();
         const sezione = $('ce-sezione').value.trim();
+        const luogo = $('ce-luogo').value.trim();
         const orari = $('ce-orari').value.trim();
         const tag = $('ce-tag').value.split(',').map(s => s.trim()).filter(Boolean);
         const note = $('ce-note').value.trim();
@@ -5373,6 +5477,7 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         if (breveStr) { const n = parseInt(breveStr, 10); newC.breve = isNaN(n) ? breveStr : n; }
         if (email) newC.email = email;
         if (sezione) newC.sezione = sezione;
+        if (luogo) newC.luogo = luogo;
         if (orari) newC.orari = orari;
         if (tag.length) newC.tag = tag;
         if (note) newC.note = note;
@@ -5445,6 +5550,55 @@ async function deleteContatto(contattoId) {
     if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
     renderNavTree();
     if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
+  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+}
+
+// Imposta o rimuove il tag (kind) di un contatto: guardia/reparto/ambulatorio/direzione, oppure null per autodetect
+async function setContactKind(contattoId, newKind) {
+  if (!isAdmin()) return toast("Solo l'admin può modificare i tag", 'warning');
+  // Trova il contatto e il source
+  let foundGroup = null, foundContact = null, src = null;
+  for (const sourceId of ['aopd','osa','iov']) {
+    const data = getNumeriDataForSource(sourceId);
+    if (!data) continue;
+    for (const g of (data.gruppi || [])) {
+      const c = (g.contatti || []).find(x => x.id === contattoId);
+      if (c) { foundGroup = g; foundContact = c; src = sourceId; break; }
+    }
+    if (foundContact) break;
+  }
+  if (!foundContact) return toast('Contatto non trovato', 'error');
+
+  // Se il kind è già quello richiesto, rimuovilo (toggle off)
+  if (foundContact.kind === newKind) newKind = null;
+
+  const data = { ...getNumeriDataForSource(src) };
+  const newGruppi = (data.gruppi || []).map(g => {
+    if (g.id !== foundGroup.id) return g;
+    return {
+      ...g,
+      contatti: (g.contatti || []).map(c => {
+        if (c.id !== contattoId) return c;
+        const { kind, ...rest } = c;
+        return newKind ? { ...rest, kind: newKind } : rest;
+      })
+    };
+  });
+
+  // Preserva scroll prima del re-render
+  const savedScroll = window.scrollY;
+  try {
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+    const label = newKind ? newKind : 'automatico';
+    toast(`Tag aggiornato: ${label}`, 'success', 1200);
+    await buildIndex();
+    if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
+    if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
+    renderNavTree();
+    if (state.currentView === 'numeri') {
+      navigate('numeri', state.currentParams || {});
+      requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+    }
   } catch (e) { toast('Errore: ' + e.message, 'error'); }
 }
 
