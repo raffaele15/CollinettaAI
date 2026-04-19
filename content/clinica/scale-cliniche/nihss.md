@@ -2,7 +2,7 @@
 id: nihss
 titolo: NIHSS — National Institutes of Health Stroke Scale
 categoria: clinica
-sottocategoria: score-scale
+sottocategoria: scale-cliniche
 tag: [stroke, score, valutazione, nihss, trombolisi, trombectomia]
 termini_equivalenti: [stroke scale, scala ictus, NIH]
 
