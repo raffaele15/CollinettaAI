@@ -6043,7 +6043,7 @@ gruppi:
           - 2354
         sezione: Degenze
         luogo: Centro Gallucci 2° piano
-        kind: ambulatorio
+        kind: reparto
       - id: card-deg-mdg
         etichetta: Medico di Guardia
         breve: 97503
