@@ -495,6 +495,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .sr-contact-utile .sr-contact-meta{color:#2e7d32;opacity:.85}
 .sr-contact-num-utile{color:#2e7d32;font-weight:500;font-size:13px}
 .sr-contact-luogo{font-size:10px;color:var(--ink-muted);margin-top:2px;opacity:.8}
+.sr-contact-sezione{font-size:11px;color:var(--ink-muted);font-weight:400;margin-left:4px;font-style:italic}
 .sr-contact-left{flex:1;min-width:0}
 .sr-contact-label{font-weight:500}
 .sr-contact-guardia .sr-contact-label{color:var(--danger);font-weight:500}
@@ -1789,11 +1790,11 @@ function rebuildSearchIndex() {
     titolo: t.titolo || t.slug
   }));
   getVisibleNumeriGroups().forEach(g => {
+    const groupAliases = (g.alias || []).join(' ');
     (g.contatti || []).forEach(c => {
       const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
       const sedi = g.sedi_operative && g.sedi_operative.length ? g.sedi_operative : (g.sede_operativa ? [g.sede_operativa] : []);
       const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');
-      // Classifica il contatto per permettere la ricerca per "reparto", "guardia", "ambulatorio", "direzione"
       const kind = (typeof classifyContatto === 'function') ? classifyContatto(c).kind : '';
       const kindAliases = {
         guardia: 'guardia mdg reperibile urgenza',
@@ -1804,7 +1805,9 @@ function rebuildSearchIndex() {
       const termini = [
         c.sezione || '',
         kind,
-        kindAliases[kind] || ''
+        kindAliases[kind] || '',
+        (c.alias || []).join(' '),
+        groupAliases
       ].filter(Boolean).join(' ');
       docs.push({
         type: 'numero', slug: c.id,
@@ -1815,7 +1818,9 @@ function rebuildSearchIndex() {
         sede: sedeStr,
         numeri: numeriStr,
         ospedale: g._source || 'aopd',
+        sezione: c.sezione || '',
         tag: (c.tag || []).join(' '),
+        alias: [...(c.alias || []), ...(g.alias || [])].join(' '),
         termini: termini
       });
     });
@@ -1824,11 +1829,13 @@ function rebuildSearchIndex() {
     keys: [
       { name: 'gruppo', weight: 4 },
       { name: 'titolo', weight: 3 },
+      { name: 'alias', weight: 3 },
       { name: 'termini', weight: 2 },
       { name: 'tag', weight: 2 },
       { name: 'direttore', weight: 1.5 },
       { name: 'sede', weight: 1 },
       { name: 'numeri', weight: 1 },
+      { name: 'sezione', weight: 1 },
       { name: 'body', weight: 0.5 }
     ],
     threshold: 0.35, includeMatches: true, includeScore: true, minMatchCharLength: 1,
@@ -3926,7 +3933,9 @@ function renderNumeri(filter) {
             <h2 class="numeri-group-title">
               ${rubricaQuery
                 ? `<a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Mostra tutti i numeri di questa UOC">${escapeHtml(g.nome)}</a>`
-                : escapeHtml(g.nome)
+                : (filter && filter !== g.id)
+                  ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri tutta la UOC">${escapeHtml(g.nome)}</a>`
+                  : escapeHtml(g.nome)
               }${renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
               <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center;">
                 ${isManuallyExpanded ? `<button class="btn-icon-mini" onclick="collapseGroup('${escapeJs(g.id)}')" title="Nascondi tutti i numeri di questa UOC" style="font-size:11px;color:var(--ink-muted);">↕ nascondi</button>` : ''}
@@ -6445,8 +6454,33 @@ function renderSearchResults(query) {
   }
 
   const terms = effectiveQuery.trim().split(/\s+/).filter(t => t.length >= 1);
+  // Numeric-only query: ricerca esatta sui numeri di contatto (no fuzzy, no partial)
+  const isNumericQuery = /^\d+$/.test(effectiveQuery.trim());
   let rawResults;
-  if (terms.length > 1) {
+  if (isNumericQuery) {
+    // Match esatto: il contatto deve contenere esattamente quel numero come token intero
+    const target = effectiveQuery.trim();
+    rawResults = [];
+    getVisibleNumeriGroups().forEach(g => {
+      (g.contatti || []).forEach(c => {
+        const nums = [...(c.numeri || []).map(String), String(c.cellulare || ''), String(c.breve || '')].filter(Boolean);
+        const exactMatch = nums.some(n => n === target);
+        if (exactMatch) {
+          const item = {
+            type: 'numero', slug: c.id,
+            titolo: c.etichetta, gruppo: g.nome, gruppoId: g.id,
+            direttore: g.direttore || '',
+            sede: '',
+            numeri: nums.join(' '),
+            ospedale: g._source || 'aopd',
+            sezione: c.sezione || '',
+            tag: (c.tag || []).join(' ')
+          };
+          rawResults.push({ item, score: 0, matches: [] });
+        }
+      });
+    });
+  } else if (terms.length > 1) {
     const extendedQuery = terms
       .filter(t => t.length >= 1)
       .map(t => t.length <= 2 ? `^${t}` : `'${t}`)
@@ -6697,12 +6731,14 @@ function renderSearchResults(query) {
     const isUtile = c.kind === 'utile';
     const isGuardiola = tagsLower.includes('guardiola');
     const luogoHtml = c.luogo ? `<div class="sr-contact-luogo">📍 ${escapeHtml(c.luogo)}</div>` : '';
+    const sezioneHtml = c.sezione ? `<span class="sr-contact-sezione">· ${escapeHtml(c.sezione)}</span>` : '';
     const tagChips = renderInlineTagChips(c);
+    const labelHtml = `${escapeHtml(c.etichetta)}${sezioneHtml}`;
 
     if (isGuardia) {
       return `<div class="sr-contact sr-contact-guardia" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
-          <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+          <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">${c.tag && c.tag.length ? escapeHtml(c.tag.join(' · ')) : 'guardia'}</div>
           ${luogoHtml}
           ${tagChips}
@@ -6713,7 +6749,7 @@ function renderSearchResults(query) {
     if (isUtile) {
       return `<div class="sr-contact sr-contact-utile" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
-          <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+          <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">● utili</div>
           ${luogoHtml}
           ${tagChips}
@@ -6725,7 +6761,7 @@ function renderSearchResults(query) {
       const repartoMeta = isGuardiola ? '🏥 guardiola' : 'reparto';
       return `<div class="sr-contact sr-contact-reparto" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
-          <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+          <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">${escapeHtml(repartoMeta)}</div>
           ${luogoHtml}
           ${tagChips}
@@ -6735,7 +6771,7 @@ function renderSearchResults(query) {
     }
     return `<div class="sr-contact" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
       <div class="sr-contact-left">
-        <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+        <div class="sr-contact-label">${labelHtml}</div>
         ${luogoHtml}
         ${tagChips}
       </div>
@@ -6805,13 +6841,15 @@ function renderSearchResults(query) {
   rawResults.forEach(r => {
     if (r.item.type !== 'numero' && countByType[r.item.type] !== undefined) countByType[r.item.type]++;
   });
-  // Se è attivo un filtro, nascondi gli altri gruppi
-  const activeFilter = state.searchFilter || null; // 'numeri' | 'procedura' | 'clinica' | 'modulo' | 'tabella' | null
-  const showNumeri = !activeFilter || activeFilter === 'numeri';
-  const showProc = !activeFilter || activeFilter === 'procedura';
-  const showClin = !activeFilter || activeFilter === 'clinica';
-  const showMod = !activeFilter || activeFilter === 'modulo';
-  const showTab = !activeFilter || activeFilter === 'tabella';
+  // Set-based filter: multi-select con toggle
+  const activeFilters = state.searchFilter instanceof Set ? state.searchFilter : new Set();
+  state.searchFilter = activeFilters;
+  const isFiltering = activeFilters.size > 0;
+  const showNumeri = !isFiltering || activeFilters.has('numeri');
+  const showProc = !isFiltering || activeFilters.has('procedura');
+  const showClin = !isFiltering || activeFilters.has('clinica');
+  const showMod = !isFiltering || activeFilters.has('modulo');
+  const showTab = !isFiltering || activeFilters.has('tabella');
 
   const chipTypes = [
     { key: 'numeri',    label: 'Rubrica',        count: countByType.numeri },
@@ -6821,18 +6859,18 @@ function renderSearchResults(query) {
     { key: 'tabella',   label: 'Tabelle',        count: countByType.tabella }
   ].filter(c => c.count > 0);
 
-  const chipsHtml = chipTypes.length > 1 || activeFilter
+  const chipsHtml = chipTypes.length > 1 || isFiltering
     ? `<div class="search-filter-chips">
-        ${activeFilter ? `<button class="search-filter-chip" onclick="clearSearchFilter()">✕ Tutti</button>` : ''}
+        ${isFiltering ? `<button class="search-filter-chip" onclick="clearSearchFilter()">✕ Tutti</button>` : ''}
         ${chipTypes.map(c =>
-          `<button class="search-filter-chip ${activeFilter === c.key ? 'active' : ''}" onclick="setSearchFilter('${c.key}')">${c.label} · ${c.count}</button>`
+          `<button class="search-filter-chip ${activeFilters.has(c.key) ? 'active' : ''}" onclick="toggleSearchFilter('${c.key}')">${c.label} · ${c.count}</button>`
         ).join('')}
       </div>`
     : '';
 
-  // Filtra nonNumeri per filter attivo
-  const filteredNonNumeri = activeFilter && activeFilter !== 'numeri'
-    ? rawResults.filter(r => r.item.type === activeFilter).slice(0, 20)
+  // Filtra nonNumeri secondo i filtri attivi
+  const filteredNonNumeri = isFiltering
+    ? rawResults.filter(r => r.item.type !== 'numero' && activeFilters.has(r.item.type)).slice(0, 20)
     : nonNumeri;
 
   $('main-content').innerHTML = `
@@ -6853,14 +6891,16 @@ function renderSearchResults(query) {
     ${totalResults === 0 ? `<p style="color:var(--ink-muted);padding:24px 0;">Nessun risultato per "${escapeHtml(query)}".</p>` : ''}`;
 }
 
-function setSearchFilter(type) {
-  state.searchFilter = type;
-  const q = $('global-search').value || state.currentParams?.q || '';
+function toggleSearchFilter(type) {
+  if (!(state.searchFilter instanceof Set)) state.searchFilter = new Set();
+  if (state.searchFilter.has(type)) state.searchFilter.delete(type);
+  else state.searchFilter.add(type);
+  const q = $('global-search').value || state.currentParams?.query || '';
   renderSearchResults(q);
 }
 function clearSearchFilter() {
-  state.searchFilter = null;
-  const q = $('global-search').value || state.currentParams?.q || '';
+  state.searchFilter = new Set();
+  const q = $('global-search').value || state.currentParams?.query || '';
   renderSearchResults(q);
 }
 
@@ -7011,7 +7051,7 @@ function initEventListeners() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       // Nuova query: resetta il filtro categoria
-      state.searchFilter = null;
+      state.searchFilter = new Set();
       if (q.length >= 2) navigate('search', { query: q });
       else if (q.length === 0 && state.currentView === 'search') navigate('home');
     }, 200);
