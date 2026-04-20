@@ -6394,22 +6394,12 @@ function renderSearchResults(query) {
     const full = getFullGroup(u.gruppoId);
     const allContatti = full ? (full.contatti || []) : u.contatti.map(r => r.item);
     const matchedIds = new Set(u.contatti.map(r => r.item.slug));
+    const groupFullyMatched = matchedGroupIds.has(u.gruppoId);
 
+    // Riuso la classifyContatto globale per coerenza con la rubrica
     const classifyContact = (c) => {
-      const label = (c.etichetta || '').toLowerCase();
-      const tags = (c.tag || []).join(' ').toLowerCase();
-      const isGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/.test(label + ' ' + tags);
-      // Direttore, Segreteria, Studio medico, Coordinatore Reparto direzione = in fondo
-      const isDirSegr = /\b(direttore|segreteria|segr\.|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(label);
-      // Reparto / caposala / medico di reparto
-      const isReparto = /\b(reparto|caposala|guardiola|sala medici|infermier|stanza|deg\.|degenz)\b/i.test(label);
-      // Ambulatori / DH / prestazioni
-      const isAmb = /\b(ambulator|amb\.|day hospital|dh\b|polisonno|eco|rmn|tac|endoscop)\b/i.test(label);
-      if (isGuardia) return { group: 1, isGuardia: true };
-      if (isReparto) return { group: 2, isGuardia: false };
-      if (isAmb) return { group: 3, isGuardia: false };
-      if (isDirSegr) return { group: 4, isGuardia: false };
-      return { group: 3, isGuardia: false }; // altro → default medio
+      const cls = classifyContatto(c);
+      return { group: cls.group, isGuardia: cls.kind === 'guardia' };
     };
 
     const contatti = allContatti.map(c => {
@@ -6436,14 +6426,24 @@ function renderSearchResults(query) {
       return { ...c, _isGuardia: cls.isGuardia, _group: cls.group, _repSub: repSub, _matched: matched, _relevance: relevance };
     });
 
-    // Ordinamento: gruppo (1=guardia, 2=reparto, 3=amb, 4=dir/segr),
-    // poi sub-priorità dentro reparto (studi medici < caposala < guardiola < altro),
-    // poi relevance
-    contatti.sort((a, b) => {
-      if (a._group !== b._group) return a._group - b._group;
-      if (a._group === 2 && a._repSub !== b._repSub) return a._repSub - b._repSub;
-      return b._relevance - a._relevance;
-    });
+    // Ordinamento:
+    // - Se il gruppo matcha pienamente la query (es. "cardio" → Cardiologia): uso l'ordine rubrica
+    //   (group -> sub-priorità reparto -> ordine YAML originale), identico a quello mostrato aprendo la UOC
+    // - Altrimenti: ordine per rilevanza (contatti che matchano meglio la query in cima)
+    if (groupFullyMatched) {
+      const origIdx = new Map(allContatti.map((c, i) => [c.id, i]));
+      contatti.sort((a, b) => {
+        if (a._group !== b._group) return a._group - b._group;
+        if (a._group === 2 && a._repSub !== b._repSub) return a._repSub - b._repSub;
+        return (origIdx.get(a.id) ?? 0) - (origIdx.get(b.id) ?? 0);
+      });
+    } else {
+      contatti.sort((a, b) => {
+        if (a._group !== b._group) return a._group - b._group;
+        if (a._group === 2 && a._repSub !== b._repSub) return a._repSub - b._repSub;
+        return b._relevance - a._relevance;
+      });
+    }
     const hasMatchedGuardia = contatti.some(c => c._isGuardia && c._matched);
     const scoreAdjusted = u.bestScore - (hasMatchedGuardia ? 0.2 : 0) - (wantsGuardia && hasMatchedGuardia ? 0.15 : 0);
 
@@ -6505,8 +6505,8 @@ function renderSearchResults(query) {
   };
 
   const renderUoc = (u) => {
-    // Se il gruppo matcha interamente la query, mostra fino a 12 contatti (come fa la rubrica espansa)
-    // Altrimenti mostra i 5-6 più rilevanti come snippet
+    // Se il gruppo matcha interamente la query, mostro i primi ~12 contatti nell'ordine della rubrica
+    // (identici a quelli mostrati aprendo la UOC). Altrimenti i più rilevanti.
     const groupFullyMatched = matchedGroupIds.has(u.gruppoId);
     const maxShown = groupFullyMatched ? 12 : (u.hasMatchedGuardia ? 6 : 5);
     const topContatti = u.contatti.slice(0, maxShown);
