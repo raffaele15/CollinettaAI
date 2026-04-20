@@ -78,6 +78,24 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 /* APP SHELL */
 #app-view{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
 header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;padding:14px 24px;background:rgba(251,248,242,.92);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--rule)}
+@media (max-width:900px){
+  header.topbar{
+    grid-template-columns:auto 1fr auto;
+    grid-template-areas:"hamb brand actions" "search search search";
+    gap:10px 12px;padding:10px 14px;
+  }
+  header.topbar > .btn-hamburger{grid-area:hamb}
+  header.topbar > .brand{grid-area:brand;justify-self:start}
+  header.topbar > .search-wrap{grid-area:search;max-width:none;margin:0}
+  header.topbar > .topbar-actions{grid-area:actions;justify-self:end}
+  .brand-divider,.brand-sub{display:none}
+  .brand-mark{font-size:18px}
+  .search-wrap input{font-size:16px;padding:8px 12px 8px 34px}
+  .search-kbd{display:none}
+  /* Compact icon-btn on mobile */
+  .topbar-actions .user-name{display:none}
+  .topbar-actions{gap:6px}
+}
 .brand{display:flex;align-items:baseline;gap:10px;cursor:pointer}
 .brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
 .brand-divider{width:1px;height:16px;background:var(--rule-strong)}
@@ -163,8 +181,48 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 .user-name{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.02em}
 
 .app-body{display:grid;grid-template-columns:240px 1fr;min-height:0}
-@media (max-width:900px){.app-body{grid-template-columns:1fr}.sidebar{display:none}}
+@media (max-width:900px){
+  .app-body{grid-template-columns:1fr}
+  /* Sidebar diventa drawer mobile */
+  aside.sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:280px;max-width:85vw;
+    height:100vh;z-index:200;
+    background:var(--bg-paper);border-right:1px solid var(--rule);
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:2px 0 16px rgba(0,0,0,.08);
+    padding:20px 16px;display:block;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  aside.sidebar.mobile-open{transform:translateX(0)}
+  aside.sidebar{overscroll-behavior:contain}
+  .sidebar-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150;
+    opacity:0;pointer-events:none;transition:opacity .25s;
+  }
+  .sidebar-overlay.show{opacity:1;pointer-events:auto}
+  .sidebar-mobile-close{
+    display:block;width:100%;text-align:left;
+    background:transparent;border:none;color:var(--ink-soft);
+    font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;padding:4px 12px 16px;cursor:pointer;
+  }
+}
+@media (min-width:901px){
+  .sidebar-overlay,.sidebar-mobile-close,.btn-hamburger{display:none}
+}
 aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:sticky;top:65px;align-self:start;height:calc(100vh - 65px);overflow-y:auto}
+.sidebar-mobile-close{display:none}
+
+/* Hamburger button */
+.btn-hamburger{
+  display:none;background:transparent;border:1px solid var(--rule);
+  width:36px;height:36px;border-radius:2px;cursor:pointer;
+  padding:0;align-items:center;justify-content:center;
+  color:var(--ink-soft);transition:background .12s,border-color .12s;
+}
+.btn-hamburger:hover,.btn-hamburger.active{background:var(--rule-soft);border-color:var(--rule-strong);color:var(--ink)}
+@media (max-width:900px){.btn-hamburger{display:inline-flex}}
+
 .nav-group{margin-bottom:24px}
 .nav-group-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);padding:0 12px 8px;font-weight:500}
 .nav-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-radius:2px;font-size:14px;color:var(--ink-soft);cursor:pointer;transition:background .12s,color .12s}
@@ -304,6 +362,12 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .numeri-group-title{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:12px;color:var(--ink);letter-spacing:-.01em}
 .numero-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule-soft)}
 .numero-row:last-child{border:none}
+@media (max-width:600px){
+  .numero-row{grid-template-columns:1fr;gap:8px;padding:14px 0}
+  .numero-nums{justify-content:flex-start}
+  .numero-btn{font-size:14px;padding:8px 14px;min-height:36px}
+  .numero-label{font-size:15px}
+}
 .numero-row-guardia{background:linear-gradient(to right,#fef0ef 0%,transparent 100%);border-left:3px solid var(--danger);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
 .numero-row-guardia .numero-label{color:var(--danger);font-weight:500}
 .numero-row-reparto{background:linear-gradient(to right,var(--accent-soft) 0%,transparent 100%);border-left:3px solid var(--accent);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
@@ -509,6 +573,9 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 
 <div id="app-view" class="hidden">
   <header class="topbar">
+    <button class="btn-hamburger" id="btn-hamburger" aria-label="Apri menù" title="Menù">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="brand" id="brand-home" title="Torna alla home">
       <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
       <span class="brand-divider"></span>
@@ -541,7 +608,9 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
     <button class="btn sm" id="btn-exit-edit">Esci da modifica</button>
   </div>
   <div class="app-body">
-    <aside class="sidebar">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-mobile-close" id="sidebar-close">← Chiudi menù</button>
       <div class="nav-group">
         <div class="nav-group-label">Contenuti</div>
         <div class="nav-item" data-route="home"><span>Home</span></div>
@@ -3923,9 +3992,13 @@ function renderSedeOperativa(sede, sediArray) {
 function classifyContatto(c) {
   // Se il contatto ha un kind esplicito, usa quello (override utente)
   if (c.kind) {
-    const kindToGroup = { guardia: 1, reparto: 2, ambulatorio: 3, direzione: 4 };
+    const kindToGroup = { guardia: 1, reparto: 2, ambulatorio: 3, direzione: 4, segreteria: 4 };
     const g = kindToGroup[c.kind];
-    if (g) return { group: g, kind: c.kind };
+    if (g) {
+      // Normalizzo: 'segreteria' e 'direzione' hanno lo stesso effetto di classificazione
+      const kind = (c.kind === 'segreteria') ? 'segreteria' : c.kind;
+      return { group: g, kind };
+    }
   }
   const label = (c.etichetta || '').toLowerCase();
   const tags = (c.tag || []).map(t => t.toLowerCase());
@@ -3942,10 +4015,31 @@ function classifyContatto(c) {
 }
 
 function sortContattiForDisplay(contatti) {
+  // Sub-priorità dentro "reparto": 
+  //   1 = studi medici / medici di reparto / specializzandi (vengono PRIMA)
+  //   2 = caposala / coordinatore (figure di organizzazione clinica)
+  //   3 = guardiola / area infermieri (numeri del bancone infermieristico — DOPO)
+  //   4 = altro (sale operatorie, piastre, box, ecc.)
+  const repartoSubPriority = (c) => {
+    const label = (c.etichetta || '').toLowerCase();
+    const tags = (c.tag || []).map(t => t.toLowerCase());
+    // 3 — guardiola (sempre per ultima tra reparto)
+    if (tags.includes('guardiola') || /guardiola|bancone/i.test(label)) return 3;
+    // 1 — studi medici, specializzandi, medici di reparto
+    if (/stud(io|i) medic|medici di reparto|specializz|\bdr\.|\bprof\.|dott\.|\bdottor/i.test(label)) return 1;
+    // 2 — caposala e coordinatori
+    if (/caposala|coordinat/i.test(label)) return 2;
+    return 4;
+  };
   const withClass = contatti.map((c, idx) => ({ ...c, _classify: classifyContatto(c), _origIdx: idx }));
-  // Ordine stabile: prima per gruppo, a parità mantiene ordine originale YAML
   withClass.sort((a, b) => {
     if (a._classify.group !== b._classify.group) return a._classify.group - b._classify.group;
+    // Dentro gruppo "reparto" (2) applico sub-priorità
+    if (a._classify.group === 2) {
+      const subA = repartoSubPriority(a);
+      const subB = repartoSubPriority(b);
+      if (subA !== subB) return subA - subB;
+    }
     return a._origIdx - b._origIdx;
   });
   return withClass;
@@ -3987,12 +4081,12 @@ function renderNumeroRow(c, gruppoId, classify) {
   // Kind selector: chip inline per cambiare classificazione senza aprire editor
   const currentKind = c.kind || cls.kind; // kind esplicito se c'è, altrimenti autodetect
   const isAuto = !c.kind; // true se kind è autodetect (non salvato nel YAML)
-  const kindSelector = c.id ? `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
+  const kindSelector = c.id ? `<div class="kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
     <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
     <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">🔴 Guardia</button>
     <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">🔵 Reparto</button>
     <button class="kind-chip ${currentKind === 'ambulatorio' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','ambulatorio')" title="Ambulatorio / DH" style="--chip-color:var(--ink-soft);--chip-bg:var(--bg-sink);">Amb.</button>
-    <button class="kind-chip ${currentKind === 'direzione' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','direzione')" title="Direttore / Segreteria / Studio" style="--chip-color:var(--ink-muted);--chip-bg:var(--rule-soft);">Dir.</button>
+    <button class="kind-chip ${currentKind === 'segreteria' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','segreteria')" title="Segreteria / Direzione / Studio" style="--chip-color:var(--ink-muted);--chip-bg:var(--rule-soft);">Segr.</button>
     ${c.kind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
   </div>` : '';
   return `
@@ -5654,7 +5748,7 @@ async function deleteContatto(contattoId) {
 
 // Imposta o rimuove il tag (kind) di un contatto: guardia/reparto/ambulatorio/direzione, oppure null per autodetect
 async function setContactKind(contattoId, newKind) {
-  if (!isAdmin()) return toast("Solo l'admin può modificare i tag", 'warning');
+  // Tutti gli utenti possono modificare i tag di classificazione dei contatti
   // Trova il contatto e il source
   let foundGroup = null, foundContact = null, src = null;
   for (const sourceId of ['aopd','osa','iov']) {
@@ -6199,6 +6293,35 @@ function renderSearchResults(query) {
   const queryTerms = terms.map(t => t.toLowerCase());
   const wantsGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/i.test(query);
 
+  // Sinonimi multi-token (allineati alla ricerca rubrica)
+  const synonyms = {
+    'reparto': ['reparto', 'reparti', 'degenza', 'degenze', 'ricovero'],
+    'reparti': ['reparto', 'reparti', 'degenza', 'degenze'],
+    'degenza': ['reparto', 'reparti', 'degenza', 'degenze'],
+    'degenze': ['reparto', 'reparti', 'degenza', 'degenze'],
+    'segreteria': ['segreteria', 'segr'],
+    'ambulatorio': ['ambulatorio', 'ambulatori', 'amb'],
+    'ambulatori': ['ambulatorio', 'ambulatori', 'amb'],
+    'sala operatoria': ['sala operatoria', 'sale operatorie', 's.o.', 'operatoria'],
+    'operatoria': ['sala operatoria', 'sale operatorie', 'operatoria'],
+    'day hospital': ['day hospital', 'dh', 'day-hospital'],
+    'dh': ['day hospital', 'dh', 'day-hospital'],
+    'mdg': ['mdg', 'medico di guardia', 'medico guardia'],
+    'guardia': ['guardia', 'mdg', 'medico di guardia'],
+  };
+  const tokenMatches = (token, text) => {
+    if (text.includes(token)) return true;
+    const alts = synonyms[token];
+    if (alts) {
+      for (const alt of alts) if (text.includes(alt)) return true;
+    }
+    return false;
+  };
+
+  // Espandi i risultati numeri: se il gruppo (nome) matcha TUTTI i token della query,
+  // includi tutti i contatti del gruppo (anche quelli che non matchano direttamente).
+  // Questo replica il comportamento della ricerca Rubrica.
+  const matchedGroupIds = new Set();
   const byGruppo = new Map();
   numeriRaw.forEach(r => {
     const gid = r.item.gruppoId;
@@ -6218,8 +6341,41 @@ function renderSearchResults(query) {
     if (r.score < g.bestScore) g.bestScore = r.score;
   });
 
+  // Aggiungo gruppi i cui campi matchano l'intera query (nome/direttore/sede/sedi_operative)
+  // anche se nessun singolo contatto ha matchato
+  const allGroupsForSearch = getVisibleNumeriGroups();
+  allGroupsForSearch.forEach(g => {
+    const base = [g.nome, g.direttore, g.email].filter(Boolean).join(' ');
+    const sedi = (g.sedi_operative || []).map(s =>
+      `${s.tipo || ''} ${s.edificio || ''} ${s.piano || ''} ${s.area || ''}`
+    ).join(' ');
+    const sedeLegacy = g.sede_operativa
+      ? `${g.sede_operativa.tipo || ''} ${g.sede_operativa.edificio || ''} ${g.sede_operativa.piano || ''} ${g.sede_operativa.area || ''}`
+      : '';
+    const gTxt = (base + ' ' + sedi + ' ' + sedeLegacy).toLowerCase();
+    const groupMatches = queryTerms.every(t => tokenMatches(t, gTxt));
+    if (groupMatches) {
+      matchedGroupIds.add(g.id);
+      if (!byGruppo.has(g.id)) {
+        byGruppo.set(g.id, {
+          gruppoId: g.id,
+          gruppo: g.nome,
+          ospedale: g._source || 'aopd',
+          direttore: g.direttore || '',
+          sede: sedi,
+          contatti: [],
+          bestScore: 0.1  // alta rilevanza: il gruppo matcha per intero
+        });
+      } else {
+        // migliora lo score del gruppo se già presente
+        const existing = byGruppo.get(g.id);
+        if (existing.bestScore > 0.1) existing.bestScore = 0.1;
+      }
+    }
+  });
+
   const getFullGroup = (gid) => {
-    for (const g of getVisibleNumeriGroups()) {
+    for (const g of allGroupsForSearch) {
       if (g.id === gid) return g;
     }
     return null;
@@ -6252,6 +6408,14 @@ function renderSearchResults(query) {
       const tags = (c.tag || []).join(' ').toLowerCase();
       const cls = classifyContact(c);
       const matched = matchedIds.has(c.id);
+      // Sub-priorità dentro "reparto" (allineata alla rubrica)
+      let repSub = 4;
+      if (cls.group === 2) {
+        const tagsArr = (c.tag || []).map(t => t.toLowerCase());
+        if (tagsArr.includes('guardiola') || /guardiola|bancone/i.test(label)) repSub = 3;
+        else if (/stud(io|i) medic|medici di reparto|specializz|\bdr\.|\bprof\.|dott\.|\bdottor/i.test(label)) repSub = 1;
+        else if (/caposala|coordinat/i.test(label)) repSub = 2;
+      }
       let relevance = 0;
       if (matched) relevance += 10;
       if (cls.isGuardia && wantsGuardia) relevance += 20;
@@ -6260,12 +6424,15 @@ function renderSearchResults(query) {
         if (label.includes(t)) relevance += 5;
         if (tags.includes(t)) relevance += 3;
       });
-      return { ...c, _isGuardia: cls.isGuardia, _group: cls.group, _matched: matched, _relevance: relevance };
+      return { ...c, _isGuardia: cls.isGuardia, _group: cls.group, _repSub: repSub, _matched: matched, _relevance: relevance };
     });
 
-    // Ordinamento: prima per gruppo (1=guardia, 2=reparto, 3=amb, 4=dir/segr), poi per relevance
+    // Ordinamento: gruppo (1=guardia, 2=reparto, 3=amb, 4=dir/segr),
+    // poi sub-priorità dentro reparto (studi medici < caposala < guardiola < altro),
+    // poi relevance
     contatti.sort((a, b) => {
       if (a._group !== b._group) return a._group - b._group;
+      if (a._group === 2 && a._repSub !== b._repSub) return a._repSub - b._repSub;
       return b._relevance - a._relevance;
     });
     const hasMatchedGuardia = contatti.some(c => c._isGuardia && c._matched);
@@ -6317,7 +6484,11 @@ function renderSearchResults(query) {
   };
 
   const renderUoc = (u) => {
-    const topContatti = u.contatti.slice(0, u.hasMatchedGuardia ? 6 : 5);
+    // Se il gruppo matcha interamente la query, mostra fino a 12 contatti (come fa la rubrica espansa)
+    // Altrimenti mostra i 5-6 più rilevanti come snippet
+    const groupFullyMatched = matchedGroupIds.has(u.gruppoId);
+    const maxShown = groupFullyMatched ? 12 : (u.hasMatchedGuardia ? 6 : 5);
+    const topContatti = u.contatti.slice(0, maxShown);
     const restCount = u.totalContatti - topContatti.length;
     const ospBadge = `<span class="sr-uoc-badge sr-uoc-badge-${u.ospedale}">${osp[u.ospedale] || u.ospedale.toUpperCase()}</span>`;
     const sedeHtml = u.fullGroup
@@ -6428,7 +6599,71 @@ function initEventListeners() {
     if (confirm('Uscire dalla sessione?')) logout();
   });
 
-  $('brand-home').addEventListener('click', () => navigate('home'));
+  $('brand-home').addEventListener('click', () => { closeMobileMenu(); navigate('home'); });
+
+  // Mobile drawer (hamburger)
+  let _scrollLockY = 0;
+  function isMobileViewport(){ return window.innerWidth <= 900; }
+  function openMobileMenu(){
+    if (!isMobileViewport()) return;
+    _scrollLockY = window.scrollY || window.pageYOffset || 0;
+    $('sidebar').classList.add('mobile-open');
+    $('sidebar-overlay').classList.add('show');
+    $('btn-hamburger').classList.add('active');
+    $('btn-hamburger').setAttribute('aria-expanded', 'true');
+    // Lock body scroll (iOS-safe: position fixed mantiene la posizione)
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${_scrollLockY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMobileMenu(){
+    const wasOpen = $('sidebar').classList.contains('mobile-open');
+    $('sidebar').classList.remove('mobile-open');
+    $('sidebar-overlay').classList.remove('show');
+    $('btn-hamburger').classList.remove('active');
+    $('btn-hamburger').setAttribute('aria-expanded', 'false');
+    // Unlock body scroll e restore posizione
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    document.body.style.overflow = '';
+    if (wasOpen && _scrollLockY) {
+      window.scrollTo(0, _scrollLockY);
+      _scrollLockY = 0;
+    }
+  }
+  $('btn-hamburger').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if ($('sidebar').classList.contains('mobile-open')) closeMobileMenu();
+    else openMobileMenu();
+  });
+  // Tap su overlay → chiude
+  $('sidebar-overlay').addEventListener('click', closeMobileMenu);
+  $('sidebar-close').addEventListener('click', closeMobileMenu);
+  // Chiudo il drawer quando l'utente naviga (click su nav-item)
+  $('sidebar').addEventListener('click', (e) => {
+    const navItem = e.target.closest('.nav-item');
+    if (navItem && isMobileViewport()) closeMobileMenu();
+  });
+  // Tap sul main content (fuori dalla sidebar) → chiude
+  $('main-content').addEventListener('click', () => {
+    if ($('sidebar').classList.contains('mobile-open')) closeMobileMenu();
+  }, true); // capture per intercettare prima di handler interni
+  // Chiudo con ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('sidebar').classList.contains('mobile-open')) closeMobileMenu();
+  });
+  // Resize: se passo a desktop, ripristino tutto
+  window.addEventListener('resize', () => {
+    if (!isMobileViewport() && $('sidebar').classList.contains('mobile-open')) {
+      closeMobileMenu();
+    }
+  });
 
   $('btn-edit-mode').addEventListener('click', () => toggleEditMode());
   $('btn-exit-edit').addEventListener('click', () => toggleEditMode(false));
