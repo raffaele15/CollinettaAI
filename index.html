@@ -460,6 +460,10 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 
 .sr-section-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
 .sr-section-title:first-child{margin-top:8px}
+.search-filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.search-filter-chip{font-family:var(--mono);font-size:11px;letter-spacing:.02em;padding:5px 10px;border-radius:14px;background:var(--bg-paper);border:1px solid var(--rule);color:var(--ink-soft);cursor:pointer;transition:all .12s;line-height:1.3}
+.search-filter-chip:hover{border-color:var(--accent);color:var(--accent)}
+.search-filter-chip.active{background:var(--accent);border-color:var(--accent);color:var(--bg-paper);font-weight:500}
 .sr-uoc-list{display:grid;gap:12px;margin-bottom:18px}
 .sr-uoc{padding:16px 18px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);cursor:pointer;transition:border-color .15s}
 .sr-uoc:hover{border-color:var(--rule-strong)}
@@ -6426,16 +6430,28 @@ function renderSearchResults(query) {
     return;
   }
 
-  const terms = query.trim().split(/\s+/).filter(t => t.length >= 1);
+  // Keyword "numero"/"numeri"/"tel"/"telefono" = filtra solo risultati rubrica, rimossa dalla query
+  const numeroKeywordRegex = /\b(numer[oi]|tel|telefon[oi])\b/gi;
+  const onlyNumeri = numeroKeywordRegex.test(query);
+  const effectiveQuery = onlyNumeri ? query.replace(numeroKeywordRegex, ' ').replace(/\s+/g, ' ').trim() : query;
+  if (onlyNumeri && effectiveQuery.length < 2) {
+    $('main-content').innerHTML = `
+      <div class="page-head">
+        <div class="page-eyebrow">Ricerca</div>
+        <h1 class="page-title">Cerca nella rubrica</h1>
+      </div>
+      <p style="color:var(--ink-muted);">Aggiungi almeno una parola dopo "numero" (es. "numero cardiologia", "numero amb ecg").</p>`;
+    return;
+  }
+
+  const terms = effectiveQuery.trim().split(/\s+/).filter(t => t.length >= 1);
   let rawResults;
   if (terms.length > 1) {
-    // Per termini corti (1 car) uso prefix match (^); per gli altri include-match (')
     const extendedQuery = terms
       .filter(t => t.length >= 1)
       .map(t => t.length <= 2 ? `^${t}` : `'${t}`)
       .join(' ');
     rawResults = state.fuse.search(extendedQuery);
-    // Se pochi risultati, prova con tutti i termini come include-match (più tollerante)
     if (rawResults.length < 3) {
       const allInclude = terms.filter(t => t.length >= 2).map(t => `'${t}`).join(' ');
       if (allInclude) {
@@ -6443,18 +6459,17 @@ function renderSearchResults(query) {
         if (fallback.length > rawResults.length) rawResults = fallback;
       }
     }
-    // Ultimo fallback: ricerca fuzzy standard sulla query completa
-    if (rawResults.length < 3) rawResults = state.fuse.search(query);
+    if (rawResults.length < 3) rawResults = state.fuse.search(effectiveQuery);
   } else {
-    rawResults = state.fuse.search(query);
+    rawResults = state.fuse.search(effectiveQuery);
   }
 
-  const nonNumeri = rawResults.filter(r => r.item.type !== 'numero').slice(0, 20);
+  const nonNumeri = onlyNumeri ? [] : rawResults.filter(r => r.item.type !== 'numero').slice(0, 20);
   const numeriRaw = rawResults.filter(r => r.item.type === 'numero');
 
-  const lowerQuery = query.toLowerCase();
+  const lowerQuery = effectiveQuery.toLowerCase();
   const queryTerms = terms.map(t => t.toLowerCase());
-  const wantsGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/i.test(query);
+  const wantsGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/i.test(effectiveQuery);
 
   // Sinonimi multi-token (allineati alla ricerca rubrica)
   const synonyms = {
@@ -6728,19 +6743,23 @@ function renderSearchResults(query) {
     </div>`;
   };
 
+  // Mostro i badge ospedale solo se almeno OSA o IOV sono abilitati (altrimenti è sempre AOPD)
+  const anyExtendedOn = !!(state.showExtendedNumeri && (state.showExtendedNumeri.osa || state.showExtendedNumeri.iov));
+
   const renderUoc = (u) => {
-    // Se il gruppo matcha interamente la query, mostro i primi ~12 contatti nell'ordine della rubrica
-    // (identici a quelli mostrati aprendo la UOC). Altrimenti i più rilevanti.
-    // Se il gruppo matcha pienamente: mostro tutti i contatti del gruppo (ordine rubrica).
-    // Altrimenti: mostro SOLO i contatti che hanno matchato direttamente la query
-    // (per query specifiche tipo "amb ecg" voglio i risultati specifici, non guardie/reparto del gruppo).
     const groupFullyMatched = matchedGroupIds.has(u.gruppoId);
     const topContatti = groupFullyMatched
       ? u.contatti.slice(0, 12)
       : u.contatti.filter(c => c._matched).slice(0, 6);
     const restCount = u.totalContatti - topContatti.length;
-    const ospBadge = `<span class="sr-uoc-badge sr-uoc-badge-${u.ospedale}">${osp[u.ospedale] || u.ospedale.toUpperCase()}</span>`;
-    const sedeHtml = u.fullGroup
+    // Badge ospedale: solo se OSA/IOV abilitati, oppure se non-AOPD
+    const showOspBadge = anyExtendedOn || u.ospedale !== 'aopd';
+    const ospBadge = showOspBadge
+      ? `<span class="sr-uoc-badge sr-uoc-badge-${u.ospedale}">${osp[u.ospedale] || u.ospedale.toUpperCase()}</span>`
+      : '';
+    // Sede: mostra solo se il gruppo è stato matchato per intero (ricerca UOC)
+    // Per ricerche specifiche (es. "amb ecg") nascondi per ridurre il clutter
+    const sedeHtml = (groupFullyMatched && u.fullGroup)
       ? renderSedeOperativa(u.fullGroup.sede_operativa, u.fullGroup.sedi_operative)
       : '';
     return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
@@ -6778,6 +6797,44 @@ function renderSearchResults(query) {
   const totalContatti = uocResults.reduce((s, u) => s + u.matchedCount, 0);
   const totalResults = uocResults.length + nonNumeri.length;
 
+  // Conteggio per categoria (per filter chips)
+  const countByType = {
+    numeri: numeriRaw.length,
+    procedura: 0, clinica: 0, modulo: 0, tabella: 0
+  };
+  rawResults.forEach(r => {
+    if (r.item.type !== 'numero' && countByType[r.item.type] !== undefined) countByType[r.item.type]++;
+  });
+  // Se è attivo un filtro, nascondi gli altri gruppi
+  const activeFilter = state.searchFilter || null; // 'numeri' | 'procedura' | 'clinica' | 'modulo' | 'tabella' | null
+  const showNumeri = !activeFilter || activeFilter === 'numeri';
+  const showProc = !activeFilter || activeFilter === 'procedura';
+  const showClin = !activeFilter || activeFilter === 'clinica';
+  const showMod = !activeFilter || activeFilter === 'modulo';
+  const showTab = !activeFilter || activeFilter === 'tabella';
+
+  const chipTypes = [
+    { key: 'numeri',    label: 'Rubrica',        count: countByType.numeri },
+    { key: 'procedura', label: 'Procedure',      count: countByType.procedura },
+    { key: 'clinica',   label: 'Schede cliniche', count: countByType.clinica },
+    { key: 'modulo',    label: 'Moduli',         count: countByType.modulo },
+    { key: 'tabella',   label: 'Tabelle',        count: countByType.tabella }
+  ].filter(c => c.count > 0);
+
+  const chipsHtml = chipTypes.length > 1 || activeFilter
+    ? `<div class="search-filter-chips">
+        ${activeFilter ? `<button class="search-filter-chip" onclick="clearSearchFilter()">✕ Tutti</button>` : ''}
+        ${chipTypes.map(c =>
+          `<button class="search-filter-chip ${activeFilter === c.key ? 'active' : ''}" onclick="setSearchFilter('${c.key}')">${c.label} · ${c.count}</button>`
+        ).join('')}
+      </div>`
+    : '';
+
+  // Filtra nonNumeri per filter attivo
+  const filteredNonNumeri = activeFilter && activeFilter !== 'numeri'
+    ? rawResults.filter(r => r.item.type === activeFilter).slice(0, 20)
+    : nonNumeri;
+
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">Risultati</div>
@@ -6787,12 +6844,24 @@ function renderSearchResults(query) {
         ${nonNumeri.length > 0 ? `${nonNumeri.length} documenti` : ''}
         ${totalResults === 0 ? 'nessun risultato' : ''}
       </div>
+      ${chipsHtml}
     </div>
-    ${uocResults.length > 0 ? `<div class="sr-section-title">Rubrica</div>
+    ${showNumeri && uocResults.length > 0 ? `<div class="sr-section-title">Rubrica</div>
     <div class="sr-uoc-list">${uocResults.map(renderUoc).join('')}</div>` : ''}
-    ${nonNumeri.length > 0 ? `<div class="sr-section-title">Documenti</div>
-    <div class="search-results">${nonNumeri.map(renderOther).join('')}</div>` : ''}
+    ${(showProc || showClin || showMod || showTab) && filteredNonNumeri.length > 0 ? `<div class="sr-section-title">Documenti</div>
+    <div class="search-results">${filteredNonNumeri.map(renderOther).join('')}</div>` : ''}
     ${totalResults === 0 ? `<p style="color:var(--ink-muted);padding:24px 0;">Nessun risultato per "${escapeHtml(query)}".</p>` : ''}`;
+}
+
+function setSearchFilter(type) {
+  state.searchFilter = type;
+  const q = $('global-search').value || state.currentParams?.q || '';
+  renderSearchResults(q);
+}
+function clearSearchFilter() {
+  state.searchFilter = null;
+  const q = $('global-search').value || state.currentParams?.q || '';
+  renderSearchResults(q);
 }
 
 /* ============================ MODAL ============================ */
@@ -6941,6 +7010,8 @@ function initEventListeners() {
     const q = e.target.value;
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
+      // Nuova query: resetta il filtro categoria
+      state.searchFilter = null;
       if (q.length >= 2) navigate('search', { query: q });
       else if (q.length === 0 && state.currentView === 'search') navigate('home');
     }, 200);
