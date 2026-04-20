@@ -472,6 +472,11 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .sr-contact-num{font-family:var(--mono);font-size:12px;color:var(--ink-soft);white-space:nowrap}
 .sr-contact-guardia{background:#fef0ef;padding:9px 10px;border-left:3px solid var(--danger);border-radius:0 2px 2px 0}
 .sr-contact-guardia:hover{background:#fce4e2}
+.sr-contact-reparto{background:var(--accent-soft);padding:9px 10px;border-left:3px solid var(--accent);border-radius:0 2px 2px 0}
+.sr-contact-reparto:hover{background:rgba(43,74,111,.18)}
+.sr-contact-reparto .sr-contact-label{color:var(--accent);font-weight:500}
+.sr-contact-reparto .sr-contact-meta{color:var(--accent);opacity:.85}
+.sr-contact-num-reparto{color:var(--accent);font-weight:500;font-size:13px}
 .sr-contact-left{flex:1;min-width:0}
 .sr-contact-label{font-weight:500}
 .sr-contact-guardia .sr-contact-label{color:var(--danger);font-weight:500}
@@ -6471,6 +6476,8 @@ function renderSearchResults(query) {
     const displayNum = [numsStr, breveStr, cellStr].filter(Boolean).join(' · ');
     const tagsLower = (c.tag || []).map(t => t.toLowerCase());
     const isGuardia = c._isGuardia;
+    const isReparto = c._group === 2 && !isGuardia;
+    const isGuardiola = tagsLower.includes('guardiola');
 
     if (isGuardia) {
       return `<div class="sr-contact sr-contact-guardia" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
@@ -6479,6 +6486,16 @@ function renderSearchResults(query) {
           <div class="sr-contact-meta">${c.tag && c.tag.length ? escapeHtml(c.tag.join(' · ')) : 'guardia'}</div>
         </div>
         <div class="sr-contact-num sr-contact-num-guardia">${escapeHtml(displayNum || '—')}</div>
+      </div>`;
+    }
+    if (isReparto) {
+      const repartoMeta = isGuardiola ? '🏥 guardiola' : 'reparto';
+      return `<div class="sr-contact sr-contact-reparto" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
+        <div class="sr-contact-left">
+          <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+          <div class="sr-contact-meta">${escapeHtml(repartoMeta)}</div>
+        </div>
+        <div class="sr-contact-num sr-contact-num-reparto">${escapeHtml(displayNum || '—')}</div>
       </div>`;
     }
     return `<div class="sr-contact" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
