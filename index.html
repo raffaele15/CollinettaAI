@@ -372,6 +372,8 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .numero-row-guardia .numero-label{color:var(--danger);font-weight:500}
 .numero-row-reparto{background:linear-gradient(to right,var(--accent-soft) 0%,transparent 100%);border-left:3px solid var(--accent);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
 .numero-row-reparto .numero-label{color:var(--accent);font-weight:500}
+.numero-row-utile{background:linear-gradient(to right,#fff8e1 0%,transparent 100%);border-left:3px solid #d4a017;padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
+.numero-row-utile .numero-label{color:#8b6914;font-weight:500}
 .uoc-compact-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-top:4px}
 .uoc-compact-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;cursor:pointer;text-align:left;font-family:inherit;transition:border-color .12s,background .12s;width:100%}
 .uoc-compact-item:hover{border-color:var(--rule-strong);background:var(--bg-sink)}
@@ -477,6 +479,11 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .sr-contact-reparto .sr-contact-label{color:var(--accent);font-weight:500}
 .sr-contact-reparto .sr-contact-meta{color:var(--accent);opacity:.85}
 .sr-contact-num-reparto{color:var(--accent);font-weight:500;font-size:13px}
+.sr-contact-utile{background:#fff8e1;padding:9px 10px;border-left:3px solid #d4a017;border-radius:0 2px 2px 0}
+.sr-contact-utile:hover{background:#fff3c4}
+.sr-contact-utile .sr-contact-label{color:#8b6914;font-weight:500}
+.sr-contact-utile .sr-contact-meta{color:#8b6914;opacity:.85}
+.sr-contact-num-utile{color:#8b6914;font-weight:500;font-size:13px}
 .sr-contact-left{flex:1;min-width:0}
 .sr-contact-label{font-weight:500}
 .sr-contact-guardia .sr-contact-label{color:var(--danger);font-weight:500}
@@ -1774,7 +1781,7 @@ function rebuildSearchIndex() {
       const kindAliases = {
         guardia: 'guardia mdg reperibile urgenza',
         reparto: 'reparto degenza degenze infermieri guardiola caposala coordinatore ucic utic terapia intensiva emodinamica elettrofisiologia bancone',
-        ambulatorio: 'ambulatorio amb dh day hospital',
+        ambulatorio: 'ambulatorio amb',
         direzione: 'direttore direzione segreteria'
       };
       const termini = [
@@ -3997,10 +4004,9 @@ function renderSedeOperativa(sede, sediArray) {
 function classifyContatto(c) {
   // Se il contatto ha un kind esplicito, usa quello (override utente)
   if (c.kind) {
-    const kindToGroup = { guardia: 1, reparto: 2, ambulatorio: 3, direzione: 4, segreteria: 4 };
+    const kindToGroup = { guardia: 1, reparto: 2, utile: 2, ambulatorio: 3, direzione: 4, segreteria: 4 };
     const g = kindToGroup[c.kind];
     if (g) {
-      // Normalizzo: 'segreteria' e 'direzione' hanno lo stesso effetto di classificazione
       const kind = (c.kind === 'segreteria') ? 'segreteria' : c.kind;
       return { group: g, kind };
     }
@@ -4014,7 +4020,7 @@ function classifyContatto(c) {
   const isSegreteria = /\b(segreteria|segr\.)\b/i.test(c.etichetta || '');
   // Direzione pura (direttore, studi professori, scuola, didattica) — NON taggata di default
   const isDirezione = /\b(direttore|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(c.etichetta || '');
-  const isAmb = /\b(ambulator|amb\.|day hospital|\bdh\b|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '');
+  const isAmb = /\b(ambulator|amb\.|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '');
   if (isGuardia) return { group: 1, kind: 'guardia' };
   if (isReparto) return { group: 2, kind: 'reparto' };
   if (isAmb) return { group: 3, kind: 'ambulatorio' };
@@ -4032,6 +4038,8 @@ function sortContattiForDisplay(contatti) {
   const repartoSubPriority = (c) => {
     const label = (c.etichetta || '').toLowerCase();
     const tags = (c.tag || []).map(t => t.toLowerCase());
+    // 0 — numeri marcati manualmente come "utili" (priorità massima)
+    if (c.kind === 'utile') return 0;
     // 3 — guardiola (sempre per ultima tra reparto)
     if (tags.includes('guardiola') || /guardiola|bancone/i.test(label)) return 3;
     // 1 — studi medici, specializzandi, medici di reparto
@@ -4059,11 +4067,13 @@ function renderNumeroRow(c, gruppoId, classify) {
   const cls = classify || (c._classify || classifyContatto(c));
   const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
     : cls.kind === 'reparto' ? 'numero-row numero-row-reparto'
+    : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge">Guardia</span>` : '';
   const urgenzaBadge = tags.includes('urgenza') ? `<span class="badge" style="background:var(--danger-soft);color:var(--danger);">Urgenza</span>` : '';
   const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">🏥 Guardiola</span>` : '';
   const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
+  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#fff8e1;color:#8b6914;">⭐ Utile</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
@@ -4090,18 +4100,17 @@ function renderNumeroRow(c, gruppoId, classify) {
   // Kind selector: chip inline per cambiare classificazione senza aprire editor
   const currentKind = c.kind || cls.kind; // kind esplicito se c'è, altrimenti autodetect
   const isAuto = !c.kind; // true se kind è autodetect (non salvato nel YAML)
-  const kindSelector = c.id ? `<div class="kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
+  const kindSelector = c.id ? `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
     <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
     <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">🔴 Guardia</button>
     <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">🔵 Reparto</button>
-    <button class="kind-chip ${currentKind === 'ambulatorio' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','ambulatorio')" title="Ambulatorio / DH" style="--chip-color:var(--ink-soft);--chip-bg:var(--bg-sink);">Amb.</button>
-    <button class="kind-chip ${currentKind === 'segreteria' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','segreteria')" title="Segreteria / Direzione / Studio" style="--chip-color:var(--ink-muted);--chip-bg:var(--rule-soft);">Segr.</button>
+    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#8b6914;--chip-bg:#fff8e1;">⭐ Utile</button>
     ${c.kind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
   </div>` : '';
   return `
     <div class="${rowClass}">
       <div>
-        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${guardiolaBadge}${repartoBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
+        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${guardiolaBadge}${repartoBadge}${utileBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
         ${sezione}
         ${luogo}
         ${email}
@@ -6411,7 +6420,8 @@ function renderSearchResults(query) {
       let repSub = 4;
       if (cls.group === 2) {
         const tagsArr = (c.tag || []).map(t => t.toLowerCase());
-        if (tagsArr.includes('guardiola') || /guardiola|bancone/i.test(label)) repSub = 3;
+        if (c.kind === 'utile') repSub = 0;
+        else if (tagsArr.includes('guardiola') || /guardiola|bancone/i.test(label)) repSub = 3;
         else if (/stud(io|i) medic|medici di reparto|specializz|\bdr\.|\bprof\.|dott\.|\bdottor/i.test(label)) repSub = 1;
         else if (/caposala|coordinat/i.test(label)) repSub = 2;
       }
@@ -6476,7 +6486,8 @@ function renderSearchResults(query) {
     const displayNum = [numsStr, breveStr, cellStr].filter(Boolean).join(' · ');
     const tagsLower = (c.tag || []).map(t => t.toLowerCase());
     const isGuardia = c._isGuardia;
-    const isReparto = c._group === 2 && !isGuardia;
+    const isReparto = c._group === 2 && !isGuardia && c.kind !== 'utile';
+    const isUtile = c.kind === 'utile';
     const isGuardiola = tagsLower.includes('guardiola');
 
     if (isGuardia) {
@@ -6486,6 +6497,15 @@ function renderSearchResults(query) {
           <div class="sr-contact-meta">${c.tag && c.tag.length ? escapeHtml(c.tag.join(' · ')) : 'guardia'}</div>
         </div>
         <div class="sr-contact-num sr-contact-num-guardia">${escapeHtml(displayNum || '—')}</div>
+      </div>`;
+    }
+    if (isUtile) {
+      return `<div class="sr-contact sr-contact-utile" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
+        <div class="sr-contact-left">
+          <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
+          <div class="sr-contact-meta">⭐ utile</div>
+        </div>
+        <div class="sr-contact-num sr-contact-num-utile">${escapeHtml(displayNum || '—')}</div>
       </div>`;
     }
     if (isReparto) {
