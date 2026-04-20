@@ -14,6 +14,7 @@
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
@@ -107,8 +108,39 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 .topbar-actions{display:flex;align-items:center;gap:8px}
 .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:2px;color:var(--ink-soft);transition:background .15s,color .15s;position:relative}
 .icon-btn:hover{background:var(--rule-soft);color:var(--ink)}
-.user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:2px;border:1px solid var(--rule);cursor:pointer;transition:background .15s}
+.user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:2px;border:1px solid var(--rule);cursor:pointer;transition:background .15s;user-select:none;position:relative}
 .user-chip:hover{background:var(--bg-raised)}
+.user-menu-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg-paper);border:1px solid var(--rule);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding:8px;min-width:240px;z-index:1000}
+.user-menu-dropdown.hidden{display:none}
+.user-menu-section{padding:6px 4px}
+.user-menu-label{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;padding:0 8px}
+.theme-options{display:flex;gap:4px;padding:0 4px}
+.theme-opt{flex:1;padding:6px 8px;background:transparent;border:1px solid var(--rule);border-radius:4px;font-size:12px;color:var(--ink);cursor:pointer;font-family:inherit}
+.theme-opt:hover{background:var(--bg-sink)}
+.theme-opt.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.user-menu-divider{height:1px;background:var(--rule);margin:6px 0}
+.user-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:transparent;border:none;border-radius:4px;font-size:13px;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit}
+.user-menu-item:hover{background:var(--bg-sink)}
+
+/* Dark theme */
+[data-theme="dark"]{
+  --bg-paper:#1a1a1a;
+  --bg-sink:#252525;
+  --bg-raised:#2a2a2a;
+  --ink:#e8e8e8;
+  --ink-soft:#b8b8b8;
+  --ink-muted:#888;
+  --ink-faint:#555;
+  --rule:#333;
+  --rule-soft:#2a2a2a;
+  --rule-strong:#444;
+  --accent:#6ba4f5;
+  --accent-soft:#1e3a5f;
+  --danger:#f07070;
+  --danger-soft:#4a1f1f;
+  --warning:#f5a35f;
+}
+[data-theme="dark"] body{background:#121212;color:var(--ink)}
 .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--bg-paper);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em}
 .rate-limit-pill{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:4px 8px;border-radius:2px;background:var(--bg-sink);color:var(--ink-muted);border:1px solid var(--rule-soft);white-space:nowrap}
 .rate-limit-pill.warning{background:var(--warning-soft);color:var(--warning);border-color:var(--warning)}
@@ -375,8 +407,9 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .numero-row-utile{background:linear-gradient(to right,#e8f5e9 0%,transparent 100%);border-left:3px solid #2e7d32;padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
 .numero-row-utile .numero-label{color:#2e7d32;font-weight:500}
 .uoc-compact-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-top:4px}
-.uoc-compact-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;cursor:pointer;text-align:left;font-family:inherit;transition:border-color .12s,background .12s;width:100%}
+.uoc-compact-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;transition:border-color .12s,background .12s}
 .uoc-compact-item:hover{border-color:var(--rule-strong);background:var(--bg-sink)}
+.uoc-compact-item .pin-star{flex-shrink:0;font-size:16px;padding:2px 4px}
 .uoc-compact-name{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);line-height:1.25;flex:1;min-width:0}
 .uoc-compact-meta{font-family:var(--mono);font-size:11px;color:var(--ink-muted);white-space:nowrap;letter-spacing:.02em}
 .rubrica-alphabet-bar{display:flex;flex-wrap:wrap;gap:2px;margin:8px 0 16px;padding:8px;background:var(--bg-sink);border-radius:3px;border:1px solid var(--rule-soft)}
@@ -506,7 +539,34 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .sede-operativa-row{display:flex;align-items:baseline;gap:10px}
 .sede-operativa-label{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;min-width:80px;flex-shrink:0}
 .sede-operativa-value{color:var(--ink);font-weight:400}
-.sede-fonte{font-size:10px;color:var(--accent);margin-left:8px;font-family:var(--mono);text-decoration:none;opacity:.7}
+.home-numero-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border:1px solid var(--rule-soft);border-radius:3px;background:var(--bg-paper);margin-bottom:6px}
+.home-numero-text{cursor:pointer;min-width:0}
+.home-numero-label{font-size:14px;color:var(--ink);font-weight:500}
+.home-numero-uoc{font-size:11px;color:var(--ink-muted);font-style:italic;margin-top:2px}
+.home-numero-num{font-family:var(--mono);font-size:13px;color:var(--accent)}
+.home-numeri-search-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--rule-soft);background:var(--bg-paper)}
+.home-numeri-search-item:last-child{border-bottom:none}
+.pinned-uoc-block{margin-bottom:16px;border:1px solid var(--rule);border-radius:3px;background:var(--bg-paper);overflow:hidden}
+.pinned-uoc-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-sink);border-bottom:1px solid var(--rule-soft)}
+.pinned-uoc-name{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);text-decoration:none;flex:1;border-bottom:1px dotted var(--rule-strong)}
+.pinned-uoc-name:hover{color:var(--accent)}
+.pinned-uoc-contatti{padding:4px 0}
+.pinned-contatto-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--rule-soft)}
+.pinned-contatto-row:last-child{border-bottom:none}
+.pinned-contatto-label{font-size:14px;color:var(--ink);cursor:pointer}
+.pinned-contatto-label:hover{color:var(--accent)}
+.pinned-contatto-num{font-family:var(--mono);font-size:13px;color:var(--accent)}
+.drag-handle{cursor:grab;color:var(--ink-faint);font-size:14px;padding:2px 4px;user-select:none;letter-spacing:-2px}
+.drag-handle:active{cursor:grabbing}
+.drag-handle:hover{color:var(--ink)}
+.sortable-ghost{opacity:.3;background:var(--accent-soft)}
+.sortable-chosen{background:var(--bg-sink)}
+.sede-bucket-header{display:flex;align-items:baseline;gap:10px;padding:8px 12px;background:var(--bg-sink);border-radius:4px;margin:14px 0 6px}
+.sede-bucket-header:first-child{margin-top:0}
+.sede-bucket-tipo{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.sede-bucket-loc{font-size:13px;color:var(--ink)}
+.sede-bucket-altro{color:var(--ink-muted);font-style:italic}
+.sede-bucket-contatti{padding:0 4px}
 .sede-fonte:hover{opacity:1;text-decoration:underline}
 
 @media print{body{background:white;color:black}header.topbar,aside.sidebar,.page-actions,.editor-head-actions{display:none!important}main.content{padding:0;max-width:100%}.procedura-body blockquote{background:#f4f4f4}a{color:black}details.scheda-section{border:none}details.scheda-section[open] .scheda-summary::after{display:none}.scheda-summary{cursor:default}}
@@ -618,9 +678,25 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
       <button class="icon-btn" id="btn-refresh" title="Aggiorna dal repository">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       </button>
-      <div class="user-chip" id="user-menu-btn">
+      <div class="user-chip" id="user-menu-btn" onclick="toggleUserMenu(event)">
         <span class="user-avatar" id="user-avatar">??</span>
         <span class="user-name" id="user-name-display">—</span>
+        <span style="font-size:10px;margin-left:4px;opacity:.6;">▾</span>
+      </div>
+      <div class="user-menu-dropdown hidden" id="user-menu-dropdown">
+        <div class="user-menu-section">
+          <div class="user-menu-label">Tema</div>
+          <div class="theme-options">
+            <button class="theme-opt" data-theme="light" onclick="setTheme('light')">☀ Chiaro</button>
+            <button class="theme-opt" data-theme="dark" onclick="setTheme('dark')">☾ Scuro</button>
+            <button class="theme-opt" data-theme="auto" onclick="setTheme('auto')">◐ Auto</button>
+          </div>
+        </div>
+        <div class="user-menu-divider"></div>
+        <button class="user-menu-item" onclick="closeUserMenu(); if(confirm('Uscire dalla sessione?')) logout();">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Esci
+        </button>
       </div>
     </div>
   </header>
@@ -924,17 +1000,19 @@ const userPrefs = {
     try {
       const file = await gh.getFile(path);
       if (!file) {
-        state.userPrefs = { pins: [], _sha: null };
+        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, _sha: null };
         return;
       }
       const parsed = jsyaml.load(file.content) || {};
       state.userPrefs = {
         pins: Array.isArray(parsed.pins) ? parsed.pins : [],
+        home_numeri: Array.isArray(parsed.home_numeri) ? parsed.home_numeri : [],
+        pin_order: (parsed.pin_order && typeof parsed.pin_order === 'object') ? parsed.pin_order : {},
         _sha: file.sha
       };
     } catch (e) {
       console.warn('[userPrefs] load failed:', e);
-      state.userPrefs = { pins: [], _sha: null };
+      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, _sha: null };
     }
   },
 
@@ -954,6 +1032,8 @@ const userPrefs = {
     const path = state.userPrefsPath;
     const data = {
       pins: state.userPrefs.pins,
+      home_numeri: state.userPrefs.home_numeri || [],
+      pin_order: state.userPrefs.pin_order || {},
       ultima_modifica: nowIso(),
       modificato_da: state.session.username
     };
@@ -1020,6 +1100,48 @@ const userPrefs = {
       toast(nowPinned ? 'Aggiunto in home' : 'Rimosso dalla home', 'info', 1500);
     }
     return nowPinned;
+  },
+
+  // --- Home numeri (lista indipendente di contatti pinnati per la home) ---
+  hasHomeNumero(cid) {
+    if (!state.userPrefs) return false;
+    return (state.userPrefs.home_numeri || []).includes(cid);
+  },
+  toggleHomeNumero(cid) {
+    if (!state.userPrefs) return false;
+    if (!state.userPrefs.home_numeri) state.userPrefs.home_numeri = [];
+    const idx = state.userPrefs.home_numeri.indexOf(cid);
+    let added;
+    if (idx >= 0) { state.userPrefs.home_numeri.splice(idx, 1); added = false; }
+    else { state.userPrefs.home_numeri.push(cid); added = true; }
+    userPrefs.scheduleSave();
+    return added;
+  },
+  reorderHomeNumeri(newOrder) {
+    if (!state.userPrefs) return;
+    state.userPrefs.home_numeri = newOrder;
+    userPrefs.scheduleSave();
+  },
+
+  // --- Rubrica preferiti: ordinamento per UOC + contatti dentro UOC ---
+  // Struttura: pin_order = { _uoc: ['gid1','gid2',...], 'gid1': ['cid1','cid2',...] }
+  getUocOrder() {
+    return (state.userPrefs && state.userPrefs.pin_order && state.userPrefs.pin_order._uoc) || [];
+  },
+  getContactOrder(gid) {
+    return (state.userPrefs && state.userPrefs.pin_order && state.userPrefs.pin_order[gid]) || [];
+  },
+  setUocOrder(order) {
+    if (!state.userPrefs) return;
+    if (!state.userPrefs.pin_order) state.userPrefs.pin_order = {};
+    state.userPrefs.pin_order._uoc = order;
+    userPrefs.scheduleSave();
+  },
+  setContactOrder(gid, order) {
+    if (!state.userPrefs) return;
+    if (!state.userPrefs.pin_order) state.userPrefs.pin_order = {};
+    state.userPrefs.pin_order[gid] = order;
+    userPrefs.scheduleSave();
   }
 };
 
@@ -1059,6 +1181,19 @@ function togglePin(type, ...args) {
       }
     });
   }
+}
+
+// Rimuove prefisso tipo "U.O.C." / "U.O.S.D." / "U.O.S." dal nome UOC
+function stripPrefixNome(name) {
+  return String(name || '').replace(/^(U\.?O\.?C\.?|U\.?O\.?S\.?D\.?|U\.?O\.?S\.?|S\.?S\.?D\.?|S\.?S\.?|U\.?O\.?)\s+/i, '').trim();
+}
+
+function isPinned(type, id) {
+  if (!userPrefs) return false;
+  const pin = (type === 'gruppo' || type === 'contatto' || type === 'capitolo')
+    ? { type, id }
+    : { type, slug: id };
+  return userPrefs.has(pin);
 }
 
 function pinKey(pin) {
@@ -1797,7 +1932,7 @@ function rebuildSearchIndex() {
       const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');
       const kind = (typeof classifyContatto === 'function') ? classifyContatto(c).kind : '';
       const kindAliases = {
-        guardia: 'guardia mdg reperibile urgenza',
+        guardia: 'guardia mdg reperibile',
         reparto: 'reparto degenza degenze infermieri guardiola caposala coordinatore ucic utic terapia intensiva emodinamica elettrofisiologia bancone',
         ambulatorio: 'ambulatorio amb',
         direzione: 'direttore direzione segreteria'
@@ -1815,7 +1950,6 @@ function rebuildSearchIndex() {
         gruppo: g.nome,
         gruppoId: g.id,
         direttore: g.direttore || '',
-        sede: sedeStr,
         numeri: numeriStr,
         ospedale: g._source || 'aopd',
         sezione: c.sezione || '',
@@ -1832,8 +1966,6 @@ function rebuildSearchIndex() {
       { name: 'alias', weight: 3 },
       { name: 'termini', weight: 2 },
       { name: 'tag', weight: 2 },
-      { name: 'direttore', weight: 1.5 },
-      { name: 'sede', weight: 1 },
       { name: 'numeri', weight: 1 },
       { name: 'sezione', weight: 1 },
       { name: 'body', weight: 0.5 }
@@ -2004,6 +2136,56 @@ async function enterApp() {
   }
 }
 
+function toggleUserMenu(e) {
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('user-menu-dropdown');
+  if (dd) dd.classList.toggle('hidden');
+}
+function closeUserMenu() {
+  const dd = document.getElementById('user-menu-dropdown');
+  if (dd) dd.classList.add('hidden');
+}
+function setTheme(theme) {
+  // 'light' | 'dark' | 'auto'
+  try { localStorage.setItem('collinetta-theme', theme); } catch {}
+  applyTheme(theme);
+  // Update active chip state
+  document.querySelectorAll('.theme-opt').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+}
+function applyTheme(theme) {
+  let effective = theme;
+  if (theme === 'auto' || !theme) {
+    effective = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', effective);
+}
+function initTheme() {
+  let saved = 'auto';
+  try { saved = localStorage.getItem('collinetta-theme') || 'auto'; } catch {}
+  applyTheme(saved);
+  // Set active state on theme chips when DOM ready
+  setTimeout(() => {
+    document.querySelectorAll('.theme-opt').forEach(b => b.classList.toggle('active', b.dataset.theme === saved));
+  }, 0);
+  // React to system changes in auto mode
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      let s = 'auto';
+      try { s = localStorage.getItem('collinetta-theme') || 'auto'; } catch {}
+      if (s === 'auto') applyTheme('auto');
+    });
+  }
+}
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('user-menu-dropdown');
+  const btn = document.getElementById('user-menu-btn');
+  if (!dd || dd.classList.contains('hidden')) return;
+  if (btn && btn.contains(e.target)) return;
+  if (dd.contains(e.target)) return;
+  closeUserMenu();
+});
+
 function logout() {
   // Flush any pending pin saves before losing session
   if (state.userPrefs && state.userPrefs._pending) {
@@ -2154,6 +2336,8 @@ function renderHome() {
         </div>
       </div>
     </div>
+
+    ${renderHomeNumeriSection()}
 
     ${pinsByType.schede.length > 0 ? `
       <div class="home-section home-pins-group">
@@ -3651,7 +3835,7 @@ function clearRubricaSearch() {
 }
 
 function filterRubricaByInitial(letter) {
-  // Imposta o resetta il filtro per iniziale del nome UOC (senza prefisso UOC/UOSD)
+  // 'pinned' = mostra solo UOC preferite; null = tutti; lettera = filtro iniziale
   if (state.rubricaInitialFilter === letter) {
     state.rubricaInitialFilter = null; // toggle off
   } else {
@@ -3720,12 +3904,6 @@ function renderNumeri(filter) {
   if (filter === 'guardia') {
     filteredGruppi = allGroups.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
     filterLabel = 'Medici di Guardia';
-  } else if (filter === 'urgenza') {
-    filteredGruppi = allGroups
-      .filter(g => !g.non_clinico)
-      .map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('urgenza') || (c.tag || []).includes('guardia')) }))
-      .filter(g => g.contatti.length);
-    filterLabel = 'Urgenze cliniche';
   } else if (filter) {
     // Prima prova: filter è un gruppoId → mostra solo quella UOC
     const gruppoMatch = allGroups.find(g => g.id === filter);
@@ -3786,7 +3964,7 @@ function renderNumeri(filter) {
     ].filter(Boolean).join(' ').toLowerCase();
     
     const groupText = (g) => {
-      const base = [g.nome, g.direttore, g.email].filter(Boolean).join(' ');
+      const base = [g.nome, g.email, (g.alias || []).join(' ')].filter(Boolean).join(' ');
       const sedi = (g.sedi_operative || []).map(s =>
         `${s.tipo || ''} ${s.edificio || ''} ${s.piano || ''} ${s.area || ''}`
       ).join(' ');
@@ -3844,8 +4022,7 @@ function renderNumeri(filter) {
       ${filterLabel ? `<div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Filtrato per: <strong>${escapeHtml(filterLabel)}</strong></div>` : ''}
       <div class="numeri-filters" style="margin-top:20px;">
         <button class="filter-chip ${!filter ? 'active' : ''}" onclick="navigate('numeri')">Tutti</button>
-        <button class="filter-chip ${filter === 'guardia' ? 'active' : ''}" onclick="navigate('numeri', {filter:'guardia'})">Solo MdG guardia</button>
-        <button class="filter-chip ${filter === 'urgenza' ? 'active' : ''}" onclick="navigate('numeri', {filter:'urgenza'})">Urgenze</button>
+        <button class="filter-chip ${filter === 'guardia' ? 'active' : ''}" onclick="navigate('numeri', {filter:'guardia'})">MdG</button>
       </div>
       ${toggleHtml}
     </div>
@@ -3882,10 +4059,7 @@ function renderNumeri(filter) {
       const showHeader = src !== 'aopd' || (showExt.osa || showExt.iov);
       const compactMode = !rubricaQuery && !filter;
       if (compactMode) {
-        // Funzione locale: nome senza prefisso UOC/UOSD/etc
-        const stripPrefix = (name) => {
-          return String(name || '').replace(/^(U\.?O\.?C\.?|U\.?O\.?S\.?D\.?|U\.?O\.?S\.?|S\.?S\.?D\.?|S\.?S\.?|U\.?O\.?)\s+/i, '').trim();
-        };
+        const stripPrefix = stripPrefixNome;
         // Calcolo le iniziali disponibili (solo lettere A-Z, ignoro numeri/altro)
         const initialsAvailable = new Set();
         list.forEach(g => {
@@ -3896,15 +4070,17 @@ function renderNumeri(filter) {
         const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
         const activeInitial = state.rubricaInitialFilter || null;
         // Filtro la lista per iniziale se attiva
-        const visibleList = activeInitial
-          ? list.filter(g => stripPrefix(g.nome).charAt(0).toUpperCase() === activeInitial)
-          : list;
+        const visibleList = activeInitial === 'pinned'
+          ? list.filter(g => isPinned('gruppo', g.id) || (g.contatti || []).some(c => isPinned('contatto', c.id)))
+          : activeInitial
+            ? list.filter(g => stripPrefix(g.nome).charAt(0).toUpperCase() === activeInitial)
+            : list;
         // Ordino per nome senza prefisso
         const sortedList = [...visibleList].sort((a,b) => stripPrefix(a.nome).localeCompare(stripPrefix(b.nome), 'it'));
         // Alfabeto cliccabile
         const alphabetBar = `
           <div class="rubrica-alphabet-bar">
-            <button class="rubrica-alpha-btn ${!activeInitial ? 'active' : ''}" onclick="filterRubricaByInitial(null)" title="Mostra tutti">★</button>
+            <button class="rubrica-alpha-btn ${activeInitial === 'pinned' ? 'active' : ''}" onclick="filterRubricaByInitial('pinned')" title="Mostra solo preferiti (fissati con ☆)">★</button>
             ${allLetters.map(L => {
               const has = initialsAvailable.has(L);
               const isActive = activeInitial === L;
@@ -3916,27 +4092,33 @@ function renderNumeri(filter) {
         return `
           ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
           ${src === 'aopd' ? alphabetBar : ''}
+          ${activeInitial === 'pinned' ? renderPinnedContattiSection(list) : `
           <div class="uoc-compact-list">
             ${sortedList.map(g => {
-              return `<button class="uoc-compact-item" onclick="navigate('numeri', {filter:'${escapeJs(g.id)}'})">
-                <span class="uoc-compact-name">${escapeHtml(stripPrefix(g.nome))}</span>
-              </button>`;
+              return `<div class="uoc-compact-item">
+                <button style="background:none;border:none;flex:1;text-align:left;cursor:pointer;padding:0;font:inherit;color:inherit;min-width:0;" onclick="navigate('numeri', {filter:'${escapeJs(g.id)}'})">
+                  <span class="uoc-compact-name">${escapeHtml(stripPrefix(g.nome))}</span>
+                </button>
+                ${renderPinButton('gruppo', g.id)}
+              </div>`;
             }).join('')}
-          </div>`;
+          </div>`}`;
       }
       return `
         ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
         ${list.map(g => {
           const isManuallyExpanded = rubricaQuery && (state.rubricaExpandedGroups || new Set()).has(g.id);
+          const isGuardiaFilter = filter === 'guardia';
+          const displayName = isGuardiaFilter ? stripPrefixNome(g.nome) : g.nome;
           return `
           <div class="numeri-group">
             <h2 class="numeri-group-title">
               ${rubricaQuery
-                ? `<a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Mostra tutti i numeri di questa UOC">${escapeHtml(g.nome)}</a>`
+                ? `<a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Mostra tutti i numeri di questa UOC">${escapeHtml(displayName)}</a>`
                 : (filter && filter !== g.id)
-                  ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri tutta la UOC">${escapeHtml(g.nome)}</a>`
-                  : escapeHtml(g.nome)
-              }${renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
+                  ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri tutta la UOC">${escapeHtml(displayName)}</a>`
+                  : escapeHtml(displayName)
+              }${isGuardiaFilter ? '' : renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
               <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center;">
                 ${isManuallyExpanded ? `<button class="btn-icon-mini" onclick="collapseGroup('${escapeJs(g.id)}')" title="Nascondi tutti i numeri di questa UOC" style="font-size:11px;color:var(--ink-muted);">↕ nascondi</button>` : ''}
                 <span class="edit-only" style="display:inline-flex;gap:6px;">
@@ -3947,8 +4129,20 @@ function renderNumeri(filter) {
             </h2>
             ${g.direttore ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
             ${g.email ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
-            ${renderSedeOperativa(g.sede_operativa, g.sedi_operative)}
-            ${sortContattiForDisplay(g.contatti || []).map(c => renderNumeroRow(c, g.id, c._classify)).join('')}
+            ${(function(){
+              const sorted = sortContattiForDisplay(g.contatti || []);
+              const buckets = groupContattiBySede(sorted, g.sedi_operative, g.sede_operativa);
+              // Se c'è una sola bucket senza sede (UOC senza sedi strutturate), render flat senza header
+              if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
+                return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify)).join('');
+              }
+              return buckets.map(b => {
+                const header = b.sede
+                  ? renderSedeBucketHeader(b.sede)
+                  : `<div class="sede-bucket-header sede-bucket-altro">Altro</div>`;
+                return `${header}<div class="sede-bucket-contatti">${b.contatti.map(c => renderNumeroRow(c, g.id, c._classify)).join('')}</div>`;
+              }).join('');
+            })()}
             ${rubricaQuery && !isManuallyExpanded && (function(){
               // Se sto filtrando e questa UOC ha più contatti di quelli visibili, mostra un hint
               const fullGroup = allGroups.find(x => x.id === g.id);
@@ -3969,6 +4163,208 @@ function renderNumeri(filter) {
         }).join('')}
       `;
     }).join('')}`;
+}
+
+function renderHomeNumeriSection() {
+  const cids = (state.userPrefs && state.userPrefs.home_numeri) || [];
+  const editMode = state.editMode;
+  // Risolvi contatti da cid
+  const items = [];
+  cids.forEach(cid => {
+    for (const g of (state.index.numeri || [])) {
+      const c = (g.contatti || []).find(x => x.id === cid);
+      if (c) { items.push({ c, g }); break; }
+    }
+  });
+
+  const searchBox = editMode ? `
+    <div style="margin-bottom:12px;">
+      <input type="text" id="home-numeri-search" placeholder="Cerca un numero da aggiungere…"
+        oninput="renderHomeNumeriSearchResults(this.value)"
+        style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
+      <div id="home-numeri-search-results" style="margin-top:6px;"></div>
+    </div>` : '';
+
+  const itemsHtml = items.map(({ c, g }) => {
+    const nums = (c.numeri || []).join(' · ');
+    const extra = [c.breve ? `br. ${c.breve}` : '', c.cellulare || ''].filter(Boolean).join(' · ');
+    const dispNum = [nums, extra].filter(Boolean).join(' · ');
+    return `<div class="home-numero-row" data-cid="${escapeHtml(c.id)}">
+      ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
+      <div class="home-numero-text" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
+        <div class="home-numero-label">${escapeHtml(c.etichetta)}</div>
+        <div class="home-numero-uoc">${escapeHtml(stripPrefixNome(g.nome))}</div>
+      </div>
+      <div class="home-numero-num">${escapeHtml(dispNum || '—')}</div>
+      ${editMode ? `<button class="btn-icon-mini" onclick="removeHomeNumero('${escapeJs(c.id)}')" title="Rimuovi">✕</button>` : ''}
+    </div>`;
+  }).join('');
+
+  const empty = !items.length && !editMode
+    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun numero in home. Clicca <em>Modifica</em> per aggiungerli.</div>`
+    : '';
+
+  setTimeout(() => initHomeNumeriSortable(), 0);
+
+  return `<div class="home-section home-pins-group">
+    <div class="home-section-title"><span>Numeri</span></div>
+    ${searchBox}
+    <div id="home-numeri-list">${itemsHtml}</div>
+    ${empty}
+  </div>`;
+}
+
+function initHomeNumeriSortable() {
+  if (typeof Sortable === 'undefined' || !state.editMode) return;
+  const el = document.getElementById('home-numeri-list');
+  if (el && !el._sortable) {
+    el._sortable = Sortable.create(el, {
+      handle: '.drag-handle',
+      animation: 150,
+      onEnd: () => {
+        const order = Array.from(el.children).map(x => x.dataset.cid).filter(Boolean);
+        userPrefs.reorderHomeNumeri(order);
+      }
+    });
+  }
+}
+
+function renderHomeNumeriSearchResults(query) {
+  const box = document.getElementById('home-numeri-search-results');
+  if (!box) return;
+  const q = (query || '').trim();
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  if (!state.fuse) { box.innerHTML = ''; return; }
+  const results = state.fuse.search(q)
+    .filter(r => r.item.type === 'numero')
+    .slice(0, 8);
+  const already = new Set((state.userPrefs && state.userPrefs.home_numeri) || []);
+  box.innerHTML = results.map(r => {
+    const item = r.item;
+    const isIn = already.has(item.slug);
+    return `<div class="home-numeri-search-item">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;color:var(--ink);">${escapeHtml(item.titolo)}</div>
+        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(item.gruppo))} · ${escapeHtml(item.numeri || '')}</div>
+      </div>
+      <button class="btn-icon-mini" onclick="addHomeNumero('${escapeJs(item.slug)}')" ${isIn ? 'disabled title="Già in home"' : 'title="Aggiungi"'}>${isIn ? '✓' : '+'}</button>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--ink-muted);padding:6px;">Nessun risultato</div>';
+}
+
+function addHomeNumero(cid) {
+  if (!userPrefs.hasHomeNumero(cid)) {
+    userPrefs.toggleHomeNumero(cid);
+    renderHome();
+  }
+}
+function removeHomeNumero(cid) {
+  if (userPrefs.hasHomeNumero(cid)) {
+    userPrefs.toggleHomeNumero(cid);
+    renderHome();
+  }
+}
+
+function renderPinnedContattiSection(allGroups) {
+  // Raccoglie tutti i contatti pinnati con il loro gruppo
+  const pinnedGroups = []; // [{ gid, nome, contatti: [c1, c2...] }]
+  allGroups.forEach(g => {
+    const pinnedContatti = (g.contatti || []).filter(c => c.id && isPinned('contatto', c.id));
+    if (pinnedContatti.length) pinnedGroups.push({ gid: g.id, nome: g.nome, contatti: pinnedContatti });
+  });
+
+  if (!pinnedGroups.length) {
+    return `<div style="padding:24px 20px;background:var(--bg-sink);border:1px dashed var(--rule);border-radius:3px;text-align:center;">
+      <div style="font-size:28px;color:var(--ink-faint);margin-bottom:8px;">☆</div>
+      <div style="font-size:14px;color:var(--ink);margin-bottom:6px;font-weight:500;">Nessun numero preferito</div>
+      <div style="font-size:12px;color:var(--ink-muted);line-height:1.5;">Apri una UOC e clicca ☆ accanto a un numero per aggiungerlo ai preferiti.</div>
+    </div>`;
+  }
+
+  // Ordina UOC secondo pin_order._uoc
+  const uocOrder = userPrefs.getUocOrder();
+  pinnedGroups.sort((a, b) => {
+    const ia = uocOrder.indexOf(a.gid);
+    const ib = uocOrder.indexOf(b.gid);
+    if (ia === -1 && ib === -1) return stripPrefixNome(a.nome).localeCompare(stripPrefixNome(b.nome), 'it');
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+
+  // Ordina contatti dentro ogni UOC
+  pinnedGroups.forEach(pg => {
+    const order = userPrefs.getContactOrder(pg.gid);
+    pg.contatti.sort((a, b) => {
+      const ia = order.indexOf(a.id);
+      const ib = order.indexOf(b.id);
+      if (ia === -1 && ib === -1) return 0;
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+  });
+
+  const editMode = state.editMode;
+  const editHint = editMode
+    ? `<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:10px;">✋ Trascina per riordinare UOC o numeri dentro una UOC</div>`
+    : '';
+
+  const groupsHtml = pinnedGroups.map(pg => {
+    const contattiHtml = pg.contatti.map(c => {
+      const nums = (c.numeri || []).join(' · ');
+      const extra = [c.breve ? `br. ${c.breve}` : '', c.cellulare || ''].filter(Boolean).join(' · ');
+      const dispNum = [nums, extra].filter(Boolean).join(' · ');
+      return `<div class="pinned-contatto-row" data-cid="${escapeHtml(c.id)}">
+        ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
+        <span class="pinned-contatto-label" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">${escapeHtml(c.etichetta)}</span>
+        <span class="pinned-contatto-num">${escapeHtml(dispNum || '—')}</span>
+        ${renderPinButton('contatto', c.id)}
+      </div>`;
+    }).join('');
+
+    return `<div class="pinned-uoc-block" data-gid="${escapeHtml(pg.gid)}">
+      <div class="pinned-uoc-header">
+        ${editMode ? '<span class="drag-handle drag-handle-uoc" title="Trascina UOC">⋮⋮</span>' : ''}
+        <a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(pg.gid)}'})" class="pinned-uoc-name">${escapeHtml(stripPrefixNome(pg.nome))}</a>
+        <span style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);">${pg.contatti.length}</span>
+      </div>
+      <div class="pinned-uoc-contatti" data-gid="${escapeHtml(pg.gid)}">${contattiHtml}</div>
+    </div>`;
+  }).join('');
+
+  // Init Sortable after render (setTimeout per garantire DOM ready)
+  setTimeout(() => initPinnedSortables(), 0);
+
+  return `${editHint}<div id="pinned-uoc-list">${groupsHtml}</div>`;
+}
+
+function initPinnedSortables() {
+  if (typeof Sortable === 'undefined') return;
+  if (!state.editMode) return;
+  const uocList = document.getElementById('pinned-uoc-list');
+  if (uocList && !uocList._sortable) {
+    uocList._sortable = Sortable.create(uocList, {
+      handle: '.drag-handle-uoc',
+      animation: 150,
+      onEnd: () => {
+        const order = Array.from(uocList.children).map(el => el.dataset.gid).filter(Boolean);
+        userPrefs.setUocOrder(order);
+      }
+    });
+  }
+  document.querySelectorAll('.pinned-uoc-contatti').forEach(el => {
+    if (el._sortable) return;
+    el._sortable = Sortable.create(el, {
+      handle: '.drag-handle:not(.drag-handle-uoc)',
+      animation: 150,
+      onEnd: () => {
+        const gid = el.dataset.gid;
+        const order = Array.from(el.children).map(c => c.dataset.cid).filter(Boolean);
+        userPrefs.setContactOrder(gid, order);
+      }
+    });
+  });
 }
 
 function renderUbicazioneBadge(ub) {
@@ -4041,7 +4437,7 @@ function classifyContatto(c) {
   }
   const label = (c.etichetta || '').toLowerCase();
   const tags = (c.tag || []).map(t => t.toLowerCase());
-  const isGuardia = tags.includes('guardia') || tags.includes('urgenza') || /\b(guardia|mdg|medico di guardia|reperibile)\b/i.test(c.etichetta || '');
+  const isGuardia = tags.includes('guardia') || /\b(guardia|mdg|medico di guardia|reperibile)\b/i.test(c.etichetta || '');
   // Reparto / aree cliniche operative. Uso prefix match per degenz/infermier (no \b finale).
   const isReparto = /\b(reparto|guardiola|caposala|coordinat|sala medici|sala operatoria|medici di reparto|degenz|infermier|\bdeg\b|front office|u\.?c\.?i\.?c|u\.?t\.?i\.?c|unità coronarica|terapia intensiva|subintensiva|sub-intensiva|emodinamica|elettrofisiologia|bancone|area infermieri|stud(io|i) medici)/i.test(c.etichetta || '');
   // Solo segreteria (non direttori/studi), che merita tag "Segr."
@@ -4091,6 +4487,86 @@ function sortContattiForDisplay(contatti) {
   return withClass;
 }
 
+// Raggruppa i contatti per sede operativa. Mappa ogni contatto a una sede_operativa
+// del gruppo usando la sezione del contatto. I contatti senza mapping vanno in "Altro".
+// Ritorna array di buckets: [{ sede, sedeKey, label, contatti }]
+function groupContattiBySede(contatti, sedi_operative, sede_operativa) {
+  const sedi = (sedi_operative && sedi_operative.length)
+    ? sedi_operative
+    : (sede_operativa ? [sede_operativa] : []);
+  if (!sedi.length) {
+    // Nessuna sede operativa strutturata: unico bucket "Tutti"
+    return [{ sede: null, sedeKey: '_all', label: null, contatti }];
+  }
+  // Mapping tipo sede → regex su sezione contatto
+  const sedeMatchers = [
+    { tipo: 'ucic',             re: /ucic|unit[àa] coronarica|terapia intensiva cardiolog/i },
+    { tipo: 'utic',             re: /utic/i },
+    { tipo: 'emodinamica',      re: /emodinamica|cardiologia intervent/i },
+    { tipo: 'elettrofisiologia', re: /elettrofisiolog/i },
+    { tipo: 'riabilitazione',   re: /riabilit/i },
+    { tipo: 'terapia_intensiva', re: /terapia intensiva|rianimaz/i },
+    { tipo: 'sub_intensiva',    re: /sub.?intensiva/i },
+    { tipo: 'day_hospital',     re: /day hospital|\bdh\b/i },
+    { tipo: 'sala_operatoria',  re: /sala operator|sale operator|\bso\b/i },
+    { tipo: 'degenze',          re: /degenz|reparto|front office|bancone|area infermier/i },
+    { tipo: 'studi_medici',     re: /stud(io|i) medic/i },
+    { tipo: 'ambulatori',       re: /ambulator|\bamb\./i },
+    { tipo: 'laboratorio',      re: /laborator/i },
+    { tipo: 'segreteria',       re: /segreteria|segr\./i },
+    { tipo: 'portineria',       re: /portineria/i },
+    { tipo: 'libera_professione', re: /libera profession/i },
+  ];
+  // Crea bucket per ogni sede operativa (nello stesso ordine delle sedi)
+  const buckets = sedi.map((s, idx) => ({
+    sede: s, sedeKey: `sede_${idx}`, tipo: s.tipo,
+    contatti: []
+  }));
+  const altro = { sede: null, sedeKey: '_altro', tipo: null, contatti: [] };
+  // Assegna ogni contatto al bucket migliore
+  contatti.forEach(c => {
+    const sez = (c.sezione || '').toLowerCase();
+    const et  = (c.etichetta || '').toLowerCase();
+    const text = sez + ' ' + et;
+    // Trova il tipo più specifico che matcha
+    let matchedTipo = null;
+    for (const m of sedeMatchers) {
+      if (m.re.test(text)) { matchedTipo = m.tipo; break; }
+    }
+    // Cerca un bucket con quel tipo
+    const bucket = matchedTipo ? buckets.find(b => b.tipo === matchedTipo) : null;
+    if (bucket) bucket.contatti.push(c);
+    else altro.contatti.push(c);
+  });
+  // Ritorno solo bucket non vuoti, in ordine
+  const result = buckets.filter(b => b.contatti.length);
+  if (altro.contatti.length) result.push(altro);
+  return result;
+}
+
+// Header per bucket sede operativa (rubrica raggruppata)
+function renderSedeBucketHeader(s) {
+  const tipoLabels = {
+    degenze: 'Degenze', sala_operatoria: 'Sala operatoria', diagnostica: 'Esami',
+    ambulatori: 'Ambulatori', day_hospital: 'Day Hospital', segreteria: 'Segreteria',
+    portineria: 'Portineria', ucic: 'UCIC', utic: 'UTIC', emodinamica: 'Emodinamica',
+    elettrofisiologia: 'Elettrofisiologia', riabilitazione: 'Riabilitazione',
+    laboratorio: 'Laboratorio', terapia_intensiva: 'Terapia Intensiva',
+    sub_intensiva: 'Sub Intensiva', studi_medici: 'Studi Medici',
+    ricoveri: 'Ricoveri', libera_professione: 'Libera Professione'
+  };
+  const tipo = tipoLabels[s.tipo] || (s.tipo || '').replace(/_/g, ' ');
+  const parts = [];
+  if (s.edificio) parts.push(escapeHtml(s.edificio));
+  if (s.piano) parts.push(escapeHtml(s.piano));
+  if (s.area) parts.push(escapeHtml(s.area));
+  const loc = parts.join(' · ');
+  return `<div class="sede-bucket-header">
+    <span class="sede-bucket-tipo">${escapeHtml(tipo)}</span>
+    ${loc ? `<span class="sede-bucket-loc">${loc}</span>` : ''}
+  </div>`;
+}
+
 function renderNumeroRow(c, gruppoId, classify) {
   const tags = c.tag || [];
   const cls = classify || (c._classify || classifyContatto(c));
@@ -4099,7 +4575,6 @@ function renderNumeroRow(c, gruppoId, classify) {
     : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge">Guardia</span>` : '';
-  const urgenzaBadge = tags.includes('urgenza') ? `<span class="badge" style="background:var(--danger-soft);color:var(--danger);">Urgenza</span>` : '';
   const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">🏥 Guardiola</span>` : '';
   const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
   const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">● Utili</span>` : '';
@@ -4146,7 +4621,7 @@ function renderNumeroRow(c, gruppoId, classify) {
   return `
     <div class="${rowClass}">
       <div>
-        <div class="numero-label">${guardiaBadge}${urgenzaBadge}${guardiolaBadge}${repartoBadge}${utileBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
+        <div class="numero-label">${guardiaBadge}${guardiolaBadge}${repartoBadge}${utileBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
         ${sezione}
         ${luogo}
         ${email}
@@ -5698,8 +6173,8 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
       </div>
       <div class="field">
         <label>Tag (separati da virgola)</label>
-        <input type="text" id="ce-tag" value="${escapeHtml(tagStr)}" placeholder="es. guardia, urgenza">
-        <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Tag speciali: <code>guardia</code>, <code>urgenza</code> (mostrano badge)</div>
+        <input type="text" id="ce-tag" value="${escapeHtml(tagStr)}" placeholder="es. guardia, guardiola">
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Tag speciali: <code>guardia</code>, <code>guardiola</code> (mostrano badge)</div>
       </div>
       <div class="field">
         <label>Note</label>
@@ -6501,7 +6976,7 @@ function renderSearchResults(query) {
 
   const lowerQuery = effectiveQuery.toLowerCase();
   const queryTerms = terms.map(t => t.toLowerCase());
-  const wantsGuardia = /\b(guardia|mdg|urgenza|reperibile)\b/i.test(effectiveQuery);
+  const wantsGuardia = /\b(guardia|mdg|reperibile)\b/i.test(effectiveQuery);
 
   // Sinonimi multi-token (allineati alla ricerca rubrica)
   const synonyms = {
@@ -6547,11 +7022,15 @@ function renderSearchResults(query) {
   numeriRaw.forEach(r => {
     const gid = r.item.gruppoId;
     // Filtro stretto: ogni token della query deve matchare nel contatto o nel gruppo
-    // (Fuse produce falsi positivi fuzzy, quindi valido con substring match)
+    // MA almeno un token deve matchare direttamente nel testo del contatto (evita di
+    // includere tutti i contatti di un gruppo solo perché il nome gruppo matcha qualche token).
     if (queryTerms.length >= 1 && !isNumericQuery) {
       const ctxt = contactText(r.item);
-      const gtxt = (r.item.gruppo + ' ' + (r.item.direttore || '') + ' ' + (r.item.sede || '') + ' ' + (r.item.alias || '')).toLowerCase();
+      const gtxt = (r.item.gruppo + ' ' + (r.item.alias || '')).toLowerCase();
       if (!allTokensMatch(ctxt, gtxt)) return;
+      // Almeno un token deve essere presente nel contatto stesso (non solo nel gruppo)
+      const anyTokenInContact = queryTerms.some(t => tokenMatches(t, ctxt));
+      if (!anyTokenInContact) return;
     }
     if (!byGruppo.has(gid)) {
       byGruppo.set(gid, {
@@ -6569,19 +7048,12 @@ function renderSearchResults(query) {
     if (r.score < g.bestScore) g.bestScore = r.score;
   });
 
-  // Aggiungo gruppi i cui campi matchano l'intera query (nome/direttore/sede/sedi_operative)
-  // anche se nessun singolo contatto ha matchato
+  // Aggiungo gruppi il cui NOME/direttore/alias matcha interamente la query (no sedi_operative tipo,
+  // che è troppo specifico: "ucic" non deve espandere tutta la Cardiologia)
   const allGroupsForSearch = getVisibleNumeriGroups();
   allGroupsForSearch.forEach(g => {
-    const base = [g.nome, g.direttore, g.email].filter(Boolean).join(' ');
-    const sedi = (g.sedi_operative || []).map(s =>
-      `${s.tipo || ''} ${s.edificio || ''} ${s.piano || ''} ${s.area || ''}`
-    ).join(' ');
-    const sedeLegacy = g.sede_operativa
-      ? `${g.sede_operativa.tipo || ''} ${g.sede_operativa.edificio || ''} ${g.sede_operativa.piano || ''} ${g.sede_operativa.area || ''}`
-      : '';
-    const gTxt = (base + ' ' + sedi + ' ' + sedeLegacy).toLowerCase();
-    const groupMatches = queryTerms.every(t => tokenMatches(t, gTxt));
+    const nameAlias = [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
+    const groupMatches = queryTerms.every(t => tokenMatches(t, nameAlias));
     if (groupMatches) {
       matchedGroupIds.add(g.id);
       if (!byGruppo.has(g.id)) {
@@ -6590,12 +7062,11 @@ function renderSearchResults(query) {
           gruppo: g.nome,
           ospedale: g._source || 'aopd',
           direttore: g.direttore || '',
-          sede: sedi,
+          sede: '',
           contatti: [],
-          bestScore: 0.1  // alta rilevanza: il gruppo matcha per intero
+          bestScore: 0.1
         });
       } else {
-        // migliora lo score del gruppo se già presente
         const existing = byGruppo.get(g.id);
         if (existing.bestScore > 0.1) existing.bestScore = 0.1;
       }
@@ -7070,6 +7541,7 @@ function initEventListeners() {
 }
 
 async function init() {
+  initTheme();
   initEventListeners();
 
   // Check for existing session
