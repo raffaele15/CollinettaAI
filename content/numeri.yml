@@ -14,6 +14,7 @@ gruppi:
       struttura: Palazzina Direzione
     direttore: Dr. Dal Ben Giuseppe
     email: dir.gen@aopd.veneto.it
+    contatti: []
   - id: dir-sanitaria
     nome: Direzione Sanitaria
     ubicazione:
@@ -21,6 +22,7 @@ gruppi:
       struttura: Palazzina Direzione
     direttore: Dr. Tessarin Michele
     email: dir.san@aopd.veneto.it
+    contatti: []
   - id: dir-amministrativa
     nome: Direzione Amministrativa
     ubicazione:
@@ -6106,7 +6108,7 @@ gruppi:
           - 2393
         sezione: Ambulatori
         luogo: Monoblocco 1° piano
-        kind: ambulatorio
+        kind: utile
       - id: card-amb-n3-eco-holter
         etichetta: Amb. N°3 - Eco Holter
         numeri:
