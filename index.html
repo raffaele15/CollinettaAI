@@ -394,6 +394,12 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .numero-nums{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .numero-btn{font-family:var(--mono);font-size:13px;font-weight:500;padding:6px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;color:var(--ink);cursor:pointer;transition:all .12s;letter-spacing:.02em}
 .numero-btn:hover{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
+.numero-row-guardia .numero-btn{background:#fef0ef;color:var(--danger);border-color:var(--danger)}
+.numero-row-guardia .numero-btn:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.numero-row-reparto .numero-btn{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.numero-row-reparto .numero-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.numero-row-utile .numero-btn{background:#e8f5e9;color:#2e7d32;border-color:#2e7d32}
+.numero-row-utile .numero-btn:hover{background:#2e7d32;color:#fff;border-color:#2e7d32}
 .numero-note{font-size:12px;color:var(--ink-muted);margin-top:4px;font-style:italic}
 .codici-banner{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:20px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;margin-bottom:32px}
 .codici-banner-item{display:flex;flex-direction:column;gap:4px}
@@ -1485,7 +1491,8 @@ const state = {
   editingContext: null,
   fuse: null,
   userPrefs: null,          // {pins: [...], _sha: null, _saveTimer: null, _pending: false}
-  userPrefsPath: null
+  userPrefsPath: null,
+  pendingTagEdits: new Map()  // Map<contactId, newKind|null> — modifiche pending ai tag kind (guardia/reparto/utile)
 };
 
 const SESSION_KEY = 'collinettaai.session';
@@ -4084,7 +4091,7 @@ function renderNumeroRow(c, gruppoId, classify) {
   const urgenzaBadge = tags.includes('urgenza') ? `<span class="badge" style="background:var(--danger-soft);color:var(--danger);">Urgenza</span>` : '';
   const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">🏥 Guardiola</span>` : '';
   const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
-  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">● Utile</span>` : '';
+  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">● Utili</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
@@ -4121,7 +4128,7 @@ function renderNumeroRow(c, gruppoId, classify) {
     <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
     <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">🔴 Guardia</button>
     <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">🔵 Reparto</button>
-    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">🟢 Utile</button>
+    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">🟢 Utili</button>
     ${effectiveKind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
     ${hasPending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
   </div>` : '';
@@ -6656,7 +6663,7 @@ function renderSearchResults(query) {
       <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
       ${mk('guardia', '🔴 Guardia', '#fef0ef', 'var(--danger)')}
       ${mk('reparto', '🔵 Reparto', 'var(--accent-soft)', 'var(--accent)')}
-      ${mk('utile',   '🟢 Utile',   '#e8f5e9', '#2e7d32')}
+      ${mk('utile',   '🟢 Utili',   '#e8f5e9', '#2e7d32')}
       ${k ? `<button class="kind-chip-reset" onclick="event.stopPropagation(); setContactKind('${escapeJs(c.id)}',null)" title="Auto">✕ auto</button>` : ''}
       ${pending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
     </div>`;
@@ -6692,7 +6699,7 @@ function renderSearchResults(query) {
       return `<div class="sr-contact sr-contact-utile" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
           <div class="sr-contact-label">${escapeHtml(c.etichetta)}</div>
-          <div class="sr-contact-meta">● utile</div>
+          <div class="sr-contact-meta">● utili</div>
           ${luogoHtml}
           ${tagChips}
         </div>
