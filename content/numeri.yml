@@ -6106,6 +6106,7 @@ gruppi:
           - 2393
         sezione: Ambulatori
         luogo: Monoblocco 1° piano
+        kind: ambulatorio
       - id: card-amb-n3-eco-holter
         etichetta: Amb. N°3 - Eco Holter
         numeri:
