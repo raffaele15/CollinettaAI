@@ -114,8 +114,7 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 .nav-tree-caret{display:inline-block;width:12px;font-size:10px;color:var(--ink-faint);text-align:center;flex-shrink:0;transition:transform .12s}
 .nav-tree-row.expanded > .nav-tree-caret{transform:rotate(0)}
 .nav-tree-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nav-tree-count{font-family:var(--mono);font-size:10px;color:var(--ink-faint);font-weight:400}
-.nav-tree-row.active .nav-tree-count{color:var(--accent)}
+.nav-tree-count{display:none}
 .nav-tree-children{padding-left:14px;border-left:1px dashed var(--rule-soft);margin-left:10px;display:none}
 .nav-tree-node.open > .nav-tree-children{display:block}
 .nav-tree-children .nav-tree-row{font-size:13px;padding:4px 10px}
@@ -314,6 +313,11 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .uoc-compact-item:hover{border-color:var(--rule-strong);background:var(--bg-sink)}
 .uoc-compact-name{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);line-height:1.25;flex:1;min-width:0}
 .uoc-compact-meta{font-family:var(--mono);font-size:11px;color:var(--ink-muted);white-space:nowrap;letter-spacing:.02em}
+.rubrica-alphabet-bar{display:flex;flex-wrap:wrap;gap:2px;margin:8px 0 16px;padding:8px;background:var(--bg-sink);border-radius:3px;border:1px solid var(--rule-soft)}
+.rubrica-alpha-btn{min-width:28px;height:28px;padding:0 6px;border:1px solid transparent;background:transparent;font-family:var(--mono);font-size:13px;color:var(--ink-soft);cursor:pointer;border-radius:2px;transition:all .1s;display:inline-flex;align-items:center;justify-content:center;font-weight:500}
+.rubrica-alpha-btn:hover:not(:disabled):not(.disabled){background:var(--bg-paper);border-color:var(--rule);color:var(--ink)}
+.rubrica-alpha-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
+.rubrica-alpha-btn.disabled,.rubrica-alpha-btn:disabled{color:var(--ink-faint);opacity:.4;cursor:not-allowed}
 .kind-chip{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:11px;background:var(--bg-paper);color:var(--ink-soft);border:1px solid var(--rule);cursor:pointer;transition:all .12s;white-space:nowrap;line-height:1.4}
 .kind-chip:hover{border-color:var(--chip-color,var(--ink-soft));color:var(--chip-color,var(--ink))}
 .kind-chip.active{background:var(--chip-bg,var(--accent-soft));color:var(--chip-color,var(--accent));border-color:var(--chip-color,var(--accent));font-weight:500}
@@ -3541,6 +3545,17 @@ function clearRubricaSearch() {
   if (input) input.focus();
 }
 
+function filterRubricaByInitial(letter) {
+  // Imposta o resetta il filtro per iniziale del nome UOC (senza prefisso UOC/UOSD)
+  if (state.rubricaInitialFilter === letter) {
+    state.rubricaInitialFilter = null; // toggle off
+  } else {
+    state.rubricaInitialFilter = letter;
+  }
+  const params = state.currentParams || {};
+  renderNumeri(params.filter);
+}
+
 function openGuardieRubrica() {
   state.rubricaSearch = '';
   navigate('numeri', { filter: 'guardia' });
@@ -3762,15 +3777,44 @@ function renderNumeri(filter) {
       const showHeader = src !== 'aopd' || (showExt.osa || showExt.iov);
       const compactMode = !rubricaQuery && !filter;
       if (compactMode) {
-        // Modalità compatta: solo titoli cliccabili
+        // Funzione locale: nome senza prefisso UOC/UOSD/etc
+        const stripPrefix = (name) => {
+          return String(name || '').replace(/^(U\.?O\.?C\.?|U\.?O\.?S\.?D\.?|U\.?O\.?S\.?|S\.?S\.?D\.?|S\.?S\.?|U\.?O\.?)\s+/i, '').trim();
+        };
+        // Calcolo le iniziali disponibili (solo lettere A-Z, ignoro numeri/altro)
+        const initialsAvailable = new Set();
+        list.forEach(g => {
+          const name = stripPrefix(g.nome);
+          const ch = (name.charAt(0) || '').toUpperCase();
+          if (ch >= 'A' && ch <= 'Z') initialsAvailable.add(ch);
+        });
+        const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const activeInitial = state.rubricaInitialFilter || null;
+        // Filtro la lista per iniziale se attiva
+        const visibleList = activeInitial
+          ? list.filter(g => stripPrefix(g.nome).charAt(0).toUpperCase() === activeInitial)
+          : list;
+        // Ordino per nome senza prefisso
+        const sortedList = [...visibleList].sort((a,b) => stripPrefix(a.nome).localeCompare(stripPrefix(b.nome), 'it'));
+        // Alfabeto cliccabile
+        const alphabetBar = `
+          <div class="rubrica-alphabet-bar">
+            <button class="rubrica-alpha-btn ${!activeInitial ? 'active' : ''}" onclick="filterRubricaByInitial(null)" title="Mostra tutti">★</button>
+            ${allLetters.map(L => {
+              const has = initialsAvailable.has(L);
+              const isActive = activeInitial === L;
+              return `<button class="rubrica-alpha-btn ${isActive ? 'active' : ''} ${has ? '' : 'disabled'}"
+                ${has ? `onclick="filterRubricaByInitial('${L}')"` : 'disabled'}
+                title="${has ? `Mostra UOC che iniziano per ${L}` : 'Nessuna UOC'}">${L}</button>`;
+            }).join('')}
+          </div>`;
         return `
           ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
+          ${src === 'aopd' ? alphabetBar : ''}
           <div class="uoc-compact-list">
-            ${list.map(g => {
-              const contactCount = (g.contatti || []).length;
+            ${sortedList.map(g => {
               return `<button class="uoc-compact-item" onclick="navigate('numeri', {filter:'${escapeJs(g.id)}'})">
-                <span class="uoc-compact-name">${escapeHtml(g.nome)}</span>
-                <span class="uoc-compact-meta">${contactCount} numeri</span>
+                <span class="uoc-compact-name">${escapeHtml(stripPrefix(g.nome))}</span>
               </button>`;
             }).join('')}
           </div>`;
@@ -3841,7 +3885,19 @@ function renderSedeOperativa(sede, sediArray) {
     diagnostica: 'Esami',
     ambulatori: 'Ambulatori',
     day_hospital: 'Day Hospital',
-    segreteria: 'Segreteria'
+    segreteria: 'Segreteria',
+    portineria: 'Portineria',
+    ucic: 'UCIC',
+    utic: 'UTIC',
+    emodinamica: 'Emodinamica',
+    elettrofisiologia: 'Elettrofisiologia',
+    riabilitazione: 'Riabilitazione',
+    laboratorio: 'Laboratorio',
+    terapia_intensiva: 'Terapia Intensiva',
+    sub_intensiva: 'Sub Intensiva',
+    studi_medici: 'Studi Medici',
+    ricoveri: 'Ricoveri',
+    libera_professione: 'Libera Professione'
   };
   const renderSingle = (s) => {
     if (!s || !s.edificio) return '';
