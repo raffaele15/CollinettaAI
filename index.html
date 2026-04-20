@@ -4005,12 +4005,16 @@ function classifyContatto(c) {
   const isGuardia = tags.includes('guardia') || tags.includes('urgenza') || /\b(guardia|mdg|medico di guardia|reperibile)\b/i.test(c.etichetta || '');
   // Reparto / aree cliniche operative. Uso prefix match per degenz/infermier (no \b finale).
   const isReparto = /\b(reparto|guardiola|caposala|coordinat|sala medici|sala operatoria|medici di reparto|degenz|infermier|\bdeg\b|front office|u\.?c\.?i\.?c|u\.?t\.?i\.?c|unità coronarica|terapia intensiva|subintensiva|sub-intensiva|emodinamica|elettrofisiologia|bancone|area infermieri|stud(io|i) medici)/i.test(c.etichetta || '');
-  const isDirSegr = /\b(direttore|segreteria|segr\.|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(c.etichetta || '');
+  // Solo segreteria (non direttori/studi), che merita tag "Segr."
+  const isSegreteria = /\b(segreteria|segr\.)\b/i.test(c.etichetta || '');
+  // Direzione pura (direttore, studi professori, scuola, didattica) — NON taggata di default
+  const isDirezione = /\b(direttore|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(c.etichetta || '');
   const isAmb = /\b(ambulator|amb\.|day hospital|\bdh\b|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '');
   if (isGuardia) return { group: 1, kind: 'guardia' };
   if (isReparto) return { group: 2, kind: 'reparto' };
   if (isAmb) return { group: 3, kind: 'ambulatorio' };
-  if (isDirSegr) return { group: 4, kind: 'direzione' };
+  if (isSegreteria) return { group: 4, kind: 'segreteria' };
+  if (isDirezione) return { group: 5, kind: 'altro' };  // direzione senza tag, in fondo
   return { group: 3, kind: 'altro' };
 }
 
