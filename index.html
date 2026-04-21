@@ -45,14 +45,12 @@
   --shadow-modal:0 20px 60px rgba(43,42,40,0.18), 0 2px 8px rgba(43,42,40,0.08);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px;-webkit-text-size-adjust:100%}
-html{overflow-x:hidden;max-width:100%}
-html{font-size:15px;overflow-x:clip;max-width:100%}
-/* Font size scale: usa zoom perché la maggior parte degli elementi ha font-size in px hardcoded */
-html[data-font-size="sm"] body{zoom:0.88}
-html[data-font-size="md"] body{zoom:1}
-html[data-font-size="lg"] body{zoom:1.12}
-html[data-font-size="xl"] body{zoom:1.25}
+html{font-size:15px;overflow-x:clip;max-width:100%;-webkit-text-size-adjust:100%}
+/* Font size scale: zoom applicato solo al contenuto principale, non a topbar/sidebar */
+html[data-font-size="sm"] main.content{zoom:0.88}
+html[data-font-size="md"] main.content{zoom:1}
+html[data-font-size="lg"] main.content{zoom:1.12}
+html[data-font-size="xl"] main.content{zoom:1.25}
 body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
 .hidden{display:none!important}
@@ -94,7 +92,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 
 /* APP SHELL */
 #app-view{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
-header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;padding:14px 24px;background:rgba(251,248,242,.92);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--rule);box-sizing:border-box;max-width:100vw}
+header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;padding:14px 24px;background:rgba(251,248,242,.92);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--rule);box-sizing:border-box}
 @media (max-width:900px){
   header.topbar{
     grid-template-columns:auto 1fr auto;
