@@ -141,6 +141,66 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
   --warning:#f5a35f;
 }
 [data-theme="dark"] body{background:#121212;color:var(--ink)}
+
+/* Palette D in dark mode: bg neutro + bordo colorato + numero pillola + pallino davanti al nome */
+[data-theme="dark"] .numero-row-guardia,
+[data-theme="dark"] .numero-row-reparto,
+[data-theme="dark"] .numero-row-utile,
+[data-theme="dark"] .sr-contact-guardia,
+[data-theme="dark"] .sr-contact-reparto,
+[data-theme="dark"] .sr-contact-utile{
+  background:var(--bg-paper);
+}
+[data-theme="dark"] .numero-row-guardia:hover,
+[data-theme="dark"] .sr-contact-guardia:hover{background:#241010}
+[data-theme="dark"] .numero-row-reparto:hover,
+[data-theme="dark"] .sr-contact-reparto:hover{background:#101a26}
+[data-theme="dark"] .numero-row-utile:hover,
+[data-theme="dark"] .sr-contact-utile:hover{background:#101a10}
+
+/* Label colorate restano colorate in dark, ma più chiare e leggibili */
+[data-theme="dark"] .numero-row-guardia .numero-label,
+[data-theme="dark"] .sr-contact-guardia .sr-contact-label{color:#f0a0a0}
+[data-theme="dark"] .numero-row-reparto .numero-label,
+[data-theme="dark"] .sr-contact-reparto .sr-contact-label{color:#9ec0ee}
+[data-theme="dark"] .numero-row-utile .numero-label,
+[data-theme="dark"] .sr-contact-utile .sr-contact-label{color:#a8d480}
+
+/* Pallino davanti al nome per guardia / reparto / utili (dark mode) */
+[data-theme="dark"] .numero-row-guardia .numero-label::before,
+[data-theme="dark"] .sr-contact-guardia .sr-contact-label::before,
+[data-theme="dark"] .numero-row-reparto .numero-label::before,
+[data-theme="dark"] .sr-contact-reparto .sr-contact-label::before,
+[data-theme="dark"] .numero-row-utile .numero-label::before,
+[data-theme="dark"] .sr-contact-utile .sr-contact-label::before{
+  content:"● ";
+  margin-right:4px;
+}
+[data-theme="dark"] .numero-row-guardia .numero-label::before,
+[data-theme="dark"] .sr-contact-guardia .sr-contact-label::before{color:#f07070}
+[data-theme="dark"] .numero-row-reparto .numero-label::before,
+[data-theme="dark"] .sr-contact-reparto .sr-contact-label::before{color:#6ba4f5}
+[data-theme="dark"] .numero-row-utile .numero-label::before,
+[data-theme="dark"] .sr-contact-utile .sr-contact-label::before{color:#8fc857}
+
+/* Numero come PILLOLA colorata piena (palette D) */
+[data-theme="dark"] .numero-row-guardia .numero-btn,
+[data-theme="dark"] .sr-contact-num-guardia{
+  background:#f07070!important;color:#1a0808!important;border-color:#f07070!important;font-weight:600
+}
+[data-theme="dark"] .numero-row-reparto .numero-btn,
+[data-theme="dark"] .sr-contact-num-reparto{
+  background:#6ba4f5!important;color:#081830!important;border-color:#6ba4f5!important;font-weight:600
+}
+[data-theme="dark"] .numero-row-utile .numero-btn,
+[data-theme="dark"] .sr-contact-num-utile{
+  background:#8fc857!important;color:#0a1804!important;border-color:#8fc857!important;font-weight:600
+}
+[data-theme="dark"] .numero-row-guardia .numero-btn:hover,
+[data-theme="dark"] .numero-row-reparto .numero-btn:hover,
+[data-theme="dark"] .numero-row-utile .numero-btn:hover{
+  filter:brightness(1.1)
+}
 .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--bg-paper);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em}
 .rate-limit-pill{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:4px 8px;border-radius:2px;background:var(--bg-sink);color:var(--ink-muted);border:1px solid var(--rule-soft);white-space:nowrap}
 .rate-limit-pill.warning{background:var(--warning-soft);color:var(--warning);border-color:var(--warning)}
@@ -263,7 +323,14 @@ aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:stic
 .nav-item-count{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
 .nav-item.active .nav-item-count{color:rgba(251,248,242,.6)}
 main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
-@media (max-width:700px){main.content{padding:28px 20px 60px}}
+@media (max-width:700px){
+  main.content{padding:14px 16px 60px}
+  .home-hero{margin-bottom:20px}
+  .home-title{font-size:clamp(26px,7vw,36px);margin-bottom:6px;line-height:1.05}
+  .home-lead{font-size:14px;line-height:1.4}
+  .page-head{margin-bottom:18px;padding-bottom:14px}
+  .page-eyebrow{margin-bottom:6px}
+}
 
 /* PAGE HEADERS */
 .page-head{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--rule)}
@@ -4167,7 +4234,7 @@ function renderNumeri(filter) {
 
 function renderHomeNumeriSection() {
   const cids = (state.userPrefs && state.userPrefs.home_numeri) || [];
-  const editMode = state.editMode;
+  const editMode = navState.editMode;
   // Risolvi contatti da cid
   const items = [];
   cids.forEach(cid => {
@@ -4215,7 +4282,7 @@ function renderHomeNumeriSection() {
 }
 
 function initHomeNumeriSortable() {
-  if (typeof Sortable === 'undefined' || !state.editMode) return;
+  if (typeof Sortable === 'undefined' || !navState.editMode) return;
   const el = document.getElementById('home-numeri-list');
   if (el && !el._sortable) {
     el._sortable = Sortable.create(el, {
@@ -4305,7 +4372,7 @@ function renderPinnedContattiSection(allGroups) {
     });
   });
 
-  const editMode = state.editMode;
+  const editMode = navState.editMode;
   const editHint = editMode
     ? `<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:10px;">✋ Trascina per riordinare UOC o numeri dentro una UOC</div>`
     : '';
@@ -4341,7 +4408,7 @@ function renderPinnedContattiSection(allGroups) {
 
 function initPinnedSortables() {
   if (typeof Sortable === 'undefined') return;
-  if (!state.editMode) return;
+  if (!navState.editMode) return;
   const uocList = document.getElementById('pinned-uoc-list');
   if (uocList && !uocList._sortable) {
     uocList._sortable = Sortable.create(uocList, {
