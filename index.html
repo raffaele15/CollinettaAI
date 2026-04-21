@@ -48,10 +48,11 @@
 html{font-size:16px;-webkit-text-size-adjust:100%}
 html{overflow-x:hidden;max-width:100%}
 html{font-size:15px;overflow-x:clip;max-width:100%}
-html[data-font-size="sm"]{font-size:13px}
-html[data-font-size="md"]{font-size:15px}
-html[data-font-size="lg"]{font-size:17px}
-html[data-font-size="xl"]{font-size:19px}
+/* Font size scale: usa zoom perché la maggior parte degli elementi ha font-size in px hardcoded */
+html[data-font-size="sm"] body{zoom:0.88}
+html[data-font-size="md"] body{zoom:1}
+html[data-font-size="lg"] body{zoom:1.12}
+html[data-font-size="xl"] body{zoom:1.25}
 body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
 .hidden{display:none!important}
