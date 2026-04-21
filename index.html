@@ -589,6 +589,11 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .spinner{width:18px;height:18px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;margin-right:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn-spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+#search-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:center;padding:80px 20px 20px}
+#search-overlay.hidden{display:none}
+.search-overlay-panel{background:var(--bg-paper);width:100%;max-width:720px;max-height:calc(100vh - 100px);border:1px solid var(--rule);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow-y:auto;padding:20px 24px}
+@media (max-width:600px){#search-overlay{padding:70px 10px 10px}.search-overlay-panel{padding:14px 16px}}
+[data-theme="dark"] #search-overlay{background:rgba(0,0,0,.6)}
 .btn.is-loading{cursor:wait}
 .btn.is-loading #login-submit-text{display:inline-flex;align-items:center;justify-content:center;min-height:1em}
 .empty{padding:60px 20px;text-align:center;color:var(--ink-muted)}
@@ -867,6 +872,11 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 
 <div id="modal-container"></div>
 <div id="toast-stack"></div>
+<div id="search-overlay" class="hidden" onclick="if(event.target===this)closeSearchOverlay()">
+  <div class="search-overlay-panel">
+    <div id="search-overlay-content"></div>
+  </div>
+</div>
 
 <script>
 /* ============================ CONFIG ============================ */
@@ -7215,9 +7225,43 @@ function renderTagPage(tagName) {
     ${total === 0 ? `<p style="color:var(--ink-muted);padding:24px 0;">Nessuna scheda usa il tag "${escapeHtml(tagName)}".</p>` : ''}`;
 }
 
-function renderSearchResults(query) {
+function openSearchOverlay(query) {
+  const overlay = document.getElementById('search-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  renderSearchResults(query, 'search-overlay-content');
+  // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
+  const panel = overlay.querySelector('.search-overlay-panel');
+  if (panel && !panel._searchClickBound) {
+    panel._searchClickBound = true;
+    panel.addEventListener('click', (e) => {
+      const link = e.target.closest('a, [onclick*="navigate"], [data-search-result]');
+      if (link) {
+        // Lascia avvenire la navigazione, poi chiudi l'overlay
+        setTimeout(() => {
+          const input = document.getElementById('global-search');
+          const clear = document.getElementById('global-search-clear');
+          if (input) input.value = '';
+          if (clear) clear.classList.add('hidden');
+          closeSearchOverlay();
+        }, 0);
+      }
+    });
+  }
+}
+function closeSearchOverlay() {
+  const overlay = document.getElementById('search-overlay');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function renderSearchResults(query, targetId) {
+  const target = document.getElementById(targetId || 'main-content');
+  if (!target) return;
   if (!state.fuse || !query || query.length < 2) {
-    $('main-content').innerHTML = `
+    target.innerHTML = `
       <div class="page-head">
         <div class="page-eyebrow">Ricerca</div>
         <h1 class="page-title">Cerca nel manuale</h1>
@@ -7231,7 +7275,7 @@ function renderSearchResults(query) {
   const onlyNumeri = numeroKeywordRegex.test(query);
   const effectiveQuery = onlyNumeri ? query.replace(numeroKeywordRegex, ' ').replace(/\s+/g, ' ').trim() : query;
   if (onlyNumeri && effectiveQuery.length < 2) {
-    $('main-content').innerHTML = `
+    target.innerHTML = `
       <div class="page-head">
         <div class="page-eyebrow">Ricerca</div>
         <h1 class="page-title">Cerca nella rubrica</h1>
@@ -7657,7 +7701,7 @@ function renderSearchResults(query) {
     ? rawResults.filter(r => r.item.type !== 'numero' && activeFilters.has(r.item.type)).slice(0, 20)
     : nonNumeri;
 
-  $('main-content').innerHTML = `
+  target.innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">Risultati</div>
       <h1 class="page-title">Ricerca: <em>${escapeHtml(query)}</em></h1>
@@ -7831,7 +7875,6 @@ function initEventListeners() {
   const searchInput = $('global-search');
   const searchClear = $('global-search-clear');
   let searchTimeout = null;
-  let preSearchState = null; // Vista prima di iniziare la ricerca
   const updateSearchClear = () => {
     if (searchClear) searchClear.classList.toggle('hidden', !searchInput.value);
   };
@@ -7842,30 +7885,16 @@ function initEventListeners() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       state.searchFilter = new Set();
-      if (q.length >= 2) {
-        // Memorizzo la vista corrente SOLO se non sono già in ricerca
-        if (state.currentView !== 'search' && !preSearchState) {
-          preSearchState = { view: state.currentView, params: state.currentParams };
-        }
-        navigate('search', { query: q });
-      } else if (q.length === 0 && state.currentView === 'search' && preSearchState) {
-        // Torno alla vista precedente
-        const { view, params } = preSearchState;
-        preSearchState = null;
-        navigate(view, params || {});
-      }
+      if (q.length >= 2) openSearchOverlay(q);
+      else closeSearchOverlay();
     }, 200);
   });
   if (searchClear) {
     searchClear.addEventListener('click', () => {
       searchInput.value = '';
       updateSearchClear();
+      closeSearchOverlay();
       searchInput.focus();
-      if (state.currentView === 'search' && preSearchState) {
-        const { view, params } = preSearchState;
-        preSearchState = null;
-        navigate(view, params || {});
-      }
     });
   }
 
@@ -7878,6 +7907,11 @@ function initEventListeners() {
     }
     if (e.key === 'Escape') {
       if ($('modal-container').children.length > 0) closeModal();
+      else if (!$('search-overlay').classList.contains('hidden')) {
+        searchInput.value = '';
+        if (searchClear) searchClear.classList.add('hidden');
+        closeSearchOverlay();
+      }
     }
   });
 }
