@@ -47,10 +47,10 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px;overflow-x:clip;max-width:100%;-webkit-text-size-adjust:100%}
 /* Font size scale: zoom applicato solo al contenuto principale, non a topbar/sidebar */
-html[data-font-size="sm"] main.content{zoom:0.88}
-html[data-font-size="md"] main.content{zoom:1}
-html[data-font-size="lg"] main.content{zoom:1.12}
-html[data-font-size="xl"] main.content{zoom:1.25}
+html[data-font-size="sm"] main.content{zoom:0.88;max-width:1114px}
+html[data-font-size="md"] main.content{zoom:1;max-width:980px}
+html[data-font-size="lg"] main.content{zoom:1.12;max-width:875px}
+html[data-font-size="xl"] main.content{zoom:1.25;max-width:784px}
 body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
 .hidden{display:none!important}
@@ -132,6 +132,10 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 .search-wrap{position:relative;max-width:580px;margin:0 auto;width:100%}
 .search-wrap input{padding:10px 14px 10px 38px;font-size:14px}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none}
+.search-clear{position:absolute;right:44px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--bg-raised);color:var(--ink-muted);border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.search-clear:hover{background:var(--rule);color:var(--ink)}
+@media (max-width:900px){.search-clear{right:10px}}
+.search-wrap input{padding-right:72px}
 .search-kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding:2px 6px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-raised)}
 .topbar-actions{display:flex;align-items:center;gap:8px}
 .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:2px;color:var(--ink-soft);transition:background .15s,color .15s;position:relative}
@@ -787,6 +791,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
     <div class="search-wrap">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       <input type="text" id="global-search" placeholder="Cerca procedure, numeri, moduli...">
+      <button type="button" class="search-clear hidden" id="global-search-clear" aria-label="Cancella" title="Cancella">✕</button>
       <span class="search-kbd">⌘K</span>
     </div>
     <div class="topbar-actions">
@@ -821,7 +826,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
           </div>
         </div>
         <div class="user-menu-divider"></div>
-        <button class="user-menu-item" onclick="closeUserMenu(); if(confirm('Uscire dalla sessione?')) logout();">
+        <button class="user-menu-item" onclick="closeUserMenu(); logout();">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Esci
         </button>
@@ -2070,6 +2075,37 @@ function rebuildSearchIndex() {
   }));
   getVisibleNumeriGroups().forEach(g => {
     const groupAliases = (g.alias || []).join(' ');
+    // Precomputo il bucketing contatto→tipo_sede una volta per gruppo
+    let sedeBuckets = [];
+    try {
+      if (typeof groupContattiBySede === 'function') {
+        sedeBuckets = groupContattiBySede(g.contatti || [], g.sedi_operative, g.sede_operativa);
+      }
+    } catch {}
+    const contactToSedeTipo = new Map();
+    sedeBuckets.forEach(b => {
+      const tipo = b.sede && b.sede.tipo ? b.sede.tipo : '';
+      if (tipo) (b.contatti || []).forEach(c => contactToSedeTipo.set(c.id, tipo));
+    });
+    // Sinonimi per tipi di sede, così cercare "ucic" matcha anche "unità coronarica"
+    const sedeTipoAliases = {
+      ucic: 'ucic unità coronarica terapia intensiva cardiologica',
+      utic: 'utic unità terapia intensiva',
+      emodinamica: 'emodinamica cardiologia interventistica',
+      elettrofisiologia: 'elettrofisiologia',
+      riabilitazione: 'riabilitazione',
+      terapia_intensiva: 'terapia intensiva rianimazione',
+      sub_intensiva: 'sub intensiva subintensiva',
+      day_hospital: 'day hospital dh',
+      sala_operatoria: 'sala operatoria so',
+      degenze: 'degenze reparto',
+      studi_medici: 'studi medici studio medico',
+      ambulatori: 'ambulatori ambulatorio amb',
+      laboratorio: 'laboratorio',
+      segreteria: 'segreteria',
+      portineria: 'portineria',
+      libera_professione: 'libera professione intramoenia'
+    };
     (g.contatti || []).forEach(c => {
       const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
       const sedi = g.sedi_operative && g.sedi_operative.length ? g.sedi_operative : (g.sede_operativa ? [g.sede_operativa] : []);
@@ -2081,10 +2117,13 @@ function rebuildSearchIndex() {
         ambulatorio: 'ambulatorio amb',
         direzione: 'direttore direzione segreteria'
       };
+      const sedeTipo = contactToSedeTipo.get(c.id) || '';
+      const sedeTipoStr = sedeTipoAliases[sedeTipo] || sedeTipo;
       const termini = [
         c.sezione || '',
         kind,
         kindAliases[kind] || '',
+        sedeTipoStr,
         (c.alias || []).join(' '),
         groupAliases
       ].filter(Boolean).join(' ');
@@ -4112,6 +4151,12 @@ function renderNumeri(filter) {
       'dh': ['day hospital', 'dh ', 'day-hospital'],
       'mdg': ['mdg', 'medico di guardia', 'medico guardia'],
       'guardia': ['guardia', 'mdg', 'medico di guardia'],
+      'ucic': ['ucic', 'unità coronarica', 'unita coronarica', 'terapia intensiva cardiologica'],
+      'utic': ['utic', 'unità terapia intensiva'],
+      'emodinamica': ['emodinamica', 'cardiologia interventistica'],
+      'elettrofisiologia': ['elettrofisiologia'],
+      'rianimazione': ['rianimazione', 'terapia intensiva'],
+      'intramoenia': ['intramoenia', 'libera professione'],
     };
     // Divido la query in termini (parole). Ogni termine deve matchare almeno un campo (contatto o gruppo).
     const tokens = rubricaQuery.split(/\s+/).filter(Boolean);
@@ -4128,35 +4173,66 @@ function renderNumeri(filter) {
       return false;
     };
     
-    const contactText = (c) => [
-      c.etichetta, c.sezione, c.luogo, c.email, c.cellulare, c.breve,
-      ...(c.numeri || []).map(String),
-      ...(c.tag || [])
-    ].filter(Boolean).join(' ').toLowerCase();
+    // Per ogni gruppo precomputo la mappa contatto→tipo_sede usando groupContattiBySede
+    const groupSedeTipoMap = new Map();
+    filteredGruppi.forEach(g => {
+      try {
+        const buckets = groupContattiBySede(g.contatti || [], g.sedi_operative, g.sede_operativa);
+        const m = new Map();
+        buckets.forEach(b => {
+          const t = b.sede && b.sede.tipo ? b.sede.tipo : '';
+          if (t) (b.contatti || []).forEach(c => m.set(c.id, t));
+        });
+        groupSedeTipoMap.set(g.id, m);
+      } catch { groupSedeTipoMap.set(g.id, new Map()); }
+    });
     
+    const contactText = (c, gId) => {
+      const sedeTipo = (groupSedeTipoMap.get(gId) || new Map()).get(c.id) || '';
+      return [
+        c.etichetta, c.sezione, c.luogo, c.cellulare, c.breve,
+        sedeTipo,
+        ...(c.numeri || []).map(String),
+        ...(c.tag || [])
+      ].filter(Boolean).join(' ').toLowerCase();
+    };
+    
+    // Testo del gruppo (per matchGroupOnly): solo nome/email/alias.
+    // Le sedi_operative NON sono incluse qui perché riguardano i singoli contatti:
+    // cercare "ucic" deve tornare i contatti UCIC, non tutti quelli della UOC che ha UCIC.
     const groupText = (g) => {
-      const base = [g.nome, g.email, (g.alias || []).join(' ')].filter(Boolean).join(' ');
+      return [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
+    };
+    // Invece per matchContactWithGroup il contesto gruppo include ANCHE le sedi:
+    // così cercando "ucic cardiologia" funziona — "cardiologia" matcha nel gruppo,
+    // "ucic" matcha nel contatto (sezione).
+    const groupContext = (g) => {
+      const base = groupText(g);
       const sedi = (g.sedi_operative || []).map(s =>
         `${s.tipo || ''} ${s.edificio || ''} ${s.piano || ''} ${s.area || ''}`
       ).join(' ');
-      return (base + ' ' + sedi).toLowerCase();
+      return base + ' ' + sedi.toLowerCase();
     };
     
     // Un contatto (o il suo gruppo) matcha se OGNI token della query è trovato
-    // almeno in uno dei campi del contatto OPPURE in uno dei campi del gruppo
-    const matchContactWithGroup = (c, gTxt) => {
-      const cTxt = contactText(c);
-      return tokens.every(tok => tokenMatchesText(tok, cTxt) || tokenMatchesText(tok, gTxt));
+    // almeno in uno dei campi del contatto OPPURE nel contesto del gruppo (incluse sedi)
+    const matchContactWithGroup = (c, gCtx, gId) => {
+      const cTxt = contactText(c, gId);
+      return tokens.every(tok => tokenMatchesText(tok, cTxt) || tokenMatchesText(tok, gCtx));
     };
     const matchGroupOnly = (gTxt) => tokens.every(tok => tokenMatchesText(tok, gTxt));
     
     const expandedSet = state.rubricaExpandedGroups || new Set();
+    // Se stiamo filtrando per una UOC specifica, la ricerca deve filtrare sui contatti
+    const isInsideSpecificUoc = filter && allGroups.find(g => g.id === filter);
     filteredGruppi = filteredGruppi.map(g => {
-      const gTxt = groupText(g);
+      const gTxt = groupText(g);       // senza sedi (per matchGroupOnly)
+      const gCtx = groupContext(g);    // con sedi (per match contatto+contesto)
       // Se il gruppo è espanso manualmente o il gruppo stesso matcha completamente, mostra tutti i contatti
-      if (expandedSet.has(g.id) || matchGroupOnly(gTxt)) return g;
+      // Eccetto quando siamo dentro una UOC specifica: lì dobbiamo sempre filtrare sui contatti
+      if (!isInsideSpecificUoc && (expandedSet.has(g.id) || matchGroupOnly(gTxt))) return g;
       // Altrimenti filtra i singoli contatti (tenendo conto del contesto gruppo per completare i token)
-      const contatti = (g.contatti || []).filter(c => matchContactWithGroup(c, gTxt));
+      const contatti = (g.contatti || []).filter(c => matchContactWithGroup(c, gCtx, g.id));
       return contatti.length ? { ...g, contatti } : null;
     }).filter(Boolean);
   }
@@ -4199,12 +4275,14 @@ function renderNumeri(filter) {
     </div>
 
     <div class="rubrica-search" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-      <input type="text" id="rubrica-search-input" placeholder="${filter && allGroups.find(g => g.id === filter) ? `Cerca in ${escapeHtml(stripPrefixNome(allGroups.find(g => g.id === filter).nome))}…` : 'Cerca in rubrica: nome, interno, reparto…'}"
-        value="${escapeHtml(state.rubricaSearch || '')}"
-        oninput="onRubricaSearchInput(this.value)"
-        style="flex:1;font-family:var(--sans);font-size:14px;padding:10px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);">
-      ${rubricaQuery ? `<button class="btn ghost" onclick="clearRubricaSearch()" style="font-size:12px;">✕ Pulisci</button>` : ''}
-      ${rubricaQuery ? `<span style="font-size:12px;color:var(--ink-muted);font-family:var(--mono);">${filteredGruppi.length} UOC · ${totalContattiVisibili} contatti</span>` : ''}
+      <div style="position:relative;flex:1;display:flex;align-items:center;">
+        <input type="text" id="rubrica-search-input" placeholder="${filter && allGroups.find(g => g.id === filter) ? `Cerca in ${escapeHtml(stripPrefixNome(allGroups.find(g => g.id === filter).nome))}…` : 'Cerca in rubrica: nome, interno, reparto…'}"
+          value="${escapeHtml(state.rubricaSearch || '')}"
+          oninput="onRubricaSearchInput(this.value)"
+          style="flex:1;font-family:var(--sans);font-size:14px;padding:10px 36px 10px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);width:100%;box-sizing:border-box;">
+        ${rubricaQuery ? `<button type="button" onclick="clearRubricaSearch()" aria-label="Cancella" title="Cancella" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--bg-paper);color:var(--ink-muted);border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;">✕</button>` : ''}
+      </div>
+      ${rubricaQuery ? `<span style="font-size:12px;color:var(--ink-muted);font-family:var(--mono);white-space:nowrap;">${filteredGruppi.length} UOC · ${totalContattiVisibili} contatti</span>` : ''}
     </div>
     ${(function(){
       // Chip filtro UOC quando si è dentro una UOC specifica
@@ -7660,7 +7738,7 @@ function initEventListeners() {
   });
 
   $('nav-logout').addEventListener('click', () => {
-    if (confirm('Uscire dalla sessione?')) logout();
+    logout();
   });
 
   $('brand-home').addEventListener('click', () => { closeMobileMenu(); navigate('home'); });
@@ -7751,17 +7829,29 @@ function initEventListeners() {
   });
 
   const searchInput = $('global-search');
+  const searchClear = $('global-search-clear');
   let searchTimeout = null;
+  const updateSearchClear = () => {
+    if (searchClear) searchClear.classList.toggle('hidden', !searchInput.value);
+  };
+  updateSearchClear();
   searchInput.addEventListener('input', (e) => {
     const q = e.target.value;
+    updateSearchClear();
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       // Nuova query: resetta il filtro categoria
       state.searchFilter = new Set();
       if (q.length >= 2) navigate('search', { query: q });
-      else if (q.length === 0 && state.currentView === 'search') navigate('home');
     }, 200);
   });
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      updateSearchClear();
+      searchInput.focus();
+    });
+  }
 
   // Keyboard shortcut: Cmd/Ctrl + K focuses search
   document.addEventListener('keydown', (e) => {
