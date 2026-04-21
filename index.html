@@ -628,6 +628,12 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .drag-handle:hover{color:var(--ink)}
 .sortable-ghost{opacity:.3;background:var(--accent-soft)}
 .sortable-chosen{background:var(--bg-sink)}
+.sede-bucket{margin-bottom:6px}
+.sede-bucket-toggle{display:flex;align-items:baseline;gap:10px;width:100%;padding:8px 12px;background:var(--bg-sink);border:none;border-radius:4px;margin:8px 0 0;cursor:pointer;text-align:left;font-family:inherit;color:inherit;transition:background .12s}
+.sede-bucket-toggle:hover{background:var(--bg-raised)}
+.sede-bucket-toggle.open{background:var(--bg-raised)}
+.sede-bucket-caret{font-family:var(--mono);font-size:10px;color:var(--ink-muted);width:10px;display:inline-block;flex-shrink:0}
+.sede-bucket-count{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-muted);background:var(--bg-paper);padding:2px 6px;border-radius:8px;border:1px solid var(--rule-soft)}
 .sede-bucket-header{display:flex;align-items:baseline;gap:10px;padding:8px 12px;background:var(--bg-sink);border-radius:4px;margin:14px 0 6px}
 .sede-bucket-header:first-child{margin-top:0}
 .sede-bucket-tipo{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
@@ -4203,11 +4209,32 @@ function renderNumeri(filter) {
               if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
                 return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify)).join('');
               }
+              // Se sto cercando o ho filtro contatto/guardia: tutto espanso
+              const autoExpandAll = !!(rubricaQuery || (filter && filter !== g.id) || filter === 'guardia');
+              if (!state.expandedSedi) state.expandedSedi = {};
+              const expanded = state.expandedSedi[g.id] || new Set();
               return buckets.map(b => {
-                const header = b.sede
-                  ? renderSedeBucketHeader(b.sede)
-                  : `<div class="sede-bucket-header sede-bucket-altro">Altro</div>`;
-                return `${header}<div class="sede-bucket-contatti">${b.contatti.map(c => renderNumeroRow(c, g.id, c._classify)).join('')}</div>`;
+                // Calcolo la "location string" del bucket per confrontarla col luogo del singolo contatto
+                const sedeLoc = b.sede
+                  ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
+                  : '';
+                const sedeLocLower = sedeLoc.toLowerCase().trim();
+                const isOpen = autoExpandAll || expanded.has(b.sedeKey);
+                const headerInner = b.sede
+                  ? renderSedeBucketHeader(b.sede, b.contatti.length)
+                  : `<span class="sede-bucket-tipo">Altro</span> <span style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);">${b.contatti.length}</span>`;
+                return `<div class="sede-bucket" data-bucket="${escapeHtml(b.sedeKey)}">
+                  <button class="sede-bucket-toggle ${isOpen ? 'open' : ''}" onclick="toggleSedeBucket('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')">
+                    <span class="sede-bucket-caret">${isOpen ? '▾' : '▸'}</span>
+                    ${headerInner}
+                  </button>
+                  ${isOpen ? `<div class="sede-bucket-contatti">${b.contatti.map(c => {
+                    // Nascondi il luogo del contatto se uguale alla location del bucket sede
+                    const cLuogo = (c.luogo || '').toLowerCase().trim();
+                    const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
+                    return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide });
+                  }).join('')}</div>` : ''}
+                </div>`;
               }).join('');
             })()}
             ${rubricaQuery && !isManuallyExpanded && (function(){
@@ -4633,7 +4660,7 @@ function groupContattiBySede(contatti, sedi_operative, sede_operativa) {
 }
 
 // Header per bucket sede operativa (rubrica raggruppata)
-function renderSedeBucketHeader(s) {
+function renderSedeBucketHeader(s, count) {
   const tipoLabels = {
     degenze: 'Degenze', sala_operatoria: 'Sala operatoria', diagnostica: 'Esami',
     ambulatori: 'Ambulatori', day_hospital: 'Day Hospital', segreteria: 'Segreteria',
@@ -4649,13 +4676,24 @@ function renderSedeBucketHeader(s) {
   if (s.piano) parts.push(escapeHtml(s.piano));
   if (s.area) parts.push(escapeHtml(s.area));
   const loc = parts.join(' · ');
-  return `<div class="sede-bucket-header">
-    <span class="sede-bucket-tipo">${escapeHtml(tipo)}</span>
+  return `<span class="sede-bucket-tipo">${escapeHtml(tipo)}</span>
     ${loc ? `<span class="sede-bucket-loc">${loc}</span>` : ''}
-  </div>`;
+    ${count !== undefined ? `<span class="sede-bucket-count">${count}</span>` : ''}`;
 }
 
-function renderNumeroRow(c, gruppoId, classify) {
+function toggleSedeBucket(gid, sedeKey) {
+  if (!state.expandedSedi) state.expandedSedi = {};
+  if (!state.expandedSedi[gid]) state.expandedSedi[gid] = new Set();
+  const set = state.expandedSedi[gid];
+  if (set.has(sedeKey)) set.delete(sedeKey);
+  else set.add(sedeKey);
+  // Re-render only this bucket area: simplest is full re-render of numeri view
+  const params = state.currentParams || {};
+  renderNumeri(params.filter);
+}
+
+function renderNumeroRow(c, gruppoId, classify, opts) {
+  const hideLuogo = opts && opts.hideLuogo;
   const tags = c.tag || [];
   const cls = classify || (c._classify || classifyContatto(c));
   const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
@@ -4669,7 +4707,7 @@ function renderNumeroRow(c, gruppoId, classify) {
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
-  const luogo = c.luogo ? `<div style="font-size:10px;color:var(--ink-muted);margin-top:1px;opacity:.75;">📍 ${escapeHtml(c.luogo)}</div>` : '';
+  const luogo = (c.luogo && !hideLuogo) ? `<div style="font-size:10px;color:var(--ink-muted);margin-top:1px;opacity:.75;">📍 ${escapeHtml(c.luogo)}</div>` : '';
   const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
   // Numbers: internal extensions, then mobile, then breve
   const numBtns = [];
