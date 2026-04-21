@@ -106,7 +106,7 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
   }
   header.topbar > .btn-hamburger{grid-area:hamb}
   header.topbar > .brand{grid-area:brand;justify-self:start;min-width:0;overflow:hidden}
-  header.topbar > .search-wrap{grid-area:search;max-width:100%;margin:0;min-width:0;width:100%}
+  header.topbar > .search-wrap-outer{grid-area:search;max-width:100%;margin:0;min-width:0;width:100%}
   .search-wrap input{font-size:16px;padding:8px 12px 8px 34px;max-width:100%;box-sizing:border-box}
   header.topbar > .topbar-actions{grid-area:actions;justify-self:end;min-width:0;flex-shrink:0}
   .brand-divider,.brand-sub{display:none}
@@ -137,6 +137,12 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 .search-wrap{position:relative;max-width:580px;margin:0 auto;width:100%}
 .search-wrap input{padding:10px 14px 10px 38px;font-size:14px}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none}
+.search-wrap-outer{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
+.search-wrap-outer > .search-wrap{flex:1;min-width:0}
+.nav-history-btns{display:flex;gap:2px;flex-shrink:0}
+.nav-history-btn{width:32px;height:32px;border:1px solid var(--rule);background:var(--bg-raised);color:var(--ink-soft);border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s,color .12s,border-color .12s}
+.nav-history-btn:hover:not(:disabled){background:var(--bg-sink);color:var(--ink);border-color:var(--rule-strong)}
+.nav-history-btn:disabled{opacity:.3;cursor:default}
 .search-clear{position:absolute;right:44px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--bg-raised);color:var(--ink-muted);border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
 .search-clear:hover{background:var(--rule);color:var(--ink)}
 @media (max-width:900px){.search-clear{right:10px}}
@@ -811,11 +817,21 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
       <span class="brand-divider"></span>
       <span class="brand-sub">Neurologia · AOPD</span>
     </div>
-    <div class="search-wrap">
-      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" id="global-search" placeholder="Cerca procedure, numeri, moduli...">
-      <button type="button" class="search-clear hidden" id="global-search-clear" aria-label="Cancella" title="Cancella">✕</button>
-      <span class="search-kbd">⌘K</span>
+    <div class="search-wrap-outer">
+      <div class="nav-history-btns">
+        <button type="button" class="nav-history-btn" id="btn-nav-back" onclick="goBack()" title="Indietro" aria-label="Indietro">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button type="button" class="nav-history-btn" id="btn-nav-forward" onclick="goForward()" title="Avanti" aria-label="Avanti">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="global-search" placeholder="Cerca procedure, numeri, moduli...">
+        <button type="button" class="search-clear hidden" id="global-search-clear" aria-label="Cancella" title="Cancella">✕</button>
+        <span class="search-kbd">⌘K</span>
+      </div>
     </div>
     <div class="topbar-actions">
       <span id="rate-limit-indicator" class="rate-limit-pill hidden" title="GitHub API: chiamate residue / limite. Si resetta ogni ora.">— /—</span>
@@ -939,20 +955,49 @@ function timeAgo(iso) {
 
 function nowIso() { return new Date().toISOString(); }
 
-// In-memory navigation history for back button
+// Navigation history bidirezionale: back/forward
 const navHistory = [];
+let navHistoryIndex = -1;
+let navHistoryMoving = false; // evita push durante goBack/goForward
 function pushHistory(route, params) {
-  // Don't push if same as current top
-  const top = navHistory[navHistory.length - 1];
+  if (navHistoryMoving) return;
+  const top = navHistory[navHistoryIndex];
   if (top && top.route === route && JSON.stringify(top.params || {}) === JSON.stringify(params || {})) return;
+  // Nuova navigazione: taglia via la coda (forward) oltre l'index attuale
+  if (navHistoryIndex < navHistory.length - 1) {
+    navHistory.length = navHistoryIndex + 1;
+  }
   navHistory.push({ route, params: params || {} });
-  if (navHistory.length > 50) navHistory.shift();
+  navHistoryIndex = navHistory.length - 1;
+  if (navHistory.length > 50) {
+    navHistory.shift();
+    navHistoryIndex--;
+  }
+  updateNavHistoryButtons();
 }
 function goBack() {
-  if (navHistory.length < 2) return navigate('home');
-  navHistory.pop(); // current
-  const prev = navHistory.pop(); // previous (will be re-pushed by navigate)
+  if (navHistoryIndex <= 0) return;
+  navHistoryIndex--;
+  const prev = navHistory[navHistoryIndex];
+  navHistoryMoving = true;
   navigate(prev.route, prev.params);
+  navHistoryMoving = false;
+  updateNavHistoryButtons();
+}
+function goForward() {
+  if (navHistoryIndex >= navHistory.length - 1) return;
+  navHistoryIndex++;
+  const next = navHistory[navHistoryIndex];
+  navHistoryMoving = true;
+  navigate(next.route, next.params);
+  navHistoryMoving = false;
+  updateNavHistoryButtons();
+}
+function updateNavHistoryButtons() {
+  const back = document.getElementById('btn-nav-back');
+  const fwd = document.getElementById('btn-nav-forward');
+  if (back) back.disabled = navHistoryIndex <= 0;
+  if (fwd) fwd.disabled = navHistoryIndex >= navHistory.length - 1;
 }
 
 // Standardized breadcrumb: ← Level1 › Level2 › Level3
@@ -963,7 +1008,7 @@ function buildBreadcrumb(segments) {
     const params = s.params ? JSON.stringify(s.params).replace(/"/g, '&quot;') : '{}';
     return `<span class="bc-segment" onclick="navigate('${escapeJs(s.route)}', ${params})">${escapeHtml(s.label)}</span>`;
   });
-  return `<button class="bc-back" onclick="goBack()" title="Indietro">←</button> ${parts.join(' <span class="bc-sep">›</span> ')}`;
+  return parts.join(' <span class="bc-sep">›</span> ');
 }
 
 /* ============================ CHIPS MULTI-SELECT ============================ */
@@ -7955,6 +8000,43 @@ function initEventListeners() {
   // Tap su overlay → chiude
   $('sidebar-overlay').addEventListener('click', closeMobileMenu);
   $('sidebar-close').addEventListener('click', closeMobileMenu);
+
+  // Swipe gesture: da bordo sinistro verso destra = apre sidebar
+  //                sulla sidebar aperta verso sinistra = chiude
+  let touchStart = null;
+  const EDGE_ZONE = 24;      // px dal bordo sx da cui parte il gesture
+  const OPEN_THRESHOLD = 60; // px di swipe orizzontale per aprire
+  const VERT_TOLERANCE = 40; // movimento verticale max consentito
+  document.addEventListener('touchstart', (e) => {
+    if (!isMobileViewport()) return;
+    const t = e.touches[0];
+    if (!t) return;
+    const sidebarOpen = $('sidebar').classList.contains('mobile-open');
+    // Apri: tocco vicino al bordo sinistro
+    // Chiudi: tocco ovunque sulla sidebar (lo gestisce il css, qui tocco sul body)
+    if (!sidebarOpen && t.clientX <= EDGE_ZONE) {
+      touchStart = { x: t.clientX, y: t.clientY, mode: 'open' };
+    } else if (sidebarOpen) {
+      touchStart = { x: t.clientX, y: t.clientY, mode: 'close' };
+    }
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!touchStart) return;
+    const t = e.touches[0];
+    if (!t) return;
+    const dx = t.clientX - touchStart.x;
+    const dy = Math.abs(t.clientY - touchStart.y);
+    if (dy > VERT_TOLERANCE) { touchStart = null; return; } // è uno scroll verticale, annullo
+    if (touchStart.mode === 'open' && dx > OPEN_THRESHOLD) {
+      openMobileMenu();
+      touchStart = null;
+    } else if (touchStart.mode === 'close' && dx < -OPEN_THRESHOLD) {
+      closeMobileMenu();
+      touchStart = null;
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', () => { touchStart = null; }, { passive: true });
+  document.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
   // Chiudo il drawer quando l'utente naviga (click su nav-item)
   $('sidebar').addEventListener('click', (e) => {
     const navItem = e.target.closest('.nav-item');
