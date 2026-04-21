@@ -107,7 +107,8 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
   .topbar-actions .user-name{display:none}
   .topbar-actions{gap:6px}
 }
-.brand{display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-home-link{display:flex;align-items:center;gap:10px;cursor:pointer}
 .brand-logo{width:32px;height:32px;object-fit:contain;flex-shrink:0}
 .brand-logo-dark{display:none}
 [data-theme="dark"] .brand-logo-light{display:none}
@@ -150,7 +151,7 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 .user-menu-item:hover{background:var(--bg-sink)}
 
 /* Dark theme */
-[data-theme="dark"]{
+html[data-theme="dark"]{
   --bg-paper:#1a1a1a;
   --bg-sink:#252525;
   --bg-raised:#2a2a2a;
@@ -579,9 +580,6 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .btn-spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 .btn.is-loading{cursor:wait}
 .btn.is-loading #login-submit-text{display:inline-flex;align-items:center;justify-content:center;min-height:1em}
-.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .15s}
-.loading-overlay.hidden{opacity:0;pointer-events:none}
-.loading-overlay-spinner{width:36px;height:36px;border:3px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 .empty{padding:60px 20px;text-align:center;color:var(--ink-muted)}
 .empty-title{font-family:var(--serif);font-size:22px;color:var(--ink-soft);margin-bottom:8px}
 
@@ -770,10 +768,12 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
     <button class="btn-hamburger" id="btn-hamburger" aria-label="Apri menù" title="Menù">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <div class="brand" id="brand-home" title="Torna alla home">
-      <img src="icons/logo-light-small.png?v=2" alt="" class="brand-logo brand-logo-light">
-      <img src="icons/logo-dark-small.png?v=2" alt="" class="brand-logo brand-logo-dark">
-      <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
+    <div class="brand">
+      <span id="brand-home" class="brand-home-link" title="Torna alla home">
+        <img src="icons/logo-light-small.png?v=2" alt="" class="brand-logo brand-logo-light">
+        <img src="icons/logo-dark-small.png?v=2" alt="" class="brand-logo brand-logo-dark">
+        <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
+      </span>
       <span class="brand-divider"></span>
       <span class="brand-sub">Neurologia · AOPD</span>
     </div>
@@ -2252,8 +2252,6 @@ async function attemptLogin(username, passphrase) {
 }
 
 async function enterApp() {
-  // Full-screen loading overlay per coprire la transizione
-  showLoadingOverlay('Caricamento…');
   $('login-view').classList.add('hidden');
   $('app-view').classList.remove('hidden');
   const displayName = (state.session.nome && state.session.cognome)
@@ -2268,31 +2266,14 @@ async function enterApp() {
   if (state.session.username === 'admin') {
     document.getElementById('rate-limit-indicator').classList.remove('hidden');
   }
+  renderLoading('Caricamento…');
   try {
     await buildIndex();
     await userPrefs.load();
     navigate('home');
   } catch (e) {
     renderError('Errore caricamento indice', e.message);
-  } finally {
-    hideLoadingOverlay();
   }
-}
-
-function showLoadingOverlay(msg) {
-  let el = document.getElementById('loading-overlay');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'loading-overlay';
-    el.className = 'loading-overlay';
-    el.innerHTML = '<div class="loading-overlay-spinner"></div>';
-    document.body.appendChild(el);
-  }
-  el.classList.remove('hidden');
-}
-function hideLoadingOverlay() {
-  const el = document.getElementById('loading-overlay');
-  if (el) el.classList.add('hidden');
 }
 
 function toggleUserMenu(e) {
