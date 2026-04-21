@@ -7537,7 +7537,21 @@ function renderSearchResults(query, targetId) {
   allGroupsForSearch.forEach(g => {
     const nameAlias = [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
     const groupMatches = queryTerms.every(t => tokenMatches(t, nameAlias));
-    if (groupMatches) {
+    // Match parziale: almeno un token matcha il nome E gli altri matchano almeno un contatto
+    // Esempio: "degenze cardiol" → "cardiol" matcha il nome, "degenze" matcha alcuni contatti
+    const tokensInName = queryTerms.filter(t => tokenMatches(t, nameAlias));
+    const tokensNotInName = queryTerms.filter(t => !tokenMatches(t, nameAlias));
+    let partialGroupMatch = false;
+    if (!groupMatches && tokensInName.length > 0 && tokensNotInName.length > 0) {
+      // Controllo: esiste almeno un contatto che matcha TUTTI i token rimanenti?
+      partialGroupMatch = (g.contatti || []).some(c => {
+        const tagsStr = Array.isArray(c.tag) ? c.tag.join(' ') : (c.tag || '');
+        const aliasStr = Array.isArray(c.alias) ? c.alias.join(' ') : (c.alias || '');
+        const ctxt = [c.etichetta, c.sezione, c.luogo, tagsStr, aliasStr].filter(Boolean).join(' ').toLowerCase();
+        return tokensNotInName.every(t => tokenMatches(t, ctxt));
+      });
+    }
+    if (groupMatches || partialGroupMatch) {
       matchedGroupIds.add(g.id);
       if (!byGruppo.has(g.id)) {
         byGruppo.set(g.id, {
