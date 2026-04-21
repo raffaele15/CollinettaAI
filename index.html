@@ -7831,6 +7831,7 @@ function initEventListeners() {
   const searchInput = $('global-search');
   const searchClear = $('global-search-clear');
   let searchTimeout = null;
+  let preSearchState = null; // Vista prima di iniziare la ricerca
   const updateSearchClear = () => {
     if (searchClear) searchClear.classList.toggle('hidden', !searchInput.value);
   };
@@ -7840,9 +7841,19 @@ function initEventListeners() {
     updateSearchClear();
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-      // Nuova query: resetta il filtro categoria
       state.searchFilter = new Set();
-      if (q.length >= 2) navigate('search', { query: q });
+      if (q.length >= 2) {
+        // Memorizzo la vista corrente SOLO se non sono già in ricerca
+        if (state.currentView !== 'search' && !preSearchState) {
+          preSearchState = { view: state.currentView, params: state.currentParams };
+        }
+        navigate('search', { query: q });
+      } else if (q.length === 0 && state.currentView === 'search' && preSearchState) {
+        // Torno alla vista precedente
+        const { view, params } = preSearchState;
+        preSearchState = null;
+        navigate(view, params || {});
+      }
     }, 200);
   });
   if (searchClear) {
@@ -7850,6 +7861,11 @@ function initEventListeners() {
       searchInput.value = '';
       updateSearchClear();
       searchInput.focus();
+      if (state.currentView === 'search' && preSearchState) {
+        const { view, params } = preSearchState;
+        preSearchState = null;
+        navigate(view, params || {});
+      }
     });
   }
 
