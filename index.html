@@ -588,12 +588,16 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .loading{display:flex;align-items:center;justify-content:center;padding:60px 20px;color:var(--ink-muted);font-size:14px}
 .spinner{width:18px;height:18px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;margin-right:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.btn-spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
-#search-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:center;padding:80px 20px 20px}
+/* Search overlay: visivamente identico alla pagina normale, sopra al main area
+   — l'utente non deve percepire la differenza. La topbar resta sopra, la sidebar dietro. */
+#search-overlay{position:fixed;top:65px;left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto}
 #search-overlay.hidden{display:none}
-.search-overlay-panel{background:var(--bg-paper);width:100%;max-width:720px;max-height:calc(100vh - 100px);border:1px solid var(--rule);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow-y:auto;padding:20px 24px}
-@media (max-width:600px){#search-overlay{padding:70px 10px 10px}.search-overlay-panel{padding:14px 16px}}
-[data-theme="dark"] #search-overlay{background:rgba(0,0,0,.6)}
+#search-overlay > .content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
+@media (max-width:900px){
+  #search-overlay{left:0;top:110px}
+  #search-overlay > .content{padding:14px 16px 60px}
+}
+.btn-spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 .btn.is-loading{cursor:wait}
 .btn.is-loading #login-submit-text{display:inline-flex;align-items:center;justify-content:center;min-height:1em}
 .empty{padding:60px 20px;text-align:center;color:var(--ink-muted)}
@@ -872,10 +876,8 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 
 <div id="modal-container"></div>
 <div id="toast-stack"></div>
-<div id="search-overlay" class="hidden" onclick="if(event.target===this)closeSearchOverlay()">
-  <div class="search-overlay-panel">
-    <div id="search-overlay-content"></div>
-  </div>
+<div id="search-overlay" class="hidden">
+  <main class="content" id="search-overlay-content"></main>
 </div>
 
 <script>
@@ -7229,16 +7231,13 @@ function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
   renderSearchResults(query, 'search-overlay-content');
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
-  const panel = overlay.querySelector('.search-overlay-panel');
-  if (panel && !panel._searchClickBound) {
-    panel._searchClickBound = true;
-    panel.addEventListener('click', (e) => {
+  if (!overlay._searchClickBound) {
+    overlay._searchClickBound = true;
+    overlay.addEventListener('click', (e) => {
       const link = e.target.closest('a, [onclick*="navigate"], [data-search-result]');
       if (link) {
-        // Lascia avvenire la navigazione, poi chiudi l'overlay
         setTimeout(() => {
           const input = document.getElementById('global-search');
           const clear = document.getElementById('global-search-clear');
@@ -7254,7 +7253,6 @@ function closeSearchOverlay() {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.add('hidden');
-  document.body.style.overflow = '';
 }
 
 function renderSearchResults(query, targetId) {
