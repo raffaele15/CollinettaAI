@@ -1,15 +1,557 @@
 # Calendario condiviso della clinica
-# Categorie: didattica, compleanni, congressi, guardie, altro
+# Categorie: didattica, compleanni, congressi, guardie, amb_divisionale, altro
 # Formato data: YYYY-MM-DD (ora opzionale: HH:MM)
-#
-# Esempio:
-# - id: evt_001
-#   data: 2026-05-15
-#   ora: "08:30"       # opzionale
-#   categoria: didattica
-#   titolo: Lezione EEG interpretazione
-#   descrizione: Aula Magna, prof. Rossi
-#   autore: raffaele
-#   creato: 2026-04-21T10:00:00Z
 
-eventi: []
+eventi:
+  - id: evt_mo967ddcd616
+    data: '2026-05-01'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Ragone, Fornasier'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcp7bq
+    data: '2026-05-01'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Fabris E'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcljq9
+    data: '2026-05-02'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Tierro, Zanovello'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc854c
+    data: '2026-05-02'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Mazzucco'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddccjx7
+    data: '2026-05-03'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Zolin, Rozzi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcnj5p
+    data: '2026-05-03'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Cavatorti'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc083g
+    data: '2026-05-04'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Cerantola, Colonna'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc1zlo
+    data: '2026-05-04'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Mirkarimi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcj4k7
+    data: '2026-05-05'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Mazzonetto, Zanovello'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcisqv
+    data: '2026-05-05'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Acerbi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcs9us
+    data: '2026-05-06'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Lamberti, Volpato'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcenwu
+    data: '2026-05-06'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Tierro'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc5b1e
+    data: '2026-05-07'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Fornasier, Cortellessa'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddce6m0
+    data: '2026-05-07'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Grassi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc4zl4
+    data: '2026-05-08'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Lorenzon, Papa'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddctedr
+    data: '2026-05-08'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Ragone'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddctanb
+    data: '2026-05-09'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: E'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcrbun
+    data: '2026-05-09'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Fabris, Volpato, Passamonti'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc3lc9
+    data: '2026-05-10'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Paredi, Fabris'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddchuaf
+    data: '2026-05-10'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Basili'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddccjqk
+    data: '2026-05-11'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Raccanello, Volpato'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddccnbv
+    data: '2026-05-11'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Mazzucco'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddce0jt
+    data: '2026-05-12'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Cortellessa, Lorenzon'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcdcku
+    data: '2026-05-12'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Zolin'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcioo0
+    data: '2026-05-13'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Martino, Zanovello'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddczn5p
+    data: '2026-05-13'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Fredianelli'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcusz5
+    data: '2026-05-14'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Benedetti, Rozzi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcbiv8
+    data: '2026-05-14'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Paredi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc18y6
+    data: '2026-05-15'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Colonna, Papa'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcagj3
+    data: '2026-05-15'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Cavatorti'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddca5ly
+    data: '2026-05-16'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Mare, Martino'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcybq5
+    data: '2026-05-16'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Di Mirkarimi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddcaf0u
+    data: '2026-05-17'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Fredianelli, Raccanello'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.376Z'
+  - id: evt_mo967ddc7j42
+    data: '2026-05-17'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Acerbi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddr4df
+    data: '2026-05-18'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Cerantola, Fornasier'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd83ru
+    data: '2026-05-18'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Pauro'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd8tgc
+    data: '2026-05-19'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Cortellessa, Lamberti'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddp5d2
+    data: '2026-05-19'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Di Mare'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddlf7b
+    data: '2026-05-20'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Fabris, Lorenzon'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddg0hk
+    data: '2026-05-20'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Ragone'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddifep
+    data: '2026-05-21'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Martino, Papa'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd2cm8
+    data: '2026-05-21'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Zolin'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddyrrr
+    data: '2026-05-22'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Colonna, Mazzonetto'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd1od5
+    data: '2026-05-22'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Grassi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddth8q
+    data: '2026-05-23'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Pauro, Cerantola'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd69fh
+    data: '2026-05-23'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Petrosino'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddkg60
+    data: '2026-05-24'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Passamonti, Cortellessa'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddikm0
+    data: '2026-05-24'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Tierro'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd8xnt
+    data: '2026-05-25'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Benedetti, Martino'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd6um7
+    data: '2026-05-25'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Mirkarimi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddegv4
+    data: '2026-05-26'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Fornasier, Lamberti'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddpxmc
+    data: '2026-05-26'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Basili'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddqe5s
+    data: '2026-05-27'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Fabris, Zanovello'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddzk3s
+    data: '2026-05-27'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Di Mare'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd73ay
+    data: '2026-05-28'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Cortellessa, Mazzonetto'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddde5sx
+    data: '2026-05-28'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Fabris'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddddvc
+    data: '2026-05-29'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Raccanello, Rozzi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddnsdy
+    data: '2026-05-29'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Pauro'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd3vbk
+    data: '2026-05-30'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Petrosino, Lorenzon'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddwptk
+    data: '2026-05-30'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Paredi'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddzpso
+    data: '2026-05-31'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia giorno: Mazzucco, Mazzonetto'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddgzsb
+    data: '2026-05-31'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte: Fredianelli'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd80jg
+    data: '2026-05-06'
+    ora: ''
+    categoria: amb_divisionale
+    titolo: 'Ambulatorio divisionale: Zolin, Cavatorti, Mazzucco, Fabris E'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddlieo
+    data: '2026-05-13'
+    ora: ''
+    categoria: amb_divisionale
+    titolo: 'Ambulatorio divisionale: Di Mare, Mirkarimi, Fabris, Ragone'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddbuu8
+    data: '2026-05-20'
+    ora: ''
+    categoria: amb_divisionale
+    titolo: 'Ambulatorio divisionale: Fredianelli, Mirkarimi, Paredi, Petrosino'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967ddd1v17
+    data: '2026-05-27'
+    ora: ''
+    categoria: amb_divisionale
+    titolo: 'Ambulatorio divisionale: Tierro, Pauro, Petrosino, Ragone'
+    descrizione: ''
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddygmk
+    data: '2026-05-05'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte OSA: Paredi'
+    descrizione: 'Sede: Ospedale Sant''Antonio'
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddkmyv
+    data: '2026-05-18'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte OSA: Petrosino'
+    descrizione: 'Sede: Ospedale Sant''Antonio'
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
+  - id: evt_mo967dddc8mm
+    data: '2026-05-30'
+    ora: ''
+    categoria: guardie
+    titolo: 'Guardia notte OSA: Acerbi'
+    descrizione: 'Sede: Ospedale Sant''Antonio'
+    autore: raffaele
+    creato: '2026-04-21T22:03:23.377Z'
