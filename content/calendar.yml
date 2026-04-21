@@ -1,0 +1,15 @@
+# Calendario condiviso della clinica
+# Categorie: didattica, compleanni, congressi, guardie, altro
+# Formato data: YYYY-MM-DD (ora opzionale: HH:MM)
+#
+# Esempio:
+# - id: evt_001
+#   data: 2026-05-15
+#   ora: "08:30"       # opzionale
+#   categoria: didattica
+#   titolo: Lezione EEG interpretazione
+#   descrizione: Aula Magna, prof. Rossi
+#   autore: raffaele
+#   creato: 2026-04-21T10:00:00Z
+
+eventi: []
