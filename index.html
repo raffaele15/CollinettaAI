@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>CollinettaAI</title>
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f3855">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Collinetta">
 <meta name="theme-color" content="#F6F2EA">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -97,7 +106,8 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
   .topbar-actions .user-name{display:none}
   .topbar-actions{gap:6px}
 }
-.brand{display:flex;align-items:baseline;gap:10px;cursor:pointer}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand-logo{width:32px;height:32px;object-fit:contain;flex-shrink:0}
 .brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
 .brand-divider{width:1px;height:16px;background:var(--rule-strong)}
 .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
@@ -628,6 +638,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .drag-handle:hover{color:var(--ink)}
 .sortable-ghost{opacity:.3;background:var(--accent-soft)}
 .sortable-chosen{background:var(--bg-sink)}
+.filter-chip-uoc{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);border-radius:14px;font-size:13px;font-weight:500}
 .sede-bucket{margin-bottom:6px}
 .sede-bucket-toggle{display:flex;align-items:baseline;gap:10px;width:100%;padding:8px 12px;background:var(--bg-sink);border:none;border-radius:4px;margin:8px 0 0;cursor:pointer;text-align:left;font-family:inherit;color:inherit;transition:background .12s}
 .sede-bucket-toggle:hover{background:var(--bg-raised)}
@@ -712,7 +723,8 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 
 <div id="login-view">
   <div class="login-card">
-    <h1 class="login-title">CollinettaAI</h1>
+    <img src="icons/icon-512.png" alt="" style="width:96px;height:96px;display:block;margin:0 auto 16px;object-fit:contain;">
+    <h1 class="login-title" style="text-align:center;">CollinettaAI</h1>
     <div id="login-error" class="login-error"></div>
     <form id="login-form">
       <div class="field">
@@ -734,6 +746,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <div class="brand" id="brand-home" title="Torna alla home">
+      <img src="icons/icon-192.png" alt="" class="brand-logo">
       <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
       <span class="brand-divider"></span>
       <span class="brand-sub">Neurologia · AOPD</span>
@@ -4100,14 +4113,26 @@ function renderNumeri(filter) {
       ${toggleHtml}
     </div>
 
-    <div class="rubrica-search" style="margin-bottom:24px;display:flex;align-items:center;gap:10px;">
-      <input type="text" id="rubrica-search-input" placeholder="Cerca in rubrica: nome, interno, reparto…"
+    <div class="rubrica-search" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+      <input type="text" id="rubrica-search-input" placeholder="${filter && allGroups.find(g => g.id === filter) ? `Cerca in ${escapeHtml(stripPrefixNome(allGroups.find(g => g.id === filter).nome))}…` : 'Cerca in rubrica: nome, interno, reparto…'}"
         value="${escapeHtml(state.rubricaSearch || '')}"
         oninput="onRubricaSearchInput(this.value)"
         style="flex:1;font-family:var(--sans);font-size:14px;padding:10px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);">
       ${rubricaQuery ? `<button class="btn ghost" onclick="clearRubricaSearch()" style="font-size:12px;">✕ Pulisci</button>` : ''}
       ${rubricaQuery ? `<span style="font-size:12px;color:var(--ink-muted);font-family:var(--mono);">${filteredGruppi.length} UOC · ${totalContattiVisibili} contatti</span>` : ''}
     </div>
+    ${(function(){
+      // Chip filtro UOC quando si è dentro una UOC specifica
+      const gruppoMatch = filter ? allGroups.find(g => g.id === filter) : null;
+      if (!gruppoMatch) return '';
+      return `<div style="margin-bottom:24px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">Filtro:</span>
+        <span class="filter-chip-uoc">
+          ${escapeHtml(stripPrefixNome(gruppoMatch.nome))}
+          <button onclick="navigate('numeri')" title="Rimuovi filtro UOC" style="background:none;border:none;color:inherit;font-size:14px;cursor:pointer;padding:0 0 0 4px;line-height:1;opacity:.7;">✕</button>
+        </span>
+      </div>` ;
+    })()}
 
     ${!filter && !rubricaQuery && codiciGen.length ? `
       <div class="codici-banner">
