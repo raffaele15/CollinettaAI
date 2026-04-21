@@ -47,10 +47,10 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px;overflow-x:clip;max-width:100%;-webkit-text-size-adjust:100%}
 /* Font size scale: zoom applicato solo al contenuto principale, non a topbar/sidebar */
-html[data-font-size="sm"] main.content{zoom:0.88;max-width:1114px}
-html[data-font-size="md"] main.content{zoom:1;max-width:980px}
-html[data-font-size="lg"] main.content{zoom:1.12;max-width:875px}
-html[data-font-size="xl"] main.content{zoom:1.25;max-width:784px}
+html[data-font-size="sm"] main.content{zoom:0.88}
+html[data-font-size="md"] main.content{zoom:1}
+html[data-font-size="lg"] main.content{zoom:1.12}
+html[data-font-size="xl"] main.content{zoom:1.25}
 body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
 .hidden{display:none!important}
@@ -363,7 +363,7 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 .nav-item.active{background:var(--ink);color:var(--bg-paper)}
 .nav-item-count{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
 .nav-item.active .nav-item-count{color:rgba(251,248,242,.6)}
-main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
+main.content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:700px){
   main.content{padding:14px 16px 60px}
   body .home-hero{margin-bottom:20px}
@@ -593,7 +593,7 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
    — l'utente non deve percepire la differenza. La topbar resta sopra, la sidebar dietro. */
 #search-overlay{position:fixed;top:65px;left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto}
 #search-overlay.hidden{display:none}
-#search-overlay > .content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
+#search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:900px){
   #search-overlay{left:0;top:110px}
   #search-overlay > .content{padding:14px 16px 60px}
@@ -631,13 +631,14 @@ main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 .sr-uoc-sede-label{font-size:10px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:2px}
 .sr-uoc-sede-value{font-size:13px;color:var(--ink)}
 .sr-uoc-contatti{display:grid;gap:5px}
-.sr-sede-bucket-header{margin:12px 0 4px;padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink);background:var(--bg-sink);border-left:3px solid var(--accent);border-radius:2px;width:100%;text-align:left;cursor:pointer;transition:background .15s,border-color .15s;font-family:inherit}
-.sr-sede-bucket-header:hover{background:var(--accent-soft);border-left-color:var(--accent)}
-.sr-sede-bucket-header .sede-bucket-tipo{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700}
+.sr-sede-bucket{margin:10px 0;border:1px solid var(--rule);border-radius:3px;background:var(--bg-paper);overflow:hidden}
+.sr-sede-bucket-header{padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink);background:var(--bg-sink);border:none;border-bottom:1px solid var(--rule);width:100%;text-align:left;cursor:pointer;transition:background .15s;font-family:inherit}
+.sr-sede-bucket-header:hover{background:var(--bg-raised)}
+.sr-sede-bucket-header .sede-bucket-tipo{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink);font-weight:700}
 .sr-sede-bucket-header .sede-bucket-loc{font-size:11px;color:var(--ink-muted)}
-.sr-sede-bucket-header:first-child{margin-top:4px}
-.sr-sede-bucket-header::after{content:'→';margin-left:auto;color:var(--ink-muted);font-size:13px;opacity:.6;transition:transform .15s,opacity .15s}
+.sr-sede-bucket-header::after{content:'→';margin-left:auto;color:var(--ink-muted);font-size:13px;opacity:.5;transition:transform .15s,opacity .15s}
 .sr-sede-bucket-header:hover::after{opacity:1;transform:translateX(2px)}
+.sr-sede-bucket-contatti{padding:6px 10px;display:grid;gap:4px}
 .sr-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:2px;cursor:pointer;transition:background .1s}
 .sr-contact:hover{background:var(--bg-sink)}
 .sr-contact-label{font-size:13px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -4424,9 +4425,12 @@ function renderNumeri(filter) {
               return buckets.map(b => {
                 // Calcolo la "location string" del bucket per confrontarla col luogo del singolo contatto
                 const sedeLoc = b.sede
-                  ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
+                  ? [b.sede.edificio, b.sede.piano, b.sede.area].filter(Boolean).join(' ')
                   : '';
                 const sedeLocLower = sedeLoc.toLowerCase().trim();
+                // Normalizza: rimuove separatori per confronto più tollerante
+                const normalize = (s) => s.toLowerCase().replace(/[·|\-,]/g, ' ').replace(/\s+/g, ' ').trim();
+                const sedeLocN = normalize(sedeLoc);
                 const isOpen = autoExpandAll || expanded.has(b.sedeKey);
                 const headerInner = b.sede
                   ? renderSedeBucketHeader(b.sede, b.contatti.length)
@@ -4437,9 +4441,20 @@ function renderNumeri(filter) {
                     ${headerInner}
                   </button>
                   ${isOpen ? `<div class="sede-bucket-contatti">${b.contatti.map(c => {
-                    // Nascondi il luogo del contatto se uguale alla location del bucket sede
-                    const cLuogo = (c.luogo || '').toLowerCase().trim();
-                    const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
+                    // Nascondi il luogo del contatto se sostanzialmente uguale al luogo del bucket sede
+                    const cLuogoN = normalize(c.luogo || '');
+                    let hide = false;
+                    if (sedeLocN && cLuogoN) {
+                      hide = cLuogoN === sedeLocN
+                        || cLuogoN.includes(sedeLocN)
+                        || sedeLocN.includes(cLuogoN);
+                      // Confronto token: tutti i token del luogo contatto sono nel sedeLoc?
+                      if (!hide) {
+                        const cToks = cLuogoN.split(' ').filter(Boolean);
+                        const sToks = new Set(sedeLocN.split(' ').filter(Boolean));
+                        hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
+                      }
+                    }
                     return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide });
                   }).join('')}</div>` : ''}
                 </div>`;
@@ -7267,7 +7282,7 @@ function openSearchOverlay(query) {
   if (!overlay._searchClickBound) {
     overlay._searchClickBound = true;
     overlay.addEventListener('click', (e) => {
-      const link = e.target.closest('a, [onclick*="navigate"], [data-search-result]');
+      const link = e.target.closest('a, [onclick*="navigate"], [onclick*="openUocWithSede"], [data-search-result]');
       if (link) {
         setTimeout(() => {
           const input = document.getElementById('global-search');
@@ -7668,19 +7683,20 @@ function renderSearchResults(query, targetId) {
           ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
           : '';
         const sedeLocLower = sedeLoc.toLowerCase().trim();
-        const headerInner = b.sede
-          ? renderSedeBucketHeader(b.sede, b.contatti.length)
-          : '';
-        const header = headerInner
-          ? `<button class="sr-sede-bucket-header" onclick="event.stopPropagation(); openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con questa sezione espansa">${headerInner}</button>`
-          : '';
         const contattiItems = b.contatti.map(c => {
           const cLuogo = (c.luogo || '').toLowerCase().trim();
           const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
-          // Dentro un bucket con header, nascondo il tag "sede" (duplicherebbe l'info)
           return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
         }).join('');
-        return header + contattiItems;
+        if (b.sede) {
+          const headerInner = renderSedeBucketHeader(b.sede, b.contatti.length);
+          return `<div class="sr-sede-bucket">
+            <button class="sr-sede-bucket-header" onclick="event.stopPropagation(); openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con questa sezione espansa">${headerInner}</button>
+            <div class="sr-sede-bucket-contatti">${contattiItems}</div>
+          </div>`;
+        }
+        // Bucket "Altro" o UOC senza sedi strutturate: nessun wrapper speciale
+        return contattiItems;
       }).join('');
     } else {
       contattiHtml = topContatti.map(c => renderContatto(c)).join('');
