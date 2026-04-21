@@ -301,8 +301,8 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 }
 @media (min-width:901px){
   .sidebar-overlay,.sidebar-mobile-close,.btn-hamburger{display:none}
+  aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:sticky;top:65px;align-self:start;height:calc(100vh - 65px);overflow-y:auto}
 }
-aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:sticky;top:65px;align-self:start;height:calc(100vh - 65px);overflow-y:auto}
 .sidebar-mobile-close{display:none}
 
 /* Hamburger button */
@@ -325,11 +325,11 @@ aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:stic
 main.content{padding:40px 48px 80px;max-width:980px;width:100%;min-width:0}
 @media (max-width:700px){
   main.content{padding:14px 16px 60px}
-  .home-hero{margin-bottom:20px}
-  .home-title{font-size:clamp(26px,7vw,36px);margin-bottom:6px;line-height:1.05}
-  .home-lead{font-size:14px;line-height:1.4}
-  .page-head{margin-bottom:18px;padding-bottom:14px}
-  .page-eyebrow{margin-bottom:6px}
+  body .home-hero{margin-bottom:20px}
+  body .home-title{font-size:clamp(26px,7vw,36px);margin-bottom:6px;line-height:1.05}
+  body .home-lead{font-size:14px;line-height:1.4}
+  body .page-head{margin-bottom:18px;padding-bottom:14px}
+  body .page-eyebrow{margin-bottom:6px}
 }
 
 /* PAGE HEADERS */
@@ -4246,11 +4246,13 @@ function renderHomeNumeriSection() {
 
   const searchBox = editMode ? `
     <div style="margin-bottom:12px;">
-      <input type="text" id="home-numeri-search" placeholder="Cerca un numero da aggiungere…"
+      <input type="text" id="home-numeri-search" placeholder="Cerca tra i preferiti della rubrica…"
         oninput="renderHomeNumeriSearchResults(this.value)"
         style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
       <div id="home-numeri-search-results" style="margin-top:6px;"></div>
     </div>` : '';
+
+  if (editMode) setTimeout(() => renderHomeNumeriSearchResults(''), 0);
 
   const itemsHtml = items.map(({ c, g }) => {
     const nums = (c.numeri || []).join(' · ');
@@ -4299,24 +4301,43 @@ function initHomeNumeriSortable() {
 function renderHomeNumeriSearchResults(query) {
   const box = document.getElementById('home-numeri-search-results');
   if (!box) return;
-  const q = (query || '').trim();
-  if (q.length < 2) { box.innerHTML = ''; return; }
-  if (!state.fuse) { box.innerHTML = ''; return; }
-  const results = state.fuse.search(q)
-    .filter(r => r.item.type === 'numero')
-    .slice(0, 8);
+  const q = (query || '').trim().toLowerCase();
+  // Raccolgo solo contatti pinnati nella rubrica
+  const pinnedContatti = [];
+  (state.index.numeri || []).forEach(g => {
+    (g.contatti || []).forEach(c => {
+      if (c.id && isPinned('contatto', c.id)) {
+        pinnedContatti.push({ c, g });
+      }
+    });
+  });
+  if (!pinnedContatti.length) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px;font-style:italic;">Nessun numero preferito nella rubrica. Vai in <em>Rubrica</em> e clicca ☆ accanto ai numeri che vuoi rendere disponibili qui.</div>';
+    return;
+  }
+  // Filtro per substring match su etichetta, gruppo, numeri (se query non vuota)
+  const filtered = q
+    ? pinnedContatti.filter(({ c, g }) => {
+        const hay = (c.etichetta + ' ' + g.nome + ' ' + (c.numeri || []).join(' ') + ' ' + (c.cellulare || '') + ' ' + (c.breve || '')).toLowerCase();
+        return hay.includes(q);
+      })
+    : pinnedContatti.slice(0, 12); // mostra primi 12 senza filtro
   const already = new Set((state.userPrefs && state.userPrefs.home_numeri) || []);
-  box.innerHTML = results.map(r => {
-    const item = r.item;
-    const isIn = already.has(item.slug);
+  if (!filtered.length) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:6px;">Nessun risultato tra i preferiti</div>';
+    return;
+  }
+  box.innerHTML = filtered.slice(0, 12).map(({ c, g }) => {
+    const isIn = already.has(c.id);
+    const numStr = (c.numeri || []).join(' · ');
     return `<div class="home-numeri-search-item">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;color:var(--ink);">${escapeHtml(item.titolo)}</div>
-        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(item.gruppo))} · ${escapeHtml(item.numeri || '')}</div>
+        <div style="font-size:13px;color:var(--ink);">${escapeHtml(c.etichetta)}</div>
+        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(g.nome))}${numStr ? ' · ' + escapeHtml(numStr) : ''}</div>
       </div>
-      <button class="btn-icon-mini" onclick="addHomeNumero('${escapeJs(item.slug)}')" ${isIn ? 'disabled title="Già in home"' : 'title="Aggiungi"'}>${isIn ? '✓' : '+'}</button>
+      <button class="btn-icon-mini" onclick="addHomeNumero('${escapeJs(c.id)}')" ${isIn ? 'disabled title="Già in home"' : 'title="Aggiungi"'}>${isIn ? '✓' : '+'}</button>
     </div>`;
-  }).join('') || '<div style="font-size:12px;color:var(--ink-muted);padding:6px;">Nessun risultato</div>';
+  }).join('');
 }
 
 function addHomeNumero(cid) {
