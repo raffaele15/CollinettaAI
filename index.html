@@ -4130,6 +4130,16 @@ function renderNumeri(filter) {
   const showExt = state.showExtendedNumeri || { osa: false, iov: false };
   const ext = state.numeriExtendedAvailable || {};
 
+  // Primo accesso alla rubrica senza filter/query: preattiva il filtro "preferiti"
+  // (se l'utente ha almeno un gruppo/contatto pinnato). Se disattiva manualmente → null.
+  if (state.rubricaInitialFilter === undefined && !filter && !state.rubricaSearch) {
+    const hasAnyPin = allGroups.some(g =>
+      isPinned('gruppo', g.id) ||
+      (g.contatti || []).some(c => isPinned('contatto', c.id))
+    );
+    state.rubricaInitialFilter = hasAnyPin ? 'pinned' : null;
+  }
+
   let filteredGruppi = allGroups;
   let filterLabel = null;
   if (filter === 'guardia') {
@@ -4876,8 +4886,24 @@ function groupContattiBySede(contatti, sedi_operative, sede_operativa) {
     if (bucket) bucket.contatti.push(c);
     else altro.contatti.push(c);
   });
-  // Ritorno solo bucket non vuoti, in ordine
-  const result = buckets.filter(b => b.contatti.length);
+  // Ritorno solo bucket non vuoti, ordinati per priorità clinica
+  // (sedi cliniche/operative prima, poi supporto, poi amministrativo)
+  const tipoPriority = {
+    // Sedi cliniche / sale operatorie (priorità alta)
+    ucic: 1, utic: 2, terapia_intensiva: 3, sub_intensiva: 4,
+    emodinamica: 5, elettrofisiologia: 6,
+    sala_operatoria: 7, diagnostica: 8,
+    degenze: 10, day_hospital: 11, riabilitazione: 12,
+    studi_medici: 13,
+    // Ambulatori (priorità media)
+    ambulatori: 20,
+    laboratorio: 25,
+    // Amministrativo / servizi (priorità bassa)
+    segreteria: 40, libera_professione: 41, portineria: 42,
+  };
+  const result = buckets
+    .filter(b => b.contatti.length)
+    .sort((a, b) => (tipoPriority[a.tipo] || 30) - (tipoPriority[b.tipo] || 30));
   if (altro.contatti.length) result.push(altro);
   return result;
 }
@@ -7662,9 +7688,27 @@ function renderSearchResults(query, targetId) {
 
   const renderUoc = (u) => {
     const groupFullyMatched = matchedGroupIds.has(u.gruppoId);
-    const topContatti = groupFullyMatched
-      ? u.contatti.slice(0, 12)
-      : u.contatti.filter(c => c._matched).slice(0, 6);
+    // Se il gruppo matcha il nome (es. "cardiologia"), ma ci sono altri token
+    // (es. "reparto"), mostro solo i contatti che matchano anche quei token.
+    // Questo evita che lo slice(0,12) riempia un solo bucket (es. Emodinamica).
+    let topContatti;
+    if (groupFullyMatched) {
+      // Token che NON sono già nel nome del gruppo
+      const gName = (u.gruppo || '').toLowerCase();
+      const extraTokens = queryTerms.filter(t => !tokenMatches(t, gName));
+      if (extraTokens.length > 0) {
+        // Filtra i contatti che matchano tutti i token extra
+        const filtered = u.contatti.filter(c => {
+          const ctxt = [c.titolo, c.sezione, c.tag, c.termini].filter(Boolean).join(' ').toLowerCase();
+          return extraTokens.every(t => tokenMatches(t, ctxt));
+        });
+        topContatti = filtered.length > 0 ? filtered.slice(0, 30) : u.contatti.slice(0, 12);
+      } else {
+        topContatti = u.contatti.slice(0, 12);
+      }
+    } else {
+      topContatti = u.contatti.filter(c => c._matched).slice(0, 6);
+    }
     const restCount = u.totalContatti - topContatti.length;
     const showOspBadge = anyExtendedOn || u.ospedale !== 'aopd';
     const ospBadge = showOspBadge
