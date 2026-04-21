@@ -5,6 +5,8 @@ pins:
   - type: contatto
     id: card-amb-n2-ecg
 home_numeri: []
-pin_order: {}
-ultima_modifica: '2026-04-21T19:01:17.605Z'
+pin_order:
+  _uoc:
+    - cardiologia
+ultima_modifica: '2026-04-21T20:50:58.125Z'
 modificato_da: raffaele
