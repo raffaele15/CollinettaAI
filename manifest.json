@@ -1,6 +1,6 @@
 {
   "name": "CollinettaAI",
-  "short_name": "Collinetta",
+  "short_name": "CollinettaAI",
   "description": "Manuale del reparto di neurologia AOPD + rubrica completa",
   "start_url": "./index.html",
   "display": "standalone",
