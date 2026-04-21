@@ -629,7 +629,9 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .search-filter-chip:hover{border-color:var(--accent);color:var(--accent)}
 .search-filter-chip.active{background:var(--accent);border-color:var(--accent);color:var(--bg-paper);font-weight:500}
 .sr-uoc-list{display:grid;gap:12px;margin-bottom:18px}
-.sr-uoc{padding:16px 18px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);cursor:pointer;transition:border-color .15s}
+.sr-uoc{padding:16px 18px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);cursor:pointer;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
+.sr-sede-bucket{-webkit-tap-highlight-color:transparent}
+.sr-contact{-webkit-tap-highlight-color:rgba(43,74,111,0.12)}
 .sr-uoc:hover{border-color:var(--rule-strong)}
 .sr-uoc-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .sr-uoc-badge{font-size:10px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:2px;font-weight:500}
@@ -653,7 +655,8 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sr-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:2px;cursor:pointer;transition:background .1s}
 .sr-contact:hover{background:var(--bg-sink)}
 .sr-contact-label{font-size:13px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sr-contact-num{font-family:var(--mono);font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.sr-contact-num{font-family:var(--mono);font-size:12px;color:var(--ink-soft);text-align:right;word-break:break-word;max-width:50%;line-height:1.4}
+@media (max-width:600px){.sr-contact-num{max-width:55%}}
 .sr-contact-guardia{background:#fef0ef;padding:9px 10px;border-left:3px solid var(--danger);border-radius:0 2px 2px 0}
 .sr-contact-guardia:hover{background:#fce4e2}
 .sr-contact-reparto{background:var(--accent-soft);padding:9px 10px;border-left:3px solid var(--accent);border-radius:0 2px 2px 0}
@@ -8033,7 +8036,7 @@ function initEventListeners() {
     if (!isMobileViewport()) return;
     const t = e.touches[0];
     if (!t) return;
-    const edgeZone = window.innerWidth / 3;
+    const edgeZone = window.innerWidth / 2;
     const sidebarOpen = $('sidebar').classList.contains('mobile-open');
     if (!sidebarOpen && t.clientX <= edgeZone) {
       touchStart = { x: t.clientX, y: t.clientY, mode: 'open' };
