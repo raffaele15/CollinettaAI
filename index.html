@@ -9,9 +9,10 @@
 <meta property="og:description" content="CollinettaAI">
 <meta name="twitter:title" content="CollinettaAI">
 <meta name="twitter:description" content="CollinettaAI">
-<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-light.png" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-dark.png" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16-light.png" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16-dark.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <!-- Theme color: cambia con il prefers-color-scheme -->
@@ -551,6 +552,8 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .rubrica-alpha-btn:hover:not(:disabled):not(.disabled){background:var(--bg-paper);border-color:var(--rule);color:var(--ink)}
 .rubrica-alpha-btn.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
 .rubrica-alpha-btn.disabled,.rubrica-alpha-btn:disabled{color:var(--ink-faint);opacity:.4;cursor:not-allowed}
+.rubrica-alpha-btn.rubrica-alpha-source{min-width:auto;padding:0 10px;margin-left:4px;background:var(--bg-paper);border-color:var(--rule);font-size:11px;font-weight:600;letter-spacing:.05em}
+.rubrica-alpha-btn.rubrica-alpha-source:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .kind-chip{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:11px;background:var(--bg-paper);color:var(--ink-soft);border:1px solid var(--rule);cursor:pointer;transition:all .12s;white-space:nowrap;line-height:1.4}
 .kind-chip:hover{border-color:var(--chip-color,var(--ink-soft));color:var(--chip-color,var(--ink))}
 .kind-chip.active{background:var(--chip-bg,var(--accent-soft));color:var(--chip-color,var(--accent));border-color:var(--chip-color,var(--accent));font-weight:500}
@@ -558,6 +561,8 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .kind-chip-reset:hover{opacity:1;color:var(--danger)}
 .numero-label{font-size:14px;color:var(--ink-soft);line-height:1.4}
 .numero-label .badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;margin-right:6px;border-radius:2px;background:var(--warning-soft);color:var(--warning)}
+.numero-label .badge-guardia{background:#fef0ef;color:#c1272d;font-weight:600}
+[data-theme="dark"] .numero-label .badge-guardia{background:#3a1515;color:#ff8585}
 .numero-nums{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .numero-btn{font-family:var(--mono);font-size:13px;font-weight:500;padding:6px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;color:var(--ink);cursor:pointer;transition:all .12s;letter-spacing:.02em}
 .numero-btn:hover{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
@@ -712,7 +717,13 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .pinned-contatto-row:last-child{border-bottom:none}
 .pinned-contatto-label{font-size:14px;color:var(--ink);cursor:pointer}
 .pinned-contatto-label:hover{color:var(--accent)}
-.pinned-contatto-num{font-family:var(--mono);font-size:13px;color:var(--accent)}
+.pinned-contatto-num{font-family:var(--mono);font-size:13px;color:var(--ink-soft);padding:3px 8px;border-radius:3px;background:var(--bg-sink);border:1px solid var(--rule-soft);text-align:right;word-break:break-word}
+.pinned-contatto-num-guardia{background:#fef0ef;color:var(--danger);border-color:#f5c2bf;font-weight:500}
+.pinned-contatto-num-reparto{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:500}
+.pinned-contatto-num-utile{background:#e8f5e9;color:#2e7d32;border-color:#b2d8b4;font-weight:500}
+[data-theme="dark"] .pinned-contatto-num-guardia{background:#3a1515;color:#ff8585;border-color:#5a2525}
+[data-theme="dark"] .pinned-contatto-num-reparto{background:#101a26;color:#6ba4f5;border-color:#1e3a5f}
+[data-theme="dark"] .pinned-contatto-num-utile{background:#101a10;color:#8fc857;border-color:#1e3a1e}
 .drag-handle{cursor:grab;color:var(--ink-faint);font-size:14px;padding:2px 4px;user-select:none;letter-spacing:-2px}
 .drag-handle:active{cursor:grabbing}
 .drag-handle:hover{color:var(--ink)}
@@ -848,7 +859,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="text" id="global-search" placeholder="Cerca procedure, numeri, moduli...">
         <button type="button" class="search-clear hidden" id="global-search-clear" aria-label="Cancella" title="Cancella">✕</button>
-        <span class="search-kbd">⌘K</span>
+        <span class="search-kbd" id="search-kbd-indicator">⌘K</span>
       </div>
     </div>
     <div class="topbar-actions">
@@ -2086,13 +2097,13 @@ async function loadExtendedNumeri(source) {
 }
 
 function getVisibleNumeriGroups() {
-  // Returns the union of AOPD groups + any toggled-on extended source.
+  // Returns all groups: AOPD + OSA + IOV (se disponibili)
+  // Il filtro per source avviene in renderNumeri quando filter='osa' o 'iov'.
   const groups = [];
   if (state.index?.numeri?.gruppi) groups.push(...state.index.numeri.gruppi);
   const ext = state.index?.numeriExtended || {};
-  const showExt = state.showExtendedNumeri || {};
-  if (showExt.osa && ext.osa?.gruppi) groups.push(...ext.osa.gruppi);
-  if (showExt.iov && ext.iov?.gruppi) groups.push(...ext.iov.gruppi);
+  if (ext.osa?.gruppi) groups.push(...ext.osa.gruppi);
+  if (ext.iov?.gruppi) groups.push(...ext.iov.gruppi);
   return groups;
 }
 
@@ -2162,7 +2173,7 @@ function rebuildSearchIndex() {
     type: 'tabella', slug: t.slug,
     titolo: t.titolo || t.slug
   }));
-  getVisibleNumeriGroups().forEach(g => {
+  getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd').forEach(g => {
     const groupAliases = (g.alias || []).join(' ');
     // Precomputo il bucketing contatto→tipo_sede una volta per gruppo
     let sedeBuckets = [];
@@ -4210,15 +4221,25 @@ function renderNumeri(filter) {
 
   let filteredGruppi = allGroups;
   let filterLabel = null;
+  let activeSource = 'aopd'; // quale fonte stiamo guardando: aopd (default), osa, iov
   if (filter === 'guardia') {
-    filteredGruppi = allGroups.map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
+    filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd').map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
     filterLabel = 'Medici di Guardia';
+  } else if (filter === 'osa') {
+    filteredGruppi = allGroups.filter(g => g._source === 'osa');
+    filterLabel = "Ospedale Sant'Antonio";
+    activeSource = 'osa';
+  } else if (filter === 'iov') {
+    filteredGruppi = allGroups.filter(g => g._source === 'iov');
+    filterLabel = 'Istituto Oncologico Veneto';
+    activeSource = 'iov';
   } else if (filter) {
     // Prima prova: filter è un gruppoId → mostra solo quella UOC
     const gruppoMatch = allGroups.find(g => g.id === filter);
     if (gruppoMatch) {
       filteredGruppi = [gruppoMatch];
       filterLabel = `UOC: ${gruppoMatch.nome}`;
+      activeSource = gruppoMatch._source || 'aopd';
     } else {
       // Fallback: filter è un contatto slug
       const c = findContattoBySlug(filter);
@@ -4230,6 +4251,9 @@ function renderNumeri(filter) {
         filterLabel = `Contatto: ${c.etichetta}`;
       }
     }
+  } else {
+    // Default: solo AOPD. OSA/IOV accessibili via chip dopo Z.
+    filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd');
   }
 
   const rubricaQuery = (state.rubricaSearch || '').trim().toLowerCase();
@@ -4345,19 +4369,7 @@ function renderNumeri(filter) {
   });
   const sourceLabels = { aopd: 'AOPD — Azienda Ospedale Università Padova', osa: "OSA — Ospedale Sant'Antonio", iov: 'IOV — Istituto Oncologico Veneto' };
 
-  const toggleHtml = (ext.osa || ext.iov) ? `
-    <div class="numeri-extra-toggles" style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;font-size:13px;">
-      ${ext.osa ? `
-        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="checkbox" ${showExt.osa ? 'checked' : ''} onchange="toggleExtendedNumeri('osa', this.checked)">
-          <span>Mostra anche Ospedale Sant'Antonio</span>
-        </label>` : ''}
-      ${ext.iov ? `
-        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="checkbox" ${showExt.iov ? 'checked' : ''} onchange="toggleExtendedNumeri('iov', this.checked)">
-          <span>Mostra anche Istituto Oncologico Veneto</span>
-        </label>` : ''}
-    </div>` : '';
+  const toggleHtml = '';
 
   const totalContattiVisibili = filteredGruppi.reduce((s, g) => s + (g.contatti || []).length, 0);
 
@@ -4416,7 +4428,7 @@ function renderNumeri(filter) {
     ${['aopd','osa','iov'].map(src => {
       const list = bySource[src] || [];
       if (!list.length) return '';
-      const showHeader = src !== 'aopd' || (showExt.osa || showExt.iov);
+      const showHeader = false;
       const compactMode = !rubricaQuery && !filter;
       if (compactMode) {
         const stripPrefix = stripPrefixNome;
@@ -4438,6 +4450,8 @@ function renderNumeri(filter) {
         // Ordino per nome senza prefisso
         const sortedList = [...visibleList].sort((a,b) => stripPrefix(a.nome).localeCompare(stripPrefix(b.nome), 'it'));
         // Alfabeto cliccabile
+        const osaAvailable = allGroups.some(g => g._source === 'osa');
+        const iovAvailable = allGroups.some(g => g._source === 'iov');
         const alphabetBar = `
           <div class="rubrica-alphabet-bar">
             <button class="rubrica-alpha-btn ${activeInitial === 'pinned' ? 'active' : ''}" onclick="filterRubricaByInitial('pinned')" title="Mostra solo preferiti (fissati con ☆)">★</button>
@@ -4448,10 +4462,12 @@ function renderNumeri(filter) {
                 ${has ? `onclick="filterRubricaByInitial('${L}')"` : 'disabled'}
                 title="${has ? `Mostra UOC che iniziano per ${L}` : 'Nessuna UOC'}">${L}</button>`;
             }).join('')}
+            ${(src === 'aopd' && osaAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="navigate('numeri', {filter:'osa'})" title="Ospedale Sant'Antonio">OSA</button>` : ''}
+            ${(src === 'aopd' && iovAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="navigate('numeri', {filter:'iov'})" title="Istituto Oncologico Veneto">IOV</button>` : ''}
           </div>`;
         return `
           ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
-          ${src === 'aopd' ? alphabetBar : ''}
+          ${alphabetBar}
           ${activeInitial === 'pinned' ? renderPinnedContattiSection(list) : `
           <div class="uoc-compact-list">
             ${sortedList.map(g => {
@@ -4731,10 +4747,16 @@ function renderPinnedContattiSection(allGroups) {
       const nums = (c.numeri || []).join(' · ');
       const extra = [c.breve ? `br. ${c.breve}` : '', c.cellulare || ''].filter(Boolean).join(' · ');
       const dispNum = [nums, extra].filter(Boolean).join(' · ');
+      const cls = (typeof classifyContatto === 'function') ? classifyContatto(c) : { kind: '' };
+      const isGuardia = cls.kind === 'guardia' || (c.tag || []).includes('guardia');
+      const numCls = isGuardia ? 'pinned-contatto-num-guardia'
+        : cls.kind === 'reparto' ? 'pinned-contatto-num-reparto'
+        : cls.kind === 'utile' ? 'pinned-contatto-num-utile'
+        : '';
       return `<div class="pinned-contatto-row" data-cid="${escapeHtml(c.id)}">
         ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
         <span class="pinned-contatto-label" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">${escapeHtml(c.etichetta)}</span>
-        <span class="pinned-contatto-num">${escapeHtml(dispNum || '—')}</span>
+        <span class="pinned-contatto-num ${numCls}">${escapeHtml(dispNum || '—')}</span>
         ${renderPinButton('contatto', c.id)}
       </div>`;
     }).join('');
@@ -4743,7 +4765,6 @@ function renderPinnedContattiSection(allGroups) {
       <div class="pinned-uoc-header">
         ${editMode ? '<span class="drag-handle drag-handle-uoc" title="Trascina UOC">⋮⋮</span>' : ''}
         <a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(pg.gid)}'})" class="pinned-uoc-name">${escapeHtml(stripPrefixNome(pg.nome))}</a>
-        <span style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);">${pg.contatti.length}</span>
       </div>
       <div class="pinned-uoc-contatti" data-gid="${escapeHtml(pg.gid)}">${contattiHtml}</div>
     </div>`;
@@ -5039,10 +5060,10 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     : cls.kind === 'reparto' ? 'numero-row numero-row-reparto'
     : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
-  const guardiaBadge = tags.includes('guardia') ? `<span class="badge">Guardia</span>` : '';
+  const guardiaBadge = tags.includes('guardia') ? `<span class="badge badge-guardia">🔴 Guardia</span>` : '';
   const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">🏥 Guardiola</span>` : '';
   const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
-  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">● Utili</span>` : '';
+  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">Utili</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
@@ -7551,7 +7572,7 @@ function renderSearchResults(query, targetId) {
 
   // Aggiungo gruppi il cui NOME/direttore/alias matcha interamente la query (no sedi_operative tipo,
   // che è troppo specifico: "ucic" non deve espandere tutta la Cardiologia)
-  const allGroupsForSearch = getVisibleNumeriGroups();
+  const allGroupsForSearch = getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd');
   allGroupsForSearch.forEach(g => {
     const nameAlias = [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
     const groupMatches = queryTerms.every(t => tokenMatches(t, nameAlias));
@@ -7735,7 +7756,7 @@ function renderSearchResults(query, targetId) {
       return `<div class="sr-contact sr-contact-utile" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
           <div class="sr-contact-label">${labelHtml}</div>
-          <div class="sr-contact-meta">● utili</div>
+          <div class="sr-contact-meta">utili</div>
           ${luogoHtml}
           ${tagChips}
         </div>
@@ -8044,9 +8065,12 @@ function initEventListeners() {
 
   // Swipe gesture: da sinistra (primo terzo dello schermo) verso destra = apre sidebar
   //                sulla sidebar aperta verso sinistra = chiude
+  //                dalla cima verso il basso = focus sulla barra di ricerca
   let touchStart = null;
-  const OPEN_THRESHOLD = 60; // px di swipe orizzontale per aprire
-  const VERT_TOLERANCE = 40; // movimento verticale max consentito
+  const OPEN_THRESHOLD = 60;       // px di swipe orizzontale per aprire sidebar
+  const VERT_TOLERANCE = 40;       // px max verticale tollerato per swipe orizz.
+  const PULL_DOWN_THRESHOLD = 90;  // px di pull-down per attivare focus search
+  const HORIZ_TOLERANCE = 40;      // px max orizzontale tollerato per pull-down
   document.addEventListener('touchstart', (e) => {
     if (!isMobileViewport()) return;
     const t = e.touches[0];
@@ -8057,6 +8081,9 @@ function initEventListeners() {
       touchStart = { x: t.clientX, y: t.clientY, mode: 'open' };
     } else if (sidebarOpen) {
       touchStart = { x: t.clientX, y: t.clientY, mode: 'close' };
+    } else if (!sidebarOpen && window.scrollY <= 0) {
+      // Siamo già in cima: avvia potenziale pull-down per focus search
+      touchStart = { x: t.clientX, y: t.clientY, mode: 'pulldown' };
     }
   }, { passive: true });
   document.addEventListener('touchmove', (e) => {
@@ -8064,14 +8091,33 @@ function initEventListeners() {
     const t = e.touches[0];
     if (!t) return;
     const dx = t.clientX - touchStart.x;
-    const dy = Math.abs(t.clientY - touchStart.y);
-    if (dy > VERT_TOLERANCE) { touchStart = null; return; } // è uno scroll verticale, annullo
-    if (touchStart.mode === 'open' && dx > OPEN_THRESHOLD) {
-      openMobileMenu();
-      touchStart = null;
-    } else if (touchStart.mode === 'close' && dx < -OPEN_THRESHOLD) {
-      closeMobileMenu();
-      touchStart = null;
+    const dy = t.clientY - touchStart.y;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (touchStart.mode === 'pulldown') {
+      // Annullo se l'utente è scrollato via dalla cima (ha iniziato a muovere la pagina)
+      if (window.scrollY > 0) { touchStart = null; return; }
+      // Annullo se il movimento è troppo orizzontale
+      if (absDx > HORIZ_TOLERANCE) { touchStart = null; return; }
+      // Pull-down raggiunto: focus sulla search
+      if (dy > PULL_DOWN_THRESHOLD) {
+        const input = document.getElementById('global-search');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+        touchStart = null;
+      }
+    } else {
+      // swipe orizzontale (open/close sidebar)
+      if (absDy > VERT_TOLERANCE) { touchStart = null; return; }
+      if (touchStart.mode === 'open' && dx > OPEN_THRESHOLD) {
+        openMobileMenu();
+        touchStart = null;
+      } else if (touchStart.mode === 'close' && dx < -OPEN_THRESHOLD) {
+        closeMobileMenu();
+        touchStart = null;
+      }
     }
   }, { passive: true });
   document.addEventListener('touchend', () => { touchStart = null; }, { passive: true });
@@ -8164,6 +8210,12 @@ function initEventListeners() {
 async function init() {
   initTheme();
   initEventListeners();
+  // Kbd indicator: Ctrl su Windows/Linux, ⌘ su Mac
+  const kbdEl = document.getElementById('search-kbd-indicator');
+  if (kbdEl) {
+    const isMac = /mac|iphone|ipad|ipod/i.test(navigator.userAgent || navigator.platform || '');
+    kbdEl.textContent = isMac ? '⌘K' : 'Ctrl K';
+  }
 
   // Check for existing session
   const saved = loadSession();
