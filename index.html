@@ -8001,20 +8001,18 @@ function initEventListeners() {
   $('sidebar-overlay').addEventListener('click', closeMobileMenu);
   $('sidebar-close').addEventListener('click', closeMobileMenu);
 
-  // Swipe gesture: da bordo sinistro verso destra = apre sidebar
+  // Swipe gesture: da sinistra (primo terzo dello schermo) verso destra = apre sidebar
   //                sulla sidebar aperta verso sinistra = chiude
   let touchStart = null;
-  const EDGE_ZONE = 24;      // px dal bordo sx da cui parte il gesture
   const OPEN_THRESHOLD = 60; // px di swipe orizzontale per aprire
   const VERT_TOLERANCE = 40; // movimento verticale max consentito
   document.addEventListener('touchstart', (e) => {
     if (!isMobileViewport()) return;
     const t = e.touches[0];
     if (!t) return;
+    const edgeZone = window.innerWidth / 3;
     const sidebarOpen = $('sidebar').classList.contains('mobile-open');
-    // Apri: tocco vicino al bordo sinistro
-    // Chiudi: tocco ovunque sulla sidebar (lo gestisce il css, qui tocco sul body)
-    if (!sidebarOpen && t.clientX <= EDGE_ZONE) {
+    if (!sidebarOpen && t.clientX <= edgeZone) {
       touchStart = { x: t.clientX, y: t.clientY, mode: 'open' };
     } else if (sidebarOpen) {
       touchStart = { x: t.clientX, y: t.clientY, mode: 'close' };
