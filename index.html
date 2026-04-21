@@ -102,16 +102,23 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
     gap:10px 12px;padding:10px 14px;
   }
   header.topbar > .btn-hamburger{grid-area:hamb}
-  header.topbar > .brand{grid-area:brand;justify-self:start}
+  header.topbar > .brand{grid-area:brand;justify-self:start;min-width:0;overflow:hidden}
   header.topbar > .search-wrap{grid-area:search;max-width:100%;margin:0;min-width:0;width:100%}
   .search-wrap input{font-size:16px;padding:8px 12px 8px 34px;max-width:100%;box-sizing:border-box}
-  header.topbar > .topbar-actions{grid-area:actions;justify-self:end}
+  header.topbar > .topbar-actions{grid-area:actions;justify-self:end;min-width:0;flex-shrink:0}
   .brand-divider,.brand-sub{display:none}
   .brand-mark{font-size:18px}
   .search-kbd{display:none}
   /* Compact icon-btn on mobile */
   .topbar-actions .user-name{display:none}
-  .topbar-actions{gap:6px}
+  .topbar-actions{gap:4px}
+  .icon-btn{width:32px;height:32px}
+  .user-chip{padding:4px 6px 4px 4px}
+}
+@media (max-width:420px){
+  .brand-mark{display:none}
+  header.topbar{padding:10px 10px;gap:8px 8px}
+  #rate-limit-indicator{display:none!important}
 }
 .brand{display:flex;align-items:center;gap:10px}
 .brand-home-link{display:flex;align-items:center;gap:10px;cursor:pointer}
