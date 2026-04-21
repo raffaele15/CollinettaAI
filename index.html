@@ -706,7 +706,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sede-bucket-toggle:hover{background:var(--bg-raised)}
 .sede-bucket-toggle.open{background:var(--bg-raised)}
 .sede-bucket-caret{font-family:var(--mono);font-size:10px;color:var(--ink-muted);width:10px;display:inline-block;flex-shrink:0}
-.sede-bucket-count{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-muted);background:var(--bg-paper);padding:2px 6px;border-radius:8px;border:1px solid var(--rule-soft)}
+.sede-bucket-loc{font-size:11px;color:var(--ink-muted);flex:1}
 .sede-bucket-header{display:flex;align-items:baseline;gap:10px;padding:8px 12px;background:var(--bg-sink);border-radius:4px;margin:14px 0 6px}
 .sede-bucket-header:first-child{margin-top:0}
 .sede-bucket-tipo{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
@@ -4493,8 +4493,8 @@ function renderNumeri(filter) {
                 const sedeLocN = normalize(sedeLoc);
                 const isOpen = autoExpandAll || expanded.has(b.sedeKey);
                 const headerInner = b.sede
-                  ? renderSedeBucketHeader(b.sede, b.contatti.length)
-                  : `<span class="sede-bucket-tipo">Altro</span> <span style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);">${b.contatti.length}</span>`;
+                  ? renderSedeBucketHeader(b.sede)
+                  : `<span class="sede-bucket-tipo">Altro</span>`;
                 return `<div class="sede-bucket" data-bucket="${escapeHtml(b.sedeKey)}">
                   <button class="sede-bucket-toggle ${isOpen ? 'open' : ''}" onclick="toggleSedeBucket('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')">
                     <span class="sede-bucket-caret">${isOpen ? '▾' : '▸'}</span>
@@ -4976,8 +4976,7 @@ function renderSedeBucketHeader(s, count) {
   if (s.area) parts.push(escapeHtml(s.area));
   const loc = parts.join(' · ');
   return `<span class="sede-bucket-tipo">${escapeHtml(tipo)}</span>
-    ${loc ? `<span class="sede-bucket-loc">${loc}</span>` : ''}
-    ${count !== undefined ? `<span class="sede-bucket-count">${count}</span>` : ''}`;
+    ${loc ? `<span class="sede-bucket-loc">${loc}</span>` : ''}`;
 }
 
 function toggleSedeBucket(gid, sedeKey) {
@@ -7747,9 +7746,14 @@ function renderSearchResults(query, targetId) {
       const gName = (u.gruppo || '').toLowerCase();
       const extraTokens = queryTerms.filter(t => !tokenMatches(t, gName));
       if (extraTokens.length > 0) {
-        // Filtra i contatti che matchano tutti i token extra
+        // Filtra TUTTI i contatti del gruppo (non solo quelli che Fuse ha già trovato)
+        // che matchano tutti i token extra nei loro campi.
+        // NB: qui c è il contatto RAW dal yaml, quindi usa c.etichetta (non c.titolo)
+        // e c.tag è un array che va joined.
         const filtered = u.contatti.filter(c => {
-          const ctxt = [c.titolo, c.sezione, c.tag, c.termini].filter(Boolean).join(' ').toLowerCase();
+          const tagsStr = Array.isArray(c.tag) ? c.tag.join(' ') : (c.tag || '');
+          const aliasStr = Array.isArray(c.alias) ? c.alias.join(' ') : (c.alias || '');
+          const ctxt = [c.etichetta, c.sezione, c.luogo, tagsStr, aliasStr].filter(Boolean).join(' ').toLowerCase();
           return extraTokens.every(t => tokenMatches(t, ctxt));
         });
         topContatti = filtered.length > 0 ? filtered.slice(0, 30) : u.contatti.slice(0, 12);
@@ -7783,14 +7787,19 @@ function renderSearchResults(query, targetId) {
           return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
         }).join('');
         if (b.sede) {
-          const headerInner = renderSedeBucketHeader(b.sede, b.contatti.length);
+          const headerInner = renderSedeBucketHeader(b.sede);
           return `<div class="sr-sede-bucket">
             <button class="sr-sede-bucket-header" onclick="openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con questa sezione espansa">${headerInner}</button>
             <div class="sr-sede-bucket-contatti">${contattiItems}</div>
           </div>`;
         }
-        // Bucket "Altro" o UOC senza sedi strutturate: nessun wrapper speciale
-        return contattiItems;
+        // Bucket "Altro": wrapper neutro con header semplice (non cliccabile perché non c'è sede)
+        return `<div class="sr-sede-bucket">
+          <div class="sr-sede-bucket-header" style="cursor:default;">
+            <span class="sede-bucket-tipo">Altro</span>
+          </div>
+          <div class="sr-sede-bucket-contatti">${contattiItems}</div>
+        </div>`;
       }).join('');
     } else {
       contattiHtml = topContatti.map(c => renderContatto(c)).join('');
