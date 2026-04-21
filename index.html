@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>CollinettaAI</title>
+<meta name="description" content="CollinettaAI">
+<meta property="og:title" content="CollinettaAI">
+<meta property="og:description" content="CollinettaAI">
+<meta name="twitter:title" content="CollinettaAI">
+<meta name="twitter:description" content="CollinettaAI">
 <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
@@ -7735,7 +7740,7 @@ function renderSearchResults(query, targetId) {
         if (b.sede) {
           const headerInner = renderSedeBucketHeader(b.sede, b.contatti.length);
           return `<div class="sr-sede-bucket">
-            <button class="sr-sede-bucket-header" onclick="event.stopPropagation(); openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con questa sezione espansa">${headerInner}</button>
+            <button class="sr-sede-bucket-header" onclick="openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con questa sezione espansa">${headerInner}</button>
             <div class="sr-sede-bucket-contatti">${contattiItems}</div>
           </div>`;
         }
@@ -7745,7 +7750,7 @@ function renderSearchResults(query, targetId) {
     } else {
       contattiHtml = topContatti.map(c => renderContatto(c)).join('');
     }
-    return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
+    return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact, .sr-sede-bucket-header, .sr-sede-bucket-contatti') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
       <div class="sr-uoc-head">
         ${ospBadge}
       </div>
