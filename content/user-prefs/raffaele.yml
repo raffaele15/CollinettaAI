@@ -4,9 +4,11 @@
 pins:
   - type: contatto
     id: card-amb-n2-ecg
+  - type: gruppo
+    id: farmacia
 home_numeri: []
 pin_order:
   _uoc:
     - cardiologia
-ultima_modifica: '2026-04-22T11:36:41.474Z'
+ultima_modifica: '2026-04-22T21:50:35.654Z'
 modificato_da: raffaele
