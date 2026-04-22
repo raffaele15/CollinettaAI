@@ -234,23 +234,6 @@ html[data-theme="dark"]{
 [data-theme="dark"] .numero-row-utile .numero-label,
 [data-theme="dark"] .sr-contact-utile .sr-contact-label{color:#a8d480}
 
-/* Pallino davanti al nome per guardia / reparto / utili (dark mode) */
-[data-theme="dark"] .numero-row-guardia .numero-label::before,
-[data-theme="dark"] .sr-contact-guardia .sr-contact-label::before,
-[data-theme="dark"] .numero-row-reparto .numero-label::before,
-[data-theme="dark"] .sr-contact-reparto .sr-contact-label::before,
-[data-theme="dark"] .numero-row-utile .numero-label::before,
-[data-theme="dark"] .sr-contact-utile .sr-contact-label::before{
-  content:"● ";
-  margin-right:4px;
-}
-[data-theme="dark"] .numero-row-guardia .numero-label::before,
-[data-theme="dark"] .sr-contact-guardia .sr-contact-label::before{color:#f07070}
-[data-theme="dark"] .numero-row-reparto .numero-label::before,
-[data-theme="dark"] .sr-contact-reparto .sr-contact-label::before{color:#6ba4f5}
-[data-theme="dark"] .numero-row-utile .numero-label::before,
-[data-theme="dark"] .sr-contact-utile .sr-contact-label::before{color:#8fc857}
-
 /* Numero come PILLOLA colorata piena (palette D) */
 [data-theme="dark"] .numero-row-guardia .numero-btn,
 [data-theme="dark"] .sr-contact-num-guardia{
@@ -615,6 +598,15 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .rubrica-alpha-btn.disabled,.rubrica-alpha-btn:disabled{color:var(--ink-faint);opacity:.4;cursor:not-allowed}
 .rubrica-alpha-btn.rubrica-alpha-source{min-width:auto;padding:0 10px;margin-left:4px;background:var(--bg-paper);border-color:var(--rule);font-size:11px;font-weight:600;letter-spacing:.05em}
 .rubrica-alpha-btn.rubrica-alpha-source:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.rubrica-pinned-section{margin:0 0 14px;border:1px solid var(--rule);border-radius:3px;background:var(--bg-paper);overflow:hidden}
+.rubrica-pinned-summary{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-sink);cursor:pointer;list-style:none;font-family:var(--serif);font-size:14px;font-weight:500;color:var(--ink);user-select:none}
+.rubrica-pinned-summary::-webkit-details-marker{display:none}
+.rubrica-pinned-summary:hover{background:var(--rule-soft)}
+.rubrica-pinned-star{color:var(--accent);font-size:15px}
+.rubrica-pinned-label{flex:1}
+.rubrica-pinned-caret{font-size:12px;color:var(--ink-muted);transition:transform .2s}
+.rubrica-pinned-section[open] .rubrica-pinned-caret{transform:rotate(180deg)}
+.rubrica-pinned-body{padding:8px 0}
 .kind-chip{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:11px;background:var(--bg-paper);color:var(--ink-soft);border:1px solid var(--rule);cursor:pointer;transition:all .12s;white-space:nowrap;line-height:1.4}
 .kind-chip:hover{border-color:var(--chip-color,var(--ink-soft));color:var(--chip-color,var(--ink))}
 .kind-chip.active{background:var(--chip-bg,var(--accent-soft));color:var(--chip-color,var(--accent));border-color:var(--chip-color,var(--accent));font-weight:500}
@@ -4323,7 +4315,7 @@ function renderNumeri(filter) {
   let activeSource = 'aopd'; // quale fonte stiamo guardando: aopd (default), osa, iov
   if (filter === 'guardia') {
     filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd').map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
-    filterLabel = 'Medici di Guardia';
+    // Nessuna label: il chip MdG in alto già indica il filtro attivo
   } else if (filter === 'osa') {
     filteredGruppi = allGroups.filter(g => g._source === 'osa');
     filterLabel = "Ospedale Sant'Antonio";
@@ -4541,19 +4533,16 @@ function renderNumeri(filter) {
         const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
         const activeInitial = state.rubricaInitialFilter || null;
         // Filtro la lista per iniziale se attiva
-        const visibleList = activeInitial === 'pinned'
-          ? list.filter(g => isPinned('gruppo', g.id) || (g.contatti || []).some(c => isPinned('contatto', c.id)))
-          : activeInitial
-            ? list.filter(g => stripPrefix(g.nome).charAt(0).toUpperCase() === activeInitial)
-            : list;
+        const visibleList = activeInitial
+          ? list.filter(g => stripPrefix(g.nome).charAt(0).toUpperCase() === activeInitial)
+          : list;
         // Ordino per nome senza prefisso
         const sortedList = [...visibleList].sort((a,b) => stripPrefix(a.nome).localeCompare(stripPrefix(b.nome), 'it'));
-        // Alfabeto cliccabile
+        // Alfabeto cliccabile (senza chip preferiti)
         const osaAvailable = allGroups.some(g => g._source === 'osa');
         const iovAvailable = allGroups.some(g => g._source === 'iov');
         const alphabetBar = `
           <div class="rubrica-alphabet-bar">
-            <button class="rubrica-alpha-btn ${activeInitial === 'pinned' ? 'active' : ''}" onclick="filterRubricaByInitial('pinned')" title="Mostra solo preferiti (fissati con ☆)">★</button>
             ${allLetters.map(L => {
               const has = initialsAvailable.has(L);
               const isActive = activeInitial === L;
@@ -4564,10 +4553,24 @@ function renderNumeri(filter) {
             ${(src === 'aopd' && osaAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="navigate('numeri', {filter:'osa'})" title="Ospedale Sant'Antonio">OSA</button>` : ''}
             ${(src === 'aopd' && iovAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="navigate('numeri', {filter:'iov'})" title="Istituto Oncologico Veneto">IOV</button>` : ''}
           </div>`;
+        // Sezione Preferiti (solo per aopd, sopra la lista UOC): aperta di default se ci sono preferiti
+        const hasPinned = list.some(g => isPinned('gruppo', g.id) || (g.contatti || []).some(c => isPinned('contatto', c.id)));
+        const pinnedSection = (src === 'aopd' && hasPinned && !activeInitial) ? `
+          <details class="rubrica-pinned-section" open>
+            <summary class="rubrica-pinned-summary">
+              <span class="rubrica-pinned-star">★</span>
+              <span class="rubrica-pinned-label">Preferiti</span>
+              <span class="rubrica-pinned-caret">▾</span>
+            </summary>
+            <div class="rubrica-pinned-body">
+              ${renderPinnedContattiSection(list)}
+            </div>
+          </details>
+        ` : '';
         return `
           ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
+          ${pinnedSection}
           ${alphabetBar}
-          ${activeInitial === 'pinned' ? renderPinnedContattiSection(list) : `
           <div class="uoc-compact-list">
             ${sortedList.map(g => {
               return `<div class="uoc-compact-item">
@@ -4577,7 +4580,7 @@ function renderNumeri(filter) {
                 ${renderPinButton('gruppo', g.id)}
               </div>`;
             }).join('')}
-          </div>`}`;
+          </div>`;
       }
       return `
         ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
@@ -4602,8 +4605,8 @@ function renderNumeri(filter) {
                 </span>
               </span>
             </h2>
-            ${g.direttore ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
-            ${g.email ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
+            ${g.direttore && filter !== 'guardia' ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
+            ${g.email && filter !== 'guardia' ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
             ${(function(){
               const sorted = sortContattiForDisplay(g.contatti || []);
               const buckets = groupContattiBySede(sorted, g.sedi_operative, g.sede_operativa);
@@ -5159,10 +5162,10 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     : cls.kind === 'reparto' ? 'numero-row numero-row-reparto'
     : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
-  const guardiaBadge = tags.includes('guardia') ? `<span class="badge badge-guardia">🔴 Guardia</span>` : '';
-  const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">🏥 Guardiola</span>` : '';
-  const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">Reparto</span>` : '';
-  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">Utili</span>` : '';
+  const guardiaBadge = tags.includes('guardia') ? `<span class="badge badge-guardia">● Guardia</span>` : '';
+  const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Guardiola</span>` : '';
+  const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Reparto</span>` : '';
+  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">● Utili</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
   const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
@@ -5197,9 +5200,9 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const isAuto = !effectiveKind;
   const kindSelector = c.id ? `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
     <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
-    <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">🔴 Guardia</button>
-    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">🔵 Reparto</button>
-    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">🟢 Utili</button>
+    <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">● Guardia</button>
+    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">● Reparto</button>
+    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">● Utili</button>
     ${effectiveKind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
     ${hasPending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
   </div>` : '';
@@ -8363,9 +8366,9 @@ function renderSearchResults(query, targetId) {
       `<button class="kind-chip ${k === value ? 'active' : ''}" onclick="event.stopPropagation(); setContactKind('${escapeJs(c.id)}','${value}')" title="${label}" style="--chip-color:${color};--chip-bg:${bg};">${label}</button>`;
     return `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;" onclick="event.stopPropagation();">
       <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
-      ${mk('guardia', '🔴 Guardia', '#fef0ef', 'var(--danger)')}
-      ${mk('reparto', '🔵 Reparto', 'var(--accent-soft)', 'var(--accent)')}
-      ${mk('utile',   '🟢 Utili',   '#e8f5e9', '#2e7d32')}
+      ${mk('guardia', '● Guardia', '#fef0ef', 'var(--danger)')}
+      ${mk('reparto', '● Reparto', 'var(--accent-soft)', 'var(--accent)')}
+      ${mk('utile',   '● Utili',   '#e8f5e9', '#2e7d32')}
       ${k ? `<button class="kind-chip-reset" onclick="event.stopPropagation(); setContactKind('${escapeJs(c.id)}',null)" title="Auto">✕ auto</button>` : ''}
       ${pending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
     </div>`;
@@ -8413,7 +8416,7 @@ function renderSearchResults(query, targetId) {
       </div>`;
     }
     if (isReparto) {
-      const repartoMeta = isGuardiola ? '🏥 guardiola' : 'reparto';
+      const repartoMeta = isGuardiola ? 'guardiola' : 'reparto';
       return `<div class="sr-contact sr-contact-reparto" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
           <div class="sr-contact-label">${labelHtml}</div>
@@ -8788,10 +8791,13 @@ function initEventListeners() {
   }, { passive: true });
   document.addEventListener('touchend', () => { touchStart = null; }, { passive: true });
   document.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
-  // Chiudo il drawer quando l'utente naviga (click su nav-item)
+  // Chiudo il drawer quando l'utente naviga (click su nav-item o nav-tree-row)
   $('sidebar').addEventListener('click', (e) => {
-    const navItem = e.target.closest('.nav-item');
-    if (navItem && isMobileViewport()) closeMobileMenu();
+    const navItem = e.target.closest('.nav-item, .nav-tree-row');
+    if (!navItem || !isMobileViewport()) return;
+    // Non chiudo se è un click sul caret di espansione (non naviga)
+    if (e.target.closest('.nav-tree-caret') || e.target.closest('.nav-edit-actions')) return;
+    closeMobileMenu();
   });
   // Tap sul main content (fuori dalla sidebar) → chiude
   $('main-content').addEventListener('click', () => {
