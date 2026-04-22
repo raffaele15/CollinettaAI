@@ -8728,14 +8728,15 @@ function initEventListeners() {
     if (!t) return;
     const edgeZone = window.innerWidth / 2;
     const sidebarOpen = $('sidebar').classList.contains('mobile-open');
-    if (!sidebarOpen && t.clientX <= edgeZone) {
-      touchStart = { x: t.clientX, y: t.clientY, mode: 'open' };
-    } else if (sidebarOpen) {
-      touchStart = { x: t.clientX, y: t.clientY, mode: 'close' };
-    } else if (!sidebarOpen && window.scrollY <= 0) {
-      // Siamo già in cima: avvia potenziale pull-down per focus search
-      touchStart = { x: t.clientX, y: t.clientY, mode: 'pulldown' };
-    }
+    // Memorizzo lo startY e tutti i mode potenzialmente validi; il mode effettivo viene deciso al primo movimento
+    touchStart = {
+      x: t.clientX, y: t.clientY,
+      sidebarOpen,
+      canOpen: !sidebarOpen && t.clientX <= edgeZone,
+      canClose: sidebarOpen,
+      canPulldown: !sidebarOpen && (window.scrollY <= 0),
+      mode: null // deciso al primo touchmove in base alla direzione
+    };
   }, { passive: true });
   document.addEventListener('touchmove', (e) => {
     if (!touchStart) return;
@@ -8745,12 +8746,27 @@ function initEventListeners() {
     const dy = t.clientY - touchStart.y;
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
+    // Decido il mode al primo movimento significativo (>15px in una direzione)
+    if (!touchStart.mode) {
+      if (absDx < 15 && absDy < 15) return; // ancora troppo piccolo
+      // Movimento prevalentemente verticale verso il basso → pulldown
+      if (absDy > absDx && dy > 0 && touchStart.canPulldown) {
+        touchStart.mode = 'pulldown';
+      }
+      // Movimento prevalentemente orizzontale → swipe sidebar
+      else if (absDx > absDy) {
+        if (dx > 0 && touchStart.canOpen) touchStart.mode = 'open';
+        else if (dx < 0 && touchStart.canClose) touchStart.mode = 'close';
+        else { touchStart = null; return; }
+      }
+      else {
+        // Movimento verticale ma non compatibile con pulldown (es. scroll verso l'alto, o già scrollato)
+        touchStart = null; return;
+      }
+    }
     if (touchStart.mode === 'pulldown') {
-      // Annullo se l'utente è scrollato via dalla cima (ha iniziato a muovere la pagina)
       if (window.scrollY > 0) { touchStart = null; return; }
-      // Annullo se il movimento è troppo orizzontale
       if (absDx > HORIZ_TOLERANCE) { touchStart = null; return; }
-      // Pull-down raggiunto: focus sulla search
       if (dy > PULL_DOWN_THRESHOLD) {
         const input = document.getElementById('global-search');
         if (input) {
@@ -8760,7 +8776,6 @@ function initEventListeners() {
         touchStart = null;
       }
     } else {
-      // swipe orizzontale (open/close sidebar)
       if (absDy > VERT_TOLERANCE) { touchStart = null; return; }
       if (touchStart.mode === 'open' && dx > OPEN_THRESHOLD) {
         openMobileMenu();
@@ -8817,19 +8832,32 @@ function initEventListeners() {
   const searchInput = $('global-search');
   const searchClear = $('global-search-clear');
   let searchTimeout = null;
+  let lastRenderedQuery = null;
   const updateSearchClear = () => {
     if (searchClear) searchClear.classList.toggle('hidden', !searchInput.value);
   };
   updateSearchClear();
+  const doSearch = (q) => {
+    if (q === lastRenderedQuery) return;
+    lastRenderedQuery = q;
+    state.searchFilter = new Set();
+    if (q.length >= 2) openSearchOverlay(q);
+    else closeSearchOverlay();
+  };
   searchInput.addEventListener('input', (e) => {
     const q = e.target.value;
     updateSearchClear();
     clearTimeout(searchTimeout);
+    // Se l'utente sta cancellando (q vuoto o 1 carattere), reagisco subito
+    if (q.length < 2) {
+      doSearch(q);
+      return;
+    }
+    // Debounce 300ms per ricerche: evita lag durante typing veloce
     searchTimeout = setTimeout(() => {
-      state.searchFilter = new Set();
-      if (q.length >= 2) openSearchOverlay(q);
-      else closeSearchOverlay();
-    }, 200);
+      // Differisco il rendering al prossimo frame per non bloccare l'input
+      requestAnimationFrame(() => doSearch(q));
+    }, 300);
   });
   if (searchClear) {
     searchClear.addEventListener('click', () => {
