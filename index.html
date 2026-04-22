@@ -2321,11 +2321,20 @@ function rebuildSearchIndex() {
         sezione: c.sezione || '',
         tag: (c.tag || []).join(' '),
         alias: [...(c.alias || []), ...(g.alias || [])].join(' '),
-        termini: termini
+        termini: termini,
+        _dedupKey: `numero:${c.id || c.etichetta}`
       });
     });
   });
-  state.fuse = new Fuse(docs, {
+  // Dedup per _dedupKey: tengo il primo (es. contatti con stesso id duplicati in più sezioni della stessa UOC)
+  const seenKeys = new Set();
+  const dedupedDocs = docs.filter(d => {
+    if (!d._dedupKey) return true;
+    if (seenKeys.has(d._dedupKey)) return false;
+    seenKeys.add(d._dedupKey);
+    return true;
+  });
+  state.fuse = new Fuse(dedupedDocs, {
     keys: [
       { name: 'gruppo', weight: 4 },
       { name: 'titolo', weight: 3 },
