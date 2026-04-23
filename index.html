@@ -772,11 +772,11 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .pinned-uoc-name{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);text-decoration:none;flex:1;border-bottom:1px dotted var(--rule-strong)}
 .pinned-uoc-name:hover{color:var(--accent)}
 .pinned-uoc-contatti{padding:4px 0}
-.pinned-contatto-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--rule-soft)}
+.pinned-contatto-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:start;padding:6px 14px;border-bottom:1px solid var(--rule-soft)}
 .pinned-contatto-row:last-child{border-bottom:none}
-.pinned-contatto-label{font-size:14px;color:var(--ink);cursor:pointer}
+.pinned-contatto-label{font-size:14px;color:var(--ink);cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
 .pinned-contatto-label:hover{color:var(--accent)}
-.pinned-contatto-num{font-family:var(--mono);font-size:13px;color:var(--ink-soft);padding:3px 8px;border-radius:3px;background:var(--bg-sink);border:1px solid var(--rule-soft);text-align:right;word-break:break-word}
+.pinned-contatto-num{font-family:var(--mono);font-size:12px;color:var(--ink-soft);padding:1px 6px;border-radius:3px;background:var(--bg-sink);border:1px solid var(--rule-soft);white-space:nowrap;line-height:1.4;flex-shrink:0}
 .pinned-contatto-num-guardia{background:#fef0ef;color:var(--danger);border-color:#f5c2bf;font-weight:500}
 .pinned-contatto-num-reparto{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:500}
 .pinned-contatto-num-utile{background:#e8f5e9;color:#2e7d32;border-color:#b2d8b4;font-weight:500}
@@ -4256,12 +4256,8 @@ function clearRubricaSearch() {
 }
 
 function filterRubricaByInitial(letter) {
-  // 'pinned' = mostra solo UOC preferite; null = tutti; lettera = filtro iniziale
-  if (state.rubricaInitialFilter === letter) {
-    state.rubricaInitialFilter = null; // toggle off
-  } else {
-    state.rubricaInitialFilter = letter;
-  }
+  // Le lettere non sono de-selezionabili: si può solo cambiare quale è attiva
+  state.rubricaInitialFilter = letter;
   const params = state.currentParams || {};
   renderNumeri(params.filter);
 }
@@ -4321,13 +4317,18 @@ function renderNumeri(filter) {
   const ext = state.numeriExtendedAvailable || {};
 
   // Primo accesso alla rubrica senza filter/query: preattiva il filtro "preferiti"
-  // (se l'utente ha almeno un gruppo/contatto pinnato). Se disattiva manualmente → null.
-  if (state.rubricaInitialFilter === undefined && !filter && !state.rubricaSearch) {
+  // (se l'utente ha almeno un gruppo/contatto pinnato). Usa un flag separato.
+  if (state.rubricaFirstAccessDone === undefined && !filter && !state.rubricaSearch) {
+    state.rubricaFirstAccessDone = true;
     const hasAnyPin = allGroups.some(g =>
       isPinned('gruppo', g.id) ||
       (g.contatti || []).some(c => isPinned('contatto', c.id))
     );
-    state.rubricaInitialFilter = hasAnyPin ? 'pinned' : null;
+    if (hasAnyPin) {
+      // Redirect al filtro preferiti
+      navigate('numeri', { filter: 'pinned' });
+      return;
+    }
   }
 
   let filteredGruppi = allGroups;
@@ -4568,6 +4569,11 @@ function renderNumeri(filter) {
           if (ch >= 'A' && ch <= 'Z') initialsAvailable.add(ch);
         });
         const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        // Se nessuna lettera è attiva, preseleziona la prima lettera disponibile (tipicamente 'A')
+        if (state.rubricaInitialFilter === null || state.rubricaInitialFilter === undefined) {
+          const firstAvailable = allLetters.find(L => initialsAvailable.has(L));
+          if (firstAvailable) state.rubricaInitialFilter = firstAvailable;
+        }
         const activeInitial = state.rubricaInitialFilter || null;
         // Filtro la lista per iniziale se attiva
         const visibleList = activeInitial
@@ -4693,8 +4699,9 @@ function renderNumeri(filter) {
                 </div>`;
               }).join('');
             })()}
-            ${rubricaQuery && !isManuallyExpanded && (function(){
+            ${(function(){
               // Se sto filtrando e questa UOC ha più contatti di quelli visibili, mostra un hint
+              if (!rubricaQuery || isManuallyExpanded) return '';
               const fullGroup = allGroups.find(x => x.id === g.id);
               const totalContacts = fullGroup ? (fullGroup.contatti || []).length : 0;
               const visibleContacts = (g.contatti || []).length;
@@ -4894,8 +4901,10 @@ function renderPinnedContattiSection(allGroups) {
         : '';
       return `<div class="pinned-contatto-row" data-cid="${escapeHtml(c.id)}">
         ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
-        <span class="pinned-contatto-label" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">${escapeHtml(c.etichetta)}</span>
-        <span class="pinned-contatto-num ${numCls}">${escapeHtml(dispNum || '—')}</span>
+        <span class="pinned-contatto-label" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
+          <span>${escapeHtml(c.etichetta)}</span>
+          <span class="pinned-contatto-num ${numCls}">${escapeHtml(dispNum || '—')}</span>
+        </span>
         ${renderPinButton('contatto', c.id)}
       </div>`;
     }).join('');
@@ -5512,7 +5521,6 @@ function renderCalendario(params) {
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Calendario</div>
       <h1 class="page-title">Calendario</h1>
-      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Eventi della clinica — condiviso tra tutti</div>
     </div>
 
     <div class="cal-wrap">
