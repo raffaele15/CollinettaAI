@@ -7,7 +7,6 @@ gruppi:
 - id: dir-generale
   nome: Direzione Generale
   ubicazione:
-    piano: 1°
     struttura: Palazzina Direzione
   direttore: Dr. Dal Ben Giuseppe
   email: dir.gen@aopd.veneto.it
@@ -16,7 +15,6 @@ gruppi:
 - id: dir-sanitaria
   nome: Direzione Sanitaria
   ubicazione:
-    piano: 1°
     struttura: Palazzina Direzione
   direttore: Dr. Tessarin Michele
   email: dir.san@aopd.veneto.it
@@ -25,7 +23,6 @@ gruppi:
 - id: dir-amministrativa
   nome: Direzione Amministrativa
   ubicazione:
-    piano: 1°
     struttura: Palazzina Direzione
   direttore: Dr. Perina Fabio
   email: dir.amm@aopd.veneto.it
@@ -57,10 +54,10 @@ gruppi:
     tipo: segreteria_direzione
     alias:
     - uscieri
+    piano: 1°
 - id: cdg
   nome: U.O.C. Controllo di Gestione
   ubicazione:
-    piano: 4°
     struttura: Ex Casa Suore
   direttore: Dr. Giona Antonio
   email: cdg@aopd.veneto.it
@@ -155,23 +152,27 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 4°
   - nome: Area Budget
     tipo: altro
     alias: []
+    piano: 4°
   - nome: Area Produzione
     tipo: altro
     alias: []
+    piano: 4°
   - nome: Area Contabilità Analitica
     tipo: altro
     alias:
     - area contabilita
+    piano: 4°
   - nome: CEDS
     tipo: altro
     alias: []
+    piano: 4°
 - id: dir-amm-ospedale
   nome: U.O.C. Direzione Amministrativa di Ospedale
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   direttore: Avv. Longhini Luisa
   contatti:
@@ -347,24 +348,28 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 2°
   - nome: Area Economica
     tipo: altro
     alias: []
+    piano: 2°
   - nome: Area Giuridica
     tipo: altro
     alias: []
+    piano: 2°
   - nome: Ufficio Comunitari ed Extracomunitari
     tipo: altro
     alias:
     - comunitari
     - extracomunitari
+    piano: 2°
   - nome: Cassa
     tipo: altro
     alias: []
+    piano: 2°
 - id: libera-prof
   nome: U.O.S. Libera Professione
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   direttore: Avv. Longhini Luisa
   contatti:
@@ -453,17 +458,16 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Palazzina Direzione
     piano: 2° piano
   - nome: LP Ambulatoriale
     tipo: ambulatori
     alias:
     - ambulatoriale
+    piano: 2°
   - nome: LP Convenzioni
     tipo: altro
     alias:
     - convenzioni
-    edificio: Palazzina Direzione
     piano: 2° piano
   - nome: LP Ricoveri (Paganti in Proprio)
     tipo: degenze
@@ -475,7 +479,6 @@ gruppi:
 - id: progetti-ricerca
   nome: U.O.S.D. Progetti e Ricerca Clinica
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   direttore: Dr.ssa Iadicicco Girolama
   email: uosd.progettiricercaclinica@aopd.veneto.it
@@ -639,33 +642,28 @@ gruppi:
     tipo: segreteria_direzione
     alias:
     - dirigenti amministrativi
-    edificio: Palazzina Direzione
     piano: 2° piano
   - nome: Unità Ricerca Clinica - Area Profit
     tipo: altro
     alias:
     - profit
     - urc profit
-    edificio: Palazzina Direzione
     piano: 2° piano
   - nome: Unità Ricerca Clinica - Area No Profit
     tipo: altro
     alias:
     - no profit
     - urc no profit
-    edificio: Palazzina Direzione
     piano: 2° piano
   - nome: Contabilità Progetti Finanziati
     tipo: altro
     alias:
     - contabilità progetti
     - sperimentazione
-    edificio: Palazzina Direzione
     piano: 2° piano
 - id: cesc
   nome: CESC - Comitato Etico Sperimentazione Clinica
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   direttore: Dr. Barbisan Camillo
   email: ce.sperimentazione@aopd.veneto.it
@@ -713,10 +711,10 @@ gruppi:
     - cesc
     - comitato etico
     - sperimentazione clinica
+    piano: 2°
 - id: bioetica
   nome: Servizio di Bioetica
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   direttore: Dr. Barbisan Camillo
   contatti:
@@ -775,10 +773,10 @@ gruppi:
     tipo: altro
     alias:
     - bioetica
+    piano: 2°
 - id: qualita
   nome: Servizio Qualità, Innovazione e Sviluppo Organizzativo
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   contatti:
   - id: q-alberti
@@ -812,10 +810,10 @@ gruppi:
     - qualità
     - innovazione
     - sviluppo organizzativo
+    piano: 2°
 - id: prest-sanitarie
   nome: Ufficio Prestazioni Sanitarie
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   contatti:
   - id: ps-bertocco
@@ -871,10 +869,10 @@ gruppi:
     tipo: altro
     alias:
     - prestazioni sanitarie
+    piano: 2°
 - id: comunicazione
   nome: Ufficio Comunicazione
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   email: comunicazione@aopd.veneto.it
   contatti:
@@ -889,10 +887,10 @@ gruppi:
     tipo: altro
     alias:
     - comunicazione
+    piano: 2°
 - id: internal-audit
   nome: Internal Audit
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione
   contatti:
   - id: ia-tumiatti
@@ -913,10 +911,10 @@ gruppi:
     alias:
     - internal audit
     - revisione interna
+    piano: 2°
 - id: coris
   nome: Consorzio per la Ricerca Sanitaria CORIS
   ubicazione:
-    piano: 2°
     struttura: Giustinianeo
   contatti:
   - id: coris-amm
@@ -952,6 +950,7 @@ gruppi:
     alias:
     - coris
     - consorzio ricerca
+    piano: 2°
 - id: provveditorato
   nome: U.O.C. Provveditorato, Economato e Logistica
   ubicazione:
@@ -1361,7 +1360,6 @@ gruppi:
 - id: logistica-servizi
   nome: U.O.S. Logistica dei Servizi
   ubicazione:
-    piano: 2°
     struttura: Palazzina Direzione - Ala Ovest
   direttore: Dr.ssa Cavallarin Maria Cristina
   contatti:
@@ -1604,7 +1602,6 @@ gruppi:
 - id: risorse-umane
   nome: U.O.C. Gestione Risorse Umane
   ubicazione:
-    piano: terra
     struttura: Palazzina Direzione
   direttore: Dr.ssa Zanella Michela
   email: personale@aopd.veneto.it
@@ -1926,18 +1923,23 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: terra
   - nome: Gestione Risorse Umane
     tipo: altro
     alias: []
+    piano: terra
   - nome: Area Economica
     tipo: altro
     alias: []
+    piano: terra
   - nome: Concorsi e Reclutamento
     tipo: altro
     alias: []
+    piano: terra
   - nome: Rapporti Sindacali
     tipo: altro
     alias: []
+    piano: terra
 - id: contabilita-bilancio
   nome: U.O.C. Contabilità e Bilancio
   ubicazione:
@@ -2130,32 +2132,39 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    indirizzo: Via Falloppio 17
   - nome: Bilancio
     tipo: altro
     alias: []
+    indirizzo: Via Falloppio 17
   - nome: Fornitori
     tipo: altro
     alias: []
+    indirizzo: Via Falloppio 17
   - nome: Fatturazione
     tipo: altro
     alias: []
+    indirizzo: Via Falloppio 17
   - nome: Pagamenti
     tipo: altro
     alias: []
+    indirizzo: Via Falloppio 17
   - nome: Entrate e Recupero Crediti
     tipo: altro
     alias:
     - entrate
+    indirizzo: Via Falloppio 17
   - nome: Fiscale
     tipo: altro
     alias: []
+    indirizzo: Via Falloppio 17
   - nome: Inventari
     tipo: altro
     alias: []
+    indirizzo: Via Falloppio 17
 - id: sistemi-informativi
   nome: U.O.C. Sistemi Informativi
   ubicazione:
-    piano: 1°
     struttura: Ex Casa Suore
   direttore: Ing. Alessio Gasparetto
   contatti:
@@ -2271,22 +2280,18 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Ex Casa Suore
     piano: 1° piano
   - nome: Sistemi Informativi
     tipo: altro
     alias: []
-    edificio: Ex Casa Suore
     piano: 1° piano
   - nome: Help Desk e Supporto
     tipo: altro
     alias: []
-    edificio: Ex Casa Suore
     piano: 1° piano
 - id: affari-generali
   nome: U.O.C. Affari Generali
   ubicazione:
-    piano: 1°
     struttura: Ex Casa Suore
   direttore: Dr.ssa Moretti Laura
   email: affarigenerali.aopd@aopd.veneto.it
@@ -2408,15 +2413,17 @@ gruppi:
   sezioni:
   - nome: Affari Generali
     alias: []
+    piano: 1°
   - nome: Protocollo Generale
     alias: []
+    piano: 1°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 1°
 - id: ufficio-legale
   nome: U.O.S. Ufficio Legale
   ubicazione:
-    piano: 1°
     struttura: Ex Casa Suore
   direttore: Avv. Romano Ludovica
   email: ufficiolegale.aopd@aopd.veneto.it
@@ -2456,7 +2463,6 @@ gruppi:
     tipo: altro
     alias:
     - ufficio legale
-    edificio: Ex Casa Suore
     piano: 1° piano
 - id: servizi-tecnici
   nome: U.O.C. Servizi Tecnici e Patrimoniali
@@ -2789,7 +2795,6 @@ gruppi:
 - id: direzione-medica
   nome: Direzione Medica
   ubicazione:
-    piano: 1°
     struttura: Palazzina Direzione - Ala Ovest
   direttore: Dr. Martello Tiziano
   email: dir.ospedaliera@aopd.veneto.it
@@ -2824,7 +2829,7 @@ gruppi:
     etichetta: Servizio Necroscopico
     numeri:
     - 3383
-    sezione: Servizio Necroscopico
+    sezione: Segreteria e Direzione
     luogo: 1° piano Palazzina Direzione ala ovest
   - id: dm-uff
     etichetta: Ufficio
@@ -3013,11 +3018,6 @@ gruppi:
     alias: []
     edificio: Palazzina Direzione
     piano: 1° piano
-  - nome: Servizio Necroscopico
-    tipo: altro
-    alias: []
-    edificio: Palazzina Direzione
-    piano: 1° piano
   - nome: Igiene e Prevenzione
     tipo: altro
     alias: []
@@ -3026,7 +3026,6 @@ gruppi:
 - id: assistenza-religiosa
   nome: Ufficio Assistenza Religiosa (Camillani)
   ubicazione:
-    piano: terra
     struttura: Monoblocco
   email: camillanipadova@gmail.com
   contatti:
@@ -3085,10 +3084,10 @@ gruppi:
     - camillani
     - cappellano
     - assistenza religiosa
+    piano: terra
 - id: cup
   nome: C.U.P. - Centro Unico Prenotazioni
   ubicazione:
-    piano: rialzato
     struttura: Piastra Policlinico
   email: cup@aopd.veneto.it
   contatti:
@@ -3140,10 +3139,10 @@ gruppi:
     alias:
     - cup
     - prenotazioni
+    piano: rialzato
 - id: piastra-piano-rialzato
   nome: Piastra Piano Rialzato Policlinico
   ubicazione:
-    piano: rialzato
     struttura: Policlinico
   contatti:
   - id: ppr-coord
@@ -3170,11 +3169,10 @@ gruppi:
     alias:
     - piastra piano rialzato
     - piastra pr
-    edificio: Policlinico
+    piano: rialzato
 - id: ricoveri-pagamento
   nome: Ricoveri a Pagamento
   ubicazione:
-    piano: 10°
     struttura: Monoblocco
   contatti:
   - id: rp-coord
@@ -3204,10 +3202,10 @@ gruppi:
     alias:
     - ricoveri paganti
     - paganti
+    piano: 10°
 - id: piastre-endoscopiche-giustinianeo
   nome: Piastra Endoscopica Giustinianeo (Esterni)
   ubicazione:
-    piano: 2°
     struttura: Giustinianeo
     struttura_extra: Ascensore 8
   email: piastra.endoscopica@aopd.veneto.it
@@ -3242,11 +3240,10 @@ gruppi:
     alias:
     - esterni
     - giustinianeo
-    edificio: Giustinianeo
+    piano: 2°
 - id: piastre-endoscopiche-monoblocco
   nome: Piastra Endoscopica Monoblocco (Interni)
   ubicazione:
-    piano: rialzato
     struttura: Monoblocco
   email: piastra.endoscopica@aopd.veneto.it
   contatti:
@@ -3268,11 +3265,10 @@ gruppi:
     alias:
     - interni
     - monoblocco
-    edificio: Monoblocco
+    piano: rialzato
 - id: piastra-endoscopica-pneumo
   nome: Piastra Endoscopica Pneumologica
   ubicazione:
-    piano: rialzato
     struttura: Policlinico
   email: endoscopia.respiratoria@aopd.veneto.it
   contatti:
@@ -3299,12 +3295,11 @@ gruppi:
     tipo: piastra_endoscopia
     alias:
     - endoscopia pneumologica
-    edificio: Policlinico
+    piano: rialzato
 - id: serv-amb-chir-giustinianeo
   nome: Servizio Ambulatoriale Chirurgico 1 Giustinianeo
   ubicazione:
     struttura: Giustinianeo
-    piano: 1°-2°
   contatti:
   - id: sac-coord
     etichetta: Coordinatrice - Casarotto Daniela
@@ -3414,12 +3409,10 @@ gruppi:
     alias:
     - sac 1
     - ambulatoriale chirurgico
-    edificio: Giustinianeo
     piano: 1° piano
 - id: ambulatori-monoblocco
   nome: Ambulatori Monoblocco
   ubicazione:
-    piano: rialzato
     struttura: Monoblocco
   contatti:
   - id: am-coord
@@ -3508,7 +3501,7 @@ gruppi:
     alias:
     - amb mb
     - ambulatori monoblocco
-    edificio: Monoblocco
+    piano: rialzato
 - id: cca
   nome: Centro Clinico Ambulatoriale (CCA)
   ubicazione:
@@ -3732,7 +3725,6 @@ gruppi:
 - id: andrologia-riproduzione
   nome: U.O.C. Andrologia e Medicina della Riproduzione
   ubicazione:
-    piano: 2°
     struttura: CCA Via Modena 9
   direttore: Prof. Ferlin Alberto
   contatti:
@@ -4100,7 +4092,6 @@ gruppi:
 - id: crt-veneto
   nome: Coordinamento Regionale Trapianti del Veneto
   ubicazione:
-    piano: 2°
     struttura: Giustinianeo
   direttore: Dr. Pittarello Demetrio
   contatti:
@@ -4152,6 +4143,7 @@ gruppi:
     alias:
     - crt
     - trapianti veneto
+    piano: 2°
 - id: creu
   nome: Coordinamento Regionale Emergenza Urgenza (CREU)
   ubicazione:
@@ -4172,7 +4164,6 @@ gruppi:
 - id: cot
   nome: Coordinamento Ospedaliero Trapianti (COT)
   ubicazione:
-    piano: 2°
     struttura: Neurochirurgia
   direttore: Dr. Pittarello Demetrio
   email: aopd.reperibilecot@aopd.veneto.it
@@ -4213,6 +4204,7 @@ gruppi:
     alias:
     - cot
     - trapianti
+    piano: 2°
 - id: formazione
   nome: U.O.S. Formazione
   ubicazione:
@@ -4301,7 +4293,6 @@ gruppi:
 - id: farmacia
   nome: U.O.C. Farmacia Ospedaliera
   ubicazione:
-    piano: terra e rialzato
     struttura: Monoblocco
   direttore: Dr.ssa Venturini Francesca
   contatti:
@@ -4507,22 +4498,26 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: terra e rialzato
   - nome: Farmacia Ospedaliera
     tipo: altro
     alias: []
+    piano: terra e rialzato
   - nome: Specialità Medicinali
     tipo: altro
     alias: []
+    piano: terra e rialzato
   - nome: Magazzino e Distribuzione
     tipo: altro
     alias: []
+    piano: terra e rialzato
   - nome: UMACA - Unità Manipolazione Antiblastici
     tipo: altro
     alias: []
+    piano: terra e rialzato
 - id: dir-prof-sanitarie
   nome: U.O.C. Direzione delle Professioni Sanitarie
   ubicazione:
-    piano: 1°
     struttura: Ex Casa Suore
   direttore: Dr. Degan Mario
   contatti:
@@ -4776,10 +4771,10 @@ gruppi:
     alias:
     - dps
     - professioni sanitarie
+    piano: 1°
 - id: prevenzione-protezione
   nome: U.O.S. Servizio Prevenzione e Protezione
   ubicazione:
-    piano: terra
     indirizzo: Via Falloppio 17
   direttore: Ing. Menotto Francesca (ad interim)
   email: sr.prevenzione@aopd.veneto.it
@@ -4831,7 +4826,6 @@ gruppi:
 - id: urp
   nome: Ufficio Relazioni con il Pubblico (URP)
   ubicazione:
-    piano: rialzato
     struttura: Giustinianeo
   email: urp@aopd.veneto.it
   contatti:
@@ -4857,10 +4851,10 @@ gruppi:
     alias:
     - urp
     - relazioni pubblico
+    piano: rialzato
 - id: anatomia-patologica
   nome: U.O.C. Anatomia Patologica
   ubicazione:
-    piano: 4°
     struttura: Giustinianeo
   direttore: Prof. Dei Tos Angelo Paolo
   email: anat.patologica@aopd.veneto.it
@@ -5185,11 +5179,37 @@ gruppi:
     sezione: Sede Giustinianeo
     numeri:
     - 0498272268
+  - id: cito-segr
+    etichetta: Citodiagnostica - Segreteria e Accettazione
+    numeri:
+    - 3781
+    - 3788
+    - 3798
+    sezione: Citodiagnostica
+    luogo: Ex Casa Suore 3° piano
+  - id: cito-lab
+    etichetta: Citodiagnostica - Laboratorio (L/V 9-13)
+    numeri:
+    - 3784
+    - 3785
+    sezione: Citodiagnostica
+    luogo: Ex Casa Suore 3° piano
+    alias:
+    - liquor
+    - citologia liquor
+    - citologico liquor
+  - id: cito-studi
+    etichetta: Citodiagnostica - Studio Medici
+    numeri:
+    - 3786
+    - 3748
+    - 3785
+    sezione: Citodiagnostica
+    luogo: Ex Casa Suore 3° piano
   sezioni:
   - nome: Sede Giustinianeo
     tipo: altro
     alias: []
-    edificio: Giustinianeo
     piano: 4° piano
     sottosezioni:
     - nome: Segreteria e Direzione
@@ -5214,6 +5234,12 @@ gruppi:
       tipo: altro
     - nome: Portineria
       tipo: portineria
+    piano: 4°
+  - nome: Citodiagnostica
+    tipo: laboratorio
+    alias: []
+    edificio: Ex Casa Suore
+    piano: 3°
 - id: anatomia-clinica
   nome: U.O.S.D. Anatomia Clinica - Istituto di Anatomia Umana
   ubicazione:
@@ -5302,7 +5328,6 @@ gruppi:
 - id: anestesia-rianimazione
   nome: U.O.C. Anestesia e Rianimazione
   ubicazione:
-    piano: 3°
     struttura: Monoblocco
   direttore: Dr. Tiberio Ivo
   email: anestesia.rianimaz@aopd.veneto.it
@@ -5444,28 +5469,23 @@ gruppi:
     alias:
     - ti
     - rianimaz
-    edificio: Monoblocco
     piano: 3° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias:
     - pacu
-    edificio: Monoblocco
     piano: piano rialzato
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Monoblocco
     piano: 3° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Monoblocco
     piano: 3° piano
 - id: istar
   nome: U.O.C. Istituto di Anestesia e Rianimazione (ISTAR)
   ubicazione:
-    piano: 2°
     struttura: Stabile Dipartimento Tecnico
     indirizzo: Via Vincenzo Gallucci 13
   direttore: Prof. Navalesi Paolo
@@ -5587,14 +5607,15 @@ gruppi:
     tipo: segreteria_direzione
     alias: []
     edificio: Via V. Gallucci 13 / Policlinico
+    piano: 2°
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
     edificio: Via V. Gallucci 13 / Policlinico
+    piano: 2°
 - id: anest-ti-trapianti
   nome: U.O.S.D. Anestesia e Terapia Intensiva Chirurgia Complessa e Trapiantologia
   ubicazione:
-    piano: 5°
     struttura: Policlinico
   direttore: Prof. Navalesi Paolo (ad interim)
   contatti:
@@ -5636,12 +5657,10 @@ gruppi:
     - istar 4
     - istar4
     - ti4
-    edificio: Policlinico
     piano: 5° piano
 - id: ti-cardiochir
   nome: U.O.C. Terapia Intensiva Cardiochirurgica
   ubicazione:
-    piano: terra
     struttura: Centro Gallucci
   direttore: Dr. Pittarello Demetrio
   contatti:
@@ -5662,6 +5681,7 @@ gruppi:
   - nome: Terapia Intensiva Cardiochirurgica
     tipo: terapia_intensiva
     alias: []
+    piano: terra
 - id: neuro-anestesia-rianimazione
   nome: U.O.S.D. Neuro Anestesia e Neuro Rianimazione
   direttore: Dr.ssa Munari Marina
@@ -5769,7 +5789,7 @@ gruppi:
     sezione: Studi Medici
     luogo: Giustinianeo 1° piano
   - id: ang-dh
-    etichetta: Day Hospital e Reparto Degenze
+    etichetta: Day Hospital / Reparto
     numeri:
     - 1936
     - 1247
@@ -6706,7 +6726,6 @@ gruppi:
 - id: cardiochirurgia-pediatrica
   nome: U.O.C. Cardiochirurgia Pediatrica
   ubicazione:
-    piano: terra
     struttura: Edificio Vincenzo Gallucci
   direttore: Prof. Vida Vladimiro
   email: cardiochirurgia.pediatrica@aopd.veneto.it
@@ -7008,7 +7027,7 @@ gruppi:
     etichetta: Laboratorio Ecocardiografia
     numeri:
     - 2391
-    sezione: Laboratorio Ecocardiografia
+    sezione: Ambulatori
     luogo: Policlinico 2° piano
   - id: card-ncd-studi
     etichetta: Studio Medici
@@ -7360,11 +7379,6 @@ gruppi:
     tipo: studi_medici
     alias:
     - ncd
-  - nome: Laboratorio Ecocardiografia
-    tipo: laboratorio
-    alias:
-    - eco
-    - ecocardio
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
@@ -7460,10 +7474,10 @@ gruppi:
     alias:
     - cric
     - invecchiamento cerebrale
+    indirizzo: Piazza B. De Claricini 12 Selvazzano Dentro
 - id: csi-cnr
   nome: Centro Studi Invecchiamento CNR
   ubicazione:
-    piano: 2°
     struttura: Edificio Dermatologia / Complesso Vallisneri
     indirizzo: Viale G. Colombo 3
   contatti:
@@ -7510,10 +7524,11 @@ gruppi:
     - csi
     - cnr
     - invecchiamento
+    piano: 2°
+    indirizzo: Viale G. Colombo 3
 - id: chir-gen-3-colorettale
   nome: U.O.C. Chirurgia Generale 3 (Colo-Rettale)
   ubicazione:
-    piano: 4°
     struttura: Policlinico
   direttore: Prof.ssa Spolverato Gaya
   email: chirurgia.generale3@aopd.veneto.it
@@ -7854,32 +7869,34 @@ gruppi:
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
-    edificio: Policlinico
     piano: 1° piano
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Policlinico
     piano: 4° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 4°
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
+    piano: 4°
   - nome: Piastra Endoscopica
     tipo: piastra_endoscopia
     alias: []
+    piano: 4°
   - nome: Laboratorio
     tipo: laboratorio
     alias: []
+    piano: 4°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 4°
 - id: endocrinochirurgia
   nome: U.O.C. Endocrinochirurgia
   ubicazione:
-    piano: 7°
     struttura: Policlinico
   direttore: Prof. Iacobone Maurizio
   contatti:
@@ -7917,19 +7934,16 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
 - id: chir-gen-1-urgenza
   nome: U.O.C. Chirurgia Generale 1 (Ricostruttiva Vie Digestive / d'Urgenza)
   ubicazione:
-    piano: 6°
     struttura: Policlinico degenze / 2° P Palazzina Ambulatori direzione
   direttore: Prof. Valmasoni Michele
   email: segreteria.chirurgiagenerale1@aopd.veneto.it
@@ -8412,7 +8426,6 @@ gruppi:
 - id: chirurgia-bariatrica
   nome: U.O.S.D. Chirurgia Bariatrica
   ubicazione:
-    piano: 4°
     struttura: Policlinico
   direttore: Dr. Foletto Mirto
   email: chirurgia.bariatrica@aopd.veneto.it
@@ -8494,7 +8507,6 @@ gruppi:
 - id: chir-trapianti-rp
   nome: U.O.C. Chirurgia dei Trapianti di Rene e Pancreas
   ubicazione:
-    piano: 2°
     struttura: Policlinico e Giustinianeo
   direttore: Prof.ssa Furian Lucrezia
   contatti:
@@ -8630,7 +8642,6 @@ gruppi:
 - id: chir-gen-2-trapianti-fegato
   nome: U.O.C. Chirurgia Generale 2 Epato-Bilio-Pancreatica e Trapianti di Fegato
   ubicazione:
-    piano: 2°-7°
     struttura: Policlinico
   direttore: Prof. Cillo Umberto
   email: segreteria.chirepatobiliare@aopd.veneto.it
@@ -8866,28 +8877,28 @@ gruppi:
   - nome: Rianimazione e Semi Intensiva
     tipo: terapia_intensiva
     alias: []
+    piano: 2°-7°
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
-    edificio: Policlinico
     piano: 1° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Policlinico
     piano: 2° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 2°-7°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 2°-7°
 - id: chir-plastica
   nome: U.O.C. Chirurgia Plastica
   ubicazione:
-    piano: 3°
     struttura: Policlinico Ala Est
   direttore: Prof. Bassetto Franco
   contatti:
@@ -8976,7 +8987,7 @@ gruppi:
     etichetta: Grandi Ustionati
     numeri:
     - 2710
-    sezione: Grandi Ustionati
+    sezione: Degenze
     luogo: Monoblocco 5° piano
     tag:
     - guardia
@@ -9080,6 +9091,7 @@ gruppi:
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
+    piano: 3°
   - nome: Degenze
     tipo: degenze
     alias: []
@@ -9090,17 +9102,19 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 3°
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
+    piano: 3°
   - nome: Ambulatorio PS
     tipo: ambulatori
     alias: []
+    piano: 3°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-  - nome: Grandi Ustionati
-    alias: []
+    piano: 3°
 - id: chir-sperimentale
   nome: Centro Interdipartimentale Ricerca Chirurgia Sperimentale
   direttore: Prof. Gringeri Enrico
@@ -9132,10 +9146,10 @@ gruppi:
     - chirurgia sperimentale
     - stabulari
     - sale operatorie
+    edificio: Ospedale Sant'Antonio (c/o stabile lavanderia)
 - id: chir-toracica
   nome: U.O.C. Chirurgia Toracica
   ubicazione:
-    piano: 1°-7°
     struttura: Policlinico
   direttore: Prof. Dell'Amore Andrea (sostituto responsabile)
   contatti:
@@ -9167,7 +9181,7 @@ gruppi:
     etichetta: Sala Operatoria Corridoio
     numeri:
     - 4468
-    sezione: Sala Operatoria Corridoio
+    sezione: Sala Operatoria
     luogo: Policlinico 7° piano
   - id: ct-amb-caposala
     etichetta: Amb. Caposala Giustinianeo
@@ -9278,45 +9292,43 @@ gruppi:
     etichetta: Centro Trapianti e Archivio
     numeri:
     - 1246
-    sezione: Centro Trapianti e Archivio
+    sezione: Segreteria e Direzione
     luogo: Policlinico 7° piano
   sezioni:
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
-  - nome: Sala Operatoria Corridoio
-    tipo: sala_operatoria
-    alias: []
+    piano: 1°-7°
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Policlinico
     piano: 1° piano
     area: C3
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 1°-7°
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
+    piano: 1°-7°
   - nome: Ambulatorio Visite
     tipo: ambulatori
     alias: []
+    piano: 1°-7°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-  - nome: Centro Trapianti e Archivio
-    tipo: archivio
-    alias: []
+    piano: 1°-7°
   - nome: Amministrazione
     alias: []
+    piano: 1°-7°
   - nome: Guardia/Consulenze
     alias: []
+    piano: 1°-7°
 - id: chir-vascolare
   nome: U.O.C. Chirurgia Vascolare
-  ubicazione:
-    piano: 3° Policlinico / 1° Monoblocco / 2° Giustinianeo
   direttore: Prof. Grego Franco
   contatti:
   - id: cv-direttore
@@ -9495,7 +9507,6 @@ gruppi:
 - id: chir-maxillo
   nome: U.O.C. Chirurgia Maxillo Facciale
   ubicazione:
-    piano: 7°
     struttura: Policlinico
   direttore: Dr. Fusetti Stefano
   contatti:
@@ -9588,7 +9599,7 @@ gruppi:
     etichetta: Sterilizzazione
     numeri:
     - 2026
-    sezione: Sterilizzazione
+    sezione: Degenze
     luogo: Policlinico 7° piano
   - id: chirurgia-maxillo-facciale-medico-di-guardia-maxillo-facciale-7594
     etichetta: Medico di Guardia Maxillo-Facciale
@@ -9601,75 +9612,23 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Sterilizzazione
-    alias: []
-    edificio: Policlinico
-    piano: 7° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-- id: citodiagnostica
-  nome: U.O.S.D. Citodiagnostica
-  ubicazione:
-    piano: 3°
-    struttura: Ex Casa Suore
-  contatti:
-  - id: cito-segr
-    etichetta: Segreteria e Accettazione
-    numeri:
-    - 3781
-    - 3788
-    - 3798
-    sezione: Segreteria e Direzione
-    luogo: Ex Casa Suore 3° piano
-  - id: cito-lab
-    etichetta: Laboratorio (L/V 9-13)
-    numeri:
-    - 3784
-    - 3785
-    sezione: Laboratorio
-    luogo: Ex Casa Suore 3° piano
-    alias:
-    - liquor
-    - citologia liquor
-    - citologico liquor
-  - id: cito-studi
-    etichetta: Studio Medici
-    numeri:
-    - 3786
-    - 3748
-    - 3785
-    sezione: Studi Medici
-    luogo: Ex Casa Suore 3° piano
-  sezioni:
-  - nome: Studi Medici
-    tipo: studi_medici
-    alias: []
-  - nome: Laboratorio
-    tipo: laboratorio
-    alias: []
-  - nome: Segreteria e Direzione
-    tipo: segreteria_direzione
-    alias: []
 - id: dermatologica
   nome: U.O.C. Dermatologica (Clinica)
   ubicazione:
@@ -9866,7 +9825,6 @@ gruppi:
 - id: dietetica
   nome: U.O.C. Dietetica e Nutrizione Clinica
   ubicazione:
-    piano: 8° Policlinico
     struttura: Monoblocco 6° piano / PalaSanità
   direttore: Prof. Busetto Luca
   email: dietetica.nutrizione.cl@aopd.veneto.it
@@ -9962,14 +9920,17 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 8° Policlinico
   - nome: Studi Medici
     tipo: studi_medici
     alias:
     - laboratori
+    piano: 8° Policlinico
   - nome: Ufficio Dietisti
     tipo: altro
     alias:
     - dietisti
+    piano: 8° Policlinico
 - id: dip-scienze-med-chir
   nome: Dipartimento Scienze Mediche e Chirurgiche
   contatti:
@@ -10028,7 +9989,6 @@ gruppi:
 - id: dip-cardio-toraco
   nome: Dipartimento Scienze Cardio-Toraco-Vascolari e Sanità Pubblica
   ubicazione:
-    piano: 1°
     struttura: Monoblocco / PalaSanità
   direttore: Prof.ssa Basso Cristina
   contatti:
@@ -10052,6 +10012,7 @@ gruppi:
     alias:
     - dctv
     - cardio-toraco-vascolari
+    piano: 1°
 - id: dip-scienze-chir-onco-gastro
   nome: Dipartimento Scienze Chir. Onc. Gastroent. (DISCOG)
   ubicazione:
@@ -10157,7 +10118,6 @@ gruppi:
 - id: endocrinologia
   nome: U.O.C. Endocrinologia
   ubicazione:
-    piano: 2°
     struttura: Monoblocco / Via Ospedale 105
   direttore: Prof.ssa Mian Caterina
   contatti:
@@ -10393,28 +10353,34 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
+    piano: 2°
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 2°
   - nome: Studio Informatico
     tipo: studi_medici
     alias: []
+    piano: 2°
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
+    piano: 2°
   - nome: Densitometria
     tipo: densitometria
     alias: []
+    piano: 2°
   - nome: Laboratorio
     tipo: laboratorio
     alias: []
+    piano: 2°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 2°
 - id: endoscopia-gastro
   nome: U.O.S.D. Endoscopia Gastroenterologica
   ubicazione:
-    piano: rialzato
     struttura: Monoblocco e Giustinianeo
   direttore: Prof.ssa Burra Patrizia (ad interim)
   email: piastra.endoscopica@aopd.veneto.it
@@ -10526,7 +10492,6 @@ gruppi:
 - id: fisica-sanitaria
   nome: Fisica Sanitaria
   ubicazione:
-    piano: 1°
     struttura: Edificio Radioterapia Lato Sud
   direttore: Dr.ssa Paiusco Marta
   contatti:
@@ -10620,16 +10585,18 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 1°
   - nome: Fisica Sanitaria
     tipo: altro
     alias: []
+    piano: 1°
   - nome: Radioprotezione
     tipo: altro
     alias: []
+    piano: 1°
 - id: fisiopatologia-respiratoria
   nome: U.O.C. Fisiopatologia Respiratoria
   ubicazione:
-    piano: 1° e rialzato
     struttura: Policlinico
   direttore: Prof. Vianello A.
   email: andrea.vianello@aopd.veneto.it
@@ -10741,13 +10708,13 @@ gruppi:
     numeri:
     - 7747
     - 7004
-    sezione: Day Hospital
+    sezione: Ambulatori
     luogo: Policlinico 7° piano
   - id: fr-piastra-fkt
     etichetta: Piastra Fisiokinesiterapia
     numeri:
     - 8589
-    sezione: Piastra Fisiokinesiterapia
+    sezione: Ambulatori
     luogo: Policlinico 7° piano
   - id: fr-coord-demario
     etichetta: Coord. De Mario Alberto
@@ -10791,47 +10758,29 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Policlinico
-    piano: 7° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Day Hospital
-    tipo: day_hospital
-    alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Consulenze PS
     alias: []
-    edificio: Policlinico
-    piano: 7° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Piastra Fisiokinesiterapia
-    alias: []
-    edificio: Policlinico
     piano: 7° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
 - id: gastroenterologia
   nome: U.O.C. Gastroenterologia
-  ubicazione:
-    piano: 5° Policlinico / 2° Giustinianeo
   direttore: Prof.ssa Burra Patrizia
   contatti:
   - id: gastro-direttore
@@ -11128,19 +11077,23 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 5° Policlinico / 2° Giustinianeo
   - nome: Laboratorio
     tipo: laboratorio
     alias:
     - campus via orus
+    piano: 5° Policlinico / 2° Giustinianeo
   - nome: Piastra Endoscopica
     tipo: piastra_endoscopia
     alias: []
+    piano: 5° Policlinico / 2° Giustinianeo
   - nome: Trapianto Multiviscerale
     tipo: degenze
     alias:
     - trapianto multiviscerale
     - centro trapianti
     edificio: Giustinianeo
+    piano: 5° Policlinico / 2° Giustinianeo
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
@@ -11149,7 +11102,6 @@ gruppi:
 - id: geriatrica
   nome: U.O.C. Geriatrica (Clinica)
   ubicazione:
-    piano: 8° e 10° OSA
     6° Monoblocco: null
     ospedale_sede: Sant'Antonio e Policlinico
   direttore: Prof. Sergi Giuseppe
@@ -11221,7 +11173,7 @@ gruppi:
     etichetta: Piani Terapeutici Anticoagulanti
     numeri:
     - 8942
-    sezione: Piani Terapeutici Anticoagulanti
+    sezione: Studi Medici
     luogo: Ospedale S. Antonio
   - id: ger-amb-densito
     etichetta: Amb. Densitometrie c/o Radiologia OSA PT
@@ -11255,11 +11207,6 @@ gruppi:
     piano: 10° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Dietisti
-    alias: []
-    edificio: Ospedale S. Antonio
-    piano: 10° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Piani Terapeutici Anticoagulanti
     alias: []
     edificio: Ospedale S. Antonio
     piano: 10° piano
@@ -11318,10 +11265,10 @@ gruppi:
     - hospice
     - paolo vi
     - ulss 6
+    indirizzo: Via Gemona 8
 - id: ematologia
   nome: U.O.C. Ematologia
   ubicazione:
-    piano: 2° Palazzina Ambulatori Policlinico
     struttura: 2°-3° Palazzina Malattie Infettive / 1° Giustinianeo
   direttore: Prof. Trentin Livio
   contatti:
@@ -11528,6 +11475,7 @@ gruppi:
     alias:
     - trapianti
     edificio: Policlinico
+    piano: 2° Palazzina Ambulatori Policlinico
   - nome: Day Hospital e Ambulatori
     tipo: day_hospital
     alias:
@@ -11535,21 +11483,24 @@ gruppi:
     - dh1
     - dh2
     edificio: Giustinianeo 1° piano
+    piano: 2° Palazzina Ambulatori Policlinico
   - nome: Studi Medici
     tipo: studi_medici
     alias:
     - studi dirigenti
+    piano: 2° Palazzina Ambulatori Policlinico
   - nome: Laboratorio
     tipo: laboratorio
     alias:
     - citofluorimetria
+    piano: 2° Palazzina Ambulatori Policlinico
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 2° Palazzina Ambulatori Policlinico
 - id: immunologia-trapianti
   nome: U.O.S.D. Immunologia dei Trapianti
   ubicazione:
-    piano: 2°
     struttura: Giustinianeo
   direttore: Prof. Cozzi Emanuele
   contatti:
@@ -11574,7 +11525,6 @@ gruppi:
 - id: immunotrasfusionale
   nome: U.O.C. Immunotrasfusionale
   ubicazione:
-    piano: 3°
     struttura: Monoblocco
   direttore: Dr. Lanti Alessandro
   contatti:
@@ -11737,23 +11687,18 @@ gruppi:
     - emocomponenti
     - citometria
     - emogruppi
-    edificio: Monoblocco
     piano: 3° piano
   - nome: Unità Aferesi Terapeutica
     tipo: ambulatori
     alias:
     - aferesi
-    edificio: Monoblocco
     piano: 3° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Monoblocco
     piano: 3° piano
 - id: malattie-metabolismo
   nome: U.O.C. Malattie del Metabolismo
-  ubicazione:
-    piano: 2° Monoblocco / Giustinianeo
   direttore: Prof. Fadini Gian Paolo
   contatti:
   - id: mm-direttore
@@ -11982,6 +11927,7 @@ gruppi:
     - colture cellulari
     - spettrometria
     edificio: Campus Biomedico Via Orus
+    piano: 2° Monoblocco / Giustinianeo
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
@@ -12183,28 +12129,24 @@ gruppi:
   - nome: Day Hospital e Poliambulatorio
     tipo: day_hospital
     alias: []
-    edificio: Edificio Pediatria
     piano: 2° piano
     area: B5
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Pediatria
     piano: 2° piano
     area: B5
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Ambulatorio Infermieristico
     tipo: ambulatori
     alias: []
-    edificio: Edificio Pediatria
     piano: 2° piano
     area: B5
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Pediatria
     piano: 2° piano
     area: B5
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
@@ -12485,29 +12427,24 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Edificio Malattie Infettive
     piano: 1° piano
   - nome: Day Hospital
     tipo: day_hospital
     alias: []
-    edificio: Edificio Malattie Infettive
   - nome: Ambulatori
     tipo: ambulatori
     alias:
     - ambulatorio integrato
     - terapie monoclonali
     - incidenti occupazionali
-    edificio: Edificio Malattie Infettive
   - nome: Studi Medici
     tipo: studi_medici
     alias:
     - studi clinici
-    edificio: Edificio Malattie Infettive
     piano: 4° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Malattie Infettive
     piano: 4° piano
 - id: clinica-medica-1-trombotiche
   nome: U.O.C. Clinica Medica 1 - Malattie Trombotiche ed Emorragiche
@@ -12815,6 +12752,8 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    edificio: Monoblocco
+    piano: 7°
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
@@ -12823,13 +12762,16 @@ gruppi:
   - nome: Laboratorio
     tipo: laboratorio
     alias: []
+    edificio: Monoblocco
+    piano: 7°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    edificio: Monoblocco
+    piano: 7°
 - id: clinica-medica-1-ori
   nome: U.O.C. Clinica Medica 1 - Osservazione Rapida Intensiva
   ubicazione:
-    piano: 2°
     struttura: Monoblocco / Palazzina Ambulatori Policlinico
   direttore: Prof. Simioni Paolo
   email: cl.medica1@aopd.veneto.it
@@ -13217,6 +13159,7 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 2°
   - nome: Ambulatori
     tipo: ambulatori
     alias:
@@ -13230,6 +13173,7 @@ gruppi:
     - campus via orus
     - ex semeiotica
     edificio: Campus Biomedico Via Orus
+    piano: 2°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
@@ -13238,7 +13182,6 @@ gruppi:
 - id: clinica-medica-3
   nome: U.O.C. Clinica Medica 3
   ubicazione:
-    piano: 9°-10°
     struttura: Monoblocco
   direttore: Prof.ssa Fioretto Paola
   email: cl.med3@aopd.veneto.it
@@ -13459,35 +13402,29 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Monoblocco
     piano: 9°-10° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Monoblocco
     piano: 9°-10° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias:
     - dh integrato
     - bariatrica
-    edificio: Monoblocco
     piano: 9° piano
   - nome: Laboratorio
     tipo: laboratorio
     alias:
     - endocrinometabolico
-    edificio: Monoblocco
     piano: 9°-10° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Monoblocco
     piano: 9° piano
 - id: clinica-medica-5
   nome: U.O.C. Clinica Medica 5
   ubicazione:
-    piano: 8°
     struttura: Policlinico
   direttore: Prof. Simioni Paolo (ad interim)
   email: cl.med5@aopd.veneto.it
@@ -13779,12 +13716,10 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Policlinico
     piano: 8° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Policlinico
     piano: 8° piano
   - nome: Ambulatori
     tipo: ambulatori
@@ -13792,7 +13727,6 @@ gruppi:
     - dh
     - epatologico
     - fibroscan
-    edificio: Policlinico
     piano: 8° piano
   - nome: Laboratori Ricerca
     tipo: laboratorio
@@ -13800,16 +13734,15 @@ gruppi:
     - epatologia
     - campus via orus
     edificio: Campus Biomedico Via Orus
+    piano: 8°
   - nome: CIRMANMEC
     tipo: altro
     alias:
     - case manager
-    edificio: Policlinico
     piano: 8° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Policlinico
     piano: 8° piano
 - id: dimed
   nome: Dipartimento di Medicina (DIMED)
@@ -13873,10 +13806,11 @@ gruppi:
     alias:
     - dimed
     - dipartimento di medicina
+    edificio: Policlinico
+    piano: 8°
 - id: medicina-lavoro
   nome: U.O.C. Medicina del Lavoro
   ubicazione:
-    piano: 2°
     struttura: Giustinianeo
   direttore: Prof.ssa Scapellato Maria Luisa
   contatti:
@@ -14114,49 +14048,41 @@ gruppi:
     tipo: ambulatori
     alias:
     - divisionale
-    edificio: Giustinianeo
     piano: 2° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Giustinianeo
     piano: 2° piano
   - nome: Fisiopatologia Respiratoria
     tipo: ambulatori
     alias:
     - fisiopatologia resp
-    edificio: Giustinianeo
     piano: 2° piano
   - nome: Medicina Preventiva Lavoratori
     tipo: ambulatori
     alias:
     - mpl
-    edificio: Giustinianeo
     piano: 2° piano
   - nome: Igiene e Tossicologia Industriale
     tipo: laboratorio
     alias:
     - igiene industriale
     - tossicologia industriale
-    edificio: Giustinianeo
     piano: 2° piano
   - nome: Laboratorio
     tipo: laboratorio
     alias:
     - allergologia
     - mutagenesi ambientale
-    edificio: Giustinianeo
     piano: 2° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Giustinianeo
     piano: 2° piano
 - id: medicina-sport
   nome: Medicina dello Sport e dell'Esercizio
   ubicazione:
     struttura: Ospedale ai Colli
-    piano: 1° Monoblocco
   direttore: Prof. Ermolao Andrea
   email: med.sport@aopd.veneto.it
   contatti:
@@ -14255,11 +14181,13 @@ gruppi:
     tipo: segreteria_direzione
     alias: []
     edificio: Monoblocco
+    piano: 1° Monoblocco
   - nome: Ambulatori
     tipo: ambulatori
     alias:
     - colli
     edificio: Colli
+    piano: 1° Monoblocco
 - id: medicina-laboratorio
   nome: U.O.C. Medicina di Laboratorio
   ubicazione:
@@ -14712,7 +14640,6 @@ gruppi:
 - id: chir-urgenza
   nome: U.O.S.D. Chirurgia d'Urgenza
   ubicazione:
-    piano: 6°
     struttura: Policlinico
   direttore: Dr. Da Dalt Gianfranco
   contatti:
@@ -14765,7 +14692,6 @@ gruppi:
     alias:
     - chirurgia urgenza
     - cg urgenza
-    edificio: Policlinico
     piano: 6° piano
 - id: medicina-legale
   nome: U.O.C. Medicina Legale e Tossicologia
@@ -14960,7 +14886,6 @@ gruppi:
 - id: medicina-nucleare
   nome: U.O.C. Medicina Nucleare
   ubicazione:
-    piano: terra
     struttura: Giustinianeo
   direttore: Prof. Cecchin Diego
   email: medicina.nucleare@aopd.veneto.it
@@ -15099,27 +15024,22 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Giustinianeo
     piano: piano terra
   - nome: Diagnostica
     tipo: ambulatori
     alias: []
-    edificio: Giustinianeo
     piano: piano terra
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Giustinianeo
     piano: piano terra
   - nome: Medicina Nucleare
     tipo: altro
     alias: []
-    edificio: Giustinianeo
     piano: piano terra
 - id: microbiologia-virologia
   nome: U.O.C. Microbiologia e Virologia
   ubicazione:
-    piano: rialzato
     struttura: Giustinianeo
   direttore: Prof. Dei Tos Angelo Paolo (f.f.)
   email: microbiologia.virologia@aopd.veneto.it
@@ -15284,17 +15204,14 @@ gruppi:
     - sierologia
     - micobatteri
     - parassitologia
-    edificio: Giustinianeo
     piano: piano terra
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Giustinianeo
     piano: piano terra
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Giustinianeo
     piano: piano terra
 - id: dmm
   nome: Dipartimento Medicina Molecolare (DMM)
@@ -15431,10 +15348,10 @@ gruppi:
     alias:
     - dmm
     - medicina molecolare
+    indirizzo: Via Gabelli 63 / Via Giustiniani 1
 - id: nefrologia-2
   nome: U.O.C. Nefrologia 2
   ubicazione:
-    piano: 8°
     struttura: Monoblocco
   direttore: Prof. Nalesso Federico
   email: nefrologia2@aopd.veneto.it
@@ -15696,17 +15613,14 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Monoblocco
     piano: 8° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Monoblocco
     piano: 8° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Monoblocco
     piano: 8° piano
   - nome: Dialisi
     tipo: ambulatori
@@ -15715,15 +15629,16 @@ gruppi:
     - emodialisi semiassistita
     - via dei colli
     edificio: Giustinianeo
+    piano: 8°
   - nome: Emodialisi OSA
     tipo: ambulatori
     alias:
     - osa
     edificio: Ospedale S. Antonio
+    piano: 8°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Monoblocco
     piano: 8° piano
 - id: neurochirurgia
   nome: U.O.C. Neurochirurgia
@@ -15931,7 +15846,7 @@ gruppi:
     etichetta: Portineria
     numeri:
     - 3610
-    sezione: Portineria
+    sezione: Segreteria e Direzione
     luogo: Palazzina Neuroscienze piano terra
   sezioni:
   - nome: Degenze
@@ -15968,11 +15883,6 @@ gruppi:
     edificio: Edificio Neurochirurgia
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-    edificio: Palazzina Neuroscienze
-    piano: piano terra
-  - nome: Portineria
-    tipo: portineria
     alias: []
     edificio: Palazzina Neuroscienze
     piano: piano terra
@@ -16105,7 +16015,7 @@ gruppi:
     numeri:
     - 3607
     - 3608
-    sezione: Laboratorio
+    sezione: Ambulatori
     luogo: Palazzina Neuroscienze piano terra
   - id: ncl-deg-coord
     etichetta: Guardiola Caposala
@@ -16158,7 +16068,7 @@ gruppi:
     etichetta: Day Hospital
     numeri:
     - 8149
-    sezione: Day Hospital
+    sezione: Ambulatori
     luogo: Edificio Malattie Infettive 3° piano ala ovest
   - id: ncl-logoped-depellegrin
     etichetta: Logopedista - Dr.ssa De Pellegrin Serena
@@ -16398,13 +16308,6 @@ gruppi:
     piano: 1° piano
     area: B1
     fonte: https://www.aopd.veneto.it/Clinica-Neurologica
-  - nome: Day Hospital
-    tipo: day_hospital
-    alias: []
-    edificio: Palazzina Malattie Infettive
-    piano: 3° piano ala ovest
-    area: B12
-    fonte: https://www.aopd.veneto.it/Clinica-Neurologica
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
@@ -16421,9 +16324,6 @@ gruppi:
     piano: piano terra
     area: B1
     fonte: https://www.aopd.veneto.it/Clinica-Neurologica
-  - nome: Laboratorio
-    tipo: laboratorio
-    alias: []
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
@@ -16433,7 +16333,6 @@ gruppi:
 - id: stroke-unit
   nome: U.O.S.D. Stroke Unit
   ubicazione:
-    piano: terra
     struttura: Edificio Neurologia
   direttore: Dr. Baracchini Claudio
   contatti:
@@ -16486,13 +16385,14 @@ gruppi:
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
+    piano: terra
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: terra
 - id: neuroradiologia
   nome: U.O.C. Neuroradiologia
   ubicazione:
-    piano: terra
     struttura: Edificio Neurologia
   direttore: Dr. Causin Francesco
   email: neuroradiologia@aopd.veneto.it
@@ -17022,7 +16922,6 @@ gruppi:
 - id: odontostomatologia
   nome: U.O.C. Clinica di Odontostomatologia
   ubicazione:
-    piano: 3°
     struttura: Policlinico Palazzina Ambulatori
   direttore: Prof. Stellini Edoardo
   contatti:
@@ -17187,19 +17086,23 @@ gruppi:
     tipo: ambulatori
     alias: []
     edificio: Istituto Odontoiatrico
+    piano: 3°
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
     edificio: Istituto Odontoiatrico
+    piano: 3°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
     edificio: Istituto Odontoiatrico
+    piano: 3°
   - nome: Altro
     tipo: altro
     alias:
     - sterilizzazione
     edificio: Istituto Odontoiatrico
+    piano: 3°
 - id: ortopedia-comuni
   nome: Ortopedia - Numeri Comuni
   ubicazione:
@@ -17210,13 +17113,13 @@ gruppi:
     numeri:
     - 3330
     - 3331
-    sezione: Portineria
+    sezione: Segreteria e Direzione
     luogo: Edificio Ortopedia
   - id: ort-ps
     etichetta: Pronto Soccorso Ortopedico
     numeri:
     - 3357
-    sezione: Pronto Soccorso Ortopedico
+    sezione: Ortopedia - Numeri Comuni
     luogo: Edificio Ortopedia
   - id: ort-sala-med
     etichetta: Sala Medici
@@ -17361,35 +17264,21 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Ortopedia
-  - nome: Pronto Soccorso Ortopedico
-    tipo: ambulatori
-    alias: []
-    edificio: Edificio Ortopedia
   - nome: Sala Gessi
     tipo: altro
     alias: []
-    edificio: Edificio Ortopedia
   - nome: Radiologia Ortopedica
     tipo: ambulatori
     alias: []
-    edificio: Edificio Ortopedia
-  - nome: Portineria
-    tipo: portineria
-    alias: []
-    edificio: Edificio Ortopedia
   - nome: Ortopedia - Numeri Comuni
     tipo: altro
     alias: []
-    edificio: Edificio Ortopedia
   - nome: Altro
     tipo: altro
     alias: []
-    edificio: Edificio Ortopedia
 - id: clinica-ortopedica
   nome: U.O.C. Clinica Ortopedica Traumatologica
   ubicazione:
-    piano: 3°-4°
     struttura: Edificio Ortopedia
   direttore: Prof. Ruggieri Pietro
   contatti:
@@ -17672,35 +17561,33 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Edificio Ortopedia
     piano: 3°-4° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Ortopedia
+    piano: 3°-4°
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Edificio Ortopedia
+    piano: 3°-4°
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias:
     - gruppo operatorio
     - sala gessi
-    edificio: Edificio Ortopedia
+    piano: 3°-4°
   - nome: Laboratorio
     tipo: laboratorio
     alias:
     - ricerche
-    edificio: Edificio Ortopedia
+    piano: 3°-4°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Ortopedia
+    piano: 3°-4°
 - id: riabilitazione-ortopedica
   nome: U.O.C. Riabilitazione Ortopedica
   ubicazione:
-    piano: 3° e PT
     struttura: Edificio Ortopedia
   direttore: Prof. Masiero Stefano
   email: riabilitazione.ortopedica@aopd.veneto.it
@@ -17856,12 +17743,10 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Edificio Ortopedia
     piano: 3° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Edificio Ortopedia
     piano: piano terra
   - nome: FKT e Palestre
     tipo: ambulatori
@@ -17869,18 +17754,15 @@ gruppi:
     - fisioterapia
     - fkt
     - palestre
-    edificio: Edificio Ortopedia
     piano: piano terra
   - nome: Studi Medici
     tipo: studi_medici
     alias:
     - neuroriabilitazione
-    edificio: Edificio Ortopedia
     piano: 1° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Ortopedia
     piano: 1° piano
 - id: clinica-ginecologica
   nome: U.O.C. Clinica Ginecologica e Ostetrica
@@ -18439,6 +18321,39 @@ gruppi:
     - '97699'
     tag:
     - guardia
+  - id: cig-acc
+    etichetta: Segreteria Accettazione Materiale
+    numeri:
+    - 8526
+    sezione: Citodiagnostica Ginecologica
+    luogo: Giustinianeo Anatomia Patologica
+  - id: cig-lab
+    etichetta: Laboratorio (9-13)
+    numeri:
+    - 3784
+    sezione: Citodiagnostica Ginecologica
+    luogo: Giustinianeo Anatomia Patologica
+    alias: []
+  - id: cig-studio
+    etichetta: Studio
+    numeri:
+    - 3786
+    - 1791
+    sezione: Citodiagnostica Ginecologica
+    luogo: Giustinianeo Anatomia Patologica
+  - id: cig-tasinato
+    etichetta: Screening Carcinoma Collo Utero - Tasinato Giovanna (uso interno)
+    numeri:
+    - 7782
+    sezione: Citodiagnostica Ginecologica
+    luogo: Giustinianeo Anatomia Patologica
+  - id: cig-screening
+    etichetta: Screening Citologico - Numero Verde
+    numeri:
+    - 7739
+    - '800859977'
+    sezione: Citodiagnostica Ginecologica
+    luogo: Giustinianeo Anatomia Patologica
   sezioni:
   - nome: Ostetricia
     tipo: degenze
@@ -18493,50 +18408,10 @@ gruppi:
     - portineria
     - servizi informatici
     edificio: Clinica Ginecologica e Ostetrica
-- id: citodiagnostica-ginecologica
-  nome: U.O.S. Citodiagnostica Ginecologica
-  ubicazione:
-    struttura: Anatomia Patologica Giustinianeo
-  contatti:
-  - id: cig-acc
-    etichetta: Segreteria Accettazione Materiale
-    numeri:
-    - 8526
-    sezione: Citodiagnostica Ginecologica
-    luogo: Giustinianeo Anatomia Patologica
-  - id: cig-lab
-    etichetta: Laboratorio (9-13)
-    numeri:
-    - 3784
-    sezione: Citodiagnostica Ginecologica
-    luogo: Giustinianeo Anatomia Patologica
-    alias: []
-  - id: cig-studio
-    etichetta: Studio
-    numeri:
-    - 3786
-    - 1791
-    sezione: Citodiagnostica Ginecologica
-    luogo: Giustinianeo Anatomia Patologica
-  - id: cig-tasinato
-    etichetta: Screening Carcinoma Collo Utero - Tasinato Giovanna (uso interno)
-    numeri:
-    - 7782
-    sezione: Citodiagnostica Ginecologica
-    luogo: Giustinianeo Anatomia Patologica
-  - id: cig-screening
-    etichetta: Screening Citologico - Numero Verde
-    numeri:
-    - 7739
-    - '800859977'
-    sezione: Citodiagnostica Ginecologica
-    luogo: Giustinianeo Anatomia Patologica
-  sezioni:
   - nome: Citodiagnostica Ginecologica
     tipo: laboratorio
-    alias:
-    - citodiagnostica
-    edificio: Giustinianeo
+    alias: []
+    edificio: Anatomia Patologica Giustinianeo
 - id: ostetricia-ginecologia
   nome: U.O.C. Ostetricia Ginecologia
   ubicazione:
@@ -18696,43 +18571,32 @@ gruppi:
     numeri:
     - 3469
     - 3470
-    sezione: Portineria
+    sezione: Segreteria e Direzione
     luogo: Edificio Ostetrica
   sezioni:
   - nome: Degenze
     tipo: degenze
     alias:
     - degenze ostetricia
-    edificio: Edificio Ostetrica
     piano: 2° piano
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
-    edificio: Edificio Ostetrica
   - nome: Sala Parto
     tipo: sala_operatoria
     alias: []
-    edificio: Edificio Ostetrica
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Edificio Ostetrica
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Ostetrica
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Ostetrica
-  - nome: Portineria
-    tipo: portineria
-    alias: []
-    edificio: Edificio Ostetrica
 - id: ps-pediatrico
   nome: U.O.C. Accettazione e Pronto Soccorso Pediatrico
   ubicazione:
-    piano: terra
     struttura: Edificio Pediatria
   direttore: Prof.ssa Bressan Silvia
   contatti:
@@ -18826,22 +18690,18 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Pediatria
     piano: piano terra
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Edificio Pediatria
     piano: piano terra
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Pediatria
     piano: piano terra
 - id: orl
   nome: U.O.C. Otorinolaringoiatria (ORL)
   ubicazione:
-    piano: 6° MB
     7°-9° Policlinico: null
     1° Giustinianeo: null
   direttore: Prof.ssa Zanoletti Elisabetta
@@ -19265,6 +19125,7 @@ gruppi:
     tipo: sala_operatoria
     alias: []
     edificio: Giustinianeo
+    piano: 6° MB
   - nome: Ambulatori
     tipo: ambulatori
     alias:
@@ -19272,6 +19133,7 @@ gruppi:
     - capo-collo
     - ps orl
     edificio: Palazzina Ambulatori Policlinico
+    piano: 6° MB
   - nome: Ambulatori MB
     tipo: ambulatori
     alias:
@@ -19967,7 +19829,6 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Edificio Pediatria
     sottosezioni:
     - nome: Degenza 2
       tipo: degenze
@@ -19976,7 +19837,6 @@ gruppi:
   - nome: Ambulatori Specialistici
     tipo: ambulatori
     alias: []
-    edificio: Edificio Pediatria
     sottosezioni:
     - nome: Neurologia e Neurofisiologia
       tipo: ambulatori
@@ -19993,17 +19853,14 @@ gruppi:
   - nome: Poliambulatorio
     tipo: ambulatori
     alias: []
-    edificio: Edificio Pediatria
     piano: 3°-4° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Pediatria
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias:
     - cup pediatrico
-    edificio: Edificio Pediatria
 - id: malattie-rare-coord
   nome: Coordinamento Regionale Malattie Rare
   ubicazione:
@@ -20092,10 +19949,10 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    indirizzo: Via Donà 11
 - id: tip
   nome: U.O.S.D. Terapia Intensiva Pediatrica (TIP)
   ubicazione:
-    piano: 2°
     struttura: Clinica Pediatrica
   direttore: Dr.ssa Amigoni Angela
   contatti:
@@ -20143,7 +20000,6 @@ gruppi:
     alias:
     - tip
     - ti pediatrica
-    edificio: Clinica Pediatrica
     piano: 2° piano
 - id: hospice-pediatrico
   nome: Hospice Pediatrico - Stanza dei Sogni
@@ -20219,10 +20075,10 @@ gruppi:
     alias:
     - stanza dei sogni
     - hospice pediatrico
+    indirizzo: Via Ospedale 57
 - id: nefrologia-pediatrica
   nome: U.O.C. Nefrologia Pediatrica
   ubicazione:
-    piano: 1°
     struttura: Edificio Pediatria
   direttore: Prof. Vidal Enrico
   contatti:
@@ -20314,27 +20170,22 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Edificio Pediatria
     piano: 1° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Edificio Pediatria
     piano: 1° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Pediatria
     piano: 1° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Pediatria
     piano: 1° piano
 - id: reumatologia-pediatrica
   nome: U.O.S.D. Reumatologia Pediatrica
   ubicazione:
-    piano: 2°
     struttura: Edificio Pediatria
   direttore: Prof. Zulian Francesco
   contatti:
@@ -20391,7 +20242,6 @@ gruppi:
     tipo: ambulatori
     alias:
     - reumatologia pediatrica
-    edificio: Edificio Pediatria
     piano: 2° piano
 - id: allergie-alimentari
   nome: U.O.S.D. Centro Regionale Allergie e Intolleranze Alimentari
@@ -20537,7 +20387,7 @@ gruppi:
     numeri:
     - 3685
     - 8044
-    sezione: Rianimazione T.I.P.O.
+    sezione: Sala Operatoria
     luogo: Edificio Divisione Ostetrica
   - id: cper-amb-est
     etichetta: Sportello Esterni (L/V 11-14:30)
@@ -20610,45 +20460,33 @@ gruppi:
     sezione: Studi Medici
     luogo: Edificio Divisione Ostetrica
   sezioni:
-  - nome: Rianimazione T.I.P.O.
-    tipo: terapia_intensiva
-    alias: []
-    edificio: Edificio Divisione Ostetrica
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
-    edificio: Edificio Divisione Ostetrica
     piano: piano terra
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Edificio Divisione Ostetrica
     piano: piano terra
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Divisione Ostetrica
     piano: piano terra
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Edificio Divisione Ostetrica
     piano: piano terra
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Edificio Divisione Ostetrica
     piano: piano terra
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
 - id: tin-patologia-neonatale
   nome: U.O.C. Terapia Intensiva Neonatale e Patologia Neonatale
   ubicazione:
-    piano: 1°-2°
     struttura: Clinica Ginecologica / Divisione Ostetrica
   direttore: Prof. Baraldi Eugenio
   contatti:
@@ -20800,18 +20638,20 @@ gruppi:
     tipo: segreteria_direzione
     alias: []
     edificio: Edificio Clinica Ginecologica
+    piano: 1°-2°
   - nome: Terapia Intensiva Neonatale
     tipo: terapia_intensiva
     alias: []
     edificio: Edificio Clinica Ginecologica
+    piano: 1°-2°
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
     edificio: Edificio Clinica Ginecologica
+    piano: 1°-2°
 - id: genetica-clinica
   nome: U.O.C. Genetica Clinica Epidemiologica
   ubicazione:
-    piano: 4°
     struttura: Edificio Pediatria / PT Divisione Ostetrica
   direttore: Prof. Salviati Leonardo
   contatti:
@@ -21269,27 +21109,23 @@ gruppi:
     numeri:
     - 3505
     - 3506
-    sezione: Portineria
+    sezione: Segreteria e Direzione
     luogo: Edificio Oncoematologia Pediatrica
   sezioni:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Edificio Oncoematologia Pediatrica
   - nome: Day Hospital
     tipo: day_hospital
     alias: []
-    edificio: Edificio Oncoematologia Pediatrica
   - nome: Laboratorio Trapianto Cellule Staminali
     tipo: laboratorio
     alias:
     - tcs
     - banca sangue cordone
-    edificio: Edificio Oncoematologia Pediatrica
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Edificio Oncoematologia Pediatrica
   - nome: Laboratorio
     tipo: laboratorio
     alias:
@@ -21301,15 +21137,9 @@ gruppi:
     - fondazione città della speranza
     - rete oncoematologia
     - team for children
-    edificio: Edificio Oncoematologia Pediatrica
-  - nome: Portineria
-    tipo: portineria
-    alias: []
-    edificio: Edificio Oncoematologia Pediatrica
 - id: lab-oncoem-ped
   nome: Laboratorio Oncoematologia Pediatrica
   ubicazione:
-    piano: 1°
     struttura: Edificio Oncoematologia Pediatrica
   contatti:
   - id: loep-segr
@@ -21404,11 +21234,10 @@ gruppi:
     - lab oncoem ped
     - emocromi
     - lab pediatrico
-    edificio: Edificio Oncoematologia Pediatrica
+    piano: 1°
 - id: pneumologia
   nome: U.O.C. Pneumologia
   ubicazione:
-    piano: rialzato e 1°
     struttura: Policlinico
   direttore: Prof. Spagnolo Paolo
   contatti:
@@ -21541,35 +21370,31 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Policlinico
     piano: 1° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias:
     - day hospital
     - specialistici
-    edificio: Policlinico
     piano: piano rialzato
   - nome: Piastra Endoscopica
     tipo: piastra_endoscopia
     alias:
     - pneumologica
-    edificio: Policlinico
     piano: piano rialzato
   - nome: Studi Medici
     tipo: studi_medici
     alias:
     - dottorandi
     - biologi
+    piano: rialzato e 1°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Policlinico
     piano: 7° piano
 - id: pronto-soccorso
   nome: U.O.C. Pronto Soccorso
   ubicazione:
-    piano: terra
     struttura: Monoblocco
   direttore: Dr. Cianci Vito
   contatti:
@@ -21704,7 +21529,6 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Monoblocco
     piano: piano terra
     area: C9
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
@@ -21936,14 +21760,12 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
-    edificio: Palazzina Ex Casa Suore
     piano: 1° piano
   - nome: Centro Disturbi Alimentari
     tipo: ambulatori
     alias:
     - cda
     - disturbi alimentari
-    edificio: Palazzina Ex Casa Suore
     piano: 2° piano
   - nome: Ambulatori
     tipo: ambulatori
@@ -21951,16 +21773,13 @@ gruppi:
     - day hospital
     - disturbi affettivi
     - crisi
-    edificio: Palazzina Ex Casa Suore
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Palazzina Ex Casa Suore
     piano: 3°-4° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Palazzina Ex Casa Suore
     piano: 3° piano
 - id: psicologia-ospedaliera
   nome: U.O.C. Psicologia Ospedaliera
@@ -21987,7 +21806,6 @@ gruppi:
 - id: radiologia-universitaria
   nome: U.O.C. Radiologia Universitaria
   ubicazione:
-    piano: terra
     struttura: Policlinico
   direttore: Prof. Quaia Emilio
   contatti:
@@ -22037,51 +21855,51 @@ gruppi:
     etichetta: Sala Lettura Urgenze - Medico
     numeri:
     - 2366
-    sezione: Refertazione
+    sezione: Studi Medici
     luogo: Policlinico piano terra
   - id: ru-urg-tec
     etichetta: Tecnici Urgenze
     breve: 97401
     cellulare: '335.7766712'
-    sezione: Altro
+    sezione: Diagnostica
     luogo: Policlinico piano terra
   - id: ru-rm
     etichetta: Risonanza Magnetica
     numeri:
     - 2362
-    sezione: RM
+    sezione: Diagnostica
     luogo: Policlinico piano terra
   - id: ru-tac
     etichetta: TAC
     numeri:
     - 2371
     - 2372
-    sezione: TC
+    sezione: Diagnostica
     luogo: Policlinico piano terra
   - id: ru-eco
-    etichetta: Ecografia
+    etichetta: Sala Ecografia
     numeri:
     - 2475
-    sezione: Ecografia
+    sezione: Diagnostica
     luogo: Policlinico piano terra
   - id: ru-contrasto
     etichetta: Esami Contrastografici
     numeri:
     - 2369
-    sezione: RX
+    sezione: Diagnostica
     luogo: Policlinico piano terra
   - id: ru-densito
-    etichetta: Densitometria
+    etichetta: Sala Densitometria
     numeri:
     - 8392
-    sezione: Densitometria
+    sezione: Diagnostica
     luogo: Policlinico piano terra
   - id: ru-radio-trad
     etichetta: Radiologia Tradizionale
     numeri:
     - 2372
     - 2373
-    sezione: RX
+    sezione: Diagnostica
     luogo: Policlinico piano terra
   - id: ru-crimi
     etichetta: Studio Dr. Crimì F.
@@ -22110,66 +21928,22 @@ gruppi:
   - id: ru-rad-ped-urg-tec
     etichetta: Radiologia Pediatrica - Urgenze Tecnico
     cellulare: '334.6059520'
-    sezione: Radiologia Pediatrica
+    sezione: Diagnostica
     luogo: Clinica Pediatrica piano terra
   sezioni:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Policlinico
     piano: piano terra
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: TC
-    tipo: tc
+  - nome: Diagnostica
+    tipo: diagnostica
     alias: []
-    edificio: Policlinico
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: RM
-    tipo: rm
-    alias: []
-    edificio: Policlinico
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: RX
-    tipo: rx
-    alias: []
-    edificio: Policlinico
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Ecografia
-    tipo: ecografia
-    alias: []
-    edificio: Policlinico
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Densitometria
-    tipo: densitometria
-    alias: []
-    edificio: Policlinico
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Radiologia Pediatrica
-    tipo: radiologia_pediatrica
-    alias: []
-    edificio: Policlinico
     piano: piano terra
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Policlinico
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Altro
-    tipo: altro
-    alias: []
-    edificio: Policlinico
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Refertazione
-    alias: []
-    edificio: Policlinico
     piano: piano terra
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
 - id: radiologia-monoblocco
@@ -22518,7 +22292,6 @@ gruppi:
 - id: reumatologia
   nome: U.O.C. Reumatologia
   ubicazione:
-    piano: 8°
     struttura: Policlinico
   direttore: Prof.ssa Ramonda Roberta
   contatti:
@@ -22668,21 +22441,24 @@ gruppi:
   - nome: Degenze
     tipo: degenze
     alias: []
+    piano: 8°
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
+    piano: 8°
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Policlinico
     piano: piano rialzato
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Laboratorio
     tipo: laboratorio
     alias: []
+    piano: 8°
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: 8°
 - id: nch-ped-funzionale-bis
   nome: U.O.C. Neurochirurgia Pediatrica e Funzionale (Cattedra)
   ubicazione:
@@ -22760,7 +22536,6 @@ gruppi:
 - id: ricoveri-lp
   nome: Ricoveri Libera Professione Intramuraria (10° Monoblocco)
   ubicazione:
-    piano: 10°
     struttura: Monoblocco
   contatti:
   - id: rlp-coord
@@ -22954,19 +22729,16 @@ gruppi:
     alias:
     - ricoveri libera professione
     - lp
-    edificio: Monoblocco
     piano: 10° piano
   - nome: Ricoveri LP Ostetricia
     tipo: degenze
     alias:
     - ostetricia lp
-    edificio: Monoblocco
     piano: 10° piano
 - id: trasporto-ammalati
   nome: Servizio Trasporto Ammalati
   non_clinico: true
   ubicazione:
-    piano: terra
     struttura: Monoblocco
   direttore: Dr. Barin Andrea
   contatti:
@@ -23006,10 +22778,10 @@ gruppi:
     alias:
     - trasporto ammalati
     - trasporto pazienti
+    piano: terra
 - id: urologia
   nome: U.O.C. Urologia
   ubicazione:
-    piano: 4°
     struttura: Monoblocco
   direttore: Prof. Dal Moro Fabrizio
   contatti:
@@ -23219,27 +22991,22 @@ gruppi:
     tipo: degenze
     alias:
     - caposala
-    edificio: Monoblocco
     piano: 4° piano
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
-    edificio: Monoblocco
     piano: 4° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    edificio: Monoblocco
     piano: 4° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    edificio: Monoblocco
     piano: 4° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    edificio: Monoblocco
     piano: 4° piano
 - id: aule
   nome: Aule Didattiche
@@ -23400,6 +23167,8 @@ gruppi:
     alias:
     - pinali
     - biblioteca
+    edificio: Palazzetto Biblioteca Pinali
+    indirizzo: Via Giustiniani 2
 - id: sterilizzazione-psis
   nome: Centrale di Sterilizzazione (PSIS - esterna)
   ubicazione:
@@ -23423,6 +23192,7 @@ gruppi:
     alias:
     - sterilizzazione
     - psis
+    indirizzo: Via del Progresso (Camin)
 - id: presidenza-medicina
   nome: Presidenza Facoltà Medicina e Chirurgia
   contatti:
@@ -23568,7 +23338,6 @@ gruppi:
 - id: mensa
   nome: Mensa Aziendale
   ubicazione:
-    piano: 1°
     struttura: Palazzina Servizi
   contatti:
   - id: mensa-bar
@@ -23600,6 +23369,7 @@ gruppi:
     tipo: altro
     alias:
     - mensa
+    piano: 1°
 - id: polizia
   nome: Polizia di Stato e Polizia Municipale
   contatti:
@@ -23721,7 +23491,6 @@ gruppi:
 - id: suem
   nome: SUEM (Servizio Urgenza Emergenza Medica)
   ubicazione:
-    piano: 1°
     struttura: Palazzina Ex Lavanderia
   direttore: Dr. Paoli Andrea
   contatti:
@@ -23757,10 +23526,10 @@ gruppi:
     - suem
     - '118'
     - urgenza emergenza
+    piano: 1°
 - id: sindacati
   nome: Sedi Sindacali
   ubicazione:
-    piano: 3°
     struttura: Palazzina Servizi
   contatti:
   - id: sind-cgil
@@ -23851,6 +23620,7 @@ gruppi:
     - cgil
     - cisl
     - uil
+    piano: 3°
 - id: associazioni
   nome: Associazioni
   contatti:
