@@ -12,6 +12,7 @@ gruppi:
   direttore: Dr. Dal Ben Giuseppe
   email: dir.gen@aopd.veneto.it
   sezioni: []
+  contatti: []
 - id: dir-sanitaria
   nome: Direzione Sanitaria
   ubicazione:
@@ -20,6 +21,7 @@ gruppi:
   direttore: Dr. Tessarin Michele
   email: dir.san@aopd.veneto.it
   sezioni: []
+  contatti: []
 - id: dir-amministrativa
   nome: Direzione Amministrativa
   ubicazione:
@@ -1161,6 +1163,8 @@ gruppi:
     etichetta: Magazzino Beni Economali - Responsabile
     numeri:
     - 1669
+    - '97768'
+    - '335.6987520'
     breve: 97768
     cellulare: '335.6987520'
     sezione: Logistica e Magazzino
@@ -1170,6 +1174,7 @@ gruppi:
     etichetta: Segreteria Ordini - Perrucchini Michela
     numeri:
     - 1617
+    - '334.6690199'
     cellulare: '334.6690199'
     email: magazzino.generale@aopd.veneto.it
     sezione: Segreteria e Direzione
@@ -1201,6 +1206,7 @@ gruppi:
     numeri:
     - 1654
     - 1618
+    - '335.7767441'
     cellulare: '335.7767441'
     sezione: Provveditorato
     Economato e Logistica: null
@@ -1211,12 +1217,16 @@ gruppi:
     sezione: Provveditorato
     Economato e Logistica: null
     luogo: Viale Navigazione Interna 38 - Padova
+    numeri:
+    - '335.7767440'
   - id: prov-mag-turi
-    etichetta: Magazziniere/Autista - Turi Marco
+    etichetta: Magazziniere/Autista - Rampino / Savoldo / Turi
     cellulare: '335.7767443'
     sezione: Provveditorato
     Economato e Logistica: null
     luogo: Viale Navigazione Interna 38 - Padova
+    numeri:
+    - '335.7767443'
   - id: prov-gare-resp
     etichetta: Gare e Contratti - Dr.ssa Serafin (resp f.f.)
     numeri:
@@ -1533,6 +1543,7 @@ gruppi:
     etichetta: Lavanderia
     numeri:
     - 3880
+    - '335.1455755'
     cellulare: '335.1455755'
     sezione: Logistica dei Servizi
     luogo: 2° piano Palazzina Direzione ala ovest
@@ -2536,6 +2547,7 @@ gruppi:
     numeri:
     - 1327
     - 3133
+    - '97696'
     breve: 97696
     sezione: Manutenzione e Impianti
     luogo: Polo Ospedaliero
@@ -2556,6 +2568,8 @@ gruppi:
     cellulare: '335.7823303'
     sezione: Servizi Tecnici e Patrimoniali
     luogo: Polo Ospedaliero
+    numeri:
+    - '335.7823303'
   - id: st-edile-scandolaro
     etichetta: Edile - Scandolaro Matteo
     numeri:
@@ -2573,6 +2587,8 @@ gruppi:
     cellulare: '335.1851612'
     sezione: Servizi Tecnici e Patrimoniali
     luogo: Polo Ospedaliero
+    numeri:
+    - '335.1851612'
   - id: st-eo-munaretti
     etichetta: Edilizia - Munaretti Rossano
     numeri:
@@ -2603,6 +2619,8 @@ gruppi:
     - 2525
     sezione: Servizi Tecnici e Patrimoniali
     luogo: Polo Ospedaliero
+    tag:
+    - guardia
   - id: st-amm-ambrosi
     etichetta: Att. Amministrative - Ambrosi Claudia
     numeri:
@@ -2781,8 +2799,11 @@ gruppi:
     breve: 97709
     tag:
     - reperibile
+    - guardia
     sezione: Segreteria e Direzione
     luogo: 1° piano Palazzina Direzione ala ovest
+    numeri:
+    - '97709'
   - id: dm-direttore
     etichetta: Direttore Dr. Martello Tiziano
     numeri:
@@ -3021,6 +3042,8 @@ gruppi:
     etichetta: Padre Superiore
     numeri:
     - 6366
+    - '97753'
+    - '338.6510171'
     sezione: Assistenza Religiosa
     luogo: Monoblocco piano terra
   - id: ar-abitazione
@@ -3429,6 +3452,8 @@ gruppi:
     - 2873
     sezione: Ambulatori Monoblocco
     luogo: Monoblocco piano rialzato
+    tag:
+    - guardia
   - id: am-amb5
     etichetta: Ambulatorio N°5
     numeri:
@@ -3843,12 +3868,20 @@ gruppi:
     - 3876
     sezione: Area Tecnica D.M.O.
     luogo: Direzione Medica Ospedaliera
+    alias:
+    - magazzino spedizioni
+    - spedizioni
+    - magazzino
   - id: dmo-at-uff
     etichetta: Ufficio
     numeri:
     - 3877
     sezione: Area Tecnica D.M.O.
     luogo: Direzione Medica Ospedaliera
+    alias:
+    - magazzino spedizioni
+    - spedizioni
+    - magazzino
   sezioni:
   - nome: Area Tecnica D.M.O.
     tipo: altro
@@ -4150,8 +4183,12 @@ gruppi:
     breve: 97513
     tag:
     - reperibile
+    - guardia
     sezione: Coordinamento Ospedaliero Trapianti
     luogo: 2° piano Neurochirurgia
+    numeri:
+    - '97513'
+    - '335.5704890'
   - id: cot-segr
     etichetta: Segreteria
     numeri:
@@ -4459,6 +4496,13 @@ gruppi:
     - 2870
     sezione: Magazzino e Distribuzione
     luogo: Monoblocco piano terra e piano rialzato
+  - id: farmacia-ospedaliera-medico-di-guardia-farmacia-7712
+    etichetta: Medico di Guardia Farmacia
+    sezione: Farmacia Ospedaliera
+    numeri:
+    - '97712'
+    tag:
+    - guardia
   sezioni:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
@@ -4486,8 +4530,13 @@ gruppi:
     etichetta: Responsabile Dr. Degan Mario
     numeri:
     - 8429
+    - '97708'
+    - '335.1275533'
     sezione: Direzione delle Professioni Sanitarie
     luogo: Ex Casa Suore 1° piano
+    alias:
+    - mediatore culturale
+    - mediatore
   - id: dps-rep-cell
     etichetta: Reperibile
     breve: 97708
@@ -4586,6 +4635,8 @@ gruppi:
     etichetta: Amb. Stomaterapisti Pizzarelli/Zamprogno (solo interni)
     numeri:
     - 2485
+    - '97695'
+    - '347.4780797'
     sezione: Direzione delle Professioni Sanitarie
     luogo: Ex Casa Suore 1° piano
   - id: dps-uscieri-brosera
@@ -4714,6 +4765,11 @@ gruppi:
     cellulare: '335.5706746'
     sezione: Direzione delle Professioni Sanitarie
     luogo: Ex Casa Suore 1° piano
+  - id: direzione-delle-professioni-sanitarie-assistente-sociale-0147
+    etichetta: Pers. Assistente Sociale
+    sezione: Direzione delle Professioni Sanitarie
+    numeri:
+    - '3386170147'
   sezioni:
   - nome: Direzione delle Professioni Sanitarie
     tipo: altro
@@ -5124,6 +5180,11 @@ gruppi:
     sezione: Sede Giustinianeo
     luogo: Monoblocco atrio piano rialzato
     sottosezione: Segreteria e Direzione
+  - id: anatomia-patologica-prof-calabrese-2268
+    etichetta: Pers. Prof. Calabrese
+    sezione: Sede Giustinianeo
+    numeri:
+    - 0498272268
   sezioni:
   - nome: Sede Giustinianeo
     tipo: altro
@@ -5337,10 +5398,13 @@ gruppi:
     - guardia
     sezione: Rianimazione
     luogo: Palazzina Chirurgia Pediatrica
+    numeri:
+    - '97579'
   - id: ar-ped-meneghini
     etichetta: Dir. Anestesiologia Pediatrica - Dr.ssa Meneghini Luisa
     numeri:
     - 8038
+    - '97035'
     breve: 97035
     sezione: Studi Medici
     luogo: Palazzina Chirurgia Pediatrica
@@ -5468,6 +5532,7 @@ gruppi:
     etichetta: Studio Medici (ISTAR 3)
     numeri:
     - 1399
+    - '97432'
     sezione: Studi Medici
     luogo: Via V. Gallucci 13 / Policlinico 6° piano
   - id: istar-ti3-mdg-breve
@@ -5488,6 +5553,7 @@ gruppi:
     etichetta: Anestesista di Guardia
     numeri:
     - 2452
+    - '97099'
     breve: 97099
     tag:
     - guardia
@@ -5511,6 +5577,11 @@ gruppi:
     - 3278
     sezione: Studi Medici
     luogo: Via V. Gallucci 13 / Policlinico 6° piano
+  - id: istituto-di-anestesia-e-rianimazione-istar-anestesista-da-verificare-8857
+    etichetta: Anestesista (da verificare)
+    sezione: Studi Medici
+    numeri:
+    - '98857'
   sezioni:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
@@ -6393,6 +6464,7 @@ gruppi:
     etichetta: Stanza Cardiochirurgo di Guardia
     numeri:
     - 2431
+    - '97575'
     breve: 97575
     tag:
     - guardia
@@ -6522,6 +6594,8 @@ gruppi:
     - guardia
     sezione: Fisiopatologia Cardiocircolatoria
     luogo: Centro Gallucci 1° piano
+    numeri:
+    - '97014'
   - id: cch-perfus-coord
     etichetta: Guardiola Coord. - Zanella Fabio
     numeri:
@@ -6560,6 +6634,7 @@ gruppi:
     etichetta: Sala Operatoria Gallucci
     numeri:
     - 2452
+    - '97099'
     sezione: Piastra Operatoria Gallucci
     luogo: Centro Gallucci piano terra
   - id: cch-piastra-so2
@@ -6800,6 +6875,8 @@ gruppi:
     - guardia
     sezione: Degenze
     luogo: Centro Gallucci 2° piano
+    numeri:
+    - '97503'
   - id: card-deg-amb-vasc
     etichetta: Ambulatorio ed Ecografia Vascolare
     numeri:
@@ -7213,6 +7290,21 @@ gruppi:
     sezione: Riabilitazione Cardiologica
     luogo: Ospedale dei Colli
     sottosezione: Studi Medici
+  - id: cardiologia-dott-bauce-8176
+    etichetta: Pers. Dott. Bauce
+    sezione: Ambulatori
+    numeri:
+    - '3479668176'
+  - id: cardiologia-aritmologia-prof-ssa-leoni-7171
+    etichetta: Aritmologia - Prof.ssa Leoni
+    sezione: Ambulatori
+    numeri:
+    - '97171'
+  - id: cardiologia-holter-pressorio-2187
+    etichetta: Holter Pressorio
+    sezione: Ambulatori
+    numeri:
+    - 2187
   sezioni:
   - nome: UCIC
     tipo: degenze
@@ -7751,6 +7843,13 @@ gruppi:
     - 049 964 01 60
     sezione: Laboratorio
     luogo: Policlinico 7° piano
+  - id: chirurgia-generale-3-colo-rettale-medico-di-guardia-chirurgia-3-7127
+    etichetta: Medico di Guardia Chirurgia 3
+    sezione: Degenze
+    numeri:
+    - '97127'
+    tag:
+    - guardia
   sezioni:
   - nome: Sala Operatoria
     tipo: sala_operatoria
@@ -8134,6 +8233,25 @@ gruppi:
     - 1925
     sezione: Piastra Endoscopica
     luogo: Monoblocco 2° piano
+  - id: chirurgia-generale-1-ricostruttiva-vie-digestive-d-urgenza-medico-di-guardia-chirurgia-generale-7523
+    etichetta: Medico di Guardia Chirurgia Generale
+    sezione: Degenze
+    numeri:
+    - '97523'
+    tag:
+    - guardia
+  - id: chirurgia-generale-1-ricostruttiva-vie-digestive-d-urgenza-medico-di-guardia-chirurgia-1-7108
+    etichetta: Medico di Guardia Chirurgia 1
+    sezione: Degenze
+    numeri:
+    - '97108'
+    tag:
+    - guardia
+  - id: chirurgia-generale-1-ricostruttiva-vie-digestive-d-urgenza-prof-bruttocao-0961
+    etichetta: Pers. Prof. Bruttocao
+    sezione: Studi Medici
+    numeri:
+    - '3357940961'
   sezioni:
   - nome: Sala Operatoria
     tipo: sala_operatoria
@@ -8698,6 +8816,8 @@ gruppi:
     - guardia
     sezione: Degenze
     luogo: Policlinico 2° piano
+    numeri:
+    - '97548'
   - id: cg2-amb-int-boccagni
     etichetta: Ambulatorio Integrato Dr.ssa Boccagni
     numeri:
@@ -8858,6 +8978,8 @@ gruppi:
     - 2710
     sezione: Grandi Ustionati
     luogo: Monoblocco 5° piano
+    tag:
+    - guardia
   - id: cp-so-coord
     etichetta: Coordinatori Sala Operatoria
     numeri:
@@ -8883,6 +9005,8 @@ gruppi:
     - 2708
     sezione: Sala Operatoria
     luogo: Monoblocco 5° piano
+    tag:
+    - guardia
   - id: cp-amb-ps
     etichetta: Amb. PS (solo interni)
     numeri:
@@ -8945,6 +9069,13 @@ gruppi:
     - 2717
     sezione: Studi Medici
     luogo: Monoblocco 5° piano
+  - id: chirurgia-plastica-medico-di-guardia-chirurgia-plastica-7459
+    etichetta: Medico di Guardia Chirurgia Plastica
+    sezione: Degenze
+    numeri:
+    - '97459'
+    tag:
+    - guardia
   sezioni:
   - nome: Sala Operatoria
     tipo: sala_operatoria
@@ -9079,11 +9210,15 @@ gruppi:
     - guardia
     sezione: Guardia/Consulenze
     luogo: Policlinico 7° piano
+    numeri:
+    - '97667'
   - id: ct-consulenze
     etichetta: Medico per Consulenze
     breve: 97600
     sezione: Guardia/Consulenze
     luogo: Policlinico 7° piano
+    numeri:
+    - '97600'
   - id: ct-cannone
     etichetta: Studio Dr. Cannone Giorgio
     numeri:
@@ -9319,6 +9454,13 @@ gruppi:
     - 2763
     sezione: Sala Operatoria
     luogo: Monoblocco 1° piano
+  - id: chirurgia-vascolare-medico-di-guardia-chirurgia-vascolare-7922
+    etichetta: Medico di Guardia Chirurgia Vascolare
+    sezione: Degenze
+    numeri:
+    - '97922'
+    tag:
+    - guardia
   sezioni:
   - nome: Sala Operatoria
     tipo: sala_operatoria
@@ -9410,6 +9552,8 @@ gruppi:
     - 4483
     sezione: Ambulatori
     luogo: Policlinico 7° piano
+    tag:
+    - guardia
   - id: cmf-bedogni
     etichetta: Studio Dr. Bedogni A.
     numeri:
@@ -9446,6 +9590,13 @@ gruppi:
     - 2026
     sezione: Sterilizzazione
     luogo: Policlinico 7° piano
+  - id: chirurgia-maxillo-facciale-medico-di-guardia-maxillo-facciale-7594
+    etichetta: Medico di Guardia Maxillo-Facciale
+    sezione: Degenze
+    numeri:
+    - '97594'
+    tag:
+    - guardia
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -9497,6 +9648,10 @@ gruppi:
     - 3785
     sezione: Laboratorio
     luogo: Ex Casa Suore 3° piano
+    alias:
+    - liquor
+    - citologia liquor
+    - citologico liquor
   - id: cito-studi
     etichetta: Studio Medici
     numeri:
@@ -9763,6 +9918,7 @@ gruppi:
     etichetta: Coord. UOC - Dr. D'Angelo Matteo (6° MB)
     numeri:
     - 6779
+    - '97752'
     breve: 97752
     sezione: Ufficio Dietisti
     luogo: Monoblocco 6° piano
@@ -10603,6 +10759,7 @@ gruppi:
     etichetta: Studio Dr. Gallan Federico
     numeri:
     - 4379
+    - '97439'
     breve: 97439
     sezione: Segreteria e Direzione
     luogo: Policlinico 7° piano
@@ -10940,6 +11097,18 @@ gruppi:
     - 1179
     sezione: Studi Medici
     luogo: Giustinianeo 2° piano
+  - id: gastroenterologia-medico-di-guardia-gastroenterologia-7869
+    etichetta: Medico di Guardia Gastroenterologia
+    sezione: Degenze
+    numeri:
+    - '97869'
+    tag:
+    - guardia
+  - id: gastroenterologia-reparto-gastroenterologia-2887
+    etichetta: Reparto Gastroenterologia
+    sezione: Degenze
+    numeri:
+    - 2887
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -11263,6 +11432,8 @@ gruppi:
     etichetta: Medico di Guardia
     numeri:
     - 8933
+    - '97973'
+    - '347.5389920'
     breve: 97973
     cellulare: '347.5389920'
     tag:
@@ -11444,6 +11615,8 @@ gruppi:
     - 7388
     sezione: Laboratorio
     luogo: Monoblocco 3° piano
+    tag:
+    - guardia
   - id: trasf-lab-emoc
     etichetta: Lab. Emocomponenti
     numeri:
@@ -11542,6 +11715,20 @@ gruppi:
     - 6053
     sezione: Segreteria e Direzione
     luogo: Monoblocco 3° piano
+  - id: immunotrasfusionale-medico-di-guardia-immunotrasfusionale-7560
+    etichetta: Medico di Guardia Immunotrasfusionale
+    sezione: Laboratorio
+    numeri:
+    - '97560'
+    tag:
+    - guardia
+  - id: immunotrasfusionale-medico-di-guardia-aferesi-7561
+    etichetta: Medico di Guardia Aferesi
+    sezione: Unità Aferesi Terapeutica
+    numeri:
+    - '97561'
+    tag:
+    - guardia
   sezioni:
   - nome: Laboratorio
     tipo: laboratorio
@@ -11761,6 +11948,20 @@ gruppi:
     - 8122
     sezione: Servizio di Diabetologia
     luogo: Monoblocco 8° piano
+  - id: malattie-del-metabolismo-medico-di-guardia-endocrinologia-7507
+    etichetta: Medico di Guardia Endocrinologia
+    sezione: Servizio di Diabetologia
+    numeri:
+    - '97507'
+    tag:
+    - guardia
+  - id: malattie-del-metabolismo-consulenze-endocrinologia-7506
+    etichetta: Consulenze Endocrinologia
+    sezione: Servizio di Diabetologia
+    numeri:
+    - '97506'
+    tag:
+    - guardia
   sezioni:
   - nome: Studi Medici
     tipo: studi_medici
@@ -12263,6 +12464,7 @@ gruppi:
     etichetta: Medico di Guardia
     numeri:
     - 3742
+    - '97859'
     breve: 97859
     tag:
     - guardia
@@ -12274,6 +12476,11 @@ gruppi:
     - 7603
     sezione: Degenze
     luogo: Edificio Malattie Infettive 1° piano
+  - id: malattie-infettive-e-tropicali-dr-lo-menzo-5131
+    etichetta: Pers. Dr. Lo Menzo
+    sezione: Studi Medici
+    numeri:
+    - '3890555131'
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -12439,7 +12646,7 @@ gruppi:
   - id: cm1te-mdg
     etichetta: Medico di Guardia
     numeri:
-    - 2680
+    - '97729'
     breve: 97549
     cellulare: '345.7079385'
     tag:
@@ -12584,6 +12791,21 @@ gruppi:
     - 2665
     sezione: Ambulatori
     luogo: Monoblocco 10° piano
+  - id: clinica-medica-1-malattie-trombotiche-ed-emorragiche-prof-tormene-7642
+    etichetta: Prof. Tormene
+    sezione: Studi Medici
+    numeri:
+    - '97642'
+  - id: clinica-medica-1-malattie-trombotiche-ed-emorragiche-coagulopatie-7519
+    etichetta: Coagulopatie
+    sezione: Degenze
+    numeri:
+    - '97519'
+  - id: clinica-medica-1-malattie-trombotiche-ed-emorragiche-dr-ssa-giannini-calcio-6252
+    etichetta: Pers. Dr.ssa Giannini (calcio)
+    sezione: Studi Medici
+    numeri:
+    - '3489306252'
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -13070,11 +13292,15 @@ gruppi:
   - id: cm3-mdg
     etichetta: Medico di Guardia
     numeri:
-    - 2647
+    - 2680
+    - '97549'
+    - '345.7079385'
     tag:
     - guardia
     sezione: Degenze
     luogo: Monoblocco 9° piano
+    alias:
+    - '2647'
   - id: cm3-deg-10p-inf
     etichetta: 10° MB - Stanza Infermieri
     numeri:
@@ -13222,6 +13448,13 @@ gruppi:
     - 8550
     sezione: Laboratorio
     luogo: Monoblocco 9°-10° piano
+  - id: clinica-medica-3-medico-di-guardia-cm3-7884
+    etichetta: Medico di Guardia CM3
+    sezione: Degenze
+    numeri:
+    - '97884'
+    tag:
+    - guardia
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -13327,6 +13560,7 @@ gruppi:
     etichetta: Medico di Guardia (8° P)
     numeri:
     - 2286
+    - '97037'
     breve: 97037
     tag:
     - guardia
@@ -14263,6 +14497,8 @@ gruppi:
     - 3996
     sezione: Laboratorio Urgenze
     luogo: Giustinianeo 2° piano
+    tag:
+    - guardia
   - id: mlab-urg-coord
     etichetta: Coord. Urgenze - Baccarin Lorenzo
     numeri:
@@ -14276,6 +14512,8 @@ gruppi:
     - 7854
     sezione: Laboratorio Urgenze
     luogo: Giustinianeo 2° piano
+    tag:
+    - guardia
   - id: mlab-prel-breve
     etichetta: Centro Prelievi Via San Massimo - Coord. Pozzato Catia
     breve: 97628
@@ -14414,6 +14652,16 @@ gruppi:
     - 6611
     sezione: Laboratorio Urgenze OSA
     luogo: Ospedale S. Antonio 3° piano
+  - id: medicina-di-laboratorio-laboratorio-centrale-7952
+    etichetta: Laboratorio Centrale
+    sezione: Laboratorio Urgenze
+    numeri:
+    - '97952'
+  - id: medicina-di-laboratorio-laboratorio-urgenze-2790
+    etichetta: Laboratorio Urgenze
+    sezione: Laboratorio Urgenze
+    numeri:
+    - 2790
   sezioni:
   - nome: Settori Laboratorio
     tipo: laboratorio
@@ -14503,6 +14751,8 @@ gruppi:
     - guardia
     sezione: Chirurgia d'Urgenza
     luogo: Policlinico 6° piano
+    numeri:
+    - '97411'
   - id: cu-spec
     etichetta: Studio Medico Specializzandi
     numeri:
@@ -14536,8 +14786,12 @@ gruppi:
     cellulare: '335.1425817'
     tag:
     - reperibile
+    - guardia
     sezione: Segreteria e Direzione
     luogo: Via Falloppio 50
+    numeri:
+    - '97058'
+    - '335.1425817'
   - id: mleg-segr
     etichetta: Segreteria Ospedaliera
     numeri:
@@ -14660,6 +14914,16 @@ gruppi:
     - 1299
     sezione: Laboratorio Genetica Forense
     luogo: Via Falloppio 50 - 2° piano
+  - id: medicina-legale-e-tossicologia-dr-ssa-tozzo-1391
+    etichetta: Pers. Dr.ssa Tozzo
+    sezione: Studi Medici
+    numeri:
+    - '3408911391'
+  - id: medicina-legale-e-tossicologia-prof-forza-tossicologo-9514
+    etichetta: Pers. Prof. Forza (tossicologo)
+    sezione: Laboratorio Tossicologia
+    numeri:
+    - '3346059514'
   sezioni:
   - nome: Studi Medici
     tipo: studi_medici
@@ -14821,6 +15085,16 @@ gruppi:
     - 8843
     sezione: Medicina Nucleare
     luogo: Giustinianeo piano terra
+  - id: medicina-nucleare-accettazione-medicina-nucleare-8804
+    etichetta: Accettazione Medicina Nucleare
+    sezione: Diagnostica
+    numeri:
+    - 8804
+  - id: medicina-nucleare-pet-rm-medicina-nucleare-7142
+    etichetta: PET/RM Medicina Nucleare
+    sezione: Diagnostica
+    numeri:
+    - 7142
   sezioni:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
@@ -14987,6 +15261,20 @@ gruppi:
     - 8950
     sezione: Studi Medici
     luogo: Giustinianeo piano terra
+  - id: microbiologia-e-virologia-covid-4327
+    etichetta: Covid
+    sezione: Laboratorio
+    numeri:
+    - 4327
+    tag:
+    - guardia
+  - id: microbiologia-e-virologia-covid-medico-di-guardia-7619
+    etichetta: Covid - Medico di Guardia
+    sezione: Laboratorio
+    numeri:
+    - '97619'
+    tag:
+    - guardia
   sezioni:
   - nome: Laboratorio
     tipo: laboratorio
@@ -15181,6 +15469,8 @@ gruppi:
     numeri:
     - 3075
     - 3167
+    - '97963'
+    - '334.6059523'
     sezione: Degenze
     luogo: Monoblocco 8° piano
     tag:
@@ -15217,6 +15507,11 @@ gruppi:
     cellulare: '335.7766627'
     sezione: Degenze
     luogo: Monoblocco 8° piano
+    numeri:
+    - '97043'
+    - '335.7766627'
+    tag:
+    - guardia
   - id: nefro-spec
     etichetta: Studio Medici Specializzandi
     numeri:
@@ -15248,6 +15543,9 @@ gruppi:
     cellulare: '335.7766628'
     sezione: Dialisi
     luogo: Giustinianeo
+    numeri:
+    - '97045'
+    - '335.7766628'
   - id: nefro-dialisi-mag
     etichetta: Magazzino Lab. Tecnico
     numeri:
@@ -15353,6 +15651,7 @@ gruppi:
     etichetta: OSA - Coord. Dialisi Dr. Celon Nicola
     numeri:
     - 5337
+    - '335.7766629'
     cellulare: '335.7766629'
     sezione: Emodialisi OSA
     luogo: Ospedale S. Antonio
@@ -15504,6 +15803,7 @@ gruppi:
     etichetta: Medico di Guardia
     numeri:
     - 3652
+    - '97897'
     breve: 97897
     tag:
     - guardia
@@ -15612,6 +15912,8 @@ gruppi:
     etichetta: TIPO Anestesista di Guardia Notturno
     numeri:
     - 6371
+    - '335.8205385'
+    - '97012'
     breve: 97012
     cellulare: '335.8205385'
     tag:
@@ -15850,6 +16152,8 @@ gruppi:
     luogo: Palazzina Neuroscienze 1° piano
     tag:
     - guardia
+    numeri:
+    - '97609'
   - id: ncl-dh
     etichetta: Day Hospital
     numeri:
@@ -16068,6 +16372,24 @@ gruppi:
     - 2575
     etichetta: Doppler Viaro
     luogo: Palazzina Neuroscienze piano terra
+  - id: neurol-case-manager-neuromuscolari
+    etichetta: Case Manager Malattie Neuromuscolari (L/V 11-12)
+    numeri:
+    - 4261
+    - '334.9311619'
+    sezione: Ambulatori
+  - id: neurologia-guardiola-neurologia-esterno-3615
+    etichetta: Guardiola Neurologia (esterno)
+    sezione: Degenze
+    numeri:
+    - 0498213615
+  - id: neurologia-neurologia-osa-cicalino-mdg-2687
+    etichetta: Pers. Neurologia OSA - Cicalino MdG
+    sezione: Degenze
+    numeri:
+    - '3346652687'
+    tag:
+    - guardia
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -16152,6 +16474,8 @@ gruppi:
     - guardia
     sezione: Degenze
     luogo: Palazzina Neuroscienze 1° piano
+    numeri:
+    - '97928'
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -16453,8 +16777,12 @@ gruppi:
     etichetta: Emergenze Oculistiche (PS Centrale)
     numeri:
     - 2114
+    - '97865'
+    - '329.9074850'
     sezione: Ambulatori
     luogo: Pronto Soccorso Centrale
+    tag:
+    - guardia
   - id: ocul-rep
     etichetta: Medico Prima Reperibilità
     breve: 97865
@@ -16652,6 +16980,11 @@ gruppi:
     - 8632
     sezione: Degenze
     luogo: Policlinico 7° piano
+  - id: oculistica-clinica-post-degenza-oculistica-1976
+    etichetta: Post-degenza Oculistica
+    sezione: Ambulatori
+    numeri:
+    - 1976
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -16979,6 +17312,7 @@ gruppi:
     etichetta: Sala Gessi (1° P)
     numeri:
     - 3345
+    - '97140'
     sezione: Sala Gessi
     luogo: Edificio Ortopedia
   - id: ort-radio-acc
@@ -17155,6 +17489,8 @@ gruppi:
     - guardia
     sezione: Degenze
     luogo: Edificio Ortopedia
+    numeri:
+    - '97993'
   - id: cort-predeg-onco
     etichetta: Studio Medici Pre-Degenze Oncologiche
     numeri:
@@ -17320,6 +17656,18 @@ gruppi:
     - 3348
     sezione: Laboratorio
     luogo: Edificio Ortopedia
+  - id: clinica-ortopedica-traumatologica-medico-di-guardia-ortopedia-alt-7605
+    etichetta: Medico di Guardia Ortopedia (alt.)
+    sezione: Degenze
+    numeri:
+    - '97605'
+    tag:
+    - guardia
+  - id: clinica-ortopedica-traumatologica-dr-rod-1796
+    etichetta: Pers. Dr. Rodà
+    sezione: Studi Medici
+    numeri:
+    - '3474231796'
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -17497,6 +17845,13 @@ gruppi:
     - 1329
     sezione: Studi Medici
     luogo: Edificio Ortopedia 1° piano
+  - id: riabilitazione-ortopedica-medico-di-guardia-fisiatria-7131
+    etichetta: Medico di Guardia Fisiatria
+    sezione: Ambulatori
+    numeri:
+    - '97131'
+    tag:
+    - guardia
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -17755,9 +18110,12 @@ gruppi:
     etichetta: PS Accettazione
     numeri:
     - 3462
+    - '97805'
     sezione: Ostetricia
     luogo: Edificio Clinica Ostetrica
     sottosezione: Pronto Soccorso
+    tag:
+    - guardia
   - id: cgo-ps-ricov
     etichetta: PS Accettazione Ricoveri
     numeri:
@@ -17765,6 +18123,8 @@ gruppi:
     sezione: Ostetricia
     luogo: Edificio Clinica Ostetrica
     sottosezione: Pronto Soccorso
+    tag:
+    - guardia
   - id: cgo-ps-mdg
     etichetta: Medico di Guardia PS
     breve: 97805
@@ -18065,6 +18425,20 @@ gruppi:
     - 3308
     sezione: Segreteria e Direzione
     luogo: Edificio Clinica Ostetrica
+  - id: clinica-ginecologica-e-ostetrica-medico-di-guardia-ginecologia-7588
+    etichetta: Medico di Guardia Ginecologia
+    sezione: Ostetricia
+    numeri:
+    - '97588'
+    tag:
+    - guardia
+  - id: clinica-ginecologica-e-ostetrica-medico-di-guardia-ginecologia-alt-7699
+    etichetta: Medico di Guardia Ginecologia (alt.)
+    sezione: Ostetricia
+    numeri:
+    - '97699'
+    tag:
+    - guardia
   sezioni:
   - nome: Ostetricia
     tipo: degenze
@@ -18136,6 +18510,7 @@ gruppi:
     - 3784
     sezione: Citodiagnostica Ginecologica
     luogo: Giustinianeo Anatomia Patologica
+    alias: []
   - id: cig-studio
     etichetta: Studio
     numeri:
@@ -18735,6 +19110,7 @@ gruppi:
     etichetta: Medico di Guardia
     numeri:
     - 2021
+    - '97521'
     breve: 97521
     tag:
     - guardia
@@ -18862,6 +19238,23 @@ gruppi:
     - 8104
     sezione: Studi Medici
     luogo: Policlinico 9° piano
+  - id: otorinolaringoiatria-orl-logopedista-esterna-6207
+    etichetta: Pers. Logopedista esterna
+    sezione: Ambulatori
+    numeri:
+    - '3472176207'
+  - id: otorinolaringoiatria-orl-orl-cicalino-7958
+    etichetta: ORL - Cicalino
+    sezione: Ambulatori
+    numeri:
+    - '97958'
+    tag:
+    - guardia
+  - id: otorinolaringoiatria-orl-dr-marchese-ragona-7060
+    etichetta: Dr. Marchese Ragona
+    sezione: Studi Medici
+    numeri:
+    - '97060'
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -20009,6 +20402,7 @@ gruppi:
     etichetta: Responsabile Prof.ssa Muraro Antonella
     numeri:
     - 7789
+    - '331.5764937'
     sezione: Centro Allergie e Intolleranze Alimentari
     luogo: Clinica Pediatrica
   - id: aa-segr-tel
@@ -20095,6 +20489,7 @@ gruppi:
     etichetta: Studio Medici Reparto
     numeri:
     - 8047
+    - '97591'
     sezione: Degenze
     luogo: Edificio Divisione Ostetrica
   - id: cper-rep-mdg
@@ -20115,12 +20510,14 @@ gruppi:
     numeri:
     - 3674
     - 3461
+    - 1934
     sezione: Sala Operatoria
     luogo: Edificio Divisione Ostetrica
   - id: cper-chir-mdg
     etichetta: Stanza Chirurgo di Guardia
     numeri:
     - 3679
+    - '97662'
     tag:
     - guardia
     sezione: Degenze
@@ -20129,6 +20526,7 @@ gruppi:
     etichetta: Anestesista di Guardia
     numeri:
     - 3676
+    - '97662'
     breve: 97662
     tag:
     - guardia
@@ -20200,6 +20598,7 @@ gruppi:
     etichetta: Dir. Anestesiologia Pediatrica - Dr.ssa Meneghini Luisa
     numeri:
     - 8038
+    - '97035'
     breve: 97035
     sezione: Studi Medici
     luogo: Edificio Divisione Ostetrica
@@ -20291,6 +20690,7 @@ gruppi:
     etichetta: TIN - Studio Medici
     numeri:
     - 3547
+    - '97082'
     sezione: Studi Medici
     luogo: Edificio Clinica Ginecologica 1° piano
   - id: tin-mdg
@@ -21108,6 +21508,8 @@ gruppi:
     etichetta: Medico di Guardia
     numeri:
     - 8593
+    - '97068'
+    - '335.7766991'
     breve: 97068
     cellulare: '335.7766991'
     tag:
@@ -21120,6 +21522,21 @@ gruppi:
     - 1222
     sezione: Degenze
     luogo: Policlinico 1° piano
+  - id: pneumologia-broncoscopia-diurno-7581
+    etichetta: Broncoscopia - Diurno
+    sezione: Piastra Endoscopica
+    numeri:
+    - '97581'
+  - id: pneumologia-broncoscopia-3725
+    etichetta: Broncoscopia
+    sezione: Piastra Endoscopica
+    numeri:
+    - 3725
+  - id: pneumologia-fisiopatologia-respiratoria-8650
+    etichetta: Fisiopatologia Respiratoria
+    sezione: Ambulatori
+    numeri:
+    - 8650
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -21260,12 +21677,14 @@ gruppi:
     etichetta: Radiologia del PS
     numeri:
     - 3224
+    - '97638'
     sezione: Segreteria e Direzione
     luogo: 2° piano Palazzina Direzione
   - id: ps-radio-lettura
     etichetta: Radiologia Sala Lettura
     numeri:
     - 3225
+    - '97029'
     sezione: Segreteria e Direzione
     luogo: 2° piano Palazzina Direzione
   - id: ps-polizia
@@ -21274,6 +21693,13 @@ gruppi:
     - 2866
     sezione: Segreteria e Direzione
     luogo: 2° piano Palazzina Direzione
+  - id: pronto-soccorso-ps-covid-1163
+    etichetta: PS Covid
+    sezione: Segreteria e Direzione
+    numeri:
+    - 1163
+    tag:
+    - guardia
   sezioni:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
@@ -21499,6 +21925,13 @@ gruppi:
     - 3834
     sezione: Ambulatori
     luogo: Palazzina Ex Casa Suore
+  - id: psichiatria-3-clinica-medico-di-guardia-psichiatria-7806
+    etichetta: Medico di Guardia Psichiatria
+    sezione: Degenze
+    numeri:
+    - '97806'
+    tag:
+    - guardia
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -22023,6 +22456,13 @@ gruppi:
     - 2807
     sezione: RX
     luogo: Istituto Radiologia Monoblocco
+  - id: radiologia-monoblocco-tc-covid-universitaria-2361
+    etichetta: TC Covid Universitaria
+    sezione: TC
+    numeri:
+    - 2361
+    tag:
+    - guardia
   sezioni:
   - nome: TC
     tipo: ambulatori
@@ -22212,6 +22652,18 @@ gruppi:
     - 2198
     sezione: Laboratorio
     luogo: Stabile PalaSanità 1° piano
+  - id: reumatologia-medico-di-guardia-reumatologia-7158
+    etichetta: Medico di Guardia Reumatologia
+    sezione: Ambulatori
+    numeri:
+    - '97158'
+    tag:
+    - guardia
+  - id: reumatologia-reumatologo-2175
+    etichetta: Reumatologo
+    sezione: Ambulatori
+    numeri:
+    - 2175
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -22263,8 +22715,11 @@ gruppi:
     breve: 97067
     tag:
     - reperibile
+    - guardia
     sezione: Segreteria e Direzione
     luogo: Palazzina Neuroscienze
+    numeri:
+    - '97067'
   - id: nchpb-baro
     etichetta: Studio Dr.ssa Baro Valentina
     numeri:
@@ -22615,11 +23070,15 @@ gruppi:
     - guardia
     sezione: Degenze
     luogo: Monoblocco 4° piano
+    numeri:
+    - '97903'
   - id: uro-mdr
     etichetta: Medico di Reparto
     breve: 97441
     sezione: Degenze
     luogo: Monoblocco 4° piano
+    numeri:
+    - '97441'
   - id: uro-dh-studi
     etichetta: Studio Medici DH
     numeri:
@@ -22669,6 +23128,8 @@ gruppi:
     - 2873
     sezione: Ambulatori
     luogo: Monoblocco piano rialzato / 4° piano
+    tag:
+    - guardia
   - id: uro-amb-ped
     etichetta: Amb. Pediatrico Reparto
     numeri:
@@ -23598,834 +24059,1250 @@ gruppi:
     etichetta: Adria
     breve: 97291
     sezione: Ospedali Italiani
+    numeri:
+    - '97291'
   - id: nb-agordo
     etichetta: Agordo
     breve: 97379
     sezione: Ospedali Italiani
+    numeri:
+    - '97379'
   - id: nb-ancona
     etichetta: Ancona
     breve: 97200
     sezione: Ospedali Italiani
+    numeri:
+    - '97200'
   - id: nb-arcugnano
     etichetta: Arcugnano
     breve: 97618
     sezione: Ospedali Italiani
+    numeri:
+    - '97618'
   - id: nb-arzignano
     etichetta: Arzignano
     breve: 97380
     sezione: Ospedali Italiani
+    numeri:
+    - '97380'
   - id: nb-asiago
     etichetta: Asiago
     breve: 97277
     sezione: Ospedali Italiani
+    numeri:
+    - '97277'
   - id: nb-asolo
     etichetta: Asolo
     breve: 97381
     sezione: Ospedali Italiani
+    numeri:
+    - '97381'
   - id: nb-auronzo
     etichetta: Auronzo
     breve: 97382
     sezione: Ospedali Italiani
+    numeri:
+    - '97382'
   - id: nb-aviano
     etichetta: Aviano Oncologico
     breve: 97378
     sezione: Ospedali Italiani
+    numeri:
+    - '97378'
   - id: nb-badia
     etichetta: Badia Polesine
     breve: 97201
     sezione: Ospedali Italiani
+    numeri:
+    - '97201'
   - id: nb-bari
     etichetta: Bari
     breve: 97202
     sezione: Ospedali Italiani
+    numeri:
+    - '97202'
   - id: nb-bassano
     etichetta: Bassano
     breve: 97203
     sezione: Ospedali Italiani
+    numeri:
+    - '97203'
   - id: nb-belluno
     etichetta: Belluno
     breve: 97204
     sezione: Ospedali Italiani
+    numeri:
+    - '97204'
   - id: nb-bergamo
     etichetta: Bergamo
     breve: 97376
     sezione: Ospedali Italiani
+    numeri:
+    - '97376'
   - id: nb-bo-bellaria
     etichetta: Bologna Bellaria
     breve: 97205
     sezione: Ospedali Italiani
+    numeri:
+    - '97205'
   - id: nb-bo-antiveleni
     etichetta: Bologna Antiveleni
     breve: 97211
     sezione: Ospedali Italiani
+    numeri:
+    - '97211'
   - id: nb-bo-maggiore
     etichetta: Bologna Maggiore
     breve: 97206
     sezione: Ospedali Italiani
+    numeri:
+    - '97206'
   - id: nb-bo-malpighi
     etichetta: Bologna Malpighi
     breve: 97207
     sezione: Ospedali Italiani
+    numeri:
+    - '97207'
   - id: nb-bo-molinelle
     etichetta: Bologna Molinelle
     breve: 97208
     sezione: Ospedali Italiani
+    numeri:
+    - '97208'
   - id: nb-bo-rizzoli
     etichetta: Bologna Rizzoli
     breve: 97209
     sezione: Ospedali Italiani
+    numeri:
+    - '97209'
   - id: nb-bo-sorsola
     etichetta: Bologna S. Orsola
     breve: 97210
     sezione: Ospedali Italiani
+    numeri:
+    - '97210'
   - id: nb-bolzano
     etichetta: Bolzano
     breve: 97212
     sezione: Ospedali Italiani
+    numeri:
+    - '97212'
   - id: nb-brescia
     etichetta: Brescia
     breve: 97213
     sezione: Ospedali Italiani
+    numeri:
+    - '97213'
   - id: nb-brunico
     etichetta: Brunico
     breve: 97368
     sezione: Ospedali Italiani
+    numeri:
+    - '97368'
   - id: nb-bussolengo
     etichetta: Bussolengo
     breve: 97383
     sezione: Ospedali Italiani
+    numeri:
+    - '97383'
   - id: nb-cagliari
     etichetta: Cagliari
     breve: 97224
     sezione: Ospedali Italiani
+    numeri:
+    - '97224'
   - id: nb-camposampiero
     etichetta: Camposampiero
     breve: 97214
     sezione: Ospedali Italiani
+    numeri:
+    - '97214'
   - id: nb-castelfranco
     etichetta: Castelfranco
     breve: 97215
     sezione: Ospedali Italiani
+    numeri:
+    - '97215'
   - id: nb-catania
     etichetta: Catania
     breve: 97225
     sezione: Ospedali Italiani
+    numeri:
+    - '97225'
   - id: nb-catanzaro
     etichetta: Catanzaro
     breve: 97216
     sezione: Ospedali Italiani
+    numeri:
+    - '97216'
   - id: nb-cavarzere
     etichetta: Cavarzere
     breve: 97217
     sezione: Ospedali Italiani
+    numeri:
+    - '97217'
   - id: nb-cesena
     etichetta: Cesena
     breve: 97218
     sezione: Ospedali Italiani
+    numeri:
+    - '97218'
   - id: nb-cesena-ant
     etichetta: Cesena Antiveleni
     breve: 97219
     sezione: Ospedali Italiani
+    numeri:
+    - '97218'
   - id: nb-chieti
     etichetta: Chieti
     breve: 97395
     sezione: Ospedali Italiani
+    numeri:
+    - '97395'
   - id: nb-chioggia
     etichetta: Chioggia
     breve: 97220
     sezione: Ospedali Italiani
+    numeri:
+    - '97220'
   - id: nb-cittadella
     etichetta: Cittadella
     breve: 97221
     sezione: Ospedali Italiani
+    numeri:
+    - '97221'
   - id: nb-cividale
     etichetta: Cividale del Friuli
     breve: 97404
     sezione: Ospedali Italiani
+    numeri:
+    - '97404'
   - id: nb-como-sanna
     etichetta: Como S. Anna
     breve: 97364
     sezione: Ospedali Italiani
+    numeri:
+    - '97364'
   - id: nb-conegliano
     etichetta: Conegliano
     breve: 97222
     sezione: Ospedali Italiani
+    numeri:
+    - '97222'
   - id: nb-conegliano-nf
     etichetta: Conegliano Nostra Famiglia
     breve: 97265
     sezione: Ospedali Italiani
+    numeri:
+    - '97222'
   - id: nb-conselve
     etichetta: Conselve
     breve: 97223
     sezione: Ospedali Italiani
+    numeri:
+    - '97223'
   - id: nb-cortina
     etichetta: Cortina Codivilla
     breve: 97400
     sezione: Ospedali Italiani
+    numeri:
+    - '97400'
   - id: nb-crema
     etichetta: Crema
     breve: 97402
     sezione: Ospedali Italiani
+    numeri:
+    - '97402'
   - id: nb-cremona
     etichetta: Cremona
     breve: 97406
     sezione: Ospedali Italiani
+    numeri:
+    - '97406'
   - id: nb-desenzano
     etichetta: Desenzano
     breve: 97384
     sezione: Ospedali Italiani
+    numeri:
+    - '97384'
   - id: nb-dolo
     etichetta: Dolo
     breve: 97226
     sezione: Ospedali Italiani
+    numeri:
+    - '97226'
   - id: nb-este
     etichetta: Este
     breve: 97227
     sezione: Ospedali Italiani
+    numeri:
+    - '97227'
   - id: nb-feltre
     etichetta: Feltre
     breve: 97228
     sezione: Ospedali Italiani
+    numeri:
+    - '97228'
   - id: nb-ferrara-genetica
     etichetta: Ferrara Genetica Medica
     breve: 97410
     sezione: Ospedali Italiani
+    numeri:
+    - '97410'
   - id: nb-ferrara-sanna
     etichetta: Ferrara S. Anna
     breve: 97229
     sezione: Ospedali Italiani
+    numeri:
+    - '97229'
   - id: nb-fi-careggi
     etichetta: Firenze Careggi
     breve: 97230
     sezione: Ospedali Italiani
+    numeri:
+    - '97230'
   - id: nb-fi-mayer
     etichetta: Firenze Mayer Pediatria
     breve: 97413
     sezione: Ospedali Italiani
+    numeri:
+    - '97413'
   - id: nb-forli
     etichetta: Forlì
     breve: 97385
     sezione: Ospedali Italiani
+    numeri:
+    - '97385'
   - id: nb-garda-cdc
     etichetta: Garda Casa di Cura
     breve: 97599
     sezione: Ospedali Italiani
+    numeri:
+    - '97599'
   - id: nb-gemona
     etichetta: Gemona del Friuli
     breve: 97386
     sezione: Ospedali Italiani
+    numeri:
+    - '97386'
   - id: nb-ge-tumori
     etichetta: Genova Centro Tumori
     breve: 97408
     sezione: Ospedali Italiani
+    numeri:
+    - '97408'
   - id: nb-ge-galliera
     etichetta: Genova Galliera
     breve: 97231
     sezione: Ospedali Italiani
+    numeri:
+    - '97231'
   - id: nb-ge-gaslini
     etichetta: Genova Gaslini
     breve: 97232
     sezione: Ospedali Italiani
+    numeri:
+    - '97232'
   - id: nb-ge-smartino
     etichetta: Genova S. Martino
     breve: 97233
     sezione: Ospedali Italiani
+    numeri:
+    - '97233'
   - id: nb-ge-smartino-univ
     etichetta: Genova S. Martino Clin. Univ.
     breve: 97369
     sezione: Ospedali Italiani
+    numeri:
+    - '97233'
   - id: nb-gorizia
     etichetta: Gorizia
     breve: 97234
     sezione: Ospedali Italiani
+    numeri:
+    - '97234'
   - id: nb-isola-scala
     etichetta: Isola della Scala
     breve: 97387
     sezione: Ospedali Italiani
+    numeri:
+    - '97387'
   - id: nb-isola-vic
     etichetta: Isola Vicentina
     breve: 97542
     sezione: Ospedali Italiani
+    numeri:
+    - '97542'
   - id: nb-jesolo
     etichetta: Jesolo
     breve: 97235
     sezione: Ospedali Italiani
+    numeri:
+    - '97235'
   - id: nb-laquila
     etichetta: L'Aquila
     breve: 97407
     sezione: Ospedali Italiani
+    numeri:
+    - '97407'
   - id: nb-latisana
     etichetta: Latisana
     breve: 97388
     sezione: Ospedali Italiani
+    numeri:
+    - '97388'
   - id: nb-legnago
     etichetta: Legnago
     breve: 97236
     sezione: Ospedali Italiani
+    numeri:
+    - '97236'
   - id: nb-legnano
     etichetta: Legnano
     breve: 97237
     sezione: Ospedali Italiani
+    numeri:
+    - '97237'
   - id: nb-lendinara
     etichetta: Lendinara
     breve: 97238
     sezione: Ospedali Italiani
+    numeri:
+    - '97238'
   - id: nb-lonigo
     etichetta: Lonigo
     breve: 97389
     sezione: Ospedali Italiani
+    numeri:
+    - '97389'
   - id: nb-magenta
     etichetta: Magenta
     breve: 97403
     sezione: Ospedali Italiani
+    numeri:
+    - '97403'
   - id: nb-mantova
     etichetta: Mantova
     breve: 97239
     sezione: Ospedali Italiani
+    numeri:
+    - '97239'
   - id: nb-merano
     etichetta: Merano
     breve: 97241
     sezione: Ospedali Italiani
+    numeri:
+    - '97241'
   - id: nb-me-osp
     etichetta: Messina Az. Osp.
     breve: 97626
     sezione: Ospedali Italiani
+    numeri:
+    - '97626'
   - id: nb-me-policlinico
     etichetta: Messina Policlinico
     breve: 97242
     sezione: Ospedali Italiani
+    numeri:
+    - '97242'
   - id: nb-mestre-angelo
     etichetta: Mestre dell'Angelo
     breve: 97243
     sezione: Ospedali Italiani
+    numeri:
+    - '97243'
   - id: nb-mestre-smarco
     etichetta: Mestre Policlinico S. Marco
     breve: 97326
     sezione: Ospedali Italiani
+    numeri:
+    - '97326'
   - id: nb-mestre-villasalus
     etichetta: Mestre Villasalus
     breve: 97276
     sezione: Ospedali Italiani
+    numeri:
+    - '97276'
   - id: nb-mi-bassini
     etichetta: Milano Bassini
     breve: 97256
     sezione: Ospedali Italiani
+    numeri:
+    - '97256'
   - id: nb-mi-besta
     etichetta: Milano Besta
     breve: 97253
     sezione: Ospedali Italiani
+    numeri:
+    - '97253'
   - id: nb-mi-antiveleni
     etichetta: Milano Antiveleni
     breve: 97271
     sezione: Ospedali Italiani
+    numeri:
+    - '97271'
   - id: nb-mi-tumori
     etichetta: Milano Centro Tumori
     breve: 97272
     sezione: Ospedali Italiani
+    numeri:
+    - '97272'
   - id: nb-mi-fbf
     etichetta: Milano Fatebenefratelli
     breve: 97257
     sezione: Ospedali Italiani
+    numeri:
+    - '97257'
   - id: nb-mi-icp
     etichetta: Milano Ist. Clin. Perfezionamento
     breve: 97274
     sezione: Ospedali Italiani
+    numeri:
+    - '97274'
   - id: nb-mi-mangiagalli
     etichetta: Milano Mangiagalli
     breve: 97259
     sezione: Ospedali Italiani
+    numeri:
+    - '97259'
   - id: nb-mi-nit
     etichetta: Milano N.I.T.
     breve: 97267
     sezione: Ospedali Italiani
+    numeri:
+    - '97267'
   - id: nb-mi-negri
     etichetta: Milano Negri
     breve: 97252
     sezione: Ospedali Italiani
+    numeri:
+    - '97252'
   - id: nb-mi-niguarda
     etichetta: Milano Niguarda
     breve: 97260
     sezione: Ospedali Italiani
+    numeri:
+    - '97260'
   - id: nb-mi-pini
     etichetta: Milano Pini Ortopedico
     breve: 97254
     sezione: Ospedali Italiani
+    numeri:
+    - '97254'
   - id: nb-mi-piox
     etichetta: Milano Pio X
     breve: 97266
     sezione: Ospedali Italiani
+    numeri:
+    - '97266'
   - id: nb-mi-policlinico
     etichetta: Milano Policlinico
     breve: 97240
     sezione: Ospedali Italiani
+    numeri:
+    - '97240'
   - id: nb-mi-scarlo
     etichetta: Milano S. Carlo Borromeo
     breve: 97255
     sezione: Ospedali Italiani
+    numeri:
+    - '97255'
   - id: nb-mi-spaolo
     etichetta: Milano S. Paolo
     breve: 97263
     sezione: Ospedali Italiani
+    numeri:
+    - '97263'
   - id: nb-mi-sraffaele
     etichetta: Milano S. Raffaele
     breve: 97275
     sezione: Ospedali Italiani
+    numeri:
+    - '97275'
   - id: nb-mi-sacco
     etichetta: Milano Sacco
     breve: 97262
     sezione: Ospedali Italiani
+    numeri:
+    - '97262'
   - id: nb-mirano
     etichetta: Mirano
     breve: 97244
     sezione: Ospedali Italiani
+    numeri:
+    - '97244'
   - id: nb-modena
     etichetta: Modena
     breve: 97250
     sezione: Ospedali Italiani
+    numeri:
+    - '97250'
   - id: nb-monfalcone
     etichetta: Monfalcone
     breve: 97390
     sezione: Ospedali Italiani
+    numeri:
+    - '97390'
   - id: nb-monselice
     etichetta: Monselice
     breve: 97245
     sezione: Ospedali Italiani
+    numeri:
+    - '97245'
   - id: nb-montagnana
     etichetta: Montagnana
     breve: 97246
     sezione: Ospedali Italiani
+    numeri:
+    - '97246'
   - id: nb-montebelluna
     etichetta: Montebelluna
     breve: 97247
     sezione: Ospedali Italiani
+    numeri:
+    - '97247'
   - id: nb-montecchio
     etichetta: Montecchio Maggiore
     breve: 97248
     sezione: Ospedali Italiani
+    numeri:
+    - '97248'
   - id: nb-monza
     etichetta: Monza
     breve: 97249
     sezione: Ospedali Italiani
+    numeri:
+    - '97249'
   - id: nb-motta
     etichetta: Motta di Livenza
     breve: 97251
     sezione: Ospedali Italiani
+    numeri:
+    - '97251'
   - id: nb-na-ascalesi
     etichetta: Napoli Ascalesi
     breve: 97279
     sezione: Ospedali Italiani
+    numeri:
+    - '97279'
   - id: nb-na-cardarelli
     etichetta: Napoli Cardarelli
     breve: 97280
     sezione: Ospedali Italiani
+    numeri:
+    - '97280'
   - id: nb-na-cotugno
     etichetta: Napoli Cotugno
     breve: 97281
     sezione: Ospedali Italiani
+    numeri:
+    - '97281'
   - id: nb-na-depascale
     etichetta: Napoli De Pascale
     breve: 97282
     sezione: Ospedali Italiani
+    numeri:
+    - '97282'
   - id: nb-na-monaldi
     etichetta: Napoli Monaldi
     breve: 97283
     sezione: Ospedali Italiani
+    numeri:
+    - '97283'
   - id: nb-na-policlinico
     etichetta: Napoli Policlinico
     breve: 97278
     sezione: Ospedali Italiani
+    numeri:
+    - '97278'
   - id: nb-na-sbono
     etichetta: Napoli S. Bono Bambini
     breve: 97284
     sezione: Ospedali Italiani
+    numeri:
+    - '97284'
   - id: nb-na-scamillo
     etichetta: Napoli S. Camillo
     breve: 97285
     sezione: Ospedali Italiani
+    numeri:
+    - '97285'
   - id: nb-na-spaolo
     etichetta: Napoli S. Paolo Pediatrico
     breve: 97286
     sezione: Ospedali Italiani
+    numeri:
+    - '97286'
   - id: nb-negrar
     etichetta: Negrar
     breve: 97617
     sezione: Ospedali Italiani
+    numeri:
+    - '97617'
   - id: nb-noale
     etichetta: Noale
     breve: 97287
     sezione: Ospedali Italiani
+    numeri:
+    - '97287'
   - id: nb-novara
     etichetta: Novara
     breve: 97391
     sezione: Ospedali Italiani
+    numeri:
+    - '97391'
   - id: nb-noventa
     etichetta: Noventa Vicentina
     breve: 97288
     sezione: Ospedali Italiani
+    numeri:
+    - '97288'
   - id: nb-oderzo
     etichetta: Oderzo
     breve: 97289
     sezione: Ospedali Italiani
+    numeri:
+    - '97289'
   - id: nb-palermo
     etichetta: Palermo
     breve: 97293
     sezione: Ospedali Italiani
+    numeri:
+    - '97293'
   - id: nb-pa-policlinico
     etichetta: Palermo Policlinico
     breve: 97295
     sezione: Ospedali Italiani
+    numeri:
+    - '97293'
   - id: nb-palmanova
     etichetta: Palmanova
     breve: 97290
     sezione: Ospedali Italiani
+    numeri:
+    - '97290'
   - id: nb-parma
     etichetta: Parma Riuniti
     breve: 97296
     sezione: Ospedali Italiani
+    numeri:
+    - '97296'
   - id: nb-pavia-smatteo
     etichetta: Pavia S. Matteo
     breve: 97297
     sezione: Ospedali Italiani
+    numeri:
+    - '97297'
   - id: nb-perugia
     etichetta: Perugia
     breve: 97298
     sezione: Ospedali Italiani
+    numeri:
+    - '97298'
   - id: nb-pesaro
     etichetta: Pesaro
     breve: 97375
     sezione: Ospedali Italiani
+    numeri:
+    - '97375'
   - id: nb-pescara
     etichetta: Pescara
     breve: 97292
     sezione: Ospedali Italiani
+    numeri:
+    - '97292'
   - id: nb-piacenza
     etichetta: Piacenza
     breve: 97299
     sezione: Ospedali Italiani
+    numeri:
+    - '97299'
   - id: nb-pieve-cadore
     etichetta: Pieve di Cadore
     breve: 97300
     sezione: Ospedali Italiani
+    numeri:
+    - '97300'
   - id: nb-pieve-soligo
     etichetta: Pieve di Soligo ULSS
     breve: 97301
     sezione: Ospedali Italiani
+    numeri:
+    - '97301'
   - id: nb-piove
     etichetta: Piove di Sacco
     breve: 97302
     sezione: Ospedali Italiani
+    numeri:
+    - '97302'
   - id: nb-pisa
     etichetta: Pisa
     breve: 97303
     sezione: Ospedali Italiani
+    numeri:
+    - '97303'
   - id: nb-pordenone
     etichetta: Pordenone
     breve: 97304
     sezione: Ospedali Italiani
+    numeri:
+    - '97304'
   - id: nb-portogruaro
     etichetta: Portogruaro
     breve: 97305
     sezione: Ospedali Italiani
+    numeri:
+    - '97305'
   - id: nb-portoviro
     etichetta: Porto Viro Casa di Cura
     breve: 97319
     sezione: Ospedali Italiani
+    numeri:
+    - '97319'
   - id: nb-ravenna
     etichetta: Ravenna
     breve: 97307
     sezione: Ospedali Italiani
+    numeri:
+    - '97307'
   - id: nb-rc
     etichetta: Reggio Calabria
     breve: 97308
     sezione: Ospedali Italiani
+    numeri:
+    - '97308'
   - id: nb-re
     etichetta: Reggio Emilia
     breve: 97309
     sezione: Ospedali Italiani
+    numeri:
+    - '97309'
   - id: nb-rieti
     etichetta: Rieti
     breve: 97310
     sezione: Ospedali Italiani
+    numeri:
+    - '97310'
   - id: nb-riva-garda
     etichetta: Riva del Garda
     breve: 97392
     sezione: Ospedali Italiani
+    numeri:
+    - '97392'
   - id: nb-roma-bg
     etichetta: Roma Bambin Gesù
     breve: 97311
     sezione: Ospedali Italiani
+    numeri:
+    - '97311'
   - id: nb-roma-ant
     etichetta: Roma Antiveleni
     breve: 97325
     sezione: Ospedali Italiani
+    numeri:
+    - '97325'
   - id: nb-roma-fbf
     etichetta: Roma Fatebenefratelli
     breve: 97312
     sezione: Ospedali Italiani
+    numeri:
+    - '97312'
   - id: nb-roma-forlanini
     etichetta: Roma Forlanini
     breve: 97313
     sezione: Ospedali Italiani
+    numeri:
+    - '97313'
   - id: nb-roma-gemelli
     etichetta: Roma Policlinico A. Gemelli
     breve: 97329
     sezione: Ospedali Italiani
+    numeri:
+    - '97329'
   - id: nb-roma-umberto
     etichetta: Roma Policlinico Umberto I
     breve: 97324
     sezione: Ospedali Italiani
+    numeri:
+    - '97324'
   - id: nb-roma-relena
     etichetta: Roma Regina Elena
     breve: 97314
     sezione: Ospedali Italiani
+    numeri:
+    - '97314'
   - id: nb-roma-relena-tum
     etichetta: Roma Regina Elena Tumori
     breve: 97328
     sezione: Ospedali Italiani
+    numeri:
+    - '97314'
   - id: nb-roma-rmargherita
     etichetta: Roma Regina Margherita
     breve: 97315
     sezione: Ospedali Italiani
+    numeri:
+    - '97315'
   - id: nb-roma-scamillo
     etichetta: Roma S. Camillo
     breve: 97316
     sezione: Ospedali Italiani
+    numeri:
+    - '97316'
   - id: nb-roma-seugenio
     etichetta: Roma S. Eugenio
     breve: 97317
     sezione: Ospedali Italiani
+    numeri:
+    - '97317'
   - id: nb-roma-sfilippo
     etichetta: Roma S. Filippo Neri
     breve: 97318
     sezione: Ospedali Italiani
+    numeri:
+    - '97318'
   - id: nb-roma-sgiacomo
     etichetta: Roma S. Giacomo
     breve: 97320
     sezione: Ospedali Italiani
+    numeri:
+    - '97320'
   - id: nb-roma-sgiovanni
     etichetta: Roma S. Giovanni
     breve: 97321
     sezione: Ospedali Italiani
+    numeri:
+    - '97321'
   - id: nb-roma-sspirito
     etichetta: Roma S. Spirito
     breve: 97322
     sezione: Ospedali Italiani
+    numeri:
+    - '97322'
   - id: nb-roma-spallanzani
     etichetta: Roma Spallanzani
     breve: 97323
     sezione: Ospedali Italiani
+    numeri:
+    - '97323'
   - id: nb-roma-sapienza
     etichetta: Roma La Sapienza
     breve: 97533
     sezione: Ospedali Italiani
+    numeri:
+    - '97533'
   - id: nb-rovereto
     etichetta: Rovereto
     breve: 97393
     sezione: Ospedali Italiani
+    numeri:
+    - '97393'
   - id: nb-rovigo
     etichetta: Rovigo
     breve: 97330
     sezione: Ospedali Italiani
+    numeri:
+    - '97330'
   - id: nb-sboniface
     etichetta: S. Bonifacio
     breve: 97340
     sezione: Ospedali Italiani
+    numeri:
+    - '97340'
   - id: nb-scandido
     etichetta: S. Candido
     breve: 97335
     sezione: Ospedali Italiani
+    numeri:
+    - '97335'
   - id: nb-sdaniele
     etichetta: S. Daniele del Friuli
     breve: 97117
     sezione: Ospedali Italiani
+    numeri:
+    - '97117'
   - id: nb-sdona
     etichetta: San Donà di Piave
     breve: 97336
     sezione: Ospedali Italiani
+    numeri:
+    - '97336'
   - id: nb-sdona-cdc
     etichetta: San Donà di Piave Casa di Cura
     breve: 97294
     sezione: Ospedali Italiani
+    numeri:
+    - '97336'
   - id: nb-svito
     etichetta: S. Vito al Tagliamento
     breve: 97337
     sezione: Ospedali Italiani
+    numeri:
+    - '97337'
   - id: nb-sacile
     etichetta: Sacile
     breve: 97331
     sezione: Ospedali Italiani
+    numeri:
+    - '97331'
   - id: nb-sandrigo
     etichetta: Sandrigo
     breve: 97396
     sezione: Ospedali Italiani
+    numeri:
+    - '97396'
   - id: nb-sassari
     etichetta: Sassari
     breve: 97332
     sezione: Ospedali Italiani
+    numeri:
+    - '97332'
   - id: nb-sassari-pol
     etichetta: Sassari Policlinico
     breve: 97333
     sezione: Ospedali Italiani
+    numeri:
+    - '97332'
   - id: nb-schiavonia
     etichetta: Schiavonia
     breve: 97334
     sezione: Ospedali Italiani
+    numeri:
+    - '97334'
   - id: nb-schio
     etichetta: Schio
     breve: 97338
     sezione: Ospedali Italiani
+    numeri:
+    - '97338'
   - id: nb-siena
     etichetta: Siena
     breve: 97339
     sezione: Ospedali Italiani
+    numeri:
+    - '97339'
   - id: nb-silandro
     etichetta: Silandro
     breve: 97365
     sezione: Ospedali Italiani
+    numeri:
+    - '97365'
   - id: nb-soave
     etichetta: Soave
     breve: 97340
     sezione: Ospedali Italiani
+    numeri:
+    - '97340'
   - id: nb-sondrio
     etichetta: Sondrio
     breve: 97341
     sezione: Ospedali Italiani
+    numeri:
+    - '97341'
   - id: nb-taranto
     etichetta: Taranto
     breve: 97342
     sezione: Ospedali Italiani
+    numeri:
+    - '97342'
   - id: nb-thiene
     etichetta: Thiene
     breve: 97344
     sezione: Ospedali Italiani
+    numeri:
+    - '97344'
   - id: nb-tolmezzo
     etichetta: Tolmezzo
     breve: 97343
     sezione: Ospedali Italiani
+    numeri:
+    - '97343'
   - id: nb-to-antiveleni
     etichetta: Torino Antiveleni
     breve: 97349
     sezione: Ospedali Italiani
+    numeri:
+    - '97349'
   - id: nb-to-gonzaga
     etichetta: Torino Gonzaga
     breve: 97347
     sezione: Ospedali Italiani
+    numeri:
+    - '97347'
   - id: nb-to-gradenigo
     etichetta: Torino Gradenigo
     breve: 97346
     sezione: Ospedali Italiani
+    numeri:
+    - '97346'
   - id: nb-to-molinette
     etichetta: Torino Molinette
     breve: 97345
     sezione: Ospedali Italiani
+    numeri:
+    - '97345'
   - id: nb-to-rmargherita
     etichetta: Torino Reg. Margherita Ped.
     breve: 97370
     sezione: Ospedali Italiani
+    numeri:
+    - '97370'
   - id: nb-to-umberto
     etichetta: Torino Umberto I
     breve: 97348
     sezione: Ospedali Italiani
+    numeri:
+    - '97348'
   - id: nb-trecenta
     etichetta: Trecenta
     breve: 97350
     sezione: Ospedali Italiani
+    numeri:
+    - '97350'
   - id: nb-trento
     etichetta: Trento S. Chiara
     breve: 97351
     sezione: Ospedali Italiani
+    numeri:
+    - '97351'
   - id: nb-treponti-tigli
     etichetta: Treponti Parco dei Tigli
     breve: 97397
     sezione: Ospedali Italiani
+    numeri:
+    - '97397'
   - id: nb-treponti-marani
     etichetta: Treponti Villa Marani
     breve: 97414
     sezione: Ospedali Italiani
+    numeri:
+    - '97414'
   - id: nb-treviso
     etichetta: Treviso S. Camillo
     breve: 97261
     sezione: Ospedali Italiani
+    numeri:
+    - '97261'
   - id: nb-trieste
     etichetta: Trieste
     breve: 97354
     sezione: Ospedali Italiani
+    numeri:
+    - '97354'
   - id: nb-trieste-burlo
     etichetta: Trieste Burlo Garofolo
     breve: 97355
     sezione: Ospedali Italiani
+    numeri:
+    - '97354'
   - id: nb-udine
     etichetta: Udine
     breve: 97356
     sezione: Ospedali Italiani
+    numeri:
+    - '97356'
   - id: nb-udine-gerv
     etichetta: Udine Gervasutta
     breve: 97394
     sezione: Ospedali Italiani
+    numeri:
+    - '97356'
   - id: nb-udine-pol
     etichetta: Udine Policlinico
     breve: 97357
     sezione: Ospedali Italiani
+    numeri:
+    - '97356'
   - id: nb-urbino
     etichetta: Urbino
     breve: 97358
     sezione: Ospedali Italiani
+    numeri:
+    - '97358'
   - id: nb-valdagno
     etichetta: Valdagno
     breve: 97359
     sezione: Ospedali Italiani
+    numeri:
+    - '97359'
   - id: nb-valdobbiadene
     etichetta: Valdobbiadene
     breve: 97360
     sezione: Ospedali Italiani
+    numeri:
+    - '97360'
   - id: nb-varese-circolo
     etichetta: Varese del Circolo
     breve: 97405
     sezione: Ospedali Italiani
+    numeri:
+    - '97405'
   - id: nb-varese-ponte
     etichetta: Varese del Ponte
     breve: 97361
     sezione: Ospedali Italiani
+    numeri:
+    - '97361'
   - id: nb-ve-scamillo
     etichetta: Venezia S. Camillo Elioterap.
     breve: 97362
     sezione: Ospedali Italiani
+    numeri:
+    - '97362'
   - id: nb-ve-fbf
     etichetta: Venezia Fatebenefratelli
     breve: 97366
     sezione: Ospedali Italiani
+    numeri:
+    - '97366'
   - id: nb-ve-riuniti
     etichetta: Venezia Riuniti
     breve: 97374
     sezione: Ospedali Italiani
+    numeri:
+    - '97374'
   - id: nb-vr
     etichetta: Verona
     breve: 97371
     sezione: Ospedali Italiani
+    numeri:
+    - '97371'
   - id: nb-vr-sgiuliana
     etichetta: Verona C. di Cura S. Giuliana
     breve: 97264
     sezione: Ospedali Italiani
+    numeri:
+    - '97371'
   - id: nb-vi-civile
     etichetta: Vicenza Civile
     breve: 97372
     sezione: Ospedali Italiani
+    numeri:
+    - '97372'
   - id: nb-vi-americano
     etichetta: Vicenza Americano
     breve: 97373
     sezione: Ospedali Italiani
+    numeri:
+    - '97373'
   - id: nb-villafranca
     etichetta: Villafranca Veronese
     breve: 97398
     sezione: Ospedali Italiani
+    numeri:
+    - '97398'
   - id: nb-vittorio-veneto
     etichetta: Vittorio Veneto
     breve: 97377
     sezione: Ospedali Italiani
+    numeri:
+    - '97377'
   - id: nb-zevio
     etichetta: Zevio
     breve: 97399
     sezione: Ospedali Italiani
+    numeri:
+    - '97399'
   sezioni:
   - nome: Ospedali Italiani
     tipo: altro
