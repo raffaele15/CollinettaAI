@@ -802,6 +802,9 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sede-bucket-loc{font-size:13px;color:var(--ink)}
 .sede-bucket-altro{color:var(--ink-muted);font-style:italic}
 .sede-bucket-contatti{padding:0 4px}
+.sede-subbucket{margin:8px 0 4px;padding:0 0 0 12px;border-left:2px solid var(--rule-soft)}
+.sede-subbucket-header{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;padding:6px 0 4px;margin-top:4px}
+.sede-subbucket-contatti{padding:0}
 .sede-fonte:hover{opacity:1;text-decoration:underline}
 
 @media print{body{background:white;color:black}header.topbar,aside.sidebar,.page-actions,.editor-head-actions{display:none!important}main.content{padding:0;max-width:100%}.procedura-body blockquote{background:#f4f4f4}a{color:black}details.scheda-section{border:none}details.scheda-section[open] .scheda-summary::after{display:none}.scheda-summary{cursor:default}}
@@ -2127,7 +2130,7 @@ async function buildIndex() {
   try {
     const saved = JSON.parse(sessionStorage.getItem('numeri_show_ext') || '{}');
     state.showExtendedNumeri = { osa: !!saved.osa, iov: !!saved.iov };
-    // Trigger background loads (non-blocking)
+    // Load on-demand quando l'utente preme i chip OSA/IOV
     if (state.showExtendedNumeri.osa && state.numeriExtendedAvailable.osa) {
       loadExtendedNumeri('osa').catch(e => console.warn('OSA load failed', e));
     }
@@ -2148,6 +2151,29 @@ async function buildIndex() {
 }
 
 // ---- Extended numeri (OSA / IOV) lazy loading ----------------------------
+
+// Entry-point per i chip OSA/IOV nella rubrica: carica on-demand + naviga
+async function openExtendedSource(source) {
+  if (source !== 'osa' && source !== 'iov') return;
+  if (!state.numeriExtendedAvailable || !state.numeriExtendedAvailable[source]) {
+    toast(`File numeri-${source}.yml non disponibile nel repo`, 'error');
+    return;
+  }
+  // Flag di visualizzazione persistente (usato anche dalla search)
+  if (!state.showExtendedNumeri) state.showExtendedNumeri = { osa: false, iov: false };
+  state.showExtendedNumeri[source] = true;
+  try { sessionStorage.setItem('numeri_show_ext', JSON.stringify(state.showExtendedNumeri)); } catch {}
+  // Se non caricato, caricalo ora (blocking con piccolo feedback)
+  if (!state.index?.numeriExtended?.[source]) {
+    try {
+      await loadExtendedNumeri(source);
+    } catch (e) {
+      toast(`Errore nel caricamento ${source.toUpperCase()}: ${e.message}`, 'error');
+      return;
+    }
+  }
+  navigate('numeri', { filter: source });
+}
 
 async function loadExtendedNumeri(source) {
   // source = 'osa' | 'iov'
@@ -2254,7 +2280,7 @@ function rebuildSearchIndex() {
     let sedeBuckets = [];
     try {
       if (typeof groupContattiBySede === 'function') {
-        sedeBuckets = groupContattiBySede(g.contatti || [], g.sedi_operative, g.sede_operativa);
+        sedeBuckets = groupContattiBySede(g.contatti || [], g.sezioni);
       }
     } catch {}
     const contactToSedeTipo = new Map();
@@ -2283,7 +2309,7 @@ function rebuildSearchIndex() {
     };
     (g.contatti || []).forEach(c => {
       const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
-      const sedi = g.sedi_operative && g.sedi_operative.length ? g.sedi_operative : (g.sede_operativa ? [g.sede_operativa] : []);
+      const sedi = g.sezioni || [];
       const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');
       const kind = (typeof classifyContatto === 'function') ? classifyContatto(c).kind : '';
       const kindAliases = {
@@ -4391,7 +4417,7 @@ function renderNumeri(filter) {
     const groupSedeTipoMap = new Map();
     filteredGruppi.forEach(g => {
       try {
-        const buckets = groupContattiBySede(g.contatti || [], g.sedi_operative, g.sede_operativa);
+        const buckets = groupContattiBySede(g.contatti || [], g.sezioni);
         const m = new Map();
         buckets.forEach(b => {
           const t = b.sede && b.sede.tipo ? b.sede.tipo : '';
@@ -4412,7 +4438,7 @@ function renderNumeri(filter) {
     };
     
     // Testo del gruppo (per matchGroupOnly): solo nome/email/alias.
-    // Le sedi_operative NON sono incluse qui perché riguardano i singoli contatti:
+    // Le sezioni NON sono incluse qui perché riguardano i singoli contatti:
     // cercare "ucic" deve tornare i contatti UCIC, non tutti quelli della UOC che ha UCIC.
     const groupText = (g) => {
       return [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
@@ -4422,7 +4448,7 @@ function renderNumeri(filter) {
     // "ucic" matcha nel contatto (sezione).
     const groupContext = (g) => {
       const base = groupText(g);
-      const sedi = (g.sedi_operative || []).map(s =>
+      const sedi = (g.sezioni || []).map(s =>
         `${s.tipo || ''} ${s.edificio || ''} ${s.piano || ''} ${s.area || ''}`
       ).join(' ');
       return base + ' ' + sedi.toLowerCase();
@@ -4539,8 +4565,8 @@ function renderNumeri(filter) {
         // Ordino per nome senza prefisso
         const sortedList = [...visibleList].sort((a,b) => stripPrefix(a.nome).localeCompare(stripPrefix(b.nome), 'it'));
         // Alfabeto cliccabile (senza chip preferiti)
-        const osaAvailable = allGroups.some(g => g._source === 'osa');
-        const iovAvailable = allGroups.some(g => g._source === 'iov');
+        const osaAvailable = !!(state.numeriExtendedAvailable && state.numeriExtendedAvailable.osa);
+        const iovAvailable = !!(state.numeriExtendedAvailable && state.numeriExtendedAvailable.iov);
         const alphabetBar = `
           <div class="rubrica-alphabet-bar">
             ${allLetters.map(L => {
@@ -4550,12 +4576,11 @@ function renderNumeri(filter) {
                 ${has ? `onclick="filterRubricaByInitial('${L}')"` : 'disabled'}
                 title="${has ? `Mostra UOC che iniziano per ${L}` : 'Nessuna UOC'}">${L}</button>`;
             }).join('')}
-            ${(src === 'aopd' && osaAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="navigate('numeri', {filter:'osa'})" title="Ospedale Sant'Antonio">OSA</button>` : ''}
-            ${(src === 'aopd' && iovAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="navigate('numeri', {filter:'iov'})" title="Istituto Oncologico Veneto">IOV</button>` : ''}
+            ${(src === 'aopd' && osaAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="openExtendedSource('osa')" title="Ospedale Sant'Antonio">OSA</button>` : ''}
+            ${(src === 'aopd' && iovAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="openExtendedSource('iov')" title="Istituto Oncologico Veneto">IOV</button>` : ''}
           </div>`;
-        // Sezione Preferiti (solo per aopd, sopra la lista UOC): aperta di default se ci sono preferiti
-        const hasPinned = list.some(g => isPinned('gruppo', g.id) || (g.contatti || []).some(c => isPinned('contatto', c.id)));
-        const pinnedSection = (src === 'aopd' && hasPinned && !activeInitial) ? `
+        // Sezione Preferiti (solo per aopd, sopra la lista UOC): sempre visibile in modalità default
+        const pinnedSection = (src === 'aopd' && !activeInitial) ? `
           <details class="rubrica-pinned-section" open>
             <summary class="rubrica-pinned-summary">
               <span class="rubrica-pinned-star">★</span>
@@ -4609,7 +4634,7 @@ function renderNumeri(filter) {
             ${g.email && filter !== 'guardia' ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
             ${(function(){
               const sorted = sortContattiForDisplay(g.contatti || []);
-              const buckets = groupContattiBySede(sorted, g.sedi_operative, g.sede_operativa);
+              const buckets = groupContattiBySede(sorted, g.sezioni);
               // Se c'è una sola bucket senza sede (UOC senza sedi strutturate), render flat senza header
               if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
                 return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify)).join('');
@@ -4630,29 +4655,41 @@ function renderNumeri(filter) {
                 const isOpen = autoExpandAll || expanded.has(b.sedeKey);
                 const headerInner = b.sede
                   ? renderSedeBucketHeader(b.sede)
-                  : `<span class="sede-bucket-tipo">Altro</span>`;
+                  : (b.customLabel
+                    ? renderSedeBucketHeader(null, b.customLabel)
+                    : `<span class="sede-bucket-tipo">Altro</span>`);
                 return `<div class="sede-bucket" data-bucket="${escapeHtml(b.sedeKey)}">
                   <button class="sede-bucket-toggle ${isOpen ? 'open' : ''}" onclick="toggleSedeBucket('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')">
                     <span class="sede-bucket-caret">${isOpen ? '▾' : '▸'}</span>
                     ${headerInner}
                   </button>
-                  ${isOpen ? `<div class="sede-bucket-contatti">${b.contatti.map(c => {
-                    // Nascondi il luogo del contatto se sostanzialmente uguale al luogo del bucket sede
-                    const cLuogoN = normalize(c.luogo || '');
-                    let hide = false;
-                    if (sedeLocN && cLuogoN) {
-                      hide = cLuogoN === sedeLocN
-                        || cLuogoN.includes(sedeLocN)
-                        || sedeLocN.includes(cLuogoN);
-                      // Confronto token: tutti i token del luogo contatto sono nel sedeLoc?
-                      if (!hide) {
-                        const cToks = cLuogoN.split(' ').filter(Boolean);
-                        const sToks = new Set(sedeLocN.split(' ').filter(Boolean));
-                        hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
+                  ${isOpen ? `<div class="sede-bucket-contatti">${(function(){
+                    // Helper: renderizza un singolo contatto nel bucket
+                    const renderC = (c) => {
+                      const cLuogoN = normalize(c.luogo || '');
+                      let hide = false;
+                      if (sedeLocN && cLuogoN) {
+                        hide = cLuogoN === sedeLocN || cLuogoN.includes(sedeLocN) || sedeLocN.includes(cLuogoN);
+                        if (!hide) {
+                          const cToks = cLuogoN.split(' ').filter(Boolean);
+                          const sToks = new Set(sedeLocN.split(' ').filter(Boolean));
+                          hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
+                        }
                       }
+                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide });
+                    };
+                    // Se il bucket ha sottosezioni: renderizzo ogni subBucket come sezione nidificata
+                    if (b.subBuckets && b.subBuckets.length) {
+                      let html = b.contatti.map(renderC).join(''); // contatti direttamente nel bucket principale (senza sottosezione)
+                      b.subBuckets.forEach(sb => {
+                        if (!sb.contatti.length) return;
+                        const subName = sb.sede?.nome || '—';
+                        html += `<div class="sede-subbucket"><div class="sede-subbucket-header">${escapeHtml(subName)}</div><div class="sede-subbucket-contatti">${sb.contatti.map(renderC).join('')}</div></div>`;
+                      });
+                      return html;
                     }
-                    return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide });
-                  }).join('')}</div>` : ''}
+                    return b.contatti.map(renderC).join('');
+                  })()}</div>` : ''}
                 </div>`;
               }).join('');
             })()}
@@ -4918,7 +4955,7 @@ function renderUbicazioneBadge(ub) {
 }
 
 function renderSedeOperativa(sede, sediArray) {
-  // Supporta sia `sede_operativa` (singola, legacy) sia `sedi_operative` (array)
+  // Legge g.sezioni (array di {nome, tipo, edificio, piano, area})
   const sedi = sediArray && sediArray.length ? sediArray : (sede ? [sede] : []);
   if (!sedi.length) return '';
   const tipoLabels = {
@@ -5026,15 +5063,15 @@ function sortContattiForDisplay(contatti) {
   return withClass;
 }
 
-// Raggruppa i contatti per sede operativa. Mappa ogni contatto a una sede_operativa
-// del gruppo usando la sezione del contatto. I contatti senza mapping vanno in "Altro".
-// Ritorna array di buckets: [{ sede, sedeKey, label, contatti }]
-function groupContattiBySede(contatti, sedi_operative, sede_operativa) {
-  const sedi = (sedi_operative && sedi_operative.length)
-    ? sedi_operative
-    : (sede_operativa ? [sede_operativa] : []);
+// Raggruppa i contatti per sezione della UOC.
+// Legge g.sezioni (array di {nome, tipo, edificio, piano, area, sottosezioni?}) — nuovo formato.
+// Se una sezione ha `sottosezioni`, i contatti con `c.sottosezione` sono raggruppati in sub-bucket.
+// Matching a 3 livelli: (1) nome esatto, (2) regex su tipo, (3) bucket dinamico.
+// Ritorna array di buckets: [{ sede, sedeKey, tipo, customLabel, contatti, subBuckets? }]
+function groupContattiBySede(contatti, sezioni) {
+  const sedi = sezioni || [];
   if (!sedi.length) {
-    // Nessuna sede operativa strutturata: unico bucket "Tutti"
+    // Nessuna sezione: unico bucket "Tutti"
     return [{ sede: null, sedeKey: '_all', label: null, contatti }];
   }
   // Mapping tipo sede → regex su sezione contatto
@@ -5045,37 +5082,80 @@ function groupContattiBySede(contatti, sedi_operative, sede_operativa) {
     { tipo: 'elettrofisiologia', re: /elettrofisiolog/i },
     { tipo: 'riabilitazione',   re: /riabilit/i },
     { tipo: 'terapia_intensiva', re: /terapia intensiva|rianimaz/i },
-    { tipo: 'sub_intensiva',    re: /sub.?intensiva/i },
+    { tipo: 'semi_intensiva',   re: /semi.?intensiva|sub.?intensiva/i },
     { tipo: 'day_hospital',     re: /day hospital|\bdh\b/i },
     { tipo: 'sala_operatoria',  re: /sala operator|sale operator|\bso\b/i },
     { tipo: 'degenze',          re: /degenz|reparto|front office|bancone|area infermier/i },
     { tipo: 'studi_medici',     re: /stud(io|i) medic/i },
     { tipo: 'ambulatori',       re: /ambulator|\bamb\./i },
     { tipo: 'laboratorio',      re: /laborator/i },
-    { tipo: 'segreteria',       re: /segreteria|segr\./i },
+    { tipo: 'segreteria_direzione', re: /segreteria|direzione|segr\./i },
     { tipo: 'portineria',       re: /portineria/i },
     { tipo: 'libera_professione', re: /libera profession/i },
   ];
-  // Crea bucket per ogni sede operativa (nello stesso ordine delle sedi)
-  const buckets = sedi.map((s, idx) => ({
-    sede: s, sedeKey: `sede_${idx}`, tipo: s.tipo,
-    contatti: []
-  }));
+  // Crea bucket per ogni sezione. Se ha sottosezioni, pre-inizializzo i sub-bucket.
+  const buckets = sedi.map((s, idx) => {
+    const bucket = {
+      sede: s, sedeKey: `sede_${idx}`, tipo: s.tipo,
+      contatti: []
+    };
+    if (s.sottosezioni && s.sottosezioni.length) {
+      bucket.subBuckets = s.sottosezioni.map((ss, sidx) => ({
+        sede: ss, sedeKey: `sede_${idx}_sub_${sidx}`, tipo: ss.tipo,
+        contatti: []
+      }));
+    }
+    return bucket;
+  });
   const altro = { sede: null, sedeKey: '_altro', tipo: null, contatti: [] };
+  // Bucket dinamici: tipo_sezione → bucket (creati al volo quando una sezione non trova sede corrispondente)
+  const dynamicBuckets = new Map();
   // Assegna ogni contatto al bucket migliore
   contatti.forEach(c => {
-    const sez = (c.sezione || '').toLowerCase();
+    const sezNome = (c.sezione || '').trim();
+    const sezLower = sezNome.toLowerCase();
+    const sottoNome = (c.sottosezione || '').trim();
+    const sottoLower = sottoNome.toLowerCase();
     const et  = (c.etichetta || '').toLowerCase();
-    const text = sez + ' ' + et;
-    // Trova il tipo più specifico che matcha
+    // 1) Match per NOME esatto di sezione (nuovo formato)
+    if (sezLower) {
+      const nameMatch = buckets.find(b => (b.sede?.nome || '').toLowerCase() === sezLower);
+      if (nameMatch) {
+        // Se c'è sottosezione e il bucket ha subBuckets, cerco il match
+        if (sottoLower && nameMatch.subBuckets) {
+          const subMatch = nameMatch.subBuckets.find(sb => (sb.sede?.nome || '').toLowerCase() === sottoLower);
+          if (subMatch) { subMatch.contatti.push(c); return; }
+        }
+        nameMatch.contatti.push(c);
+        return;
+      }
+    }
+    const text = sezLower + ' ' + et;
+    // 2) Fallback: trova il tipo più specifico che matcha via regex
     let matchedTipo = null;
     for (const m of sedeMatchers) {
       if (m.re.test(text)) { matchedTipo = m.tipo; break; }
     }
-    // Cerca un bucket con quel tipo
     const bucket = matchedTipo ? buckets.find(b => b.tipo === matchedTipo) : null;
-    if (bucket) bucket.contatti.push(c);
-    else altro.contatti.push(c);
+    if (bucket) { bucket.contatti.push(c); return; }
+    // 3) Fallback: se il contatto ha una sezione, crea bucket dinamico
+    if (sezNome) {
+      const dynKey = `dyn_${sezLower.replace(/\s+/g,'_')}`;
+      let dyn = dynamicBuckets.get(dynKey);
+      if (!dyn) {
+        dyn = {
+          sede: null,
+          sedeKey: dynKey,
+          tipo: matchedTipo || dynKey,
+          contatti: [],
+          customLabel: sezNome
+        };
+        dynamicBuckets.set(dynKey, dyn);
+      }
+      dyn.contatti.push(c);
+      return;
+    }
+    altro.contatti.push(c);
   });
   // Ritorno solo bucket non vuoti, ordinati per priorità clinica
   // (sedi cliniche/operative prima, poi supporto, poi amministrativo)
@@ -5095,28 +5175,45 @@ function groupContattiBySede(contatti, sedi_operative, sede_operativa) {
   const result = buckets
     .filter(b => b.contatti.length)
     .sort((a, b) => (tipoPriority[a.tipo] || 30) - (tipoPriority[b.tipo] || 30));
+  // Aggiungo i bucket dinamici (basati su sezione contatto) ordinati per priorità/alfabetico
+  const dynList = [...dynamicBuckets.values()].sort((a, b) => {
+    const pa = tipoPriority[a.tipo] || 30;
+    const pb = tipoPriority[b.tipo] || 30;
+    if (pa !== pb) return pa - pb;
+    return (a.customLabel || '').localeCompare(b.customLabel || '', 'it');
+  });
+  dynList.forEach(d => result.push(d));
   if (altro.contatti.length) result.push(altro);
   return result;
 }
 
 // Header per bucket sede operativa (rubrica raggruppata)
-function renderSedeBucketHeader(s, count) {
+function renderSedeBucketHeader(s, customLabel) {
   const tipoLabels = {
     degenze: 'Degenze', sala_operatoria: 'Sala operatoria', diagnostica: 'Esami',
     ambulatori: 'Ambulatori', day_hospital: 'Day Hospital', segreteria: 'Segreteria',
+    segreteria_direzione: 'Segreteria e Direzione',
     portineria: 'Portineria', ucic: 'UCIC', utic: 'UTIC', emodinamica: 'Emodinamica',
     elettrofisiologia: 'Elettrofisiologia', riabilitazione: 'Riabilitazione',
     laboratorio: 'Laboratorio', terapia_intensiva: 'Terapia Intensiva',
     sub_intensiva: 'Sub Intensiva', studi_medici: 'Studi Medici',
     ricoveri: 'Ricoveri', libera_professione: 'Libera Professione'
   };
-  const tipo = tipoLabels[s.tipo] || (s.tipo || '').replace(/_/g, ' ');
+  // Se è un bucket dinamico (nessuna sede ma customLabel presente): mostra solo la sezione
+  if (!s && customLabel) {
+    return `<span class="sede-bucket-tipo">${escapeHtml(customLabel)}</span>`;
+  }
+  if (!s) {
+    return `<span class="sede-bucket-tipo">${escapeHtml(customLabel || '—')}</span>`;
+  }
+  // Priorità al campo `nome` (nuovo formato), poi tipoLabels, poi tipo raw
+  const label = s.nome || tipoLabels[s.tipo] || (s.tipo || '').replace(/_/g, ' ');
   const parts = [];
   if (s.edificio) parts.push(escapeHtml(s.edificio));
   if (s.piano) parts.push(escapeHtml(s.piano));
   if (s.area) parts.push(escapeHtml(s.area));
   const loc = parts.join(' · ');
-  return `<span class="sede-bucket-tipo">${escapeHtml(tipo)}</span>
+  return `<span class="sede-bucket-tipo">${escapeHtml(label)}</span>
     ${loc ? `<span class="sede-bucket-loc">${loc}</span>` : ''}`;
 }
 
@@ -7266,6 +7363,28 @@ async function saveNumeriForSource(src, data) {
   await gh.putFile(path, content, file ? file.sha : null, `Aggiorna numeri-${src}.yml (by ${state.session.username})`);
 }
 
+// Aggiorna dinamicamente il campo sottosezione in base alla sezione scelta nel modale contatto
+function updateCESottosezione() {
+  const sezInput = document.getElementById('ce-sezione');
+  const wrap = document.getElementById('ce-sottosezione-wrap');
+  const list = document.getElementById('ce-sottosezione-list');
+  const input = document.getElementById('ce-sottosezione');
+  if (!sezInput || !wrap || !list) return;
+  const sezVal = (sezInput.value || '').trim().toLowerCase();
+  // Trova il gruppo dal modale (ricerco tramite l'id nel dataset — useremo il currente)
+  const gruppoId = wrap.dataset.gruppoId;
+  const grp = gruppoId ? state.index?.numeri?.gruppi?.find(x => x.id === gruppoId) : null;
+  const sezione = grp?.sezioni?.find(s => (s.nome || '').toLowerCase() === sezVal);
+  const subs = sezione?.sottosezioni || [];
+  if (subs.length) {
+    wrap.style.display = '';
+    list.innerHTML = subs.map(s => `<option value="${escapeHtml(s.nome)}">`).join('');
+  } else {
+    wrap.style.display = 'none';
+    if (input) input.value = '';
+  }
+}
+
 // Open the contact editor modal. mode = 'new' | 'edit'
 function openContattoEditor({ mode, gruppoId, contatto }) {
   const isNew = mode === 'new';
@@ -7302,12 +7421,41 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="field">
           <label>Sezione (ruolo)</label>
-          <input type="text" id="ce-sezione" value="${escapeHtml(c.sezione || '')}" placeholder="es. Studi Medici">
+          <input type="text" id="ce-sezione" value="${escapeHtml(c.sezione || '')}" list="ce-sezione-list" placeholder="es. Studi Medici" oninput="updateCESottosezione()">
+          <datalist id="ce-sezione-list">
+            ${(() => {
+              const std = ['Degenze','Studi Medici','Ambulatori','Segreteria e Direzione','Day Hospital','Laboratorio','Portineria','Coordinamento','Tecnici','Sala Operatoria','Terapia Intensiva','Semi Intensiva','UCIC','UTIC','Emodinamica','Elettrofisiologia','Riabilitazione','Libera Professione','Altro'];
+              const grp = state.index?.numeri?.gruppi?.find(x => x.id === gruppoId) || state.index?.numeriExtended?.osa?.gruppi?.find(x => x.id === gruppoId) || state.index?.numeriExtended?.iov?.gruppi?.find(x => x.id === gruppoId);
+              // Preferisco i nomi definiti in sezioni (se presenti)
+              const fromSezioni = grp?.sezioni ? grp.sezioni.map(s => s.nome).filter(Boolean) : [];
+              const fromContatti = grp ? [...new Set((grp.contatti || []).map(x => x.sezione).filter(Boolean))] : [];
+              const all = [...new Set([...fromSezioni, ...fromContatti, ...std])].sort((a,b) => a.localeCompare(b, 'it'));
+              return all.map(s => `<option value="${escapeHtml(s)}">`).join('');
+            })()}
+          </datalist>
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Scegli o digita una nuova sezione</div>
         </div>
         <div class="field">
           <label>Luogo (ubicazione)</label>
           <input type="text" id="ce-luogo" value="${escapeHtml(c.luogo || '')}" placeholder="es. Monoblocco 2° piano">
         </div>
+      </div>
+      <div class="field" id="ce-sottosezione-wrap" data-gruppo-id="${escapeHtml(gruppoId)}" style="${(() => {
+        // Mostra il campo sottosezione solo se la sezione scelta ha sottosezioni definite
+        const grp = state.index?.numeri?.gruppi?.find(x => x.id === gruppoId);
+        const sezione = grp?.sezioni?.find(s => (s.nome || '').toLowerCase() === (c.sezione || '').toLowerCase());
+        return sezione?.sottosezioni?.length ? '' : 'display:none;';
+      })()}">
+        <label>Sottosezione</label>
+        <input type="text" id="ce-sottosezione" value="${escapeHtml(c.sottosezione || '')}" list="ce-sottosezione-list" placeholder="es. Studi Medici">
+        <datalist id="ce-sottosezione-list">
+          ${(() => {
+            const grp = state.index?.numeri?.gruppi?.find(x => x.id === gruppoId);
+            const sezione = grp?.sezioni?.find(s => (s.nome || '').toLowerCase() === (c.sezione || '').toLowerCase());
+            return (sezione?.sottosezioni || []).map(s => `<option value="${escapeHtml(s.nome)}">`).join('');
+          })()}
+        </datalist>
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Solo se la sezione ha sottosezioni definite</div>
       </div>
       <div class="field">
         <label>Orari</label>
@@ -7349,6 +7497,9 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         if (breveStr) { const n = parseInt(breveStr, 10); newC.breve = isNaN(n) ? breveStr : n; }
         if (email) newC.email = email;
         if (sezione) newC.sezione = sezione;
+        const sottosezioneEl = document.getElementById('ce-sottosezione');
+        const sottosezione = sottosezioneEl ? sottosezioneEl.value.trim() : '';
+        if (sottosezione) newC.sottosezione = sottosezione;
         if (luogo) newC.luogo = luogo;
         if (orari) newC.orari = orari;
         if (tag.length) newC.tag = tag;
@@ -8220,7 +8371,7 @@ function renderSearchResults(query, targetId) {
     if (r.score < g.bestScore) g.bestScore = r.score;
   });
 
-  // Aggiungo gruppi il cui NOME/direttore/alias matcha interamente la query (no sedi_operative tipo,
+  // Aggiungo gruppi il cui NOME/direttore/alias matcha interamente la query (no sezioni tipo,
   // che è troppo specifico: "ucic" non deve espandere tutta la Cardiologia)
   const allGroupsForSearch = getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd');
   allGroupsForSearch.forEach(g => {
@@ -8474,13 +8625,13 @@ function renderSearchResults(query, targetId) {
       ? `<span class="sr-uoc-badge sr-uoc-badge-${u.ospedale}">${osp[u.ospedale] || u.ospedale.toUpperCase()}</span>`
       : '';
     const sedeHtml = (groupFullyMatched && u.fullGroup)
-      ? renderSedeOperativa(u.fullGroup.sede_operativa, u.fullGroup.sedi_operative)
+      ? renderSedeOperativa(null, u.fullGroup.sezioni)
       : '';
     // Raggruppo topContatti per sede operativa usando groupContattiBySede.
     // Ogni bucket ha un header con il nome della sede + luogo.
     let contattiHtml = '';
     if (u.fullGroup && typeof groupContattiBySede === 'function') {
-      const buckets = groupContattiBySede(topContatti, u.fullGroup.sedi_operative, u.fullGroup.sede_operativa);
+      const buckets = groupContattiBySede(topContatti, u.fullGroup.sezioni);
       contattiHtml = buckets.map(b => {
         const sedeLoc = b.sede
           ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
@@ -8498,10 +8649,11 @@ function renderSearchResults(query, targetId) {
             <div class="sr-sede-bucket-contatti">${contattiItems}</div>
           </div>`;
         }
-        // Bucket "Altro": wrapper neutro con header semplice (non cliccabile perché non c'è sede)
+        // Bucket dinamico (da sezione) o "Altro": wrapper neutro con header
+        const label = b.customLabel || 'Altro';
         return `<div class="sr-sede-bucket">
           <div class="sr-sede-bucket-header" style="cursor:default;">
-            <span class="sede-bucket-tipo">Altro</span>
+            <span class="sede-bucket-tipo">${escapeHtml(label)}</span>
           </div>
           <div class="sr-sede-bucket-contatti">${contattiItems}</div>
         </div>`;
