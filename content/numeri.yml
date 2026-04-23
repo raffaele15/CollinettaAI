@@ -11,6 +11,7 @@ gruppi:
     struttura: Palazzina Direzione
   direttore: Dr. Dal Ben Giuseppe
   email: dir.gen@aopd.veneto.it
+  sezioni: []
 - id: dir-sanitaria
   nome: Direzione Sanitaria
   ubicazione:
@@ -18,6 +19,7 @@ gruppi:
     struttura: Palazzina Direzione
   direttore: Dr. Tessarin Michele
   email: dir.san@aopd.veneto.it
+  sezioni: []
 - id: dir-amministrativa
   nome: Direzione Amministrativa
   ubicazione:
@@ -249,7 +251,7 @@ gruppi:
     etichetta: Coordinamento Cassa - Dr.ssa Giraldo Amalia
     numeri:
     - 8911
-    sezione: Coordinamento Cassa e Fondo Economale
+    sezione: Segreteria e Direzione
     luogo: 2° piano Palazzina Direzione
   - id: damm-rec-crediti
     etichetta: Ufficio Recupero Crediti Ticket (interni)
@@ -338,9 +340,6 @@ gruppi:
   sezioni:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-  - nome: Coordinamento Cassa e Fondo Economale
-    tipo: coordinamento
     alias: []
   - nome: Area Economica
     alias: []
@@ -3724,24 +3723,21 @@ gruppi:
     etichetta: Archivio Cartelle Cliniche
     numeri:
     - 3318
-    sezione: Archivio Generale
+    sezione: Segreteria e Direzione
     luogo: Palazzina Ortopedia / Via Inghilterra 16
   - id: arch-centrale
     etichetta: Archivio Centrale (Via Inghilterra 16 Camin)
     numeri:
     - 049 870 00 67
     breve: 97670
-    sezione: Archivio Generale
+    sezione: Segreteria e Direzione
     luogo: Palazzina Ortopedia / Via Inghilterra 16
   - id: arch-ciatto
     etichetta: Ciatto Leonardo
     cellulare: '331.6743272'
-    sezione: Archivio Generale
+    sezione: Segreteria e Direzione
     luogo: Palazzina Ortopedia / Via Inghilterra 16
-  sezioni:
-  - nome: Archivio Generale
-    tipo: archivio
-    alias: []
+  sezioni: []
 - id: pre-ricovero
   nome: Servizio Pre Ricovero AOPD - O.S.A.
   email: info.chirurgia@aopd.veneto.it
@@ -3827,51 +3823,45 @@ gruppi:
     etichetta: Responsabile/Coord. Regionale - Dr. Pittarello Demetrio
     numeri:
     - 7652
-    sezione: Coordinamento Regionale Trapianti
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano - Scala A Ascensore 5
   - id: crt-segr-biscaro
     etichetta: Segreteria - Biscaro Federica
     numeri:
     - 8125
-    sezione: Coordinamento Regionale Trapianti
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano - Scala A Ascensore 5
   - id: crt-segr-garofolin
     etichetta: Segreteria - Garofolin Veronica
     numeri:
     - 8124
-    sezione: Coordinamento Regionale Trapianti
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano - Scala A Ascensore 5
   - id: crt-resp-op
     etichetta: Responsabile Operativo CRT - Dr. Petranzan Enrico
     numeri:
     - 8431
-    sezione: Coordinamento Regionale Trapianti
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano - Scala A Ascensore 5
   - id: crt-coord-inf
     etichetta: Coordinatore Infermieristico - Tognon Roberto
     numeri:
     - 8436
-    sezione: Coordinamento Regionale Trapianti
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano - Scala A Ascensore 5
   - id: crt-inf-lazzarini
     etichetta: Infermiere - Lazzarini Fabio
     numeri:
     - 8434
-    sezione: Coordinamento Regionale Trapianti
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano - Scala A Ascensore 5
   - id: crt-inf-masenello
     etichetta: Infermiere - Masenello Marco
     numeri:
     - 8435
-    sezione: Coordinamento Regionale Trapianti
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano - Scala A Ascensore 5
-  sezioni:
-  - nome: Coordinamento Regionale Trapianti
-    tipo: coordinamento
-    alias: []
-    edificio: Ospedale Giustinianeo
-    piano: 2° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
+  sezioni: []
 - id: creu
   nome: Coordinamento Regionale Emergenza Urgenza (CREU)
   ubicazione:
@@ -3901,30 +3891,27 @@ gruppi:
     breve: 97513
     tag:
     - reperibile
-    sezione: Coordinamento Ospedaliero Trapianti
+    sezione: Segreteria e Direzione
     luogo: 2° piano Neurochirurgia
   - id: cot-segr
     etichetta: Segreteria
     numeri:
     - 7648
-    sezione: Coordinamento Ospedaliero Trapianti
+    sezione: Segreteria e Direzione
     luogo: 2° piano Neurochirurgia
   - id: cot-inf-berto
     etichetta: Infermiere - Berto Nicola
     numeri:
     - 7649
-    sezione: Coordinamento Ospedaliero Trapianti
+    sezione: Segreteria e Direzione
     luogo: 2° piano Neurochirurgia
   - id: cot-inf-scattolin
     etichetta: Scattolin Michela
     numeri:
     - 8437
-    sezione: Coordinamento Ospedaliero Trapianti
+    sezione: Segreteria e Direzione
     luogo: 2° piano Neurochirurgia
-  sezioni:
-  - nome: Coordinamento Ospedaliero Trapianti
-    tipo: coordinamento
-    alias: []
+  sezioni: []
 - id: formazione
   nome: U.O.S. Formazione
   ubicazione:
@@ -5287,7 +5274,7 @@ gruppi:
     etichetta: Coordinatore - Contarato Roberta
     numeri:
     - 8812
-    sezione: Coordinamento
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 1° piano
   - id: ang-acc-bo-cacco
     etichetta: Accettazione Back Office - Cacco Lorenza
@@ -5360,12 +5347,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-    edificio: Ospedale Giustinianeo
-    piano: 1° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Coordinamento
-    tipo: coordinamento
     alias: []
     edificio: Ospedale Giustinianeo
     piano: 1° piano
@@ -6003,7 +5984,7 @@ gruppi:
     numeri:
     - 2429
     - 2751
-    sezione: Studio Anestesisti
+    sezione: Studi Medici
     luogo: Centro Gallucci piano terra
   - id: cch-ct-segr
     etichetta: Centro Trapianti - Segreteria (1° P)
@@ -6146,9 +6127,6 @@ gruppi:
     piano: 1° piano
     fonte: https://www.aopd.veneto.it/Cardiochirurgia
   - nome: Studi Medici
-    tipo: studi_medici
-    alias: []
-  - nome: Studio Anestesisti
     tipo: studi_medici
     alias: []
   - nome: Ambulatori
@@ -6990,7 +6968,7 @@ gruppi:
     numeri:
     - 1389
     - 2057
-    sezione: Archivio Cartelle
+    sezione: Segreteria e Direzione
     luogo: Policlinico 7° piano
   - id: cg3-predeg
     etichetta: Predegenze
@@ -7112,7 +7090,7 @@ gruppi:
     numeri:
     - 4497
     - 3259
-    sezione: Coordinamento Ambulatori
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 1°-2° piano
   - id: cg3-amb-acc-1p
     etichetta: Acc. Amb. 1° P Giustinianeo
@@ -7329,12 +7307,6 @@ gruppi:
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-  - nome: Coordinamento Ambulatori
-    tipo: coordinamento
-    alias: []
-  - nome: Archivio Cartelle
-    tipo: archivio
-    alias: []
   - nome: Data Manager
     alias: []
   - nome: PACU
@@ -7460,7 +7432,7 @@ gruppi:
     etichetta: Archivio Cartelle (solo esami istologici)
     numeri:
     - 3163
-    sezione: Archivio Cartelle
+    sezione: Segreteria e Direzione
     luogo: Palazzina Ambulatori Policlinico 2° piano
   - id: cg1-so-coord
     etichetta: SO 1° P - Coord. Dr.ssa Gentile Francesca
@@ -7498,7 +7470,7 @@ gruppi:
     numeri:
     - 4497
     - 3259
-    sezione: Coordinamento Ambulatori
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo
   - id: cg1-amb-acc-1p
     etichetta: Acc. Amb. 1° P Giustinianeo
@@ -7753,18 +7725,6 @@ gruppi:
     edificio: Policlinico
     piano: 6° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Coordinamento Ambulatori
-    tipo: coordinamento
-    alias: []
-    edificio: Policlinico
-    piano: 6° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Archivio Cartelle
-    tipo: archivio
-    alias: []
-    edificio: Policlinico
-    piano: 6° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Altro
     tipo: altro
     alias: []
@@ -7863,7 +7823,7 @@ gruppi:
     etichetta: Coord. Amb. 1° P Giustinianeo
     numeri:
     - 4497
-    sezione: Coordinamento Ambulatori
+    sezione: Segreteria e Direzione
     luogo: Monoblocco 2° piano
   - id: ds-amb-acc
     etichetta: Accettazione Amb. 2° P Giustinianeo
@@ -7898,12 +7858,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-    edificio: Monoblocco
-    piano: 2° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Coordinamento Ambulatori
-    tipo: coordinamento
     alias: []
     edificio: Monoblocco
     piano: 2° piano
@@ -8019,7 +7973,7 @@ gruppi:
     etichetta: Coordinatore Studi Clinici
     numeri:
     - 1322
-    sezione: Coordinamento Studi Clinici
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano
   - id: ctrp-dibella
     etichetta: Studio Dr.ssa Di Bella Caterina
@@ -8050,7 +8004,7 @@ gruppi:
     numeri:
     - 4485
     - 4486
-    sezione: Archivio
+    sezione: Segreteria e Direzione
     luogo: Giustinianeo 2° piano
   - id: ctrp-deg-coord
     etichetta: Degenze 2° P - Caposala Lessi Lara
@@ -8126,20 +8080,6 @@ gruppi:
     piano: 2° piano
     area: D6
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Coordinamento Studi Clinici
-    tipo: coordinamento
-    alias: []
-    edificio: Ospedale Giustinianeo
-    piano: 2° piano
-    area: D6
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Archivio
-    tipo: archivio
-    alias: []
-    edificio: Ospedale Giustinianeo
-    piano: 2° piano
-    area: D6
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
 - id: chir-gen-2-trapianti-fegato
   nome: U.O.C. Chirurgia Generale 2 Epato-Bilio-Pancreatica e Trapianti di Fegato
   ubicazione:
@@ -8190,7 +8130,7 @@ gruppi:
     etichetta: Archivio Cartelle Cliniche
     numeri:
     - 7015
-    sezione: Archivio Cartelle
+    sezione: Segreteria e Direzione
     luogo: Policlinico 7° piano
   - id: cg2-amb-acc
     etichetta: Acc. Amb. 2° P Giustinianeo
@@ -8202,14 +8142,14 @@ gruppi:
     etichetta: Coord. Trapianti Epatici - Dr.ssa Magrofuoco Angelica
     numeri:
     - 2388
-    sezione: Coordinamento Trapianti Epatici
+    sezione: Segreteria e Direzione
     luogo: Policlinico 2° piano
   - id: cg2-coord-tf-segr
     etichetta: Segr. Coord. Trapianti Epatici
     numeri:
     - 1804
     email: trapiantifegato.@aopd.veneto.it
-    sezione: Coordinamento Trapianti Epatici
+    sezione: Segreteria e Direzione
     luogo: Policlinico 7° piano
   - id: cg2-bassi
     etichetta: Studio Dr. Bassi Domenico
@@ -8339,7 +8279,7 @@ gruppi:
     etichetta: Studio Medici Specializzandi
     numeri:
     - 7008
-    sezione: Specializzandi
+    sezione: Degenze
     luogo: Policlinico 2° piano
   - id: cg2-so
     etichetta: Sala Operatoria
@@ -8395,20 +8335,11 @@ gruppi:
     edificio: Policlinico
     piano: 2° piano
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Specializzandi
-    tipo: studi_medici
-    alias: []
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-  - nome: Coordinamento Trapianti Epatici
-    tipo: coordinamento
-    alias: []
-  - nome: Archivio Cartelle
-    tipo: archivio
     alias: []
 - id: chir-plastica
   nome: U.O.C. Chirurgia Plastica
@@ -8589,7 +8520,7 @@ gruppi:
     etichetta: Studio Anestesisti
     numeri:
     - 2717
-    sezione: Studio Anestesisti
+    sezione: Studi Medici
     luogo: Monoblocco 5° piano
   sezioni:
   - nome: Sala Operatoria
@@ -8603,9 +8534,6 @@ gruppi:
     area: C8
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
-    tipo: studi_medici
-    alias: []
-  - nome: Studio Anestesisti
     tipo: studi_medici
     alias: []
   - nome: Ambulatori
@@ -8860,7 +8788,7 @@ gruppi:
     etichetta: Archivio Cartelle - Gobbo Chiara
     numeri:
     - 1394
-    sezione: Archivio Cartelle
+    sezione: Segreteria e Direzione
     luogo: Monoblocco 1° piano
   - id: cv-amb-acc-gg
     etichetta: Acc. Amb. 2° P Giustinianeo
@@ -8994,12 +8922,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-    edificio: Monoblocco
-    piano: 1° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Archivio Cartelle
-    tipo: archivio
     alias: []
     edificio: Monoblocco
     piano: 1° piano
@@ -10244,14 +10166,14 @@ gruppi:
     etichetta: Coord. De Mario Alberto
     numeri:
     - 8591
-    sezione: Coordinamento
+    sezione: Segreteria e Direzione
     luogo: Policlinico 7° piano
   - id: fr-gallan
     etichetta: Studio Dr. Gallan Federico
     numeri:
     - 4379
     breve: 97439
-    sezione: Coordinamento
+    sezione: Segreteria e Direzione
     luogo: Policlinico 7° piano
   - id: fr-amb-cons-ps
     etichetta: Amb. Consulenze PS
@@ -10304,12 +10226,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-    edificio: Policlinico
-    piano: 7° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Coordinamento
-    tipo: coordinamento
     alias: []
     edificio: Policlinico
     piano: 7° piano
@@ -11015,7 +10931,7 @@ gruppi:
     etichetta: Archivio Cartelle
     numeri:
     - 7799
-    sezione: Archivio Cartelle
+    sezione: Segreteria e Direzione
     luogo: Palazzina Malattie Infettive
   sezioni:
   - nome: Degenze
@@ -11044,9 +10960,6 @@ gruppi:
     alias: []
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-  - nome: Archivio Cartelle
-    tipo: archivio
     alias: []
 - id: immunologia-trapianti
   nome: U.O.S.D. Immunologia dei Trapianti
@@ -13408,15 +13321,9 @@ gruppi:
     - 8119
     - 8278
     - 8279
-    sezione: Specializzandi
+    sezione: Studi Medici
     luogo: Giustinianeo 2° piano
   sezioni:
-  - nome: Specializzandi
-    tipo: studi_medici
-    alias: []
-    edificio: Ospedale Giustinianeo
-    piano: 2° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
@@ -14381,7 +14288,7 @@ gruppi:
     etichetta: Coordinatore - Dr.ssa Moro F.
     numeri:
     - 3138
-    sezione: Coordinamento
+    sezione: Segreteria e Direzione
     luogo: Via Falloppio 50 piano terra
   - id: mleg-beccegato
     etichetta: Studio Dr.ssa Beccegato Elena
@@ -14423,7 +14330,7 @@ gruppi:
     etichetta: Stanza Specializzandi
     numeri:
     - 8938
-    sezione: Specializzandi
+    sezione: Studi Medici
     luogo: Via Falloppio 50 piano terra
   - id: mleg-autoptica
     etichetta: Sala Autoptica (Via G. Gabelli 61)
@@ -14494,13 +14401,6 @@ gruppi:
     sezione: Laboratorio Genetica Forense
     luogo: Via Falloppio 50 - 2° piano
   sezioni:
-  - nome: Specializzandi
-    tipo: studi_medici
-    alias: []
-    edificio: Via Falloppio 50
-    piano: piano terra
-    area: D10
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
@@ -14524,13 +14424,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-    edificio: Via Falloppio 50
-    piano: piano terra
-    area: D10
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Coordinamento
-    tipo: coordinamento
     alias: []
     edificio: Via Falloppio 50
     piano: piano terra
@@ -16017,7 +15910,7 @@ gruppi:
     etichetta: Coordinatore - Dr. Schiavolin Alessandro
     numeri:
     - 3646
-    sezione: Coordinamento
+    sezione: Segreteria e Direzione
     luogo: Palazzina Neuroscienze 1° piano
   - id: su-mdg
     etichetta: Medico di Guardia
@@ -16038,9 +15931,6 @@ gruppi:
     alias: []
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
-    alias: []
-  - nome: Coordinamento
-    tipo: coordinamento
     alias: []
 - id: neuroradiologia
   nome: U.O.C. Neuroradiologia
@@ -17153,7 +17043,7 @@ gruppi:
     etichetta: Stanza Specializzandi (1° P)
     numeri:
     - 7783
-    sezione: Specializzandi
+    sezione: Degenze
     luogo: Edificio Ortopedia 1° piano
   - id: cort-lab-ric
     etichetta: Laboratorio Ricerche
@@ -17170,12 +17060,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Degenze
     tipo: degenze
-    alias: []
-    edificio: Padiglione Ortopedia
-    piano: 1° piano
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Specializzandi
-    tipo: studi_medici
     alias: []
     edificio: Padiglione Ortopedia
     piano: 1° piano
@@ -17858,7 +17742,7 @@ gruppi:
     etichetta: Studio Anestesisti Ostetrici Strutturati
     numeri:
     - 3454
-    sezione: Studio Anestesisti
+    sezione: Studi Medici
     luogo: Edificio Clinica Ostetrica
   - id: cgo-anest-spec
     etichetta: Studio Anestesisti Ostetrici Specializzandi
@@ -17888,7 +17772,7 @@ gruppi:
     etichetta: Archivio Cartelle Cliniche
     numeri:
     - 3404
-    sezione: Archivio Cartelle
+    sezione: Segreteria e Direzione
     luogo: Edificio Clinica Ostetrica
   - id: cgo-bordoni
     etichetta: Coord. CDL Ostetricia - Dr.ssa Bordoni M.
@@ -17916,12 +17800,6 @@ gruppi:
     piano: piano rialzato
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Studi Medici
-    tipo: studi_medici
-    alias: []
-    edificio: Clinica Ginecologica e Ostetrica
-    piano: piano rialzato
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Studio Anestesisti
     tipo: studi_medici
     alias: []
     edificio: Clinica Ginecologica e Ostetrica
@@ -17965,12 +17843,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Portineria
     tipo: portineria
-    alias: []
-    edificio: Clinica Ginecologica e Ostetrica
-    piano: piano rialzato
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Archivio Cartelle
-    tipo: archivio
     alias: []
     edificio: Clinica Ginecologica e Ostetrica
     piano: piano rialzato
@@ -19569,55 +19441,55 @@ gruppi:
     etichetta: Segreteria Coordinamento
     numeri:
     - 5700
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-segr-amm
     etichetta: Segreteria Amm. - Dr.ssa Guarnieri Elga
     numeri:
     - 5684
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-num-verde
     etichetta: Numero Verde Regionale Malattie Rare
     numeri:
     - '800318811'
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-corcelli
     etichetta: Dr. Corcelli Alessandro
     numeri:
     - 5694
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-mazzucato
     etichetta: Dr.ssa Mazzucato Monica
     numeri:
     - 5695
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-minichiello
     etichetta: Dr.ssa Minichiello Cinzia
     numeri:
     - 5629
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-pastori
     etichetta: Dr.ssa Pastori Laura
     numeri:
     - 5698
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-vianello
     etichetta: Dr. Vianello Andrea
     numeri:
     - 5693
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-aula
     etichetta: Aula Didattica
     numeri:
     - 5692
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   - id: mr-oss-ferrante
     etichetta: Osservatorio Epid. Ped. - Dr.ssa Ferrante Anna
@@ -19637,14 +19509,9 @@ gruppi:
     - 1632
     - 1633
     - 5690
-    sezione: Coordinamento Regionale Malattie Rare
+    sezione: Segreteria e Direzione
     luogo: Via Donà 11
   sezioni:
-  - nome: Coordinamento Regionale Malattie Rare
-    tipo: coordinamento
-    alias: []
-    edificio: Dipartimento Salute Donna e Bambino
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Osservatorio Epidemiologico Pediatrico
     alias: []
     edificio: Dipartimento Salute Donna e Bambino
@@ -20128,14 +19995,14 @@ gruppi:
     numeri:
     - 8038
     breve: 97035
-    sezione: Studi Anestesisti
+    sezione: Studi Medici
     luogo: Edificio Divisione Ostetrica
   - id: cper-anest-guardia
     etichetta: Anestesista di Guardia
     breve: 97579
     tag:
     - guardia
-    sezione: Studi Anestesisti
+    sezione: Studi Medici
     luogo: Edificio Divisione Ostetrica
   sezioni:
   - nome: Rianimazione T.I.P.O.
@@ -20146,12 +20013,6 @@ gruppi:
     fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
   - nome: Degenze
     tipo: degenze
-    alias: []
-    edificio: Edificio Divisione Ostetrica
-    piano: piano terra
-    fonte: https://www.aopd.veneto.it/Unita-Operative-Sanitarie
-  - nome: Studi Anestesisti
-    tipo: studi_medici
     alias: []
     edificio: Edificio Divisione Ostetrica
     piano: piano terra
