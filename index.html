@@ -2735,12 +2735,7 @@ function renderHome() {
   const username = state.session?.username || '';
 
   $('main-content').innerHTML = `
-    <div class="home-hero" style="padding-bottom:16px;">
-      <h1 class="home-title">Home di <em>${escapeHtml(username)}</em></h1>
-      <p class="home-lead">Accesso rapido alle tue risorse fissate. Usa ⭐ su qualsiasi pagina per aggiungere alla home.</p>
-    </div>
-
-    <div class="home-section">
+    <div class="home-section" style="margin-top:16px;">
       <div class="home-quickaccess">
         <div class="quickaccess-card quickaccess-emergency" onclick="navigate('procedure-cat', {cat:'emergenze'})">
           <div class="quickaccess-icon">
@@ -4339,7 +4334,17 @@ function renderNumeri(filter) {
   let filteredGruppi = allGroups;
   let filterLabel = null;
   let activeSource = 'aopd'; // quale fonte stiamo guardando: aopd (default), osa, iov
-  if (filter === 'guardia') {
+  if (filter === 'pinned') {
+    // Solo UOC e contatti preferiti (★)
+    filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd').map(g => {
+      const gPinned = isPinned('gruppo', g.id);
+      const cPinnati = (g.contatti || []).filter(c => isPinned('contatto', c.id));
+      // Se il gruppo è pinnato, mostro tutti i suoi contatti; altrimenti solo quelli pinnati
+      if (gPinned) return g;
+      if (cPinnati.length) return { ...g, contatti: cPinnati };
+      return null;
+    }).filter(Boolean);
+  } else if (filter === 'guardia') {
     filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd').map(g => ({ ...g, contatti: (g.contatti || []).filter(c => (c.tag || []).includes('guardia')) })).filter(g => g.contatti.length);
     // Nessuna label: il chip MdG in alto già indica il filtro attivo
   } else if (filter === 'osa') {
@@ -4496,6 +4501,7 @@ function renderNumeri(filter) {
       <h1 class="page-title">Rubrica</h1>
       ${filterLabel ? `<div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Filtrato per: <strong>${escapeHtml(filterLabel)}</strong></div>` : ''}
       <div class="numeri-filters" style="margin-top:20px;">
+        <button class="filter-chip ${filter === 'pinned' ? 'active' : ''}" onclick="navigate('numeri', {filter:'pinned'})" title="Solo numeri e UOC preferiti">★</button>
         <button class="filter-chip ${!filter ? 'active' : ''}" onclick="navigate('numeri')">Tutti</button>
         <button class="filter-chip ${filter === 'guardia' ? 'active' : ''}" onclick="navigate('numeri', {filter:'guardia'})">MdG</button>
       </div>
@@ -4579,19 +4585,8 @@ function renderNumeri(filter) {
             ${(src === 'aopd' && osaAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="openExtendedSource('osa')" title="Ospedale Sant'Antonio">OSA</button>` : ''}
             ${(src === 'aopd' && iovAvailable) ? `<button class="rubrica-alpha-btn rubrica-alpha-source" onclick="openExtendedSource('iov')" title="Istituto Oncologico Veneto">IOV</button>` : ''}
           </div>`;
-        // Sezione Preferiti (solo per aopd, sopra la lista UOC): sempre visibile in modalità default
-        const pinnedSection = (src === 'aopd' && !activeInitial) ? `
-          <details class="rubrica-pinned-section" open>
-            <summary class="rubrica-pinned-summary">
-              <span class="rubrica-pinned-star">★</span>
-              <span class="rubrica-pinned-label">Preferiti</span>
-              <span class="rubrica-pinned-caret">▾</span>
-            </summary>
-            <div class="rubrica-pinned-body">
-              ${renderPinnedContattiSection(list)}
-            </div>
-          </details>
-        ` : '';
+        // Il filtro preferiti è ora gestito dal chip ★ tra i filtri in alto
+        const pinnedSection = '';
         return `
           ${showHeader ? `<h3 class="numeri-source-header" style="margin:28px 0 12px;font-family:var(--serif);font-size:15px;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule-soft);padding-bottom:6px;">${escapeHtml(sourceLabels[src])}</h3>` : ''}
           ${pinnedSection}
