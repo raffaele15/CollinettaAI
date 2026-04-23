@@ -2296,7 +2296,7 @@ function rebuildSearchIndex() {
       elettrofisiologia: 'elettrofisiologia',
       riabilitazione: 'riabilitazione',
       terapia_intensiva: 'terapia intensiva rianimazione',
-      sub_intensiva: 'sub intensiva subintensiva',
+      semi_intensiva: 'semi intensiva subintensiva',
       day_hospital: 'day hospital dh',
       sala_operatoria: 'sala operatoria so',
       degenze: 'degenze reparto',
@@ -4968,7 +4968,7 @@ function renderSedeOperativa(sede, sediArray) {
     riabilitazione: 'Riabilitazione',
     laboratorio: 'Laboratorio',
     terapia_intensiva: 'Terapia Intensiva',
-    sub_intensiva: 'Sub Intensiva',
+    semi_intensiva: 'Semi Intensiva',
     studi_medici: 'Studi Medici',
     ricoveri: 'Ricoveri',
     libera_professione: 'Libera Professione'
@@ -5156,7 +5156,7 @@ function groupContattiBySede(contatti, sezioni) {
   // (sedi cliniche/operative prima, poi supporto, poi amministrativo)
   const tipoPriority = {
     // Sedi cliniche / sale operatorie (priorità alta)
-    ucic: 1, utic: 2, terapia_intensiva: 3, sub_intensiva: 4,
+    ucic: 1, utic: 2, terapia_intensiva: 3, semi_intensiva: 4,
     emodinamica: 5, elettrofisiologia: 6,
     sala_operatoria: 7, diagnostica: 8,
     degenze: 10, day_hospital: 11, riabilitazione: 12,
@@ -5168,7 +5168,7 @@ function groupContattiBySede(contatti, sezioni) {
     segreteria: 40, libera_professione: 41, portineria: 42,
   };
   const result = buckets
-    .filter(b => b.contatti.length)
+    .filter(b => b.contatti.length || (b.subBuckets && b.subBuckets.some(sb => sb.contatti.length)))
     .sort((a, b) => (tipoPriority[a.tipo] || 30) - (tipoPriority[b.tipo] || 30));
   // Aggiungo i bucket dinamici (basati su sezione contatto) ordinati per priorità/alfabetico
   const dynList = [...dynamicBuckets.values()].sort((a, b) => {
@@ -5191,7 +5191,7 @@ function renderSedeBucketHeader(s, customLabel) {
     portineria: 'Portineria', ucic: 'UCIC', utic: 'UTIC', emodinamica: 'Emodinamica',
     elettrofisiologia: 'Elettrofisiologia', riabilitazione: 'Riabilitazione',
     laboratorio: 'Laboratorio', terapia_intensiva: 'Terapia Intensiva',
-    sub_intensiva: 'Sub Intensiva', studi_medici: 'Studi Medici',
+    semi_intensiva: 'Semi Intensiva', studi_medici: 'Studi Medici',
     ricoveri: 'Ricoveri', libera_professione: 'Libera Professione'
   };
   // Se è un bucket dinamico (nessuna sede ma customLabel presente): mostra solo la sezione
