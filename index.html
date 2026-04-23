@@ -150,11 +150,10 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 .brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
 .brand-divider{width:1px;height:16px;background:var(--rule-strong)}
 .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
-.search-wrap{position:relative;max-width:580px;margin:0 auto;width:100%}
+.search-wrap{position:relative;flex:1;min-width:0}
 .search-wrap input{padding:10px 14px 10px 38px;font-size:14px}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none}
-.search-wrap-outer{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
-.search-wrap-outer > .search-wrap{flex:1;min-width:0}
+.search-wrap-outer{display:flex;align-items:center;gap:8px;width:100%;min-width:0;max-width:620px;margin:0 auto}
 .nav-history-btns{display:flex;gap:2px;flex-shrink:0}
 .nav-history-btn{width:32px;height:32px;border:1px solid var(--rule);background:var(--bg-raised);color:var(--ink-soft);border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s,color .12s,border-color .12s}
 .nav-history-btn:hover:not(:disabled){background:var(--bg-sink);color:var(--ink);border-color:var(--rule-strong)}
@@ -4552,6 +4551,12 @@ function renderNumeri(filter) {
       const list = bySource[src] || [];
       if (!list.length) return '';
       const showHeader = false;
+      // Filtro "preferiti" (chip ★): uso rendering minimale stile "pinned section"
+      if (filter === 'pinned' && src === 'aopd') {
+        return renderPinnedContattiSection(list);
+      }
+      // Altre source (osa/iov) non mostrano nulla in modalità pinned
+      if (filter === 'pinned') return '';
       const compactMode = !rubricaQuery && !filter;
       if (compactMode) {
         const stripPrefix = stripPrefixNome;
@@ -5260,7 +5265,7 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">● Utili</span>` : '';
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
-  const sezione = c.sezione ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(c.sezione)}</div>` : '';
+  // c.sezione NON viene renderizzato: il nome della sezione è già nell'header del bucket parent
   const luogo = (c.luogo && !hideLuogo) ? `<div style="font-size:10px;color:var(--ink-muted);margin-top:1px;opacity:.75;">📍 ${escapeHtml(c.luogo)}</div>` : '';
   const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
   // Numbers: internal extensions, then mobile, then breve
@@ -5302,7 +5307,6 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     <div class="${rowClass}">
       <div>
         <div class="numero-label">${guardiaBadge}${guardiolaBadge}${repartoBadge}${utileBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
-        ${sezione}
         ${luogo}
         ${email}
         ${note}
