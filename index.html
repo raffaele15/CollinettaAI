@@ -64,6 +64,7 @@
   --shadow-subtle:0 1px 0 rgba(255,255,255,0.7) inset, 0 0 0 1px rgba(0,0,0,0.02);
   --shadow-raised:0 4px 16px rgba(43,42,40,0.06), 0 1px 3px rgba(43,42,40,0.04);
   --shadow-modal:0 20px 60px rgba(43,42,40,0.18), 0 2px 8px rgba(43,42,40,0.08);
+  --topbar-height:68px;   /* altezza effettiva topbar sticky, usata per scroll-margin-top */
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px;overflow-x:clip;max-width:100%;-webkit-text-size-adjust:100%}
@@ -156,6 +157,7 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
   .user-chip{padding:4px 6px 4px 4px}
 }
 @media (max-width:420px){
+  :root{--topbar-height:60px}
   .brand-mark{display:none}
   .brand-mark-compact{display:inline-flex;align-items:baseline}
   header.topbar{padding:10px 10px;gap:8px 8px}
@@ -564,7 +566,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .filter-chip{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:6px 12px;border:1px solid var(--rule);border-radius:2px;color:var(--ink-soft);cursor:pointer;background:transparent;transition:all .15s}
 .filter-chip:hover{border-color:var(--ink);color:var(--ink)}
 .filter-chip.active{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
-.numeri-group{margin-bottom:32px}
+.numeri-group{margin-bottom:32px;scroll-margin-top:calc(var(--topbar-height) + 12px)}
 .numeri-group-title{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:12px;color:var(--ink);letter-spacing:-.01em}
 .numero-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule-soft)}
 .numero-row:last-child{border:none}
@@ -842,7 +844,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sortable-ghost{opacity:.3;background:var(--accent-soft)}
 .sortable-chosen{background:var(--bg-sink)}
 .filter-chip-uoc{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);border-radius:14px;font-size:13px;font-weight:500}
-.sede-bucket{margin-bottom:6px}
+.sede-bucket{margin-bottom:6px;scroll-margin-top:calc(var(--topbar-height) + 12px)}
 .sede-bucket-toggle{display:flex;align-items:baseline;gap:10px;width:100%;padding:8px 12px;background:var(--bg-sink);border:none;border-radius:4px;margin:8px 0 0;cursor:pointer;text-align:left;font-family:inherit;color:inherit;transition:background .12s}
 .sede-bucket-toggle:hover{background:var(--bg-raised)}
 .sede-bucket-toggle.open{background:var(--bg-raised)}
@@ -862,7 +864,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 @media print{body{background:white;color:black}header.topbar,aside.sidebar,.page-actions,.editor-head-actions{display:none!important}main.content{padding:0;max-width:100%}.procedura-body blockquote{background:#f4f4f4}a{color:black}details.scheda-section{border:none}details.scheda-section[open] .scheda-summary::after{display:none}.scheda-summary{cursor:default}}
 
 /* SCHEDA FLESSIBILE */
-.scheda-section{margin-bottom:14px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);overflow:hidden}
+.scheda-section{margin-bottom:14px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);overflow:hidden;scroll-margin-top:calc(var(--topbar-height) + 12px)}
 .scheda-section[open]{border-color:var(--rule-strong)}
 .scheda-summary{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;padding:14px 20px;cursor:pointer;background:var(--bg-sink);list-style:none;display:flex;align-items:center;gap:8px;transition:background .12s,color .12s}
 .scheda-summary::-webkit-details-marker{display:none}
@@ -884,6 +886,198 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .scheda-kv-table th{text-align:left;padding:8px 14px 8px 0;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;vertical-align:top;width:32%;border-bottom:1px solid var(--rule-soft)}
 .scheda-kv-table td{padding:8px 0;color:var(--ink-soft);border-bottom:1px solid var(--rule-soft);vertical-align:top;line-height:1.5}
 .scheda-kv-table tr:last-child th,.scheda-kv-table tr:last-child td{border-bottom:none}
+
+/* ============================ BLOCCHI TIPIZZATI ============================ */
+.scheda-blocchi{display:flex;flex-direction:column;gap:18px;padding:4px 0}
+.bl{scroll-margin-top:calc(var(--topbar-height) + 12px);transition:box-shadow .3s,background-color .3s}
+.bl-flash{animation:bl-flash-pulse 2s ease-out}
+@keyframes bl-flash-pulse{
+  0%{box-shadow:0 0 0 3px var(--accent);background-color:var(--accent-soft)}
+  50%{box-shadow:0 0 0 2px var(--accent)}
+  100%{box-shadow:0 0 0 0 transparent;background-color:transparent}
+}
+[data-theme="dark"] .bl-flash{animation-name:bl-flash-pulse-dark}
+@keyframes bl-flash-pulse-dark{
+  0%{box-shadow:0 0 0 3px var(--accent);background-color:rgba(43,74,111,.25)}
+  50%{box-shadow:0 0 0 2px var(--accent)}
+  100%{box-shadow:0 0 0 0 transparent;background-color:transparent}
+}
+.bl-title{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;font-weight:500}
+.bl-title-warn{color:var(--danger)}
+
+/* text */
+.bl-text-body{font-size:15px;line-height:1.65;color:var(--ink-soft)}
+.bl-text-body p{margin-bottom:10px}
+.bl-text-body p:last-child{margin-bottom:0}
+.bl-text-body strong{color:var(--ink);font-weight:600}
+.bl-text-body em{font-family:var(--serif);font-style:italic}
+.bl-text-body code{font-family:var(--mono);font-size:13px;background:var(--bg-sink);padding:1px 6px;border-radius:2px;color:var(--ink)}
+
+/* list */
+.bl-list ul{list-style:disc;margin:0 0 0 22px;padding:0}
+.bl-list li{margin-bottom:5px;line-height:1.55;color:var(--ink-soft);font-size:15px}
+.bl-list-warn{padding:12px 14px;border-left:3px solid var(--danger);background:var(--danger-soft);border-radius:0 2px 2px 0}
+[data-theme="dark"] .bl-list-warn{background:rgba(143,46,42,.15)}
+
+/* checklist */
+.bl-checklist ul{list-style:none;margin:0;padding:0}
+.bl-checklist-item{padding:4px 0;line-height:1.5}
+.bl-checklist-item label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:15px;color:var(--ink-soft)}
+.bl-checklist-cb{margin-top:4px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.bl-checklist-cb:checked + .bl-checklist-text{text-decoration:line-through;color:var(--ink-muted)}
+.bl-checklist-text{transition:color .15s}
+.bl-checklist-actions{margin-top:10px;display:flex;justify-content:flex-end}
+.bl-mini-btn{background:none;border:1px solid var(--rule);color:var(--ink-muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .15s}
+.bl-mini-btn:hover{background:var(--bg-sink);color:var(--ink)}
+
+/* callout */
+.bl-callout{border-left:3px solid var(--rule-strong);padding:12px 16px;background:var(--bg-sink);border-radius:0 3px 3px 0}
+.bl-callout-title{font-weight:600;color:var(--ink);margin-bottom:4px;font-size:14px}
+.bl-callout-body{font-size:14px;line-height:1.55;color:var(--ink-soft)}
+.bl-callout-warning{border-color:var(--warning);background:var(--warning-soft)}
+.bl-callout-warning .bl-callout-title{color:var(--warning)}
+.bl-callout-info{border-color:var(--accent);background:var(--accent-soft)}
+.bl-callout-info .bl-callout-title{color:var(--accent)}
+.bl-callout-tip{border-color:var(--success);background:var(--success-soft)}
+.bl-callout-tip .bl-callout-title{color:var(--success)}
+.bl-callout-danger{border-color:var(--danger);background:var(--danger-soft)}
+.bl-callout-danger .bl-callout-title{color:var(--danger)}
+[data-theme="dark"] .bl-callout-warning{background:rgba(138,90,31,.18)}
+[data-theme="dark"] .bl-callout-info{background:rgba(43,74,111,.18)}
+[data-theme="dark"] .bl-callout-tip{background:rgba(47,95,61,.18)}
+[data-theme="dark"] .bl-callout-danger{background:rgba(143,46,42,.18)}
+
+/* table */
+.bl-table-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:2px}
+.bl-table table{width:100%;border-collapse:collapse;font-size:14px}
+.bl-table th{text-align:left;padding:10px 14px;background:var(--bg-sink);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;border-bottom:1px solid var(--rule)}
+.bl-table td{padding:10px 14px;color:var(--ink-soft);border-bottom:1px solid var(--rule-soft);vertical-align:top;line-height:1.5}
+.bl-table tr:last-child td{border-bottom:none}
+.bl-table tr:hover td{background:var(--bg-sink)}
+
+/* image */
+.bl-image{margin:0}
+.bl-image-img{display:block;max-width:100%;height:auto;border-radius:2px;border:1px solid var(--rule);cursor:zoom-in}
+.bl-image-caption{margin-top:8px;font-size:12px;color:var(--ink-muted);font-style:italic;text-align:center;font-family:var(--serif)}
+
+/* system_code */
+.bl-sc{border:1px solid var(--rule);background:var(--bg-paper);border-radius:3px;padding:14px;border-left:3px solid var(--warning)}
+.bl-sc-head{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.bl-sc-sistema{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--warning);background:var(--warning-soft);padding:2px 8px;border-radius:2px;font-weight:600}
+[data-theme="dark"] .bl-sc-sistema{background:rgba(138,90,31,.22)}
+.bl-sc-titolo{font-weight:600;color:var(--ink);font-size:14px}
+.bl-sc-percorso{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--bg-sink);padding:6px 10px;border-radius:2px;margin-bottom:10px;word-break:break-word;line-height:1.5}
+.bl-sc-codici{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.bl-sc-codice{background:var(--bg-sink);border:1px solid var(--rule);padding:6px 12px;border-radius:2px;cursor:pointer;display:inline-flex;align-items:baseline;gap:8px;transition:all .15s;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+.bl-sc-codice:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.bl-sc-codice-val{font-weight:700;color:var(--ink);letter-spacing:.03em}
+.bl-sc-desc{font-family:var(--sans);font-weight:400;color:var(--ink-muted);font-size:11px}
+.bl-sc-codice:hover .bl-sc-codice-val{color:var(--accent)}
+.bl-sc-note{font-size:13px;color:var(--ink-muted);font-style:italic;line-height:1.5}
+
+/* link esterno */
+.bl-link{display:block;border:1px solid var(--rule);background:var(--bg-paper);border-radius:3px;padding:12px 14px;text-decoration:none;color:inherit;transition:all .15s}
+.bl-link:hover{border-color:var(--accent);background:var(--bg-raised)}
+.bl-link-head{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.bl-link-icon{font-size:13px;color:var(--accent);flex-shrink:0}
+.bl-link-titolo{font-weight:500;color:var(--ink);font-size:14px;line-height:1.4}
+.bl-link-fonte{font-size:12px;color:var(--ink-muted);font-family:var(--mono);margin-left:21px}
+.bl-link:hover .bl-link-titolo{color:var(--accent)}
+
+/* form_ref */
+.bl-form-ref{display:flex;align-items:center;gap:10px;border:1px solid var(--rule);background:var(--bg-paper);border-radius:3px;padding:12px 14px;text-decoration:none;color:inherit;transition:all .15s;border-left:3px solid var(--accent)}
+.bl-form-ref:hover{background:var(--accent-soft);border-color:var(--accent)}
+.bl-icon-doc{font-size:16px;flex-shrink:0}
+.bl-form-ref-label{flex:1;font-weight:500;color:var(--ink);font-size:14px}
+.bl-arrow{color:var(--ink-muted);font-size:14px;flex-shrink:0}
+.bl-form-ref:hover .bl-form-ref-label{color:var(--accent)}
+
+/* internal_ref */
+.bl-internal-ref{display:flex;align-items:center;gap:10px;border:1px solid var(--rule);background:var(--bg-paper);border-radius:3px;padding:10px 14px;text-decoration:none;color:inherit;transition:all .15s}
+.bl-internal-ref:hover{border-color:var(--accent);background:var(--bg-raised)}
+.bl-internal-tipo{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);background:var(--bg-sink);padding:2px 8px;border-radius:2px;flex-shrink:0;font-weight:500}
+.bl-internal-label{flex:1;color:var(--ink);font-size:14px;line-height:1.4}
+.bl-internal-ref:hover .bl-internal-label{color:var(--accent)}
+
+/* clinical_note */
+.bl-clinical-note{border:1px solid var(--rule);background:var(--bg-paper);border-radius:3px;border-left:3px solid var(--success)}
+.bl-cn-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--rule-soft);background:var(--bg-sink)}
+.bl-cn-title{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--success);font-weight:600}
+.bl-cn-body{padding:14px;font-family:var(--serif);font-size:14px;line-height:1.6;color:var(--ink-soft);white-space:pre-wrap;font-style:italic}
+
+/* unknown (fallback) */
+.bl-unknown{padding:10px 14px;border:1px dashed var(--danger);background:var(--danger-soft);color:var(--danger);font-size:13px;border-radius:2px}
+
+/* ============================ EDITOR A BLOCCHI (Fase 2) ============================
+   Stile gentile, ispirato Notion. No gergo tecnico visibile, bottoni solo al hover. */
+.bk-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.bk-empty{padding:24px;text-align:center;color:var(--ink-muted);font-style:italic;background:var(--bg-sink);border-radius:4px;border:1px dashed var(--rule)}
+
+/* Blocco singolo */
+.bk-item{background:var(--bg-paper);border:1px solid var(--rule);border-radius:4px;transition:border-color .15s,box-shadow .15s}
+.bk-item:hover{border-color:var(--rule-strong)}
+.bk-item:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+.bk-item-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--rule-soft);background:var(--bg-sink);border-radius:4px 4px 0 0}
+.bk-item-icon{display:inline-flex;color:var(--ink-muted);flex-shrink:0}
+.bk-item-type{font-size:12px;color:var(--ink-soft);font-weight:500;flex:1}
+.bk-item-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.bk-item:hover .bk-item-actions,.bk-item:focus-within .bk-item-actions{opacity:1}
+
+.bk-mini-btn{background:none;border:1px solid transparent;color:var(--ink-muted);font-size:13px;padding:3px 8px;border-radius:2px;cursor:pointer;transition:all .12s;font-family:var(--sans)}
+.bk-mini-btn:hover{background:var(--bg-raised);color:var(--ink);border-color:var(--rule)}
+.bk-mini-btn-danger:hover{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+
+.bk-item-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+
+/* Campi */
+.bk-field{display:flex;flex-direction:column;gap:4px}
+.bk-field-label{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);font-weight:500}
+.bk-field-hint{font-size:11px;color:var(--ink-muted);font-style:italic;margin-top:2px}
+.bk-input,.bk-textarea,.bk-select{font-family:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-raised);color:var(--ink);width:100%;transition:border-color .12s,box-shadow .12s}
+.bk-input:focus,.bk-textarea:focus,.bk-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bk-textarea{resize:vertical;line-height:1.5;min-height:40px;font-family:var(--serif)}
+.bk-string-list{font-family:var(--sans);font-size:13px}
+
+/* Table editor inline */
+.bk-table-editor .bk-table-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:2px;background:var(--bg-raised)}
+.bk-table-editor table{width:100%;border-collapse:collapse;font-size:13px}
+.bk-table-editor th,.bk-table-editor td{padding:2px;border:1px solid var(--rule-soft);vertical-align:top}
+.bk-table-editor th{background:var(--bg-sink)}
+.bk-table-editor .bk-input{border:none;background:transparent;padding:6px 8px;font-size:13px;min-width:80px}
+.bk-table-editor .bk-input:focus{background:var(--bg-raised);box-shadow:inset 0 0 0 2px var(--accent)}
+.bk-table-editor .bk-th{font-weight:500;color:var(--ink)}
+.bk-table-editor .bk-row-actions{background:var(--bg-sink);width:40px;text-align:center}
+.bk-table-editor .bk-col-actions-head{width:40px;background:var(--bg-sink)}
+.bk-table-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+
+/* Codici editor */
+.bk-codici-editor .bk-codici-list{display:flex;flex-direction:column;gap:4px;margin-bottom:6px}
+.bk-codice-row{display:grid;grid-template-columns:120px 1fr auto;gap:6px;align-items:center}
+.bk-codice-val{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.03em}
+
+/* Menu "aggiungi blocco" */
+.bk-add-menu{background:var(--bg-sink);border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.bk-add-summary{padding:12px 14px;cursor:pointer;color:var(--accent);font-weight:500;font-size:14px;list-style:none;user-select:none;transition:background .12s}
+.bk-add-summary:hover{background:var(--bg-raised)}
+.bk-add-summary::-webkit-details-marker{display:none}
+.bk-add-menu[open] .bk-add-summary{border-bottom:1px solid var(--rule-soft)}
+.bk-add-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;padding:10px}
+.bk-add-option{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;cursor:pointer;text-align:left;font-family:inherit;color:inherit;transition:all .12s}
+.bk-add-option:hover{border-color:var(--accent);background:var(--bg-raised)}
+.bk-add-icon{color:var(--accent);flex-shrink:0;display:inline-flex}
+.bk-add-label{display:flex;flex-direction:column;gap:2px;line-height:1.3;min-width:0}
+.bk-add-label strong{font-size:13px;font-weight:500;color:var(--ink)}
+.bk-add-desc{font-size:11px;color:var(--ink-muted);line-height:1.4}
+
+/* Mobile adjustments */
+@media (max-width:640px){
+  .bk-add-options{grid-template-columns:1fr}
+  .bk-codice-row{grid-template-columns:1fr 1fr auto}
+  .bk-codice-val{grid-column:1;grid-row:1}
+}
+
+.bk-item-unknown{border-color:var(--danger);background:var(--danger-soft)}
 
 .nav-sub{margin-left:12px;padding-left:12px;border-left:1px solid var(--rule-soft)}
 .nav-sub .nav-item{font-size:13px;padding:5px 10px}
@@ -2052,8 +2246,44 @@ const state = {
   fuse: null,
   userPrefs: null,          // {pins: [...], _sha: null, _saveTimer: null, _pending: false}
   userPrefsPath: null,
-  pendingTagEdits: new Map()  // Map<contactId, newKind|null> — modifiche pending ai tag kind (guardia/reparto/utile)
+  pendingTagEdits: new Map(),  // Map<contactId, newKind|null> — modifiche pending ai tag kind (guardia/reparto/utile)
+  pendingBlockHash: null       // id blocco (es. "bl-rachicentesi-5") da scrollare dopo il prossimo render scheda
 };
+
+/* Deep-link a blocchi specifici — es. condivisione/citazioni AI con URL tipo
+   https://app/#bl-rachicentesi-5 che dovrebbe aprire la scheda e scrollare
+   al blocco 5 con un flash visivo. Chiamata al boot e a ogni hashchange.
+   Ritorna true se l'hash è stato catturato, false altrimenti. */
+function tryCaptureBlockHash() {
+  const h = (window.location.hash || '').replace(/^#/, '');
+  if (/^bl-[a-z0-9-]+-\d+$/i.test(h)) {
+    state.pendingBlockHash = h;
+    return true;
+  }
+  return false;
+}
+
+/* Dopo il render di una scheda, chiama questa per scrollare al blocco in attesa.
+   Se l'elemento esiste, scrolla con flash; poi consuma pendingBlockHash.
+   Safe da chiamare anche quando pendingBlockHash è null. */
+function scrollToPendingBlock() {
+  if (!state.pendingBlockHash) return;
+  const targetId = state.pendingBlockHash;
+  // Aspetta 2 frame per dare al DOM il tempo di renderizzare
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const el = document.getElementById(targetId);
+    if (!el) {
+      // Elemento non in questa pagina — resetta per evitare comportamenti strani
+      state.pendingBlockHash = null;
+      return;
+    }
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
+    // Flash di evidenziazione
+    el.classList.add('bl-flash');
+    setTimeout(() => el.classList.remove('bl-flash'), 2000);
+    state.pendingBlockHash = null;
+  }));
+}
 
 const SESSION_KEY = 'collinettaai.session';
 // Usa localStorage solo se l'app è installata come PWA (mobile "Aggiungi a home")
@@ -3311,11 +3541,222 @@ function renderProcedureByCategoria(cat, subFilter) {
 }
 
 /* ============================ VIEW — PROCEDURA ============================ */
+/* ============================ BLOCCHI TIPIZZATI (schema a blocchi) ============================
+   Ogni scheda può avere un campo `contenuti` = array di blocchi.
+   Tipi supportati in Fase 1: text, list, checklist, callout, table, image,
+   system_code, link, form_ref, internal_ref, clinical_note.
+   I blocchi sono renderizzati in ordine. Ciascuno ha struttura:
+     { tipo: 'string', ...campi specifici del tipo }
+*/
+function renderBlocco(b, idx, scheda) {
+  if (!b || typeof b !== 'object' || !b.tipo) return '';
+  // ID DOM stabile per ogni blocco — usato per deep-link, scroll, AI citations
+  const schedaId = (scheda && (scheda.id || scheda.slug)) || 'x';
+  const blockId = `bl-${schedaId}-${idx}`;
+  let html;
+  switch (b.tipo) {
+    case 'text':          html = renderBloccoText(b, scheda); break;
+    case 'list':          html = renderBloccoList(b); break;
+    case 'checklist':     html = renderBloccoChecklist(b, idx, scheda); break;
+    case 'callout':       html = renderBloccoCallout(b); break;
+    case 'table':         html = renderBloccoTable(b); break;
+    case 'image':         html = renderBloccoImage(b, scheda); break;
+    case 'system_code':   html = renderBloccoSystemCode(b); break;
+    case 'link':          html = renderBloccoLink(b); break;
+    case 'form_ref':      html = renderBloccoFormRef(b); break;
+    case 'internal_ref':  html = renderBloccoInternalRef(b); break;
+    case 'clinical_note': html = renderBloccoClinicalNote(b, idx, scheda); break;
+    default:
+      console.warn('[renderBlocco] tipo sconosciuto:', b.tipo);
+      html = `<div class="bl bl-unknown">Blocco non supportato: <code>${escapeHtml(b.tipo)}</code></div>`;
+  }
+  // Inietto l'id nell'elemento radice del blocco se è un div o un'altra tag con classi
+  // Il primo elemento ha sempre class="bl ..." — ci metto id subito dopo class attribute
+  return html.replace(/^(<[a-z]+\s+[^>]*?class="bl[^"]*")/i, `$1 id="${blockId}"`);
+}
+
+function renderBloccoText(b, scheda) {
+  if (!b.testo) return '';
+  const md = (typeof renderMarkdownWithImages === 'function')
+    ? renderMarkdownWithImages(b.testo, scheda && scheda.path)
+    : escapeHtml(b.testo).replace(/\n\n/g, '</p><p>').replace(/^/, '<p>') + '</p>';
+  const title = b.titolo ? `<div class="bl-title">${escapeHtml(b.titolo)}</div>` : '';
+  return `<div class="bl bl-text">${title}<div class="bl-text-body">${md}</div></div>`;
+}
+
+function renderBloccoList(b) {
+  if (!Array.isArray(b.items) || !b.items.length) return '';
+  const title = b.titolo ? `<div class="bl-title ${b.variante === 'warning' ? 'bl-title-warn' : ''}">${escapeHtml(b.titolo)}</div>` : '';
+  const items = b.items.map(i => `<li>${escapeHtml(String(i))}</li>`).join('');
+  return `<div class="bl bl-list ${b.variante === 'warning' ? 'bl-list-warn' : ''}">${title}<ul>${items}</ul></div>`;
+}
+
+function renderBloccoChecklist(b, idx, scheda) {
+  if (!Array.isArray(b.items) || !b.items.length) return '';
+  const title = b.titolo ? `<div class="bl-title">${escapeHtml(b.titolo)}</div>` : '';
+  // Stato checkbox è solo client-side (per uso durante procedura), non salvato
+  const blockId = `cl-${scheda && scheda.slug ? scheda.slug : 'x'}-${idx}`;
+  const items = b.items.map((i, ii) => {
+    const itemId = `${blockId}-${ii}`;
+    return `<li class="bl-checklist-item">
+      <label for="${itemId}">
+        <input type="checkbox" id="${itemId}" class="bl-checklist-cb">
+        <span class="bl-checklist-text">${escapeHtml(String(i))}</span>
+      </label>
+    </li>`;
+  }).join('');
+  return `<div class="bl bl-checklist">${title}<ul>${items}</ul>
+    <div class="bl-checklist-actions"><button onclick="resetChecklist('${blockId}')" class="bl-mini-btn">Azzera</button></div>
+  </div>`;
+}
+
+function renderBloccoCallout(b) {
+  const variante = ['warning', 'info', 'tip', 'danger'].includes(b.variante) ? b.variante : 'info';
+  const title = b.titolo ? `<div class="bl-callout-title">${escapeHtml(b.titolo)}</div>` : '';
+  const body = b.testo ? `<div class="bl-callout-body">${escapeHtml(b.testo)}</div>` : '';
+  return `<div class="bl bl-callout bl-callout-${variante}">${title}${body}</div>`;
+}
+
+function renderBloccoTable(b) {
+  if (!Array.isArray(b.headers) || !Array.isArray(b.rows)) return '';
+  const title = b.titolo ? `<div class="bl-title">${escapeHtml(b.titolo)}</div>` : '';
+  const th = b.headers.map(h => `<th>${escapeHtml(String(h))}</th>`).join('');
+  const tr = b.rows.map(row => {
+    const cells = Array.isArray(row) ? row : [row];
+    return `<tr>${cells.map(c => `<td>${escapeHtml(String(c == null ? '' : c))}</td>`).join('')}</tr>`;
+  }).join('');
+  return `<div class="bl bl-table">${title}<div class="bl-table-wrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div></div>`;
+}
+
+function renderBloccoImage(b, scheda) {
+  if (!b.src) return '';
+  // Costruisco URL come per markdown images: se relativo, punta al DATA_REPO_NAME
+  let url = b.src;
+  if (!/^(https?:|data:|\/)/i.test(url)) {
+    const basePath = 'content/moduli/img/';
+    url = `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${basePath}${url.replace(/^\.?\//, '')}`;
+  }
+  const caption = b.caption ? `<figcaption class="bl-image-caption">${escapeHtml(b.caption)}</figcaption>` : '';
+  const alt = b.alt || b.caption || 'Immagine';
+  // Campo b.descrizione (opzionale): descrizione estesa non visualizzata, usata per RAG/AI.
+  // Viene propagata come data-attribute per essere estratta da pipeline esterne senza parse YAML.
+  const descrAttr = b.descrizione ? ` data-descrizione="${escapeHtml(String(b.descrizione))}"` : '';
+  return `<figure class="bl bl-image"${descrAttr}>
+    <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" class="bl-image-img" data-lightbox="1">
+    ${caption}
+  </figure>`;
+}
+
+function renderBloccoSystemCode(b) {
+  if (!b.codici && !b.percorso && !b.titolo) return '';
+  const sistema = b.sistema || 'Sistema';
+  const title = `<div class="bl-sc-head">
+    <span class="bl-sc-sistema">${escapeHtml(sistema)}</span>
+    ${b.titolo ? `<span class="bl-sc-titolo">${escapeHtml(b.titolo)}</span>` : ''}
+  </div>`;
+  const percorso = b.percorso ? `<div class="bl-sc-percorso">${escapeHtml(b.percorso)}</div>` : '';
+  let codici = '';
+  if (Array.isArray(b.codici) && b.codici.length) {
+    codici = '<div class="bl-sc-codici">' + b.codici.map(c => {
+      const codice = c.codice || '';
+      const desc = c.descrizione ? `<span class="bl-sc-desc">${escapeHtml(c.descrizione)}</span>` : '';
+      return `<button class="bl-sc-codice" onclick="copyNumber('${escapeJs(codice)}')" title="Copia il codice">
+        <span class="bl-sc-codice-val">${escapeHtml(codice)}</span>${desc}
+      </button>`;
+    }).join('') + '</div>';
+  }
+  const note = b.note ? `<div class="bl-sc-note">${escapeHtml(b.note)}</div>` : '';
+  return `<div class="bl bl-sc">${title}${percorso}${codici}${note}</div>`;
+}
+
+function renderBloccoLink(b) {
+  if (!b.url) return '';
+  const titolo = b.titolo || b.url;
+  const fonte = b.fonte ? `<div class="bl-link-fonte">${escapeHtml(b.fonte)}${b.data_accesso ? ' · ' + escapeHtml(String(b.data_accesso)) : ''}</div>` : '';
+  return `<a href="${escapeHtml(b.url)}" target="_blank" rel="noopener" class="bl bl-link">
+    <div class="bl-link-head">
+      <span class="bl-link-icon">↗</span>
+      <span class="bl-link-titolo">${escapeHtml(titolo)}</span>
+    </div>
+    ${fonte}
+  </a>`;
+}
+
+function renderBloccoFormRef(b) {
+  if (!b.modulo) return '';
+  const label = b.label || b.modulo;
+  return `<a href="#" class="bl bl-form-ref" onclick="event.preventDefault();navigate('modulo',{slug:'${escapeJs(b.modulo)}'})">
+    <span class="bl-icon-doc">📄</span>
+    <span class="bl-form-ref-label">${escapeHtml(label)}</span>
+    <span class="bl-arrow">→</span>
+  </a>`;
+}
+
+function renderBloccoInternalRef(b) {
+  if (!b.target) return '';
+  const tipoToRoute = {
+    procedura: 'procedura',
+    tabella: 'tabella',
+    modulo: 'modulo',
+    clinica: 'clinica-scheda',
+    numero: 'numeri'
+  };
+  const route = tipoToRoute[b.target_tipo] || 'procedura';
+  const params = b.target_tipo === 'numero' ? `{filter:'${escapeJs(b.target)}'}` : `{slug:'${escapeJs(b.target)}'}`;
+  const label = b.label || b.target;
+  const tipoLabel = b.target_tipo ? b.target_tipo.charAt(0).toUpperCase() + b.target_tipo.slice(1) : 'Riferimento';
+  return `<a href="#" class="bl bl-internal-ref" onclick="event.preventDefault();navigate('${route}',${params})">
+    <span class="bl-internal-tipo">${escapeHtml(tipoLabel)}</span>
+    <span class="bl-internal-label">${escapeHtml(label)}</span>
+    <span class="bl-arrow">→</span>
+  </a>`;
+}
+
+function renderBloccoClinicalNote(b, idx, scheda) {
+  if (!b.testo) return '';
+  const title = b.titolo || 'Nota clinica (template)';
+  const blockId = `cn-${scheda && scheda.slug ? scheda.slug : 'x'}-${idx}`;
+  return `<div class="bl bl-clinical-note">
+    <div class="bl-cn-head">
+      <span class="bl-cn-title">${escapeHtml(title)}</span>
+      <button class="bl-mini-btn" onclick="copyClinicalNote('${blockId}')" title="Copia il testo">Copia</button>
+    </div>
+    <div class="bl-cn-body" id="${blockId}">${escapeHtml(b.testo)}</div>
+  </div>`;
+}
+
+/* Helper: azzera una checklist client-side */
+function resetChecklist(blockId) {
+  document.querySelectorAll(`[id^="${blockId}-"]`).forEach(cb => {
+    if (cb.type === 'checkbox') cb.checked = false;
+  });
+}
+
+/* Helper: copia testo nota clinica */
+function copyClinicalNote(blockId) {
+  const el = document.getElementById(blockId);
+  if (!el) return;
+  const text = el.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof toast === 'function') toast('Nota copiata', 'success');
+  }).catch(() => {
+    if (typeof toast === 'function') toast('Impossibile copiare', 'error');
+  });
+}
+
 function renderSchedaBody(scheda) {
   const sections = [];
 
   if (scheda.sintesi) {
     sections.push(schedaSection('Sintesi', `<p style="font-family:var(--serif);font-size:17px;line-height:1.55;font-style:italic;color:var(--ink-soft);">${escapeHtml(scheda.sintesi)}</p>`, true));
+  }
+
+  // Nuovo schema a blocchi tipizzati (contenuti = array di blocchi)
+  if (Array.isArray(scheda.contenuti) && scheda.contenuti.length) {
+    const blocchiHtml = scheda.contenuti.map((b, idx) => renderBlocco(b, idx, scheda)).filter(Boolean).join('');
+    if (blocchiHtml) {
+      sections.push(`<div class="scheda-blocchi">${blocchiHtml}</div>`);
+    }
   }
 
   if (Array.isArray(scheda.indicazioni) || Array.isArray(scheda.controindicazioni)) {
@@ -3537,6 +3978,7 @@ function renderProcedura(slug) {
       ${bodyHtml ? `<div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--rule);">${bodyHtml}</div>` : ''}
     </article>
     ${renderSchedaRelated(proc, false)}`;
+  scrollToPendingBlock();
 }
 
 function renderClinicaList(subFilter) {
@@ -3639,6 +4081,7 @@ function renderSchedaClinica(slug) {
       ${bodyHtml ? `<div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--rule);">${bodyHtml}</div>` : ''}
     </article>
     ${renderSchedaRelated(scheda, true)}`;
+  scrollToPendingBlock();
 }
 
 function showClinicaHistoryModal(slug) {
@@ -3777,18 +4220,26 @@ function renderEditorUIClinica(slug, frontmatter, body) {
       <div id="editor-wrapper"></div>
     </div>`;
 
-  state.editorInstance = new toastui.Editor({
-    el: $('editor-wrapper'),
-    height: '400px',
-    initialEditType: 'wysiwyg',
-    previewStyle: 'vertical',
-    initialValue: body,
-    usageStatistics: false,
-    hideModeSwitch: true,
-    toolbarItems: [['heading','bold','italic'],['hr','quote'],['ul','ol'],['table','link'],['code','codeblock']]
-  });
+  // Se la scheda clinica usa il nuovo schema a blocchi, monta il block editor;
+  // altrimenti fallback a Toast UI per file legacy.
+  const usesBlockEditor = Array.isArray(frontmatter.contenuti);
+  if (usesBlockEditor) {
+    blockEditor.render($('editor-wrapper'), frontmatter.contenuti);
+    state.editingContext._usesBlockEditor = true;
+  } else {
+    state.editorInstance = new toastui.Editor({
+      el: $('editor-wrapper'),
+      height: '400px',
+      initialEditType: 'wysiwyg',
+      previewStyle: 'vertical',
+      initialValue: body,
+      usageStatistics: false,
+      hideModeSwitch: true,
+      toolbarItems: [['heading','bold','italic'],['hr','quote'],['ul','ol'],['table','link'],['code','codeblock']]
+    });
 
-  state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+    state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  }
 
   // Image upload handler for clinica editor
   attachImageUploadHandler('img-file-input-clinica', 'img-upload-status-clinica');
@@ -3842,7 +4293,14 @@ async function saveSchedaClinica() {
       ...((ctx.originalFrontmatter.cronologia_recente || []).slice(0, 4))
     ];
 
-    const newBody = state.editorInstance.getMarkdown();
+    // Serializza secondo il tipo di editor usato
+    let newBody;
+    if (ctx._usesBlockEditor) {
+      nf.contenuti = blockEditor.getBlocks();
+      newBody = '';
+    } else {
+      newBody = state.editorInstance.getMarkdown();
+    }
     const newContent = stringifyMarkdown(nf, newBody);
     const commitMsg = `Aggiorna clinica/${ctx.slug} — ${nota} (by ${state.session.username})`;
 
@@ -4086,6 +4544,514 @@ window.addEventListener('beforeunload', () => {
   }
 });
 
+/* ============================ EDITOR A BLOCCHI (Fase 2) ============================
+   Editor Notion-like per schede con schema a blocchi tipizzati.
+   Design: UI gentile per specializzandi non-tecnici, nessun gergo visibile,
+   menu bottoni solo su hover, aggiungi blocco con selettore visuale, riordino ↑↓×.
+   API pubblica:
+     - blockEditor.render(container, contenuti): monta editor in container con array iniziale
+     - blockEditor.getBlocks(): ritorna l'array corrente letto dal DOM
+     - blockEditor.hasBlocks(): true se c'è almeno un blocco (anche vuoto)
+*/
+const blockEditor = (function() {
+  // Tipi disponibili. Ognuno ha: label (ita, per utente), icon (SVG 16x16), render() per form inline
+  const TIPI = {
+    text: {
+      label: 'Testo',
+      descrizione: 'Paragrafo con formattazione base',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg>',
+      defaults: { testo: '' },
+      fields: [
+        { key: 'titolo', label: 'Titolo (opzionale)', type: 'text', placeholder: 'es. Note operative' },
+        { key: 'testo', label: 'Testo', type: 'textarea', rows: 3, placeholder: 'Scrivi qui. Puoi usare **grassetto**, *corsivo*, `codice`.' }
+      ]
+    },
+    list: {
+      label: 'Elenco',
+      descrizione: 'Elenco puntato, normale o evidenziato',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>',
+      defaults: { items: [''] },
+      fields: [
+        { key: 'titolo', label: 'Titolo (opzionale)', type: 'text', placeholder: 'es. Indicazioni' },
+        { key: 'variante', label: 'Stile', type: 'select', options: [
+          { value: '', label: 'Normale' },
+          { value: 'warning', label: 'Evidenziato (rosso, per controindicazioni)' }
+        ]},
+        { key: 'items', label: 'Voci', type: 'string-list', placeholder: 'una voce per riga' }
+      ]
+    },
+    checklist: {
+      label: 'Checklist',
+      descrizione: 'Elenco con caselle da spuntare durante la procedura',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="6" rx="1"/><path d="M5 6l1 1 2-2"/><path d="M12 6h9M12 12h9M12 18h9"/><rect x="3" y="9" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/></svg>',
+      defaults: { items: [''] },
+      fields: [
+        { key: 'titolo', label: 'Titolo', type: 'text', placeholder: 'es. Controlli pre-procedura' },
+        { key: 'items', label: 'Voci da spuntare', type: 'string-list', placeholder: 'una per riga' }
+      ]
+    },
+    callout: {
+      label: 'Avviso',
+      descrizione: 'Box evidenziato per note importanti',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 22h20L12 2z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>',
+      defaults: { variante: 'warning', testo: '' },
+      fields: [
+        { key: 'variante', label: 'Tipo', type: 'select', options: [
+          { value: 'warning', label: '⚠ Avviso (arancio)' },
+          { value: 'info', label: 'ℹ Informazione (blu)' },
+          { value: 'tip', label: '✓ Consiglio (verde)' },
+          { value: 'danger', label: '✗ Pericolo (rosso)' }
+        ]},
+        { key: 'titolo', label: 'Titolo', type: 'text', placeholder: 'es. Prima di pungere' },
+        { key: 'testo', label: 'Testo', type: 'textarea', rows: 2 }
+      ]
+    },
+    table: {
+      label: 'Tabella',
+      descrizione: 'Tabella con intestazioni e righe',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>',
+      defaults: { headers: ['Colonna 1', 'Colonna 2'], rows: [['', '']] },
+      fields: [
+        { key: 'titolo', label: 'Titolo', type: 'text', placeholder: 'es. Analisi specifiche' },
+        { key: '_table', type: 'table-editor' }
+      ]
+    },
+    image: {
+      label: 'Immagine',
+      descrizione: 'Immagine con didascalia e descrizione',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+      defaults: { src: '' },
+      fields: [
+        { key: 'src', label: 'Nome file immagine', type: 'text', placeholder: 'es. rachicentesi-repere.jpg', hint: 'Il file deve esistere in content/moduli/img/. Usa il pulsante sopra per caricare.' },
+        { key: 'alt', label: 'Testo alternativo', type: 'text', placeholder: 'breve descrizione per accessibilità' },
+        { key: 'caption', label: 'Didascalia (visibile)', type: 'text', placeholder: 'es. Punto di repere L3-L4' },
+        { key: 'descrizione', label: 'Descrizione estesa (per AI, non visibile)', type: 'textarea', rows: 3, hint: 'Descrivi cosa mostra l\'immagine in dettaglio. Sarà usato da un\'AI futura per rispondere a domande.' }
+      ]
+    },
+    system_code: {
+      label: 'Codice sistema',
+      descrizione: 'Codici per sistemi ospedalieri (Galileo, GIPSE)',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+      defaults: { sistema: 'Galileo', codici: [{ codice: '', descrizione: '' }] },
+      fields: [
+        { key: 'sistema', label: 'Sistema', type: 'select', options: [
+          { value: 'Galileo', label: 'Galileo' },
+          { value: 'GIPSE', label: 'GIPSE' },
+          { value: 'Altro', label: 'Altro sistema' }
+        ]},
+        { key: 'titolo', label: 'Titolo richiesta', type: 'text', placeholder: 'es. Esame del liquor' },
+        { key: 'percorso', label: 'Percorso nel sistema', type: 'text', placeholder: 'es. SR MEDICINA DI LABORATORIO → ESAME DEL LIQUOR' },
+        { key: '_codici', type: 'codici-editor' },
+        { key: 'note', label: 'Note', type: 'textarea', rows: 2, placeholder: 'es. Feriali entro le 14' }
+      ]
+    },
+    link: {
+      label: 'Link esterno',
+      descrizione: 'Collegamento a linea guida, articolo, sito',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>',
+      defaults: { url: '' },
+      fields: [
+        { key: 'url', label: 'URL', type: 'text', placeholder: 'https://...' },
+        { key: 'titolo', label: 'Titolo', type: 'text', placeholder: 'es. Lumbar puncture — StatPearls' },
+        { key: 'fonte', label: 'Fonte', type: 'text', placeholder: 'es. NCBI Bookshelf' },
+        { key: 'data_accesso', label: 'Data di accesso (opzionale)', type: 'text', placeholder: 'es. 2026-04-15' }
+      ]
+    },
+    form_ref: {
+      label: 'Modulo interno',
+      descrizione: 'Rimando a un modulo dell\'app',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>',
+      defaults: { modulo: '' },
+      fields: [
+        { key: 'modulo', label: 'Modulo', type: 'select-dynamic', sourceKey: 'moduli' },
+        { key: 'label', label: 'Etichetta da mostrare', type: 'text', placeholder: 'es. Modulo consenso informato' }
+      ]
+    },
+    internal_ref: {
+      label: 'Rimando interno',
+      descrizione: 'Link ad altra scheda, modulo, tabella o contatto',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l10-10M7 7h10v10"/></svg>',
+      defaults: { target_tipo: 'procedura', target: '' },
+      fields: [
+        { key: 'target_tipo', label: 'Tipo di risorsa', type: 'select', options: [
+          { value: 'procedura', label: 'Procedura' },
+          { value: 'clinica', label: 'Scheda clinica' },
+          { value: 'tabella', label: 'Tabella' },
+          { value: 'modulo', label: 'Modulo' },
+          { value: 'numero', label: 'Contatto/numero' }
+        ]},
+        { key: 'target', label: 'Risorsa', type: 'select-dynamic', sourceKeyFrom: 'target_tipo' },
+        { key: 'label', label: 'Etichetta da mostrare', type: 'text', placeholder: 'es. Tabella sospensione anticoagulanti' }
+      ]
+    },
+    clinical_note: {
+      label: 'Template nota clinica',
+      descrizione: 'Testo pronto da copiare nel diario clinico',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      defaults: { testo: '' },
+      fields: [
+        { key: 'titolo', label: 'Titolo', type: 'text', placeholder: 'es. Template nota di diario' },
+        { key: 'testo', label: 'Testo della nota', type: 'textarea', rows: 5, placeholder: 'Scrivi qui il template...' }
+      ]
+    }
+  };
+
+  // Stato modulo (non esposto)
+  let _root = null;         // <div> container
+  let _blocks = [];         // array corrente (sincronizzato con DOM alla lettura)
+  let _uid = 0;             // contatore per id temporanei univoci
+
+  function uid() { return ++_uid; }
+
+  // Normalizza array di valori: converte textarea line-break in array items
+  function _normalizeBlock(b) {
+    const out = { ...b };
+    // Rimuovi campi vuoti/undefined (a parte tipo)
+    Object.keys(out).forEach(k => {
+      if (k === 'tipo') return;
+      if (out[k] === '' || out[k] == null) delete out[k];
+      else if (Array.isArray(out[k]) && out[k].length === 0) delete out[k];
+    });
+    return out;
+  }
+
+  // === Funzioni di source per select-dynamic (moduli, tabelle, ecc.) ===
+  function _sourcesFor(tipo) {
+    if (tipo === 'procedura') return state.index.procedure.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
+    if (tipo === 'clinica') return state.index.clinica.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
+    if (tipo === 'tabella') return state.index.tabelle.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
+    if (tipo === 'modulo') return state.index.moduli.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
+    if (tipo === 'numero') {
+      const out = [];
+      (state.index.numeri && state.index.numeri.gruppi || []).forEach(g => {
+        (g.contatti || []).forEach(c => { if (c.id) out.push({ id: c.id, label: c.etichetta || c.id }); });
+      });
+      return out;
+    }
+    if (tipo === 'moduli') return state.index.moduli.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
+    return [];
+  }
+
+  function _renderFieldHtml(field, value, blockIdx, fieldCtx) {
+    const fv = value == null ? '' : value;
+    const name = `bk-f-${blockIdx}-${field.key}`;
+    const id = `bk-field-${blockIdx}-${field.key}`;
+    const hint = field.hint ? `<div class="bk-field-hint">${escapeHtml(field.hint)}</div>` : '';
+    const lbl = field.label ? `<label for="${id}" class="bk-field-label">${escapeHtml(field.label)}</label>` : '';
+
+    if (field.type === 'text') {
+      return `<div class="bk-field">${lbl}<input type="text" id="${id}" class="bk-input" data-field="${field.key}" value="${escapeHtml(String(fv))}" placeholder="${escapeHtml(field.placeholder || '')}">${hint}</div>`;
+    }
+    if (field.type === 'textarea') {
+      return `<div class="bk-field">${lbl}<textarea id="${id}" class="bk-textarea" data-field="${field.key}" rows="${field.rows || 3}" placeholder="${escapeHtml(field.placeholder || '')}">${escapeHtml(String(fv))}</textarea>${hint}</div>`;
+    }
+    if (field.type === 'select') {
+      const opts = (field.options || []).map(o => `<option value="${escapeHtml(o.value)}" ${o.value === fv ? 'selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
+      return `<div class="bk-field">${lbl}<select id="${id}" class="bk-select" data-field="${field.key}">${opts}</select>${hint}</div>`;
+    }
+    if (field.type === 'select-dynamic') {
+      // Risolve source dinamico in base al tipo corrente (per internal_ref) o chiave fissa (per form_ref)
+      const srcKey = field.sourceKeyFrom ? fieldCtx[field.sourceKeyFrom] : field.sourceKey;
+      const items = _sourcesFor(srcKey);
+      const opts = '<option value="">— scegli —</option>' + items.map(it => `<option value="${escapeHtml(it.id)}" ${it.id === fv ? 'selected' : ''}>${escapeHtml(it.label)}</option>`).join('');
+      return `<div class="bk-field">${lbl}<select id="${id}" class="bk-select" data-field="${field.key}" data-source="${srcKey || ''}">${opts}</select>${hint}</div>`;
+    }
+    if (field.type === 'string-list') {
+      // Textarea dove ogni riga è un item
+      const lines = Array.isArray(fv) ? fv.join('\n') : String(fv || '');
+      return `<div class="bk-field">${lbl}<textarea id="${id}" class="bk-textarea bk-string-list" data-field="${field.key}" rows="4" placeholder="${escapeHtml(field.placeholder || 'una voce per riga')}">${escapeHtml(lines)}</textarea>${hint}</div>`;
+    }
+    if (field.type === 'table-editor') {
+      return _renderTableEditor(blockIdx, fieldCtx);
+    }
+    if (field.type === 'codici-editor') {
+      return _renderCodiciEditor(blockIdx, fieldCtx.codici || []);
+    }
+    return '';
+  }
+
+  function _renderTableEditor(blockIdx, ctx) {
+    const headers = Array.isArray(ctx.headers) ? ctx.headers : ['Colonna 1'];
+    const rows = Array.isArray(ctx.rows) ? ctx.rows : [];
+    const thCells = headers.map((h, ci) =>
+      `<th><input type="text" class="bk-input bk-th" data-col="${ci}" value="${escapeHtml(String(h || ''))}" placeholder="Intestazione"></th>`
+    ).join('');
+    const trRows = rows.map((row, ri) => {
+      const cells = headers.map((_, ci) =>
+        `<td><input type="text" class="bk-input bk-td" data-row="${ri}" data-col="${ci}" value="${escapeHtml(String(row[ci] != null ? row[ci] : ''))}"></td>`
+      ).join('');
+      return `<tr>${cells}<td class="bk-row-actions"><button type="button" class="bk-mini-btn" data-row-del="${ri}" title="Elimina riga">×</button></td></tr>`;
+    }).join('');
+    return `<div class="bk-field bk-table-editor">
+      <label class="bk-field-label">Tabella</label>
+      <div class="bk-table-wrap">
+        <table>
+          <thead><tr>${thCells}<th class="bk-col-actions-head"></th></tr></thead>
+          <tbody>${trRows}</tbody>
+        </table>
+      </div>
+      <div class="bk-table-actions">
+        <button type="button" class="bk-mini-btn" data-row-add>+ Aggiungi riga</button>
+        <button type="button" class="bk-mini-btn" data-col-add>+ Aggiungi colonna</button>
+        <button type="button" class="bk-mini-btn" data-col-del>− Rimuovi colonna</button>
+      </div>
+    </div>`;
+  }
+
+  function _renderCodiciEditor(blockIdx, codici) {
+    const list = (codici && codici.length) ? codici : [{ codice: '', descrizione: '' }];
+    const rows = list.map((c, ci) => `
+      <div class="bk-codice-row" data-idx="${ci}">
+        <input type="text" class="bk-input bk-codice-val" placeholder="es. LIQUO" value="${escapeHtml(String(c.codice || ''))}">
+        <input type="text" class="bk-input bk-codice-desc" placeholder="es. Chimico-fisico" value="${escapeHtml(String(c.descrizione || ''))}">
+        <button type="button" class="bk-mini-btn" data-codice-del="${ci}" title="Rimuovi">×</button>
+      </div>
+    `).join('');
+    return `<div class="bk-field bk-codici-editor">
+      <label class="bk-field-label">Codici</label>
+      <div class="bk-codici-list">${rows}</div>
+      <button type="button" class="bk-mini-btn" data-codice-add>+ Aggiungi codice</button>
+    </div>`;
+  }
+
+  // Costruisce un blocco DOM per un blocco dati
+  function _renderBlock(b, idx) {
+    const def = TIPI[b.tipo];
+    if (!def) {
+      return `<div class="bk-item bk-item-unknown" data-bk-idx="${idx}" data-bk-tipo="${escapeHtml(b.tipo)}">
+        <div class="bk-item-head"><span class="bk-item-type">Tipo sconosciuto: ${escapeHtml(b.tipo)}</span></div>
+      </div>`;
+    }
+    const fieldsHtml = def.fields.map(f => _renderFieldHtml(f, b[f.key], idx, b)).join('');
+    return `<div class="bk-item" data-bk-idx="${idx}" data-bk-tipo="${escapeHtml(b.tipo)}">
+      <div class="bk-item-head">
+        <span class="bk-item-icon">${def.icon}</span>
+        <span class="bk-item-type">${escapeHtml(def.label)}</span>
+        <div class="bk-item-actions">
+          <button type="button" class="bk-mini-btn" data-move-up title="Sposta su">↑</button>
+          <button type="button" class="bk-mini-btn" data-move-down title="Sposta giù">↓</button>
+          <button type="button" class="bk-mini-btn bk-mini-btn-danger" data-delete title="Elimina blocco">×</button>
+        </div>
+      </div>
+      <div class="bk-item-body">${fieldsHtml}</div>
+    </div>`;
+  }
+
+  function _renderAddMenu() {
+    const btns = Object.keys(TIPI).map(t => {
+      const def = TIPI[t];
+      return `<button type="button" class="bk-add-option" data-add-type="${t}">
+        <span class="bk-add-icon">${def.icon}</span>
+        <span class="bk-add-label">
+          <strong>${escapeHtml(def.label)}</strong>
+          <span class="bk-add-desc">${escapeHtml(def.descrizione)}</span>
+        </span>
+      </button>`;
+    }).join('');
+    return `<details class="bk-add-menu">
+      <summary class="bk-add-summary">+ Aggiungi blocco</summary>
+      <div class="bk-add-options">${btns}</div>
+    </details>`;
+  }
+
+  function _fullRender() {
+    if (!_root) return;
+    const blocksHtml = _blocks.map((b, i) => _renderBlock(b, i)).join('');
+    _root.innerHTML = `
+      <div class="bk-list">${blocksHtml || '<div class="bk-empty">Nessun blocco. Usa il pulsante qui sotto per iniziare.</div>'}</div>
+      ${_renderAddMenu()}
+    `;
+    _attachEvents();
+  }
+
+  function _markDirty() {
+    if (state.editingContext) state.editingContext.isDirty = true;
+  }
+
+  function _attachEvents() {
+    if (!_root) return;
+
+    // Input generici: rileggono valore nel blocco e marcano dirty
+    _root.querySelectorAll('.bk-item input[data-field], .bk-item select[data-field], .bk-item textarea[data-field]').forEach(el => {
+      el.addEventListener('input', () => {
+        const item = el.closest('.bk-item');
+        if (!item) return;
+        const idx = parseInt(item.dataset.bkIdx, 10);
+        const key = el.dataset.field;
+        const b = _blocks[idx];
+        if (!b) return;
+        if (el.classList.contains('bk-string-list')) {
+          b[key] = el.value.split('\n').map(s => s.trim()).filter(Boolean);
+        } else {
+          b[key] = el.value;
+        }
+        _markDirty();
+        // Se è cambiato target_tipo in internal_ref, rigenera il secondo select
+        if (b.tipo === 'internal_ref' && key === 'target_tipo') {
+          b.target = '';
+          _fullRender();
+        }
+      });
+    });
+
+    // Table editor: input su th/td + bottoni riga/colonna
+    _root.querySelectorAll('.bk-table-editor').forEach(tblEl => {
+      const item = tblEl.closest('.bk-item');
+      const idx = parseInt(item.dataset.bkIdx, 10);
+      const b = _blocks[idx];
+      if (!b) return;
+
+      tblEl.querySelectorAll('.bk-th').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const ci = parseInt(inp.dataset.col, 10);
+          if (!Array.isArray(b.headers)) b.headers = [];
+          b.headers[ci] = inp.value;
+          _markDirty();
+        });
+      });
+      tblEl.querySelectorAll('.bk-td').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const ri = parseInt(inp.dataset.row, 10);
+          const ci = parseInt(inp.dataset.col, 10);
+          if (!Array.isArray(b.rows)) b.rows = [];
+          if (!Array.isArray(b.rows[ri])) b.rows[ri] = [];
+          b.rows[ri][ci] = inp.value;
+          _markDirty();
+        });
+      });
+
+      const btnRowAdd = tblEl.querySelector('[data-row-add]');
+      if (btnRowAdd) btnRowAdd.onclick = () => {
+        if (!Array.isArray(b.rows)) b.rows = [];
+        b.rows.push(new Array((b.headers || []).length).fill(''));
+        _markDirty(); _fullRender();
+      };
+      const btnColAdd = tblEl.querySelector('[data-col-add]');
+      if (btnColAdd) btnColAdd.onclick = () => {
+        if (!Array.isArray(b.headers)) b.headers = [];
+        b.headers.push(`Colonna ${b.headers.length + 1}`);
+        (b.rows || []).forEach(r => r.push(''));
+        _markDirty(); _fullRender();
+      };
+      const btnColDel = tblEl.querySelector('[data-col-del]');
+      if (btnColDel) btnColDel.onclick = () => {
+        if (!Array.isArray(b.headers) || b.headers.length <= 1) return;
+        b.headers.pop();
+        (b.rows || []).forEach(r => r.pop());
+        _markDirty(); _fullRender();
+      };
+      tblEl.querySelectorAll('[data-row-del]').forEach(btn => {
+        btn.onclick = () => {
+          const ri = parseInt(btn.dataset.rowDel, 10);
+          if (Array.isArray(b.rows) && ri >= 0 && ri < b.rows.length) {
+            b.rows.splice(ri, 1);
+            _markDirty(); _fullRender();
+          }
+        };
+      });
+    });
+
+    // Codici editor (system_code)
+    _root.querySelectorAll('.bk-codici-editor').forEach(codEl => {
+      const item = codEl.closest('.bk-item');
+      const idx = parseInt(item.dataset.bkIdx, 10);
+      const b = _blocks[idx];
+      if (!b) return;
+      if (!Array.isArray(b.codici)) b.codici = [{ codice: '', descrizione: '' }];
+
+      codEl.querySelectorAll('.bk-codice-row').forEach(rowEl => {
+        const ci = parseInt(rowEl.dataset.idx, 10);
+        rowEl.querySelector('.bk-codice-val').addEventListener('input', (e) => {
+          if (!b.codici[ci]) b.codici[ci] = { codice: '', descrizione: '' };
+          b.codici[ci].codice = e.target.value;
+          _markDirty();
+        });
+        rowEl.querySelector('.bk-codice-desc').addEventListener('input', (e) => {
+          if (!b.codici[ci]) b.codici[ci] = { codice: '', descrizione: '' };
+          b.codici[ci].descrizione = e.target.value;
+          _markDirty();
+        });
+      });
+      codEl.querySelectorAll('[data-codice-del]').forEach(btn => {
+        btn.onclick = () => {
+          const ci = parseInt(btn.dataset.codiceDel, 10);
+          if (b.codici.length > 1) b.codici.splice(ci, 1);
+          else b.codici[0] = { codice: '', descrizione: '' };
+          _markDirty(); _fullRender();
+        };
+      });
+      const btnAdd = codEl.querySelector('[data-codice-add]');
+      if (btnAdd) btnAdd.onclick = () => {
+        b.codici.push({ codice: '', descrizione: '' });
+        _markDirty(); _fullRender();
+      };
+    });
+
+    // Azioni blocco: sposta su/giù, elimina
+    _root.querySelectorAll('.bk-item').forEach(item => {
+      const idx = parseInt(item.dataset.bkIdx, 10);
+      const upBtn = item.querySelector('[data-move-up]');
+      const dnBtn = item.querySelector('[data-move-down]');
+      const delBtn = item.querySelector('[data-delete]');
+      if (upBtn) upBtn.onclick = () => {
+        if (idx <= 0) return;
+        const tmp = _blocks[idx]; _blocks[idx] = _blocks[idx - 1]; _blocks[idx - 1] = tmp;
+        _markDirty(); _fullRender();
+      };
+      if (dnBtn) dnBtn.onclick = () => {
+        if (idx >= _blocks.length - 1) return;
+        const tmp = _blocks[idx]; _blocks[idx] = _blocks[idx + 1]; _blocks[idx + 1] = tmp;
+        _markDirty(); _fullRender();
+      };
+      if (delBtn) delBtn.onclick = () => {
+        if (!confirm('Eliminare questo blocco?')) return;
+        _blocks.splice(idx, 1);
+        _markDirty(); _fullRender();
+      };
+    });
+
+    // Aggiungi blocco
+    _root.querySelectorAll('[data-add-type]').forEach(btn => {
+      btn.onclick = () => {
+        const t = btn.dataset.addType;
+        const def = TIPI[t];
+        if (!def) return;
+        // Clone profondo dei defaults per evitare condivisione di riferimenti
+        const newB = { tipo: t, ...JSON.parse(JSON.stringify(def.defaults)) };
+        _blocks.push(newB);
+        _markDirty();
+        _fullRender();
+        // Chiude il menu aperto
+        const menu = _root.querySelector('.bk-add-menu');
+        if (menu) menu.removeAttribute('open');
+        // Scroll al nuovo blocco
+        setTimeout(() => {
+          const items = _root.querySelectorAll('.bk-item');
+          const last = items[items.length - 1];
+          if (last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      };
+    });
+  }
+
+  // === API pubblica ===
+  return {
+    render(container, contenuti) {
+      _root = container;
+      // Copia profonda dei blocchi iniziali (per non mutare il frontmatter originale)
+      _blocks = Array.isArray(contenuti) ? JSON.parse(JSON.stringify(contenuti)) : [];
+      _fullRender();
+    },
+    getBlocks() {
+      // Rilettura finale: ripulisce campi vuoti e normalizza
+      return _blocks.map(b => _normalizeBlock(b));
+    },
+    hasBlocks() { return _blocks.length > 0; },
+    // Esposto solo per test
+    _tipi: TIPI
+  };
+})();
+
 function renderEditorUI(slug, frontmatter, body) {
   const moduliOpts = state.index.moduli.map(m => m.slug);
   const tabelleOpts = state.index.tabelle.map(t => t.slug);
@@ -4233,25 +5199,34 @@ function renderEditorUI(slug, frontmatter, body) {
       <div id="editor-wrapper"></div>
     </div>`;
 
-  state.editorInstance = new toastui.Editor({
-    el: $('editor-wrapper'),
-    height: '600px',
-    initialEditType: 'wysiwyg',
-    previewStyle: 'vertical',
-    initialValue: body,
-    usageStatistics: false,
-    hideModeSwitch: true,
-    toolbarItems: [
-      ['heading', 'bold', 'italic', 'strike'],
-      ['hr', 'quote'],
-      ['ul', 'ol', 'task'],
-      ['table', 'link'],
-      ['code', 'codeblock']
-    ]
-  });
+  // Decide quale editor montare:
+  // - Se il frontmatter ha `contenuti` (array), usa il block editor (schema nuovo, Fase 2+)
+  // - Altrimenti fallback a Toast UI Editor (file legacy)
+  const usesBlockEditor = Array.isArray(frontmatter.contenuti);
+  if (usesBlockEditor) {
+    blockEditor.render($('editor-wrapper'), frontmatter.contenuti);
+    // Memorizzo flag per sapere come serializzare in save
+    state.editingContext._usesBlockEditor = true;
+  } else {
+    state.editorInstance = new toastui.Editor({
+      el: $('editor-wrapper'),
+      height: '600px',
+      initialEditType: 'wysiwyg',
+      previewStyle: 'vertical',
+      initialValue: body,
+      usageStatistics: false,
+      hideModeSwitch: true,
+      toolbarItems: [
+        ['heading', 'bold', 'italic', 'strike'],
+        ['hr', 'quote'],
+        ['ul', 'ol', 'task'],
+        ['table', 'link'],
+        ['code', 'codeblock']
+      ]
+    });
 
-  state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
-  state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+    state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  }
 
   // Image upload handler for procedure editor
   attachImageUploadHandler('img-file-input-proc', 'img-upload-status-proc');
@@ -4332,7 +5307,15 @@ async function saveProcedura() {
       ...((ctx.originalFrontmatter.cronologia_recente || []).slice(0, 4))
     ];
 
-    const newBody = state.editorInstance.getMarkdown();
+    // Se la scheda usa l'editor a blocchi, leggo i blocchi dal modulo e li metto in nf.contenuti.
+    // Il body markdown resta sempre vuoto per le schede a blocchi (è voluto).
+    let newBody;
+    if (ctx._usesBlockEditor) {
+      nf.contenuti = blockEditor.getBlocks();
+      newBody = '';
+    } else {
+      newBody = state.editorInstance.getMarkdown();
+    }
     const newContent = stringifyMarkdown(nf, newBody);
     const commitMsg = `Aggiorna ${ctx.slug} — ${nota} (by ${state.session.username})`;
 
@@ -5241,6 +6224,7 @@ function classifyContatto(c) {
     }
   }
   const label = (c.etichetta || '').toLowerCase();
+  const sezione = (c.sezione || '').toLowerCase();
   const tags = (c.tag || []).map(t => t.toLowerCase());
   const isGuardia = tags.includes('guardia') || /\b(guardia|mdg|medico di guardia|reperibile)\b/i.test(c.etichetta || '');
   // Reparto / aree cliniche operative. Uso prefix match per degenz/infermier (no \b finale).
@@ -5249,8 +6233,10 @@ function classifyContatto(c) {
   const isSegreteria = /\b(segreteria|segr\.)\b/i.test(c.etichetta || '');
   // Direzione pura (direttore, studi professori, scuola, didattica) — NON taggata di default
   const isDirezione = /\b(direttore|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(c.etichetta || '');
-  const isAmb = /\b(ambulator|amb\.|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '');
+  const isAmb = /\b(ambulator|amb\.|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '') || sezione === 'ambulatori';
   if (isGuardia) return { group: 1, kind: 'guardia' };
+  // Se l'etichetta o la sezione segnala "ambulatorio", vince su reparto (es. "Coordinatore Ambulatorio")
+  if (isAmb && isReparto) return { group: 3, kind: 'ambulatorio' };
   if (isReparto) return { group: 2, kind: 'reparto' };
   if (isAmb) return { group: 3, kind: 'ambulatorio' };
   if (isSegreteria) return { group: 4, kind: 'segreteria' };
@@ -9879,6 +10865,16 @@ function initEventListeners() {
 async function init() {
   initTheme();
   initEventListeners();
+
+  // Deep-link: se l'URL ha un hash del tipo #bl-<schedaId>-<idx>, memorizzalo
+  // per essere scrollato dopo il render della scheda. Utile per citazioni AI future.
+  tryCaptureBlockHash();
+  window.addEventListener('hashchange', () => {
+    if (tryCaptureBlockHash()) {
+      scrollToPendingBlock();
+    }
+  });
+
   // Kbd indicator: Ctrl su Windows/Linux, ⌘ su Mac
   const kbdEl = document.getElementById('search-kbd-indicator');
   if (kbdEl) {
