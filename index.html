@@ -72,7 +72,8 @@ html[data-font-size="sm"] main.content{zoom:0.88}
 html[data-font-size="md"] main.content{zoom:1}
 html[data-font-size="lg"] main.content{zoom:1.12}
 html[data-font-size="xl"] main.content{zoom:1.25}
-body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior-y:contain}
+html{overscroll-behavior-y:contain}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
 .hidden{display:none!important}
 a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
@@ -102,8 +103,28 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .btn.secondary:hover{background:var(--rule-soft)}
 .btn.ghost{background:transparent;border-color:var(--rule);color:var(--ink-soft)}
 .btn.ghost:hover{border-color:var(--ink);color:var(--ink);background:var(--bg-raised)}
-.btn.danger{background:var(--danger);border-color:var(--danger)}
-.btn.danger:hover{background:#7a2723}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.danger:hover{background:#7a2723;color:#fff}
+.btn.ghost.danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+.btn.ghost.danger:hover{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.small{font-size:12px;padding:6px 12px}
+
+/* Gestione utenti — toolbar ricerca + filtri ruolo */
+.ut-toolbar{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.ut-search-wrap{position:relative;max-width:420px}
+.ut-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none}
+.ut-search-input{width:100%;padding:10px 40px 10px 38px;font-size:15px;font-family:var(--sans);border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);color:var(--ink);transition:border-color .15s,background .15s}
+.ut-search-input:focus{outline:none;border-color:var(--ink);background:var(--bg)}
+.ut-search-input::-webkit-search-cancel-button{display:none}
+.ut-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:transparent;color:var(--ink-muted);font-size:20px;line-height:1;cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center;padding:0}
+.ut-search-clear:hover{background:var(--rule-soft);color:var(--ink)}
+.ut-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ut-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:14px;font-family:var(--sans);font-size:12px;color:var(--ink-soft);cursor:pointer;transition:all .12s;letter-spacing:.01em}
+.ut-chip:hover{border-color:var(--ink-soft);background:var(--bg-sink)}
+.ut-chip.active{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
+.ut-chip.active:hover{background:var(--ink-soft);border-color:var(--ink-soft)}
+.ut-chip-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;padding:1px 5px;font-family:var(--mono);font-size:10px;font-weight:600;background:var(--bg-sink);color:var(--ink-muted);border-radius:10px}
+.ut-chip.active .ut-chip-count{background:rgba(255,255,255,.2);color:var(--bg-paper)}
 .btn.full{width:100%}
 .btn.sm{font-size:12px;padding:8px 14px}
 
@@ -1796,6 +1817,7 @@ function saveEtagCacheToSession() {
     etagCache.forEach((v, k) => { obj[k] = v; });
     sessionStorage.setItem('collinettaai.etags', JSON.stringify({
       _savedAt: nowIso(),
+      _dataRepo: CONFIG.DATA_REPO_NAME,
       entries: obj
     }));
   } catch (e) { console.warn('etag cache persist failed', e); }
@@ -1808,6 +1830,12 @@ function loadEtagCacheFromSession() {
     const parsed = JSON.parse(raw);
     // Invalidate cache older than 30 min
     if ((new Date() - new Date(parsed._savedAt)) > 30 * 60 * 1000) {
+      sessionStorage.removeItem('collinettaai.etags');
+      return;
+    }
+    // Invalida se la cache è stata creata per un repo diverso da quello attuale
+    // (necessario dopo la migrazione al repo dati CollinettaAI-data)
+    if (parsed._dataRepo !== CONFIG.DATA_REPO_NAME) {
       sessionStorage.removeItem('collinettaai.etags');
       return;
     }
@@ -4016,6 +4044,15 @@ async function proceedToEdit(slug, forceOverride) {
     const file = await gh.getFile(proc.path);
     if (!file) throw new Error(`File non trovato (${proc.path})`);
     const { frontmatter, body } = parseMarkdown(file.content);
+    // Log diagnostico per debug body vuoto
+    if (!body || body.trim().length < 10) {
+      console.warn('[editor] body molto corto o vuoto per', slug, {
+        path: proc.path,
+        contentLength: file.content ? file.content.length : 0,
+        bodyLength: body ? body.length : 0,
+        contentPreview: (file.content || '').substring(0, 200)
+      });
+    }
     state.editingContext = {
       type: 'procedura', slug, path: file.path, sha: file.sha,
       originalFrontmatter: { ...frontmatter },
@@ -6493,56 +6530,218 @@ async function decryptPayload(entry, passphrase) {
 /* Ruoli disponibili, sincronizzato con create_users.html */
 const RUOLI_STANDARD = ['specializzando', 'strutturato'];
 
+// Stato per UI gestione utenti: ricerca e filtro ruolo
+const gestioneUtentiState = {
+  searchQuery: '',
+  filterRuolo: 'all',     // 'all' | 'admin' | 'specializzando' | 'strutturato' | '<ruolo custom>' | '—'
+  _data: null             // cache dell'ultima risposta gh_auth.getTokensFile()
+};
+
+function ruoloLabel(r) {
+  if (r === '—' || !r) return 'Senza ruolo';
+  return r.charAt(0).toUpperCase() + r.slice(1);
+}
+
 async function renderGestioneUtenti() {
   if (!isAdmin()) return renderError('Accesso negato', 'Solo amministratori.');
   renderLoading('Caricamento utenti...');
   try {
     const { data } = await gh_auth.getTokensFile();
-    const users = data.utenti || {};
-    const entries = Object.entries(users).sort(([a], [b]) => a.localeCompare(b));
-
-    $('main-content').innerHTML = `
-      <div class="page-head">
-        <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Amministrazione</div>
-        <h1 class="page-title">Gestione <em>utenti</em></h1>
-        <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
-          ${entries.length} utenti registrati. I nuovi utenti eredidano il <code>token_data</code> dalla tua sessione; se promossi ad admin ereditano anche <code>token_auth</code>.
-        </div>
-        <div class="page-actions" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn" id="btn-add-user">+ Aggiungi utente</button>
-          <button class="btn ghost" onclick="navigate('cestino-utenti')">Cestino utenti</button>
-        </div>
-      </div>
-      <div class="procedure-grid" style="margin-top:24px;">
-        ${entries.length === 0 ? '<p style="color:var(--ink-muted);font-style:italic;">Nessun utente.</p>' :
-          entries.map(([uname, entry]) => {
-            const isAdminUser = !!entry.is_admin;
-            const ruolo = entry.ruolo || '—';
-            const ruoloLabel = RUOLI_STANDARD.includes(ruolo)
-              ? ruolo.charAt(0).toUpperCase() + ruolo.slice(1)
-              : (ruolo === '—' ? '—' : ruolo.charAt(0).toUpperCase() + ruolo.slice(1));
-            const iterCount = entry.iterations || '?';
-            return `
-              <div class="procedure-card" style="cursor:default;">
-                <div class="procedure-card-title" style="display:flex;align-items:center;gap:10px;">
-                  <span>${escapeHtml(uname)}</span>
-                  <span style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;${isAdminUser ? 'background:var(--accent);color:white;' : 'background:var(--bg-sink);color:var(--ink-muted);border:1px solid var(--rule);'}">${isAdminUser ? '★ Admin' : 'Utente'}</span>
-                </div>
-                <div class="procedure-card-tags" style="font-size:13px;color:var(--ink-muted);margin:6px 0;">
-                  Ruolo: <strong>${escapeHtml(ruoloLabel)}</strong>${entry.updated_at ? ' · Aggiornato ' + timeAgo(entry.updated_at) : ''}
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
-                  <button class="btn small ghost" onclick="cambiaPassphrase('${escapeJs(uname)}')">Cambia passphrase</button>
-                  ${uname === state.session.username ? '' : `<button class="btn small ghost danger" onclick="rimuoviUtente('${escapeJs(uname)}')">Rimuovi</button>`}
-                </div>
-              </div>`;
-          }).join('')}
-      </div>`;
-
-    $('btn-add-user').addEventListener('click', () => aggiungiUtenteModal());
+    gestioneUtentiState._data = data;
+    renderGestioneUtentiView();
   } catch (e) {
     renderError('Errore caricamento utenti', e.message);
   }
+}
+
+function renderGestioneUtentiView() {
+  const data = gestioneUtentiState._data || { utenti: {} };
+  const users = data.utenti || {};
+  const entries = Object.entries(users).sort(([a], [b]) => a.localeCompare(b));
+
+  // Conteggi per ruolo (ignorano i filtri attivi)
+  const countAll = entries.length;
+  const countAdmin = entries.filter(([, e]) => !!e.is_admin).length;
+  const ruoloBuckets = {};
+  entries.forEach(([, e]) => {
+    const r = e.ruolo || '—';
+    ruoloBuckets[r] = (ruoloBuckets[r] || 0) + 1;
+  });
+  const ruoliOrdered = [];
+  RUOLI_STANDARD.forEach(r => { if (ruoloBuckets[r]) ruoliOrdered.push(r); });
+  Object.keys(ruoloBuckets)
+    .filter(r => !RUOLI_STANDARD.includes(r) && r !== '—')
+    .sort()
+    .forEach(r => ruoliOrdered.push(r));
+  if (ruoloBuckets['—']) ruoliOrdered.push('—');
+
+  // Applico filtri
+  const q = gestioneUtentiState.searchQuery.trim().toLowerCase();
+  const filtered = entries.filter(([uname, entry]) => {
+    if (gestioneUtentiState.filterRuolo === 'admin') {
+      if (!entry.is_admin) return false;
+    } else if (gestioneUtentiState.filterRuolo !== 'all') {
+      const r = entry.ruolo || '—';
+      if (r !== gestioneUtentiState.filterRuolo) return false;
+    }
+    if (q) {
+      const ruolo = (entry.ruolo || '').toLowerCase();
+      if (!uname.toLowerCase().includes(q) && !ruolo.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const chipActive = (val) => gestioneUtentiState.filterRuolo === val;
+  const chipsHtml = `
+    <button class="ut-chip ${chipActive('all') ? 'active' : ''}" data-filter="all">Tutti <span class="ut-chip-count">${countAll}</span></button>
+    <button class="ut-chip ${chipActive('admin') ? 'active' : ''}" data-filter="admin">★ Admin <span class="ut-chip-count">${countAdmin}</span></button>
+    ${ruoliOrdered.map(r => `
+      <button class="ut-chip ${chipActive(r) ? 'active' : ''}" data-filter="${escapeHtml(r)}">${escapeHtml(ruoloLabel(r))} <span class="ut-chip-count">${ruoloBuckets[r]}</span></button>
+    `).join('')}
+  `;
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Amministrazione</div>
+      <h1 class="page-title">Gestione <em>utenti</em></h1>
+      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
+        ${countAll} utenti registrati. I nuovi utenti ereditano il <code>token_data</code> dalla tua sessione; se promossi ad admin ereditano anche <code>token_auth</code>.
+      </div>
+      <div class="page-actions" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" id="btn-add-user">+ Aggiungi utente</button>
+        <button class="btn ghost" onclick="navigate('cestino-utenti')">Cestino utenti</button>
+      </div>
+    </div>
+
+    <div class="ut-toolbar">
+      <div class="ut-search-wrap">
+        <svg class="ut-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="search" id="ut-search" class="ut-search-input" placeholder="Cerca per username o ruolo…" value="${escapeHtml(gestioneUtentiState.searchQuery)}" autocomplete="off">
+        ${gestioneUtentiState.searchQuery ? '<button type="button" class="ut-search-clear" id="ut-search-clear" title="Pulisci" aria-label="Pulisci ricerca">×</button>' : ''}
+      </div>
+      <div class="ut-chips" id="ut-chips">${chipsHtml}</div>
+    </div>
+
+    <div id="ut-results" style="margin-top:20px;">${renderUtentiCards(filtered, countAll, q)}</div>
+  `;
+
+  // Event binding
+  $('btn-add-user').addEventListener('click', () => aggiungiUtenteModal());
+
+  const searchInput = $('ut-search');
+  if (searchInput) {
+    // input event → filtra senza refetch, non rifa l'intera UI (focus preservato)
+    searchInput.addEventListener('input', (e) => {
+      gestioneUtentiState.searchQuery = e.target.value;
+      rerenderUtentiResults();
+    });
+    // Al primo render, se c'era una query attiva, riposiziona focus e cursore in coda
+    if (gestioneUtentiState.searchQuery) {
+      const len = searchInput.value.length;
+      searchInput.focus();
+      searchInput.setSelectionRange(len, len);
+    }
+  }
+  const searchClear = $('ut-search-clear');
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      gestioneUtentiState.searchQuery = '';
+      renderGestioneUtentiView();  // rifa la UI per rimuovere il bottone ×
+    });
+  }
+
+  // Chip filtri
+  document.querySelectorAll('.ut-chip[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      gestioneUtentiState.filterRuolo = btn.dataset.filter;
+      renderGestioneUtentiView();  // rifa la UI per aggiornare .active
+    });
+  });
+}
+
+// Ricomputa e rerenderizza solo la parte cards/empty-state senza toccare search/chips
+function rerenderUtentiResults() {
+  const data = gestioneUtentiState._data || { utenti: {} };
+  const entries = Object.entries(data.utenti || {}).sort(([a], [b]) => a.localeCompare(b));
+  const countAll = entries.length;
+  const q = gestioneUtentiState.searchQuery.trim().toLowerCase();
+  const filtered = entries.filter(([uname, entry]) => {
+    if (gestioneUtentiState.filterRuolo === 'admin') {
+      if (!entry.is_admin) return false;
+    } else if (gestioneUtentiState.filterRuolo !== 'all') {
+      const r = entry.ruolo || '—';
+      if (r !== gestioneUtentiState.filterRuolo) return false;
+    }
+    if (q) {
+      const ruolo = (entry.ruolo || '').toLowerCase();
+      if (!uname.toLowerCase().includes(q) && !ruolo.includes(q)) return false;
+    }
+    return true;
+  });
+  const target = $('ut-results');
+  if (target) target.innerHTML = renderUtentiCards(filtered, countAll, q);
+
+  // Mostra/nascondi il bottone clear della search in base allo stato
+  const wrap = document.querySelector('.ut-search-wrap');
+  const existingClear = $('ut-search-clear');
+  if (q && !existingClear && wrap) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ut-search-clear';
+    b.id = 'ut-search-clear';
+    b.title = 'Pulisci';
+    b.setAttribute('aria-label', 'Pulisci ricerca');
+    b.textContent = '×';
+    b.addEventListener('click', () => {
+      gestioneUtentiState.searchQuery = '';
+      const searchInput = $('ut-search');
+      if (searchInput) searchInput.value = '';
+      b.remove();
+      rerenderUtentiResults();
+    });
+    wrap.appendChild(b);
+  } else if (!q && existingClear) {
+    existingClear.remove();
+  }
+}
+
+function renderUtentiCards(filtered, countAll, q) {
+  if (countAll === 0) {
+    return '<p style="color:var(--ink-muted);font-style:italic;">Nessun utente registrato.</p>';
+  }
+  if (filtered.length === 0) {
+    return `<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;border:1px dashed var(--rule);border-radius:2px;">
+      Nessun utente corrisponde ai filtri.
+      <button class="btn ghost small" style="margin-left:8px;" onclick="resetUtentiFilters()">Azzera filtri</button>
+    </div>`;
+  }
+  return `<div class="procedure-grid">
+    ${filtered.map(([uname, entry]) => {
+      const isAdminUser = !!entry.is_admin;
+      const ruolo = entry.ruolo || '—';
+      const rLabel = ruoloLabel(ruolo);
+      return `
+        <div class="procedure-card" style="cursor:default;">
+          <div class="procedure-card-title" style="display:flex;align-items:center;gap:10px;">
+            <span>${escapeHtml(uname)}</span>
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;${isAdminUser ? 'background:var(--accent);color:white;' : 'background:var(--bg-sink);color:var(--ink-muted);border:1px solid var(--rule);'}">${isAdminUser ? '★ Admin' : 'Utente'}</span>
+          </div>
+          <div class="procedure-card-tags" style="font-size:13px;color:var(--ink-muted);margin:6px 0;">
+            Ruolo: <strong>${escapeHtml(rLabel)}</strong>${entry.updated_at ? ' · Aggiornato ' + timeAgo(entry.updated_at) : ''}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+            <button class="btn small ghost" onclick="cambiaPassphrase('${escapeJs(uname)}')">Cambia passphrase</button>
+            ${uname === state.session.username ? '' : `<button class="btn small ghost danger" onclick="rimuoviUtente('${escapeJs(uname)}')">Rimuovi</button>`}
+          </div>
+        </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function resetUtentiFilters() {
+  gestioneUtentiState.searchQuery = '';
+  gestioneUtentiState.filterRuolo = 'all';
+  renderGestioneUtentiView();
 }
 
 function aggiungiUtenteModal() {
@@ -9445,6 +9644,26 @@ function initEventListeners() {
       mode: null // deciso al primo touchmove in base alla direzione
     };
   }, { passive: true });
+
+  // Listener NON-PASSIVO per bloccare il pull-to-refresh nativo quando l'utente
+  // sta facendo pull-down sull'app. overscroll-behavior-y:contain dovrebbe bastare,
+  // ma questo è un fallback per browser che non lo supportano pienamente.
+  document.addEventListener('touchmove', (e) => {
+    if (!touchStart || !isMobileViewport()) return;
+    // Se siamo in modalità 'pulldown' con scroll a 0 e il gesto è principalmente verticale-giù,
+    // blocco il browser dal fare il suo pull-to-refresh nativo.
+    if (touchStart.mode === 'pulldown' || touchStart.canPulldown) {
+      const t = e.touches[0];
+      if (!t) return;
+      const dy = t.clientY - touchStart.y;
+      const absDx = Math.abs(t.clientX - touchStart.x);
+      // Se sto già andando giù dalla posizione in cima e il gesto è verticale
+      if (dy > 0 && absDx < HORIZ_TOLERANCE && window.scrollY <= 0) {
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
   document.addEventListener('touchmove', (e) => {
     if (!touchStart) return;
     const t = e.touches[0];
