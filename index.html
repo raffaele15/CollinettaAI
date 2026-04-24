@@ -136,6 +136,7 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 }
 @media (max-width:420px){
   .brand-mark{display:none}
+  .brand-mark-compact{display:inline-flex;align-items:baseline}
   header.topbar{padding:10px 10px;gap:8px 8px}
   #rate-limit-indicator{display:none!important}
 }
@@ -148,6 +149,8 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 [data-theme="dark"] .login-logo-light{display:none!important}
 [data-theme="dark"] .login-logo-dark{display:block!important}
 .brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
+.brand-mark-compact{display:none;font-family:var(--serif);font-weight:500;font-style:italic;font-size:20px;letter-spacing:-.02em;color:var(--ink)}
+.brand-mark-compact-ai{font-size:.7em;letter-spacing:.02em;margin-left:1px}
 .brand-divider{width:1px;height:16px;background:var(--rule-strong)}
 .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
 .search-wrap{position:relative;flex:1;min-width:0}
@@ -272,12 +275,39 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 .nav-tree-row.active{background:var(--accent-soft);color:var(--accent);font-weight:500}
 .nav-tree-row.expanded{font-weight:500;color:var(--ink)}
 .nav-tree-caret{display:inline-block;width:12px;font-size:10px;color:var(--ink-faint);text-align:center;flex-shrink:0;transition:transform .12s}
+.nav-tree-caret-clickable{cursor:pointer;padding:6px 8px;margin:-6px -8px -6px -4px;border-radius:3px}
+.nav-tree-caret-clickable:hover{background:var(--rule-soft);color:var(--ink)}
+.nav-tree-caret-clickable:active{background:var(--rule)}
+@media (max-width:900px){
+  .nav-tree-caret-clickable{padding:8px 10px;margin:-8px 2px -8px -6px;min-width:28px}
+}
 .nav-tree-row.expanded > .nav-tree-caret{transform:rotate(0)}
 .nav-tree-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nav-tree-count{display:none}
 .nav-tree-children{padding-left:14px;border-left:1px dashed var(--rule-soft);margin-left:10px;display:none}
 .nav-tree-node.open > .nav-tree-children{display:block}
 .nav-tree-children .nav-tree-row{font-size:13px;padding:4px 10px}
+
+/* Sidebar drill-down mode */
+.nav-drill-back{display:flex;align-items:center;gap:6px;padding:10px 12px;margin-bottom:6px;font-size:13px;color:var(--accent);cursor:pointer;border-radius:2px;background:var(--rule-soft);border:1px solid var(--rule);font-family:var(--mono);letter-spacing:.02em;transition:background .12s}
+.nav-drill-back:hover{background:var(--rule);color:var(--ink)}
+.nav-drill-back svg{flex-shrink:0}
+.nav-drill-header{padding:10px 12px 8px;border-bottom:1px solid var(--rule);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.nav-drill-title{font-family:var(--serif);font-size:17px;font-weight:500;color:var(--ink);flex:1}
+.nav-drill-header .nav-tree-count{display:inline-flex;font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:2px}
+.nav-drill-overview{border-bottom:1px dashed var(--rule-soft);margin-bottom:6px;padding-bottom:8px;font-style:italic;color:var(--ink-soft)}
+
+/* Root-level sidebar rows (nuova UX drill-down) */
+.nav-tree-root-row{padding:12px 14px;font-size:15px;font-weight:500;color:var(--ink);border-radius:2px;justify-content:space-between}
+.nav-tree-root-row:hover{background:var(--rule-soft)}
+.nav-tree-root-row .nav-tree-label{font-weight:500}
+.nav-tree-root-row .nav-tree-count{display:inline-flex;font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:2px}
+.nav-tree-chevron{font-size:18px;color:var(--ink-faint);flex-shrink:0;margin-left:4px;transition:color .12s}
+.nav-tree-root-row:hover .nav-tree-chevron{color:var(--ink)}
+.nav-tree-drill-row{padding:8px 12px;font-size:14px;color:var(--ink);justify-content:space-between}
+.nav-tree-drill-row:hover{background:var(--rule-soft)}
+.nav-tree-drill-row .nav-tree-count{display:inline-flex;font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--rule-soft);padding:1px 5px;border-radius:2px}
+.nav-tree-drill-row:hover .nav-tree-chevron{color:var(--ink)}
 
 /* Focus mode in sidebar */
 .nav-focus-header{padding:8px 10px 12px;border-bottom:1px solid var(--rule-soft);margin-bottom:8px}
@@ -904,6 +934,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
         <img src="icons/logo-light-small.png?v=2" alt="" class="brand-logo brand-logo-light">
         <img src="icons/logo-dark-small.png?v=2" alt="" class="brand-logo brand-logo-dark">
         <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
+        <span class="brand-mark-compact">C.<span class="brand-mark-compact-ai">AI</span></span>
       </span>
       <span class="brand-divider"></span>
       <span class="brand-sub">Neurologia · AOPD</span>
@@ -4499,7 +4530,6 @@ function renderNumeri(filter) {
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Rubrica</div>
       <h1 class="page-title">Rubrica</h1>
-      ${filterLabel ? `<div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">Filtrato per: <strong>${escapeHtml(filterLabel)}</strong></div>` : ''}
       <div class="numeri-filters" style="margin-top:20px;">
         <button class="filter-chip ${filter === 'pinned' ? 'active' : ''}" onclick="navigate('numeri', {filter:'pinned'})" title="Solo numeri e UOC preferiti">★</button>
         <button class="filter-chip ${!filter ? 'active' : ''}" onclick="navigate('numeri')">Tutti</button>
@@ -4645,10 +4675,19 @@ function renderNumeri(filter) {
               if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
                 return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify)).join('');
               }
-              // Se sto cercando o ho filtro contatto/guardia: tutto espanso
-              const autoExpandAll = !!(rubricaQuery || (filter && filter !== g.id) || filter === 'guardia');
+              // Logica inversa: espansi di default quando si apre la UOC in overview.
+              // Quando si fa una ricerca (rubricaQuery) o filtro guardia: collassati,
+              // mostrando solo gli header sede come shortcut di navigazione.
+              const isSearchingGlobal = !!rubricaQuery;
+              const isGuardiaFilter2 = filter === 'guardia';
+              // Modalità:
+              //   - overview UOC / filtro UOC singolo → "default aperto", toggle chiude singoli bucket
+              //   - ricerca / filtro guardia → "default chiuso", toggle apre singoli bucket
+              const defaultOpen = !isSearchingGlobal && !isGuardiaFilter2;
               if (!state.expandedSedi) state.expandedSedi = {};
+              if (!state.collapsedSedi) state.collapsedSedi = {};
               const expanded = state.expandedSedi[g.id] || new Set();
+              const collapsed = state.collapsedSedi[g.id] || new Set();
               return buckets.map(b => {
                 // Calcolo la "location string" del bucket per confrontarla col luogo del singolo contatto
                 const sedeLoc = b.sede
@@ -4658,14 +4697,16 @@ function renderNumeri(filter) {
                 // Normalizza: rimuove separatori per confronto più tollerante
                 const normalize = (s) => s.toLowerCase().replace(/[·|\-,]/g, ' ').replace(/\s+/g, ' ').trim();
                 const sedeLocN = normalize(sedeLoc);
-                const isOpen = autoExpandAll || expanded.has(b.sedeKey);
+                // Se siamo in modalità "default aperto": il bucket è aperto salvo che l'utente non l'abbia chiuso
+                // Se siamo in modalità "default chiuso": il bucket è chiuso salvo che l'utente non l'abbia aperto
+                const isOpen = defaultOpen ? !collapsed.has(b.sedeKey) : expanded.has(b.sedeKey);
                 const headerInner = b.sede
-                  ? renderSedeBucketHeader(b.sede)
+                  ? renderSedeBucketHeader(b.sede, null, g)
                   : (b.customLabel
-                    ? renderSedeBucketHeader(null, b.customLabel)
+                    ? renderSedeBucketHeader(null, b.customLabel, g)
                     : `<span class="sede-bucket-tipo">Altro</span>`);
                 return `<div class="sede-bucket" data-bucket="${escapeHtml(b.sedeKey)}">
-                  <button class="sede-bucket-toggle ${isOpen ? 'open' : ''}" onclick="toggleSedeBucket('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')">
+                  <button class="sede-bucket-toggle ${isOpen ? 'open' : ''}" onclick="toggleSedeBucket('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}', ${defaultOpen})">
                     <span class="sede-bucket-caret">${isOpen ? '▾' : '▸'}</span>
                     ${headerInner}
                   </button>
@@ -5197,7 +5238,7 @@ function groupContattiBySede(contatti, sezioni) {
 }
 
 // Header per bucket sede operativa (rubrica raggruppata)
-function renderSedeBucketHeader(s, customLabel) {
+function renderSedeBucketHeader(s, customLabel, gruppo) {
   const tipoLabels = {
     degenze: 'Degenze', sala_operatoria: 'Sala operatoria', diagnostica: 'Esami',
     ambulatori: 'Ambulatori', day_hospital: 'Day Hospital', segreteria: 'Segreteria',
@@ -5210,7 +5251,10 @@ function renderSedeBucketHeader(s, customLabel) {
   };
   // Se è un bucket dinamico (nessuna sede ma customLabel presente): mostra solo la sezione
   if (!s && customLabel) {
-    return `<span class="sede-bucket-tipo">${escapeHtml(customLabel)}</span>`;
+    // Anche qui eredita edificio dall'UOC se disponibile
+    const gubLoc = gruppo && gruppo.ubicazione ? (gruppo.ubicazione.struttura || '') : '';
+    return `<span class="sede-bucket-tipo">${escapeHtml(customLabel)}</span>
+      ${gubLoc ? `<span class="sede-bucket-loc">${escapeHtml(gubLoc)}</span>` : ''}`;
   }
   if (!s) {
     return `<span class="sede-bucket-tipo">${escapeHtml(customLabel || '—')}</span>`;
@@ -5218,23 +5262,41 @@ function renderSedeBucketHeader(s, customLabel) {
   // Priorità al campo `nome` (nuovo formato), poi tipoLabels, poi tipo raw
   const label = s.nome || tipoLabels[s.tipo] || (s.tipo || '').replace(/_/g, ' ');
   const parts = [];
-  if (s.edificio) parts.push(escapeHtml(s.edificio));
+  // Edificio: usa quello della sezione o, se assente, eredita dall'UOC
+  const edif = s.edificio || (gruppo && gruppo.ubicazione && gruppo.ubicazione.struttura);
+  if (edif) parts.push(escapeHtml(edif));
   if (s.piano) parts.push(escapeHtml(s.piano));
   if (s.area) parts.push(escapeHtml(s.area));
+  // Indirizzo: se la sezione o il gruppo ne ha uno e l'edificio non è già descrittivo dell'indirizzo
+  const ind = s.indirizzo || (gruppo && gruppo.ubicazione && gruppo.ubicazione.indirizzo);
+  if (ind && !parts.some(p => p.includes(ind))) parts.push(escapeHtml(ind));
   const loc = parts.join(' · ');
   return `<span class="sede-bucket-tipo">${escapeHtml(label)}</span>
     ${loc ? `<span class="sede-bucket-loc">${loc}</span>` : ''}`;
 }
 
-function toggleSedeBucket(gid, sedeKey) {
+function toggleSedeBucket(gid, sedeKey, defaultOpen) {
   if (!state.expandedSedi) state.expandedSedi = {};
-  if (!state.expandedSedi[gid]) state.expandedSedi[gid] = new Set();
-  const set = state.expandedSedi[gid];
-  if (set.has(sedeKey)) set.delete(sedeKey);
-  else set.add(sedeKey);
+  if (!state.collapsedSedi) state.collapsedSedi = {};
+  if (defaultOpen) {
+    // Modalità "default aperto": il click chiude (aggiunge a collapsed) o riapre (rimuove da collapsed)
+    if (!state.collapsedSedi[gid]) state.collapsedSedi[gid] = new Set();
+    const set = state.collapsedSedi[gid];
+    if (set.has(sedeKey)) set.delete(sedeKey);
+    else set.add(sedeKey);
+  } else {
+    // Modalità "default chiuso": il click apre (aggiunge a expanded) o richiude (rimuove)
+    if (!state.expandedSedi[gid]) state.expandedSedi[gid] = new Set();
+    const set = state.expandedSedi[gid];
+    if (set.has(sedeKey)) set.delete(sedeKey);
+    else set.add(sedeKey);
+  }
   // Re-render only this bucket area: simplest is full re-render of numeri view
+  // Salvo la posizione di scroll e la ripristino dopo il render per evitare jump in cima
+  const savedScroll = window.scrollY || document.documentElement.scrollTop;
   const params = state.currentParams || {};
   renderNumeri(params.filter);
+  requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
 }
 
 // Apre la UOC filtrata con solo questo bucket espanso, scroll al bucket
@@ -6499,7 +6561,8 @@ function rimuoviUtente(username) {
 const navState = {
   expanded: new Set(),       // ids of currently-expanded nodes
   editMode: false,
-  openMenu: null
+  openMenu: null,
+  drillPath: []              // stack of node ids for drill-down navigation (empty = root level)
 };
 
 function toggleEditMode(force) {
@@ -6525,19 +6588,137 @@ function toggleEditMode(force) {
   }
 }
 
+function getRootNavNodes() {
+  return [
+    { id: 'procedure', label: 'Procedure', count: state.index.procedure.length, kind: 'top', slug: 'procedure', navTarget: { route: 'procedure', params: {} }, children: () => buildProcedureChildren() },
+    { id: 'clinica', label: 'Clinica', count: (state.index.clinica || []).length, kind: 'top', slug: 'clinica', navTarget: { route: 'clinica', params: {} }, children: () => buildClinicaChildren() },
+    { id: 'numeri', label: 'Rubrica', count: countNumeri(), kind: 'top', slug: 'numeri', navTarget: { route: 'numeri', params: {} } },
+    { id: 'moduli', label: 'Moduli', count: state.index.moduli.length, kind: 'top', slug: 'moduli', navTarget: { route: 'moduli', params: {} }, children: () => buildModuliChildren() },
+    { id: 'tabelle', label: 'Tabelle', count: state.index.tabelle.length, kind: 'top', slug: 'tabelle', navTarget: { route: 'tabelle', params: {} }, children: () => buildTabelleChildren() },
+    { id: 'calendario', label: 'Calendario', count: ((state.index.calendar && state.index.calendar.eventi) || []).length, kind: 'top', slug: 'calendario', navTarget: { route: 'calendario', params: {} } },
+    { id: 'manuale', label: 'Manuale', count: (state.index.capitoli || []).length, kind: 'top', slug: 'manuale', navTarget: { route: 'manuale', params: {} }, children: () => buildManualeChildren() },
+  ];
+}
+
+// Trova il nodo corrispondente a un id esplorando la gerarchia partendo dalle root
+function findNavNode(id, nodes) {
+  if (!nodes) nodes = getRootNavNodes();
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    if (n.children) {
+      const found = findNavNode(id, n.children());
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Ritorna { node, breadcrumb } del nodo corrente nel drill path
+function getCurrentDrillNode() {
+  if (!navState.drillPath || navState.drillPath.length === 0) return null;
+  const breadcrumb = [];
+  let nodes = getRootNavNodes();
+  let current = null;
+  for (const id of navState.drillPath) {
+    current = nodes.find(n => n.id === id);
+    if (!current) return null;
+    breadcrumb.push(current);
+    if (current.children) nodes = current.children();
+    else break;
+  }
+  return { node: current, breadcrumb };
+}
+
+function drillInto(nodeId) {
+  navState.drillPath.push(nodeId);
+  renderNavTree();
+}
+
+function drillBack() {
+  navState.drillPath.pop();
+  renderNavTree();
+}
+
+function resetDrill() {
+  navState.drillPath = [];
+  renderNavTree();
+}
+
 function renderNavTree() {
   const tree = document.getElementById('nav-tree');
   if (!tree) return;
-  const nodes = [
-    { id: 'procedure', label: 'Procedure', count: state.index.procedure.length, kind: 'top', slug: 'procedure', children: () => buildProcedureChildren() },
-    { id: 'clinica', label: 'Clinica', count: (state.index.clinica || []).length, kind: 'top', slug: 'clinica', children: () => buildClinicaChildren() },
-    { id: 'numeri', label: 'Rubrica', count: countNumeri(), kind: 'top', slug: 'numeri', navTarget: { route: 'numeri', params: {} } },
-    { id: 'moduli', label: 'Moduli', count: state.index.moduli.length, kind: 'top', slug: 'moduli', children: () => buildModuliChildren() },
-    { id: 'tabelle', label: 'Tabelle', count: state.index.tabelle.length, kind: 'top', slug: 'tabelle', children: () => buildTabelleChildren() },
-    { id: 'calendario', label: 'Calendario', count: ((state.index.calendar && state.index.calendar.eventi) || []).length, kind: 'top', slug: 'calendario', navTarget: { route: 'calendario', params: {} } },
-    { id: 'manuale', label: 'Manuale', count: (state.index.capitoli || []).length, kind: 'top', slug: 'manuale', children: () => buildManualeChildren() },
-  ];
-  tree.innerHTML = nodes.map(n => renderNavTreeNode(n, 0)).join('');
+
+  const drill = getCurrentDrillNode();
+
+  if (drill && drill.node) {
+    // Drill-down mode: mostra back + children del nodo corrente
+    const parentLabel = drill.breadcrumb.length > 1
+      ? drill.breadcrumb[drill.breadcrumb.length - 2].label
+      : 'Home';
+    const currentNode = drill.node;
+    const children = currentNode.children ? currentNode.children() : [];
+    const rootTarget = currentNode.navTarget;
+
+    const backButton = `<div class="nav-drill-back" onclick="drillBack()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span>${escapeHtml(parentLabel)}</span>
+    </div>`;
+
+    const header = `<div class="nav-drill-header">
+      <span class="nav-drill-title">${escapeHtml(currentNode.label)}</span>
+      ${currentNode.count !== null && currentNode.count !== undefined ? `<span class="nav-tree-count">${currentNode.count}</span>` : ''}
+    </div>`;
+
+    // Voce "Panoramica" che naviga al target principale del nodo
+    const overviewRow = rootTarget
+      ? `<div class="nav-tree-row nav-drill-overview" onclick="navigate('${escapeJs(rootTarget.route)}', ${JSON.stringify(rootTarget.params || {}).replace(/"/g, '&quot;')})">
+          <span class="nav-tree-caret">·</span>
+          <span class="nav-tree-label">Panoramica ${escapeHtml(currentNode.label)}</span>
+        </div>`
+      : '';
+
+    const childrenHtml = children.map(c => renderNavTreeNode(c, 0)).join('');
+
+    tree.innerHTML = backButton + header + overviewRow + childrenHtml;
+  } else {
+    // Root mode: mostra solo i top-level, ciascuno come entry singola senza figli inline
+    const nodes = getRootNavNodes();
+    tree.innerHTML = nodes.map(n => renderNavRootNode(n)).join('');
+  }
+}
+
+function renderNavRootNode(node) {
+  const hasChildren = !!node.children;
+  // Click: se ha figli, drill-in (e naviga al navTarget se presente)
+  // Se leaf: solo navigate
+  const clickAction = hasChildren
+    ? `handleNavRootClick('${escapeJs(node.id)}', ${node.navTarget ? `'${escapeJs(node.navTarget.route)}'` : 'null'}, ${node.navTarget && node.navTarget.params ? JSON.stringify(node.navTarget.params).replace(/"/g, '&quot;') : 'null'})`
+    : (node.navTarget ? `navigate('${escapeJs(node.navTarget.route)}', ${JSON.stringify(node.navTarget.params || {}).replace(/"/g, '&quot;')})` : '');
+
+  const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+  const nodeKind = node.kind || 'top';
+  const showMenuBtn = navState.editMode && (!folderKinds.has(nodeKind) || isAdmin());
+  const editBtn = showMenuBtn
+    ? `<span class="nav-edit-actions"><button class="btn-icon-mini" onclick="event.stopPropagation();showNavContextMenu(this, '${nodeKind}', '${escapeJs(node.slug || node.id)}')" title="Azioni">⋯</button></span>`
+    : '';
+
+  return `
+    <div class="nav-tree-node" data-id="${escapeHtml(node.id)}">
+      <div class="nav-tree-row nav-tree-root-row" data-slug="${escapeHtml(node.slug || '')}" data-kind="${nodeKind}" onclick="${clickAction}">
+        <span class="nav-tree-label">${escapeHtml(node.label)}</span>
+        ${node.count !== null && node.count !== undefined ? `<span class="nav-tree-count">${node.count}</span>` : ''}
+        ${hasChildren ? '<span class="nav-tree-chevron">›</span>' : ''}
+        ${editBtn}
+      </div>
+    </div>`;
+}
+
+function handleNavRootClick(nodeId, route, params) {
+  // 1. Drill in
+  navState.drillPath = [nodeId];
+  renderNavTree();
+  // 2. Naviga alla pagina (se c'è un target)
+  if (route) navigate(route, params || {});
 }
 
 function buildProcedureChildren() {
@@ -6761,13 +6942,37 @@ function countNumeri() {
 }
 
 function renderNavTreeNode(node, depth) {
-  const expanded = navState.expanded.has(node.id);
   const hasChildren = !!node.children;
+  const inDrill = navState.drillPath && navState.drillPath.length > 0;
+
+  // In drill-mode, children navigation uses drill-in instead of inline expand
+  if (inDrill) {
+    const clickAction = hasChildren
+      ? `handleNavDrillClick('${escapeJs(node.id)}', ${node.navTarget ? `'${escapeJs(node.navTarget.route)}'` : 'null'}, ${node.navTarget && node.navTarget.params ? JSON.stringify(node.navTarget.params).replace(/"/g, '&quot;') : 'null'})`
+      : (node.navTarget ? `navigate('${escapeJs(node.navTarget.route)}', ${JSON.stringify(node.navTarget.params || {}).replace(/"/g, '&quot;')})` : '');
+
+    const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+    const nodeKind = node.kind || 'top';
+    const showMenuBtn = navState.editMode && (!folderKinds.has(nodeKind) || isAdmin());
+    const editBtn = showMenuBtn
+      ? `<span class="nav-edit-actions"><button class="btn-icon-mini" onclick="event.stopPropagation();showNavContextMenu(this, '${nodeKind}', '${escapeJs(node.slug || node.id)}')" title="Azioni">⋯</button></span>`
+      : '';
+
+    return `
+      <div class="nav-tree-node" data-id="${escapeHtml(node.id)}">
+        <div class="nav-tree-row nav-tree-drill-row" data-slug="${escapeHtml(node.slug || '')}" data-kind="${nodeKind}" onclick="${clickAction}">
+          <span class="nav-tree-label">${escapeHtml(node.label)}</span>
+          ${node.count !== null && node.count !== undefined ? `<span class="nav-tree-count">${node.count}</span>` : ''}
+          ${hasChildren ? '<span class="nav-tree-chevron">›</span>' : ''}
+          ${editBtn}
+        </div>
+      </div>`;
+  }
+
+  // Fallback legacy tree mode (non usato nel nuovo drill ma mantenuto per retrocompat)
+  const expanded = navState.expanded.has(node.id);
   const childrenList = expanded && hasChildren ? node.children() : [];
 
-  // Whole row click handler:
-  // - if has children: toggles expansion AND navigates
-  // - if leaf: only navigates
   let rowClickAction;
   if (hasChildren) {
     rowClickAction = `handleNavRowClick('${escapeJs(node.id)}', ${node.navTarget ? `'${escapeJs(node.navTarget.route)}'` : 'null'}, ${node.navTarget && node.navTarget.params ? JSON.stringify(node.navTarget.params).replace(/"/g, '&quot;') : 'null'})`;
@@ -6777,7 +6982,6 @@ function renderNavTreeNode(node, depth) {
     rowClickAction = '';
   }
 
-  // Folder-kind menu only for admin; leaf-kind menu for everyone
   const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
   const nodeKind = node.kind || 'top';
   const showMenuBtn = navState.editMode && (!folderKinds.has(nodeKind) || isAdmin());
@@ -6788,13 +6992,20 @@ function renderNavTreeNode(node, depth) {
   return `
     <div class="nav-tree-node ${expanded ? 'open' : ''}" data-id="${escapeHtml(node.id)}">
       <div class="nav-tree-row ${expanded ? 'expanded' : ''}" data-slug="${escapeHtml(node.slug || '')}" data-kind="${node.kind || 'top'}" onclick="${rowClickAction}">
-        <span class="nav-tree-caret">${hasChildren ? (expanded ? '▾' : '▸') : '·'}</span>
+        <span class="nav-tree-caret${hasChildren ? ' nav-tree-caret-clickable' : ''}" ${hasChildren ? `onclick="event.stopPropagation(); toggleNavNode('${escapeJs(node.id)}')"` : ''}>${hasChildren ? (expanded ? '▾' : '▸') : '·'}</span>
         <span class="nav-tree-label">${escapeHtml(node.label)}</span>
         ${node.count !== null && node.count !== undefined ? `<span class="nav-tree-count">${node.count}</span>` : ''}
         ${editBtn}
       </div>
       ${hasChildren ? `<div class="nav-tree-children">${childrenList.map(c => renderNavTreeNode(c, depth + 1)).join('')}</div>` : ''}
     </div>`;
+}
+
+function handleNavDrillClick(nodeId, route, params) {
+  // Drill-in e naviga al target (se presente)
+  navState.drillPath.push(nodeId);
+  renderNavTree();
+  if (route) navigate(route, params || {});
 }
 
 function handleNavRowClick(nodeId, route, params) {
@@ -8650,7 +8861,7 @@ function renderSearchResults(query, targetId) {
           return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
         }).join('');
         if (b.sede) {
-          const headerInner = renderSedeBucketHeader(b.sede);
+          const headerInner = renderSedeBucketHeader(b.sede, null, u.fullGroup);
           return `<div class="sr-sede-bucket">
             <button class="sr-sede-bucket-header" onclick="openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con questa sezione espansa">${headerInner}</button>
             <div class="sr-sede-bucket-contatti">${contattiItems}</div>
@@ -8829,7 +9040,7 @@ function initEventListeners() {
     logout();
   });
 
-  $('brand-home').addEventListener('click', () => { closeMobileMenu(); navigate('home'); });
+  $('brand-home').addEventListener('click', () => { closeMobileMenu(); resetDrill(); navigate('home'); });
 
   // Mobile drawer (hamburger)
   let _scrollLockY = 0;
