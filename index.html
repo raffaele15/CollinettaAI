@@ -4570,6 +4570,11 @@ function renderNumeri(filter) {
           return matches.length ? { ...g, contatti: matches } : null;
         }).filter(Boolean);
         filterLabel = `Contatto: ${c.etichetta}`;
+      } else {
+        // Filter è un id ma non matcha né gruppo né contatto: mostra messaggio esplicito
+        console.warn('[renderNumeri] filter non trovato:', filter);
+        filteredGruppi = [];
+        filterLabel = `Contatto non trovato (id: ${filter})`;
       }
     }
   } else {
