@@ -2432,7 +2432,9 @@ function rebuildSearchIndex() {
       libera_professione: 'libera professione intramoenia'
     };
     (g.contatti || []).forEach(c => {
-      const numeriStr = [...(c.numeri || []), c.cellulare, c.breve].filter(Boolean).join(' ');
+      const cellFlat = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(' ') : (c.cellulare_personale || '');
+      const cellPubFlat = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
+      const numeriStr = [...(c.numeri || []), cellFlat, cellPubFlat, c.breve].filter(Boolean).join(' ');
       const sedi = g.sezioni || [];
       const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');
       const kind = (typeof classifyContatto === 'function') ? classifyContatto(c).kind : '';
@@ -4632,7 +4634,7 @@ function renderNumeri(filter) {
     const contactText = (c, gId) => {
       const sedeTipo = (groupSedeTipoMap.get(gId) || new Map()).get(c.id) || '';
       return [
-        c.etichetta, c.sezione, c.luogo, c.cellulare, c.breve,
+        c.etichetta, c.sezione, c.luogo, c.cellulare_personale, c.cellulare_aziendale, c.breve,
         sedeTipo,
         ...(c.numeri || []).map(String),
         ...(c.tag || [])
@@ -4953,7 +4955,9 @@ function renderHomeNumeriSection() {
 
   const itemsHtml = items.map(({ c, g }) => {
     const nums = (c.numeri || []).join(' · ');
-    const extra = [c.breve ? `br. ${c.breve}` : '', c.cellulare || ''].filter(Boolean).join(' · ');
+    const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).map(n => `pers. ${n}`).join(' · ') : '';
+    const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).map(n => `cel. ${n}`).join(' · ') : '';
+    const extra = [c.breve ? `br. ${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
     const dispNum = [nums, extra].filter(Boolean).join(' · ');
     return `<div class="home-numero-row" data-cid="${escapeHtml(c.id)}">
       ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
@@ -5015,7 +5019,9 @@ function renderHomeNumeriSearchResults(query) {
   // Filtro per substring match su etichetta, gruppo, numeri (se query non vuota)
   const filtered = q
     ? pinnedContatti.filter(({ c, g }) => {
-        const hay = (c.etichetta + ' ' + g.nome + ' ' + (c.numeri || []).join(' ') + ' ' + (c.cellulare || '') + ' ' + (c.breve || '')).toLowerCase();
+        const cellFlat = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(' ') : (c.cellulare_personale || '');
+        const cellPubFlat = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
+        const hay = (c.etichetta + ' ' + g.nome + ' ' + (c.numeri || []).join(' ') + ' ' + cellFlat + ' ' + cellPubFlat + ' ' + (c.breve || '')).toLowerCase();
         return hay.includes(q);
       })
     : pinnedContatti.slice(0, 12); // mostra primi 12 senza filtro
@@ -5098,7 +5104,9 @@ function renderPinnedContattiSection(allGroups) {
   const groupsHtml = pinnedGroups.map(pg => {
     const contattiHtml = pg.contatti.map(c => {
       const nums = (c.numeri || []).join(' · ');
-      const extra = [c.breve ? `br. ${c.breve}` : '', c.cellulare || ''].filter(Boolean).join(' · ');
+      const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).map(n => `pers. ${n}`).join(' · ') : '';
+      const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).map(n => `cel. ${n}`).join(' · ') : '';
+      const extra = [c.breve ? `br. ${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
       const dispNum = [nums, extra].filter(Boolean).join(' · ');
       const cls = (typeof classifyContatto === 'function') ? classifyContatto(c) : { kind: '' };
       const isGuardia = cls.kind === 'guardia' || (c.tag || []).includes('guardia');
@@ -5510,14 +5518,20 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   (c.numeri || []).forEach(n => {
     numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(n))}')" title="Copia interno">${escapeHtml(String(n))}</button>`);
   });
-  if (c.cellulare) {
-    const cells = Array.isArray(c.cellulare) ? c.cellulare : [c.cellulare];
+  if (c.cellulare_personale) {
+    const cells = Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale];
     cells.forEach(cell => {
-      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare" style="background:var(--accent-soft);">📱 ${escapeHtml(String(cell))}</button>`);
+      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare personale" style="background:var(--accent-soft);">pers. ${escapeHtml(String(cell))}</button>`);
+    });
+  }
+  if (c.cellulare_aziendale) {
+    const cells = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale];
+    cells.forEach(cell => {
+      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare aziendale">cel. ${escapeHtml(String(cell))}</button>`);
     });
   }
   if (c.breve) {
-    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(c.breve))}')" title="Numero breve" style="background:var(--rule-soft);">br ${escapeHtml(String(c.breve))}</button>`);
+    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(c.breve))}')" title="Numero breve" style="background:var(--rule-soft);">br. ${escapeHtml(String(c.breve))}</button>`);
   }
   const editControls = c.id ? `<span class="edit-only" style="display:inline-flex;gap:4px;margin-left:6px;">
     <button class="btn-icon-mini" onclick="editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
@@ -8141,7 +8155,8 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
   const isNew = mode === 'new';
   const c = contatto || {};
   const numeriStr = (c.numeri || []).join(', ');
-  const cellulareStr = Array.isArray(c.cellulare) ? c.cellulare.join(', ') : (c.cellulare || '');
+  const cellularePersonaleStr = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(', ') : (c.cellulare_personale || '');
+  const cellulareAziendaleStr = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(', ') : (c.cellulare_aziendale || '');
   const tagStr = (c.tag || []).join(', ');
   const body = `
     <form id="contatto-form" onsubmit="return false;" style="display:flex;flex-direction:column;gap:12px;">
@@ -8161,9 +8176,17 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
           <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">5 cifre, di solito 97xxx</div>
         </div>
       </div>
-      <div class="field">
-        <label>Cellulare</label>
-        <input type="text" id="ce-cellulare" value="${escapeHtml(cellulareStr)}" class="mono-input" placeholder="es. 334.6652687">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Cellulare personale <span style="color:var(--ink-muted);font-weight:400;font-size:11px;">("pers.")</span></label>
+          <input type="text" id="ce-cellulare-personale" value="${escapeHtml(cellularePersonaleStr)}" class="mono-input" placeholder="es. 334.6652687">
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Numero privato del singolo operatore</div>
+        </div>
+        <div class="field">
+          <label>Cellulare aziendale <span style="color:var(--ink-muted);font-weight:400;font-size:11px;">("cel.")</span></label>
+          <input type="text" id="ce-cellulare-pub" value="${escapeHtml(cellulareAziendaleStr)}" class="mono-input" placeholder="es. 347.1234567">
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Numero pubblico dell'ospedale</div>
+        </div>
       </div>
       <div class="field">
         <label>Email</label>
@@ -8233,8 +8256,10 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         if (!etichetta) return toast('Etichetta obbligatoria', 'warning');
         const numeri = $('ce-numeri').value.split(',').map(s => s.trim()).filter(Boolean).map(n => /^\d+$/.test(n) ? parseInt(n, 10) : n);
         const breveStr = $('ce-breve').value.trim();
-        const cellulareStr2 = $('ce-cellulare').value.trim();
-        const cellulareList = cellulareStr2.split(',').map(s => s.trim()).filter(Boolean);
+        const cellularePersonaleStr2 = $('ce-cellulare-personale').value.trim();
+        const cellularePersonaleList = cellularePersonaleStr2.split(',').map(s => s.trim()).filter(Boolean);
+        const cellulareAziendaleStr2 = $('ce-cellulare-pub') ? $('ce-cellulare-pub').value.trim() : '';
+        const cellulareAziendaleList = cellulareAziendaleStr2.split(',').map(s => s.trim()).filter(Boolean);
         const email = $('ce-email').value.trim();
         const sezione = $('ce-sezione').value.trim();
         const luogo = $('ce-luogo').value.trim();
@@ -8243,8 +8268,10 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         const note = $('ce-note').value.trim();
         const newC = { id: c.id || (slugifyLocal(`${gruppoId}-${etichetta}`).slice(0, 60) + '-' + Date.now().toString(36).slice(-4)), etichetta };
         if (numeri.length) newC.numeri = numeri;
-        if (cellulareList.length === 1) newC.cellulare = cellulareList[0];
-        else if (cellulareList.length > 1) newC.cellulare = cellulareList;
+        if (cellularePersonaleList.length === 1) newC.cellulare_personale = cellularePersonaleList[0];
+        else if (cellularePersonaleList.length > 1) newC.cellulare_personale = cellularePersonaleList;
+        if (cellulareAziendaleList.length === 1) newC.cellulare_aziendale = cellulareAziendaleList[0];
+        else if (cellulareAziendaleList.length > 1) newC.cellulare_aziendale = cellulareAziendaleList;
         if (breveStr) { const n = parseInt(breveStr, 10); newC.breve = isNaN(n) ? breveStr : n; }
         if (email) newC.email = email;
         if (sezione) newC.sezione = sezione;
@@ -8255,7 +8282,7 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         if (orari) newC.orari = orari;
         if (tag.length) newC.tag = tag;
         if (note) newC.note = note;
-        if (!newC.numeri && !newC.cellulare && !newC.breve) {
+        if (!newC.numeri && !newC.cellulare_personale && !newC.cellulare_aziendale && !newC.breve) {
           return toast('Inserire almeno un numero (interno, cellulare o breve)', 'warning');
         }
         // Find source and group
@@ -9004,7 +9031,9 @@ function renderSearchResults(query, targetId) {
     rawResults = [];
     getVisibleNumeriGroups().forEach(g => {
       (g.contatti || []).forEach(c => {
-        const nums = [...(c.numeri || []).map(String), String(c.cellulare || ''), String(c.breve || '')].filter(Boolean);
+        const cellsPers = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.map(String) : (c.cellulare_personale ? [String(c.cellulare_personale)] : []);
+        const cellsPub = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.map(String) : (c.cellulare_aziendale ? [String(c.cellulare_aziendale)] : []);
+        const nums = [...(c.numeri || []).map(String), ...cellsPers, ...cellsPub, String(c.breve || '')].filter(Boolean);
         const exactMatch = nums.some(n => n === target);
         if (exactMatch) {
           const item = {
@@ -9280,7 +9309,14 @@ function renderSearchResults(query, targetId) {
     const parts = [];
     if (c.numeri) c.numeri.forEach(n => { if (n) parts.push(String(n)); });
     if (c.breve) parts.push(`br. ${c.breve}`);
-    if (c.cellulare) parts.push(String(c.cellulare));
+    if (c.cellulare_personale) {
+      const cells = Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale];
+      cells.forEach(cell => parts.push(`pers. ${cell}`));
+    }
+    if (c.cellulare_aziendale) {
+      const cells = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale];
+      cells.forEach(cell => parts.push(`cel. ${cell}`));
+    }
     const tagsLower = (c.tag || []).map(t => t.toLowerCase());
     const isGuardia = c._isGuardia;
     const isReparto = c._group === 2 && !isGuardia && c.kind !== 'utile';
@@ -9694,12 +9730,10 @@ function initEventListeners() {
       if (window.scrollY > 0) { touchStart = null; return; }
       if (absDx > HORIZ_TOLERANCE) { touchStart = null; return; }
       if (dy > PULL_DOWN_THRESHOLD) {
-        const input = document.getElementById('global-search');
-        if (input) {
-          input.focus();
-          input.select();
-        }
-        touchStart = null;
+        // Su iOS/Android il focus+keyboard funziona in modo affidabile SOLO se chiamato
+        // durante touchend (gesto "completato"), non durante touchmove. Segno il flag
+        // e il touchend handler lo esegue.
+        touchStart.shouldFocusSearch = true;
       }
     } else {
       if (absDy > VERT_TOLERANCE) { touchStart = null; return; }
@@ -9712,7 +9746,26 @@ function initEventListeners() {
       }
     }
   }, { passive: true });
-  document.addEventListener('touchend', () => { touchStart = null; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    // Eseguo il focus della search in touchend per garantire l'apertura della tastiera su mobile
+    if (touchStart && touchStart.shouldFocusSearch) {
+      const input = document.getElementById('global-search');
+      if (input) {
+        // requestAnimationFrame dà al browser un tick per chiudere il gesto prima del focus
+        requestAnimationFrame(() => {
+          input.focus();
+          // Su iOS serve un ulteriore trick: scroll nell'input per farlo visibile e attivo
+          try {
+            input.scrollIntoView({ block: 'center', behavior: 'instant' });
+          } catch (e) {
+            input.scrollIntoView(false);
+          }
+          input.select();
+        });
+      }
+    }
+    touchStart = null;
+  }, { passive: true });
   document.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
   // Chiudo il drawer quando l'utente naviga (click su nav-item o nav-tree-row)
   $('sidebar').addEventListener('click', (e) => {
