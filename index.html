@@ -987,6 +987,14 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
           </div>
         </div>
         <div class="user-menu-divider"></div>
+        <button class="user-menu-item" onclick="closeUserMenu(); navigate('cestino');">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          Cestino
+        </button>
+        <button class="user-menu-item hidden" id="user-menu-utenti" onclick="closeUserMenu(); navigate('utenti');">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Gestione utenti
+        </button>
         <button class="user-menu-item" onclick="closeUserMenu(); logout();">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Esci
@@ -1011,11 +1019,11 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
     <aside class="sidebar" id="sidebar">
       <button class="sidebar-mobile-close" id="sidebar-close">← Chiudi menù</button>
       <div class="nav-group">
-        <div class="nav-group-label">Contenuti</div>
-        <div class="nav-item" data-route="home"><span>Home</span></div>
         <div id="nav-tree"></div>
       </div>
-      <div class="nav-group">
+      <!-- Gli elementi di sistema (Cestino, Gestione utenti, Esci) restano disponibili ma nascosti
+           dal menu principale: l'accesso rapido è via menu utente in alto a destra. -->
+      <div class="nav-group hidden" id="nav-group-sistema">
         <div class="nav-group-label">Sistema</div>
         <div class="nav-item" data-route="cestino"><span>Cestino</span></div>
         <div class="nav-item hidden" data-route="utenti" id="nav-utenti"><span>Gestione utenti</span></div>
@@ -2549,6 +2557,8 @@ async function enterApp() {
     : state.session.username.substring(0, 2);
   $('user-avatar').textContent = avatarSource.toUpperCase();
   $('nav-utenti').classList.toggle('hidden', state.session.username !== 'admin');
+  const umUtenti = document.getElementById('user-menu-utenti');
+  if (umUtenti) umUtenti.classList.toggle('hidden', state.session.username !== 'admin');
   if (state.session.username === 'admin') {
     document.getElementById('rate-limit-indicator').classList.remove('hidden');
   }
@@ -6666,16 +6676,11 @@ function renderNavTree() {
 
     const header = `<div class="nav-drill-header">
       <span class="nav-drill-title">${escapeHtml(currentNode.label)}</span>
-      ${currentNode.count !== null && currentNode.count !== undefined ? `<span class="nav-tree-count">${currentNode.count}</span>` : ''}
     </div>`;
 
-    // Voce "Panoramica" che naviga al target principale del nodo
-    const overviewRow = rootTarget
-      ? `<div class="nav-tree-row nav-drill-overview" onclick="navigate('${escapeJs(rootTarget.route)}', ${JSON.stringify(rootTarget.params || {}).replace(/"/g, '&quot;')})">
-          <span class="nav-tree-caret">·</span>
-          <span class="nav-tree-label">Panoramica ${escapeHtml(currentNode.label)}</span>
-        </div>`
-      : '';
+    // Voce "Panoramica" rimossa: cliccando la sezione principale l'utente vede già
+    // la panoramica nella pagina a destra, quindi è implicito.
+    const overviewRow = '';
 
     const childrenHtml = children.map(c => renderNavTreeNode(c, 0)).join('');
 
@@ -6706,7 +6711,6 @@ function renderNavRootNode(node) {
     <div class="nav-tree-node" data-id="${escapeHtml(node.id)}">
       <div class="nav-tree-row nav-tree-root-row" data-slug="${escapeHtml(node.slug || '')}" data-kind="${nodeKind}" onclick="${clickAction}">
         <span class="nav-tree-label">${escapeHtml(node.label)}</span>
-        ${node.count !== null && node.count !== undefined ? `<span class="nav-tree-count">${node.count}</span>` : ''}
         ${hasChildren ? '<span class="nav-tree-chevron">›</span>' : ''}
         ${editBtn}
       </div>
@@ -6962,7 +6966,6 @@ function renderNavTreeNode(node, depth) {
       <div class="nav-tree-node" data-id="${escapeHtml(node.id)}">
         <div class="nav-tree-row nav-tree-drill-row" data-slug="${escapeHtml(node.slug || '')}" data-kind="${nodeKind}" onclick="${clickAction}">
           <span class="nav-tree-label">${escapeHtml(node.label)}</span>
-          ${node.count !== null && node.count !== undefined ? `<span class="nav-tree-count">${node.count}</span>` : ''}
           ${hasChildren ? '<span class="nav-tree-chevron">›</span>' : ''}
           ${editBtn}
         </div>
