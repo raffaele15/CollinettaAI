@@ -2791,7 +2791,6 @@ gruppi:
     tipo: altro
     alias:
     - ingegneria clinica
-    edificio: Palazzina Direzione ala est
 - id: direzione-medica
   nome: Direzione Medica
   ubicazione:
@@ -7328,10 +7327,9 @@ gruppi:
   - nome: UCIC
     tipo: degenze
     alias: []
-    edificio: Centro Gallucci
     piano: piano terra
     sottosezioni:
-    - nome: Degenze
+    - nome: Degenze UCIC
       tipo: degenze
     - nome: Studi Medici
       tipo: studi_medici
@@ -7345,6 +7343,7 @@ gruppi:
       tipo: studi_medici
     - nome: Segreteria e Direzione
       tipo: segreteria_direzione
+    piano: 1° piano
   - nome: Riabilitazione Cardiologica
     tipo: ambulatori
     alias: []
@@ -7363,10 +7362,9 @@ gruppi:
       tipo: ambulatori
     - nome: Studi Medici
       tipo: studi_medici
-  - nome: Degenze
+  - nome: Degenze Cardiologia
     tipo: degenze
     alias: []
-    edificio: Centro Gallucci
     piano: 2° piano
     area: C5
   - nome: Ambulatori
@@ -14186,7 +14184,6 @@ gruppi:
     tipo: ambulatori
     alias:
     - colli
-    edificio: Colli
     piano: 1° Monoblocco
 - id: medicina-laboratorio
   nome: U.O.C. Medicina di Laboratorio
