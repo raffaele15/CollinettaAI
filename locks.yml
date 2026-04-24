@@ -4,8 +4,8 @@
 locks:
   ecg:
     utente: raffaele
-    iniziato: '2026-04-19T11:11:33.582Z'
-    scade: '2026-04-19T11:41:33.582Z'
+    iniziato: '2026-04-24T09:46:03.159Z'
+    scade: '2026-04-24T10:16:03.159Z'
   crisi-epilettica:
     utente: raffaele
     iniziato: '2026-04-19T11:19:52.757Z'
