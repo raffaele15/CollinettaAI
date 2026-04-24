@@ -533,6 +533,8 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .procedure-card-title{font-family:var(--serif);font-size:19px;font-weight:500;line-height:1.2;margin-bottom:8px;color:var(--ink);display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .card-edit-btn{flex-shrink:0;margin-top:2px;opacity:.6;transition:opacity .15s}
 .card-edit-btn:hover{opacity:1}
+.card-actions{display:inline-flex;align-items:center;gap:2px;flex-shrink:0}
+.card-actions .pin-star{font-size:16px;padding:2px 4px}
 .procedure-card-meta{font-size:12px;color:var(--ink-muted);display:flex;align-items:center;gap:10px;margin-top:12px}
 .procedure-card-tags{margin-top:10px}
 
@@ -2961,7 +2963,10 @@ function renderProcedureCard(p) {
   return `
     <div class="procedure-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
       <div class="procedure-card-title">${escapeHtml(p.titolo || p.slug)}
-        <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'procedure', '${escapeJs(p.slug)}')" title="Azioni">⋯</button>
+        <span class="card-actions">
+          ${renderPinButton('procedura', p.slug)}
+          <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'procedure', '${escapeJs(p.slug)}')" title="Azioni">⋯</button>
+        </span>
       </div>
       <div class="procedure-card-tags">${tagsHtml}</div>
       <div class="procedure-card-meta"><span>Aggiornato ${timeAgo(p.ultima_modifica)}</span></div>
@@ -3454,7 +3459,10 @@ function renderClinicaCard(c) {
   return `
     <div class="procedure-card" onclick="navigate('clinica-scheda', {slug:'${escapeHtml(c.slug)}'})">
       <div class="procedure-card-title">${escapeHtml(c.titolo || c.slug)}
-        <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'clinica', '${escapeJs(c.slug)}')" title="Azioni">⋯</button>
+        <span class="card-actions">
+          ${renderPinButton('clinica', c.slug)}
+          <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'clinica', '${escapeJs(c.slug)}')" title="Azioni">⋯</button>
+        </span>
       </div>
       <div class="procedure-card-tags">${tagsHtml}</div>
       <div class="procedure-card-meta"><span>Aggiornata ${timeAgo(c.ultima_modifica)}</span></div>
@@ -5420,7 +5428,9 @@ function renderModuliList() {
     <div class="procedure-grid">
       ${moduli.map(m => `
         <div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeHtml(m.slug)}'})">
-          <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}</div>
+          <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
+            <span class="card-actions">${renderPinButton('modulo', m.slug)}</span>
+          </div>
           <div class="procedure-card-tags">${(m.tag || []).slice(0,3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
           <div class="procedure-card-meta"><span>${escapeHtml(m.tipo || 'modulo')}</span></div>
         </div>
@@ -6030,7 +6040,9 @@ function renderTabelleList() {
     <div class="procedure-grid">
       ${tt.map(t => `
         <div class="procedure-card" onclick="navigate('tabella', {slug:'${escapeHtml(t.slug)}'})">
-          <div class="procedure-card-title">${escapeHtml(t.titolo || t.slug)}</div>
+          <div class="procedure-card-title">${escapeHtml(t.titolo || t.slug)}
+            <span class="card-actions">${renderPinButton('tabella', t.slug)}</span>
+          </div>
           <div class="procedure-card-meta"><span>Aggiornata ${timeAgo(t.ultima_modifica)}</span></div>
         </div>
       `).join('') || '<p style="color:var(--ink-muted);">Nessuna tabella.</p>'}
