@@ -6854,44 +6854,44 @@ gruppi:
     numeri:
     - 2351
     email: cardiologia.degenze@aopd.veneto.it
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-front
     etichetta: Front Office Accoglimento Degenze
     numeri:
     - 2315
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-inf
     etichetta: Area Infermieri
     numeri:
     - 2331
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-studi-est
     etichetta: Studio Medici Lato Est
     numeri:
     - 2308
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-studi-ovest
     etichetta: Studio Medici Lato Ovest
     numeri:
     - 2318
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-studi-eco
     etichetta: Studio Medici Fronte Eco
     numeri:
     - 2354
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-mdg
     etichetta: Medico di Guardia
     breve: 97503
     tag:
     - guardia
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
     numeri:
     - '97503'
@@ -6899,19 +6899,19 @@ gruppi:
     etichetta: Ambulatorio ed Ecografia Vascolare
     numeri:
     - 2353
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-amb-eco
     etichetta: Amb. Ecocardiografia (solo degenti)
     numeri:
     - 2831
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci 2° piano
   - id: card-deg-arch
     etichetta: Archivio
     numeri:
     - 2352
-    sezione: Degenze
+    sezione: Degenze Ordinarie
     luogo: Centro Gallucci piano interrato
   - id: card-amb-coord
     etichetta: Amb. Cardiologia - Coord. Dr.ssa Munaron Sara
@@ -7346,7 +7346,8 @@ gruppi:
     piano: 1° piano
   - nome: Riabilitazione Cardiologica
     tipo: ambulatori
-    alias: []
+    alias:
+    - ospedale dei colli
     sottosezioni:
     - nome: Ambulatori
       tipo: ambulatori
@@ -7354,15 +7355,19 @@ gruppi:
       tipo: studi_medici
     - nome: Segreteria e Direzione
       tipo: segreteria_direzione
+    edificio: Ospedale dei Colli
   - nome: Servizio Prevenzione Trombosi
     tipo: ambulatori
-    alias: []
+    alias:
+    - ospedale dei colli
+    - trombosi
     sottosezioni:
     - nome: Ambulatori
       tipo: ambulatori
     - nome: Studi Medici
       tipo: studi_medici
-  - nome: Degenze Cardiologia
+    edificio: Ospedale dei Colli
+  - nome: Degenze Ordinarie
     tipo: degenze
     alias: []
     piano: 2° piano
@@ -7377,9 +7382,13 @@ gruppi:
     tipo: studi_medici
     alias:
     - ncd
+    - ncd
+    - centro direzionale
+    edificio: Nuovo Centro Direzionale Cardiologico
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
+    piano: piano terra
 - id: cric
   nome: CRIC - Centro Regionale Invecchiamento Cerebrale
   ubicazione:
@@ -8875,7 +8884,7 @@ gruppi:
   - nome: Rianimazione e Semi Intensiva
     tipo: terapia_intensiva
     alias: []
-    piano: 2°-7°
+    piano: 2°-7° piano
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
@@ -8889,11 +8898,11 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    piano: 2°-7°
+    piano: 2°-7° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    piano: 2°-7°
+    piano: 2°-7° piano
 - id: chir-plastica
   nome: U.O.C. Chirurgia Plastica
   ubicazione:
@@ -9296,7 +9305,7 @@ gruppi:
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias: []
-    piano: 1°-7°
+    piano: 1°-7° piano
   - nome: Degenze
     tipo: degenze
     alias: []
@@ -9306,25 +9315,25 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    piano: 1°-7°
+    piano: 1°-7° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    piano: 1°-7°
+    piano: 1°-7° piano
   - nome: Ambulatorio Visite
     tipo: ambulatori
     alias: []
-    piano: 1°-7°
+    piano: 1°-7° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    piano: 1°-7°
+    piano: 1°-7° piano
   - nome: Amministrazione
     alias: []
-    piano: 1°-7°
+    piano: 1°-7° piano
   - nome: Guardia/Consulenze
     alias: []
-    piano: 1°-7°
+    piano: 1°-7° piano
 - id: chir-vascolare
   nome: U.O.C. Chirurgia Vascolare
   direttore: Prof. Grego Franco
@@ -11267,7 +11276,7 @@ gruppi:
 - id: ematologia
   nome: U.O.C. Ematologia
   ubicazione:
-    struttura: 2°-3° Palazzina Malattie Infettive / 1° Giustinianeo
+    struttura: 2°-3° piano Palazzina Malattie Infettive / 1° Giustinianeo
   direttore: Prof. Trentin Livio
   contatti:
   - id: ema-direttore
@@ -17100,179 +17109,6 @@ gruppi:
     - sterilizzazione
     edificio: Istituto Odontoiatrico
     piano: 3°
-- id: ortopedia-comuni
-  nome: Ortopedia - Numeri Comuni
-  ubicazione:
-    struttura: Edificio Ortopedia
-  contatti:
-  - id: ort-portineria
-    etichetta: Portineria
-    numeri:
-    - 3330
-    - 3331
-    sezione: Segreteria e Direzione
-    luogo: Edificio Ortopedia
-  - id: ort-ps
-    etichetta: Pronto Soccorso Ortopedico
-    numeri:
-    - 3357
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-sala-med
-    etichetta: Sala Medici
-    numeri:
-    - 3321
-    sezione: Altro
-    luogo: Edificio Ortopedia
-  - id: ort-acc
-    etichetta: Accettazione
-    numeri:
-    - 3316
-    sezione: Segreteria e Direzione
-    luogo: Edificio Ortopedia
-  - id: ort-amb-coord
-    etichetta: Caposala Ambulatorio
-    numeri:
-    - 3325
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-amb-pt
-    etichetta: Ambulatorio/Sala Gessi PT
-    numeri:
-    - 3326
-    sezione: Sala Gessi
-    luogo: Edificio Ortopedia
-  - id: ort-amb1
-    etichetta: Ambulatorio N°1
-    numeri:
-    - 7363
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-amb2
-    etichetta: Ambulatorio N°2
-    numeri:
-    - 7364
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-amb3
-    etichetta: Ambulatorio N°3
-    numeri:
-    - 7365
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-anest
-    etichetta: Ambulatorio Anestesisti
-    numeri:
-    - 1793
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-acc-amb
-    etichetta: Sala Accoglienza Ambulatorio
-    numeri:
-    - 3379
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-prep-int
-    etichetta: Preparazione Interventi Programmati
-    numeri:
-    - 3303
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-arch-pt
-    etichetta: Archivio Cartelle PT
-    numeri:
-    - 3318
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-arch-1p
-    etichetta: Archivio Chiusura Cartelle (1° P)
-    numeri:
-    - 3307
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-arch-radio
-    etichetta: Archivio Radiologico
-    numeri:
-    - 3319
-    sezione: Radiologia Ortopedica
-    luogo: Edificio Ortopedia
-  - id: ort-go-coord
-    etichetta: Caposala Gruppo Operatorio
-    numeri:
-    - 8476
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-go
-    etichetta: Gruppo Operatorio
-    numeri:
-    - 3344
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-gessi-1p
-    etichetta: Sala Gessi (1° P)
-    numeri:
-    - 3345
-    - '97140'
-    sezione: Sala Gessi
-    luogo: Edificio Ortopedia
-  - id: ort-radio-acc
-    etichetta: Accettazione Radiologia
-    numeri:
-    - 3134
-    sezione: Radiologia Ortopedica
-    luogo: Edificio Ortopedia
-  - id: ort-radiodiag
-    etichetta: Radiodiagnostica
-    numeri:
-    - 3322
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-rmn
-    etichetta: R.M.N.
-    numeri:
-    - 3327
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-tac
-    etichetta: TAC
-    numeri:
-    - 8148
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-eco
-    etichetta: Ecografia
-    numeri:
-    - 8157
-    sezione: Ortopedia - Numeri Comuni
-    luogo: Edificio Ortopedia
-  - id: ort-segr-radio
-    etichetta: Segretaria Radiologia
-    numeri:
-    - 8473
-    sezione: Radiologia Ortopedica
-    luogo: Edificio Ortopedia
-  - id: ort-studi-radio
-    etichetta: Studio Medici Radiologia
-    numeri:
-    - 8150
-    sezione: Radiologia Ortopedica
-    luogo: Edificio Ortopedia
-  sezioni:
-  - nome: Segreteria e Direzione
-    tipo: segreteria_direzione
-    alias: []
-  - nome: Sala Gessi
-    tipo: altro
-    alias: []
-  - nome: Radiologia Ortopedica
-    tipo: ambulatori
-    alias: []
-  - nome: Ortopedia - Numeri Comuni
-    tipo: altro
-    alias: []
-  - nome: Altro
-    tipo: altro
-    alias: []
 - id: clinica-ortopedica
   nome: U.O.C. Clinica Ortopedica Traumatologica
   ubicazione:
@@ -17554,6 +17390,158 @@ gruppi:
     sezione: Studi Medici
     numeri:
     - '3474231796'
+  - id: ort-portineria
+    etichetta: Portineria
+    numeri:
+    - 3330
+    - 3331
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-ps
+    etichetta: Pronto Soccorso Ortopedico
+    numeri:
+    - 3357
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-sala-med
+    etichetta: Sala Medici
+    numeri:
+    - 3321
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-acc
+    etichetta: Accettazione
+    numeri:
+    - 3316
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-amb-coord
+    etichetta: Caposala Ambulatorio
+    numeri:
+    - 3325
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-amb-pt
+    etichetta: Ambulatorio/Sala Gessi PT
+    numeri:
+    - 3326
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-amb1
+    etichetta: Ambulatorio N°1
+    numeri:
+    - 7363
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-amb2
+    etichetta: Ambulatorio N°2
+    numeri:
+    - 7364
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-amb3
+    etichetta: Ambulatorio N°3
+    numeri:
+    - 7365
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-anest
+    etichetta: Ambulatorio Anestesisti
+    numeri:
+    - 1793
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-acc-amb
+    etichetta: Sala Accoglienza Ambulatorio
+    numeri:
+    - 3379
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-prep-int
+    etichetta: Preparazione Interventi Programmati
+    numeri:
+    - 3303
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-arch-pt
+    etichetta: Archivio Cartelle PT
+    numeri:
+    - 3318
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-arch-1p
+    etichetta: Archivio Chiusura Cartelle (1° P)
+    numeri:
+    - 3307
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-arch-radio
+    etichetta: Radiologia Ortopedica - Archivio Radiologico
+    numeri:
+    - 3319
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-go-coord
+    etichetta: Caposala Gruppo Operatorio
+    numeri:
+    - 8476
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-go
+    etichetta: Gruppo Operatorio
+    numeri:
+    - 3344
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-gessi-1p
+    etichetta: Sala Gessi (1° P)
+    numeri:
+    - 3345
+    - '97140'
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-radio-acc
+    etichetta: Radiologia Ortopedica - Accettazione Radiologia
+    numeri:
+    - 3134
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-radiodiag
+    etichetta: Radiodiagnostica
+    numeri:
+    - 3322
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-rmn
+    etichetta: R.M.N.
+    numeri:
+    - 3327
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-tac
+    etichetta: TAC
+    numeri:
+    - 8148
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-eco
+    etichetta: Ecografia
+    numeri:
+    - 8157
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-segr-radio
+    etichetta: Radiologia Ortopedica - Segretaria Radiologia
+    numeri:
+    - 8473
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
+  - id: ort-studi-radio
+    etichetta: Radiologia Ortopedica - Studio Medici Radiologia
+    numeri:
+    - 8150
+    sezione: Numeri Comuni
+    luogo: Edificio Ortopedia
   sezioni:
   - nome: Degenze
     tipo: degenze
@@ -17562,26 +17550,29 @@ gruppi:
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
-    piano: 3°-4°
+    piano: 3°-4° piano
   - nome: Ambulatori
     tipo: ambulatori
     alias: []
-    piano: 3°-4°
+    piano: 3°-4° piano
   - nome: Sala Operatoria
     tipo: sala_operatoria
     alias:
     - gruppo operatorio
     - sala gessi
-    piano: 3°-4°
+    piano: 3°-4° piano
   - nome: Laboratorio
     tipo: laboratorio
     alias:
     - ricerche
-    piano: 3°-4°
+    piano: 3°-4° piano
   - nome: Segreteria e Direzione
     tipo: segreteria_direzione
     alias: []
-    piano: 3°-4°
+    piano: 3°-4° piano
+  - nome: Numeri Comuni
+    tipo: numeri_comuni
+    alias: []
 - id: riabilitazione-ortopedica
   nome: U.O.C. Riabilitazione Ortopedica
   ubicazione:
@@ -20635,17 +20626,17 @@ gruppi:
     tipo: segreteria_direzione
     alias: []
     edificio: Edificio Clinica Ginecologica
-    piano: 1°-2°
+    piano: 1°-2° piano
   - nome: Terapia Intensiva Neonatale
     tipo: terapia_intensiva
     alias: []
     edificio: Edificio Clinica Ginecologica
-    piano: 1°-2°
+    piano: 1°-2° piano
   - nome: Studi Medici
     tipo: studi_medici
     alias: []
     edificio: Edificio Clinica Ginecologica
-    piano: 1°-2°
+    piano: 1°-2° piano
 - id: genetica-clinica
   nome: U.O.C. Genetica Clinica Epidemiologica
   ubicazione:
