@@ -126,6 +126,36 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .ut-chip.active:hover{background:var(--ink-soft);border-color:var(--ink-soft)}
 .ut-chip-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;padding:1px 5px;font-family:var(--mono);font-size:10px;font-weight:600;background:var(--bg-sink);color:var(--ink-muted);border-radius:10px}
 .ut-chip.active .ut-chip-count{background:rgba(255,255,255,.2);color:var(--bg-paper)}
+
+/* ============================ ATTIVITA RECENTE (admin) ============================ */
+.at-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:16px 0 24px}
+.at-metric{padding:12px 16px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px}
+.at-metric-label{font-size:11px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;font-weight:500}
+.at-metric-value{font-size:22px;font-weight:500;color:var(--ink);font-family:var(--serif)}
+.at-metric-api{font-family:var(--mono);font-size:16px;font-weight:600}
+.at-metric-api.warning{color:var(--warning)}
+.at-metric-api.danger{color:var(--danger)}
+
+.at-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.at-chips{display:flex;gap:6px;flex-wrap:wrap}
+.at-toolbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+.at-error{padding:10px 14px;background:var(--danger-soft);color:var(--danger);border-left:3px solid var(--danger);border-radius:2px;margin-bottom:14px;font-size:13px}
+
+.at-events{border:1px solid var(--rule);border-radius:3px;background:var(--bg-paper);overflow:hidden}
+.at-event{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--rule-soft);transition:background .12s}
+.at-event:last-child{border-bottom:none}
+.at-event:hover{background:var(--bg-sink)}
+.at-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg-sink);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:var(--mono);flex-shrink:0}
+.at-avatar-admin{background:var(--accent-soft);color:var(--accent)}
+.at-event-main{flex:1;min-width:0}
+.at-event-line{font-size:14px;line-height:1.4;color:var(--ink-soft)}
+.at-event-line strong{color:var(--ink);font-weight:600}
+.at-event-verb{color:var(--ink-muted);margin:0 4px}
+.at-event-target{color:var(--accent);font-weight:500}
+.at-event-nota{font-size:12px;color:var(--ink-muted);margin-top:2px;line-height:1.4}
+.at-event-tipo{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);background:var(--bg-sink);padding:3px 8px;border-radius:2px;flex-shrink:0;font-weight:500}
+
 .btn.full{width:100%}
 .btn.sm{font-size:12px;padding:8px 14px}
 
@@ -3096,6 +3126,7 @@ function navigate(route, params = {}) {
     case 'cestino': renderCestino(); break;
     case 'cestino-utenti': renderCestinoUtenti(); break;
     case 'utenti': renderGestioneUtenti(); break;
+    case 'attivita': renderAttivita(); break;
     case 'search': renderSearchResults(params.query); break;
     case 'tag': renderTagPage(params.tag); break;
     default: renderHome();
@@ -7615,6 +7646,7 @@ function renderGestioneUtentiView() {
       <div class="page-actions" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" id="btn-add-user">+ Aggiungi utente</button>
         <button class="btn ghost" onclick="navigate('cestino-utenti')">Cestino utenti</button>
+        <button class="btn ghost" onclick="navigate('attivita')">Attività recente</button>
       </div>
     </div>
 
@@ -7950,6 +7982,265 @@ function rimuoviUtente(username) {
       }}
     ]
   });
+}
+
+/* ============================ ATTIVITA RECENTE (admin only) ============================
+   Aggregatore client-side delle modifiche recenti in tutte le aree dell'app.
+   Fonte dati: cronologia_recente nei file (già in state.index) + commit messages
+   del repo CollinettaAI-data per azioni senza file-level cronologia (es. numeri.yml).
+   Non aggiunge chiamate API obbligatorie — la chiamata commits è una sola, opzionale
+   con ultimi 100 commit (sufficienti per un log settimanale).
+*/
+function renderAttivita() {
+  if (!isAdmin()) return renderError('Accesso negato', 'Solo amministratori.');
+
+  // Stato locale di questa vista (filtri e caricamento commits)
+  if (!state._attivitaState) {
+    state._attivitaState = {
+      filter: 'tutti',          // tutti | procedure | clinica | moduli | tabelle | numeri | utenti
+      loadingCommits: false,
+      commits: null,            // array di eventi da commit GitHub
+      error: null
+    };
+  }
+  const s = state._attivitaState;
+
+  // 1) EVENTI DA cronologia_recente NEI FILE
+  //    Tutti gli oggetti (procedura, clinica, modulo, tabella) con cronologia_recente
+  //    producono un evento per ogni entry.
+  const eventsFromFiles = [];
+  const pushEntries = (items, tipo) => {
+    (items || []).forEach(item => {
+      const storia = item.cronologia_recente || [];
+      storia.forEach(s => {
+        if (!s.data) return;
+        eventsFromFiles.push({
+          when: new Date(s.data),
+          user: s.utente || '—',
+          tipo,
+          slug: item.slug || item.id,
+          label: item.titolo || item.slug || item.id,
+          nota: s.nota || 'aggiornamento',
+          source: 'file'
+        });
+      });
+    });
+  };
+  pushEntries(state.index.procedure, 'procedura');
+  pushEntries(state.index.clinica, 'clinica');
+  pushEntries(state.index.moduli, 'modulo');
+  pushEntries(state.index.tabelle, 'tabella');
+
+  // 2) EVENTI DA COMMIT GITHUB (opzionale, caricati on-demand)
+  //    Cattura modifiche che non hanno cronologia nel file (numeri.yml, utenti, ecc.).
+  const eventsFromCommits = s.commits || [];
+
+  // Unione + ordinamento cronologico DESC + filtri
+  const allEvents = [...eventsFromFiles, ...eventsFromCommits];
+  allEvents.sort((a, b) => b.when - a.when);
+
+  const filtered = s.filter === 'tutti'
+    ? allEvents
+    : allEvents.filter(e => e.tipo === s.filter);
+
+  // Metriche
+  const now = new Date();
+  const events24h = allEvents.filter(e => (now - e.when) < 24 * 3600 * 1000).length;
+  const users7d = new Set(allEvents.filter(e => (now - e.when) < 7 * 24 * 3600 * 1000).map(e => e.user).filter(u => u && u !== '—')).size;
+  const apiText = (rateLimit.remaining != null)
+    ? `${rateLimit.remaining} / ${rateLimit.limit}`
+    : '—';
+
+  // Chip conteggi globali (per i filtri)
+  const counts = { tutti: allEvents.length };
+  allEvents.forEach(e => { counts[e.tipo] = (counts[e.tipo] || 0) + 1; });
+  const chipDefs = [
+    { key: 'tutti', label: 'Tutti' },
+    { key: 'procedura', label: 'Procedure' },
+    { key: 'clinica', label: 'Cliniche' },
+    { key: 'numeri', label: 'Numeri' },
+    { key: 'modulo', label: 'Moduli' },
+    { key: 'tabella', label: 'Tabelle' },
+    { key: 'utenti', label: 'Utenti' }
+  ];
+  const chipsHtml = chipDefs
+    .filter(c => c.key === 'tutti' || counts[c.key])
+    .map(c => `<button class="ut-chip ${s.filter === c.key ? 'active' : ''}" data-at-filter="${c.key}">${escapeHtml(c.label)} <span class="ut-chip-count">${counts[c.key] || 0}</span></button>`)
+    .join('');
+
+  // Lista eventi
+  const eventsHtml = filtered.length === 0
+    ? '<div style="padding:40px 16px;text-align:center;color:var(--ink-muted);font-style:italic;">Nessun evento trovato con questi filtri.</div>'
+    : filtered.slice(0, 100).map(e => renderAttivitaEvent(e)).join('');
+
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}, {label:'Gestione utenti', route:'utenti'}])} · Attività</div>
+      <h1 class="page-title">Attività <em>recente</em></h1>
+      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">
+        Cronologia delle modifiche rilevate dai file. Le modifiche a <code>numeri.yml</code> e le azioni sugli utenti sono visibili solo dopo aver caricato la cronologia commit.
+      </div>
+    </div>
+
+    <div class="at-metrics">
+      <div class="at-metric">
+        <div class="at-metric-label">Modifiche 24h</div>
+        <div class="at-metric-value">${events24h}</div>
+      </div>
+      <div class="at-metric">
+        <div class="at-metric-label">Utenti attivi 7 giorni</div>
+        <div class="at-metric-value">${users7d}</div>
+      </div>
+      <div class="at-metric">
+        <div class="at-metric-label">API GitHub residua</div>
+        <div class="at-metric-value at-metric-api ${(rateLimit.remaining != null && rateLimit.remaining < 1000) ? 'warning' : ''} ${(rateLimit.remaining != null && rateLimit.remaining < 200) ? 'danger' : ''}">${escapeHtml(apiText)}</div>
+      </div>
+    </div>
+
+    <div class="at-toolbar">
+      <div class="at-chips">${chipsHtml}</div>
+      <div class="at-toolbar-actions">
+        ${s.commits ? `<span style="font-size:12px;color:var(--ink-muted);">Commit caricati: ${s.commits.length}</span>` : ''}
+        <button class="btn ghost" id="btn-load-commits" ${s.loadingCommits ? 'disabled' : ''}>
+          ${s.loadingCommits ? 'Caricamento...' : (s.commits ? 'Ricarica commit' : 'Carica commit GitHub')}
+        </button>
+      </div>
+    </div>
+
+    ${s.error ? `<div class="at-error">${escapeHtml(s.error)}</div>` : ''}
+
+    <div class="at-events">${eventsHtml}</div>
+
+    ${filtered.length > 100 ? `<div style="padding:12px;text-align:center;color:var(--ink-muted);font-size:12px;">Mostrati i 100 eventi più recenti su ${filtered.length} totali.</div>` : ''}
+  `;
+
+  // Handlers
+  $('btn-load-commits').onclick = async () => {
+    s.loadingCommits = true; s.error = null;
+    renderAttivita();
+    try {
+      s.commits = await _fetchAttivitaCommits();
+    } catch (err) {
+      s.error = 'Errore caricamento commit: ' + err.message;
+    }
+    s.loadingCommits = false;
+    renderAttivita();
+  };
+
+  document.querySelectorAll('[data-at-filter]').forEach(btn => {
+    btn.onclick = () => {
+      s.filter = btn.dataset.atFilter;
+      renderAttivita();
+    };
+  });
+}
+
+/* Render di un singolo evento (riga nella lista) */
+function renderAttivitaEvent(e) {
+  const initials = (e.user || '?').slice(0, 2).toUpperCase();
+  const userIsAdmin = e.user && state.tokensFile && state.tokensFile.utenti
+    && state.tokensFile.utenti[e.user] && state.tokensFile.utenti[e.user].is_admin;
+  const avatarClass = userIsAdmin ? 'at-avatar at-avatar-admin' : 'at-avatar';
+  // Click porta alla risorsa se disponibile
+  let clickHandler = '';
+  if (e.slug && e.tipo === 'procedura') clickHandler = `onclick="navigate('procedura',{slug:'${escapeJs(e.slug)}'})"`;
+  else if (e.slug && e.tipo === 'clinica') clickHandler = `onclick="navigate('clinica-scheda',{slug:'${escapeJs(e.slug)}'})"`;
+  else if (e.slug && e.tipo === 'modulo') clickHandler = `onclick="navigate('modulo',{slug:'${escapeJs(e.slug)}'})"`;
+  else if (e.slug && e.tipo === 'tabella') clickHandler = `onclick="navigate('tabella',{slug:'${escapeJs(e.slug)}'})"`;
+  else if (e.tipo === 'numeri') clickHandler = `onclick="navigate('numeri')"`;
+
+  return `<div class="at-event" ${clickHandler} ${clickHandler ? 'style="cursor:pointer;"' : ''}>
+    <div class="${avatarClass}" title="${escapeHtml(e.user || '—')}">${escapeHtml(initials)}</div>
+    <div class="at-event-main">
+      <div class="at-event-line">
+        <strong>${escapeHtml(e.user || '—')}</strong>
+        <span class="at-event-verb">${e.source === 'commit' ? 'ha commesso' : 'ha modificato'}</span>
+        <span class="at-event-target">${escapeHtml(e.label || e.slug || '(anonimo)')}</span>
+      </div>
+      ${e.nota ? `<div class="at-event-nota">${escapeHtml(e.nota)} · ${timeAgo(e.when.toISOString())}</div>` : `<div class="at-event-nota">${timeAgo(e.when.toISOString())}</div>`}
+    </div>
+    <span class="at-event-tipo">${escapeHtml(e.tipo)}</span>
+  </div>`;
+}
+
+/* Fetch dei commit GitHub dal repo dati E dal repo auth (se admin con tokenAuth),
+   parse username dal messaggio ("Aggiorna foo (by marco) — dettaglio"). Ritorna
+   array di eventi normalizzati. */
+async function _fetchAttivitaCommits() {
+  const fetchRepo = async (repo, token) => {
+    if (!token) return [];
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${repo}/commits?per_page=100`;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+    });
+    updateRateLimitFromHeaders(res);
+    if (!res.ok) throw new Error(`GET ${repo} commits: ${res.status}`);
+    return await res.json();
+  };
+
+  const [dataCommits, authCommits] = await Promise.all([
+    fetchRepo(CONFIG.DATA_REPO_NAME, state.session.tokenData),
+    fetchRepo(CONFIG.AUTH_REPO_NAME, state.session.tokenAuth)
+  ]);
+
+  const all = [...dataCommits, ...authCommits];
+  const out = [];
+  for (const c of all) {
+    const msg = (c.commit && c.commit.message) || '';
+    const dateStr = c.commit && c.commit.author && c.commit.author.date;
+    if (!dateStr) continue;
+    // Estrae "by <user>" dal messaggio (formato del nostro codice)
+    const m = msg.match(/\(by ([^)]+)\)/);
+    const user = m ? m[1] : '—';
+    // Prima riga = titolo
+    const firstLine = msg.split('\n')[0] || '';
+    // Euristica per classificare il tipo dal messaggio
+    let tipo = 'altro';
+    let label = firstLine;
+    let slug = null;
+    if (/encrypted-tokens/i.test(firstLine)) {
+      tipo = 'utenti';
+      label = firstLine.replace(/\(by [^)]+\)\s*—?\s*/, '').trim();
+    } else if (/^Aggiorna numeri/i.test(firstLine)) {
+      tipo = 'numeri';
+      // Se c'è " — <desc>", prendo la desc come label
+      const descMatch = firstLine.match(/\s—\s(.+)$/);
+      label = descMatch ? descMatch[1] : 'rubrica numeri';
+    } else if (/^Aggiorna clinica\//i.test(firstLine)) {
+      tipo = 'clinica';
+      slug = firstLine.match(/^Aggiorna clinica\/([^\s—]+)/i)?.[1];
+      label = slug || 'scheda clinica';
+    } else if (/^(Aggiorna|Nuova procedura|Nuova scheda)/i.test(firstLine)) {
+      tipo = 'procedura';
+      slug = firstLine.match(/^(?:Aggiorna|Nuova procedura:)\s+([^\s—]+)/i)?.[1];
+      label = slug || 'procedura';
+    } else if (/^Sposta nel cestino/i.test(firstLine)) {
+      tipo = 'cestino';
+      slug = firstLine.match(/^Sposta nel cestino:\s+([^\s(]+)/i)?.[1];
+      label = `eliminato: ${slug || '?'}`;
+    } else if (/^Carica immagine/i.test(firstLine)) {
+      tipo = 'immagine';
+      label = firstLine;
+    } else if (/^(acquire|release|chore\(locks\))/i.test(firstLine)) {
+      continue; // filtro locks: troppo rumore
+    }
+    // De-dup: per procedure/cliniche/moduli/tabelle la cronologia_recente nei file
+    // copre già le modifiche. I commit su quei file sarebbero un duplicato.
+    // Tengo solo numeri, utenti, cestino, immagine, altro.
+    if (tipo === 'procedura' || tipo === 'clinica' || tipo === 'modulo' || tipo === 'tabella') {
+      continue;
+    }
+    out.push({
+      when: new Date(dateStr),
+      user,
+      tipo,
+      slug,
+      label,
+      nota: user !== '—' ? firstLine.replace(/\(by [^)]+\)\s*—?\s*/, '').replace(/\(by [^)]+\)/, '').trim() : firstLine,
+      source: 'commit'
+    });
+  }
+  return out;
 }
 
 /* ============================ CESTINO USER-PREFS (admin only) ============================ */
@@ -9100,7 +9391,7 @@ function getNumeriDataForSource(src) {
   return state.index.numeriExtended?.[src] || {};
 }
 
-async function saveNumeriForSource(src, data) {
+async function saveNumeriForSource(src, data, changeDesc) {
   const path = src === 'aopd' ? 'content/numeri.yml' : `content/numeri-${src}.yml`;
   const file = await gh.getFile(path);
   // Strip internal _-prefixed keys before serialization
@@ -9116,7 +9407,11 @@ async function saveNumeriForSource(src, data) {
   }
   const content = `# Rubrica telefonica ${src.toUpperCase()}\n# Gestita dall'app — modifica con cautela\n\n` +
     jsyaml.dump(clean, { lineWidth: 120, noRefs: true, sortKeys: false });
-  await gh.putFile(path, content, file ? file.sha : null, `Aggiorna numeri-${src}.yml (by ${state.session.username})`);
+  // Messaggio commit: generico base + descrizione dettagliata se fornita
+  // Esempi: "Aggiorna numeri-aopd (by marco) — modifica contatto: Case Manager Malattie Neuromuscolari"
+  const baseMsg = `Aggiorna numeri-${src}.yml (by ${state.session.username})`;
+  const fullMsg = changeDesc ? `${baseMsg} — ${changeDesc}` : baseMsg;
+  await gh.putFile(path, content, file ? file.sha : null, fullMsg);
 }
 
 // Aggiorna dinamicamente il campo sottosezione in base alla sezione scelta nel modale contatto
@@ -9287,7 +9582,11 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
           return { ...g, contatti };
         });
         try {
-          await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+          const etichettaSnap = (newC && newC.etichetta) ? newC.etichetta : (c && c.etichetta) || '(senza nome)';
+          const desc = isNew
+            ? `aggiungi contatto: ${etichettaSnap}`
+            : `modifica contatto: ${etichettaSnap}`;
+          await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, desc);
           toast(isNew ? 'Contatto creato' : 'Contatto aggiornato', 'success');
           closeModal();
           await buildIndex();
@@ -9335,7 +9634,7 @@ async function deleteContatto(contattoId) {
   const data = { ...getNumeriDataForSource(src) };
   const newGruppi = (data.gruppi || []).map(g => g.id !== foundGroup.id ? g : { ...g, contatti: g.contatti.filter(c => c.id !== contattoId) });
   try {
-    await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, `elimina contatto: ${foundContact.etichetta || contattoId}`);
     toast('Contatto eliminato', 'success');
     await buildIndex();
     if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
@@ -9428,7 +9727,18 @@ async function commitTagEdits() {
       })
     }));
     try {
-      await saveNumeriForSource(sourceId, { ...data, gruppi: newGruppi });
+      // Raccolgo etichette per la descrizione (max 3, poi +N altri)
+      const changedLabels = [];
+      for (const [cid] of pending) {
+        for (const g of (data.gruppi || [])) {
+          const c = (g.contatti || []).find(x => x.id === cid);
+          if (c && c.etichetta) { changedLabels.push(c.etichetta); break; }
+        }
+      }
+      const shown = changedLabels.slice(0, 3);
+      const extra = changedLabels.length - shown.length;
+      const desc = `aggiorna tag di ${pending.size} contatt${pending.size === 1 ? 'o' : 'i'}: ${shown.join(', ')}${extra > 0 ? ` +${extra} altr${extra === 1 ? 'o' : 'i'}` : ''}`;
+      await saveNumeriForSource(sourceId, { ...data, gruppi: newGruppi }, desc);
       totalSaved += pending.size;
     } catch (e) {
       toast(`Errore salvataggio ${sourceId.toUpperCase()}: ${e.message}`, 'error');
@@ -9492,7 +9802,8 @@ async function _commitSingleTagEdit(contattoId, newKind) {
   // Preserva scroll prima del re-render
   const savedScroll = window.scrollY;
   try {
-    await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+    const tagLabel = newKind || 'automatico';
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, `tag "${tagLabel}" su contatto: ${foundContact.etichetta || contattoId}`);
     const label = newKind ? newKind : 'automatico';
     toast(`Tag aggiornato: ${label}`, 'success', 1200);
     await buildIndex();
@@ -9881,7 +10192,8 @@ function openGruppoEditor({ mode, gruppo, source }) {
         updatedGroup.contatti = isNew ? [] : (g.contatti || []);
         const newGruppi = isNew ? [...gruppi, updatedGroup] : gruppi.map(x => x.id === id ? updatedGroup : x);
         try {
-          await saveNumeriForSource(sourceSelected, { ...data, gruppi: newGruppi });
+          const desc = isNew ? `nuovo gruppo: ${nome}` : `modifica gruppo: ${nome}`;
+          await saveNumeriForSource(sourceSelected, { ...data, gruppi: newGruppi }, desc);
           toast(isNew ? 'Gruppo creato' : 'Gruppo aggiornato', 'success');
           closeModal();
           await buildIndex();
@@ -9914,7 +10226,7 @@ async function deleteGruppoNumeri(id) {
   const data = { ...getNumeriDataForSource(src) };
   const newGruppi = (data.gruppi || []).filter(x => x.id !== id);
   try {
-    await saveNumeriForSource(src, { ...data, gruppi: newGruppi });
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, `elimina gruppo: ${g.nome}${n > 0 ? ` (con ${n} contatt${n === 1 ? 'o' : 'i'})` : ''}`);
     toast('Gruppo eliminato', 'success');
     await buildIndex();
     if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
@@ -9924,9 +10236,9 @@ async function deleteGruppoNumeri(id) {
   } catch (e) { toast('Errore: ' + e.message, 'error'); }
 }
 
-async function saveNumeriFile(numeriObj) {
+async function saveNumeriFile(numeriObj, changeDesc) {
   // Legacy compatibility: saves to AOPD
-  return saveNumeriForSource('aopd', numeriObj);
+  return saveNumeriForSource('aopd', numeriObj, changeDesc);
 }
 
 
