@@ -188,8 +188,8 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 }
 @media (max-width:420px){
   :root{--topbar-height:60px}
-  .brand-mark{display:none}
-  .brand-mark-compact{display:inline-flex;align-items:baseline}
+  .brand-mark{display:none!important}
+  .brand-mark-compact{display:inline-flex!important;align-items:baseline}
   header.topbar{padding:10px 10px;gap:8px 8px}
   #rate-limit-indicator{display:none!important}
 }
@@ -313,7 +313,7 @@ html[data-theme="dark"]{
 .rate-limit-pill.danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
 
 /* Edit mode */
-.edit-banner{position:sticky;top:51px;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--accent);font-size:13px;gap:12px}
+.edit-banner{position:sticky;top:var(--topbar-height);z-index:40;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--accent);font-size:13px;gap:12px}
 .edit-banner-text{display:inline-flex;align-items:center;gap:8px;font-weight:500}
 .icon-btn.active{background:var(--accent);color:var(--bg-paper)}
 body.edit-mode .app-body{outline:2px solid var(--accent);outline-offset:-1px}
@@ -434,7 +434,7 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 }
 @media (min-width:901px){
   .sidebar-overlay,.sidebar-mobile-close,.btn-hamburger{display:none}
-  aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:sticky;top:65px;align-self:start;height:calc(100vh - 65px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--rule) transparent}
+  aside.sidebar{border-right:1px solid var(--rule);padding:24px 16px;position:sticky;top:calc(var(--topbar-height) + var(--edit-banner-height, 0px));align-self:start;height:calc(100vh - var(--topbar-height) - var(--edit-banner-height, 0px));overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--rule) transparent}
   aside.sidebar::-webkit-scrollbar{width:4px}
   aside.sidebar::-webkit-scrollbar-track{background:transparent}
   aside.sidebar::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
@@ -3996,7 +3996,6 @@ function renderProcedura(slug) {
       <div style="margin-top:12px;">${tagsHtml}</div>
       <div class="page-meta">
         <div class="page-meta-item">Aggiornata ${timeAgo(proc.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(proc.modificato_da || '—')}</strong></div>
-        ${proc.urgenza_tipica ? `<div class="page-meta-item">Urgenza: ${escapeHtml(proc.urgenza_tipica)}</div>` : ''}
       </div>
       <div class="page-actions">
         <button class="btn edit-only" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
@@ -8404,7 +8403,51 @@ const navState = {
 function toggleEditMode(force) {
   const wasEdit = navState.editMode;
   const willEdit = (force !== undefined) ? force : !navState.editMode;
-  // Se stiamo uscendo da edit mode con modifiche pending, chiedi conferma
+
+  // Se stiamo USCENDO da edit mode mentre un editor file è aperto, chiedi conferma
+  // e chiudi anche l'editor (Opzione A scelta dall'utente).
+  if (wasEdit && !willEdit && state.editingContext) {
+    const ctx = state.editingContext;
+    if (ctx.isDirty) {
+      if (!confirm('Hai modifiche non salvate nel file aperto. Uscire dalla modalità modifica e perdere le modifiche?')) {
+        return; // Annullato: nessun cambio di stato
+      }
+    }
+    // Rilascia il lock se posseduto
+    if (ctx.hasLock && typeof locks !== 'undefined' && locks.release) {
+      locks.release(ctx.slug).catch(() => {});
+    }
+    // Distruggi editor instance (Toast UI legacy o block editor non ha destroy ma ok)
+    if (state.editorInstance) {
+      try { state.editorInstance.destroy(); } catch {}
+      state.editorInstance = null;
+    }
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    state.editingContext = null;
+    // Determina dove tornare: route corrente è del tipo `procedura-edit` o `clinica-edit`
+    // → torno alla rotta in lettura corrispondente
+    let targetRoute = null;
+    let targetParams = state.currentParams || {};
+    if (state.currentView === 'procedura-edit') targetRoute = 'procedura';
+    else if (state.currentView === 'clinica-edit') targetRoute = 'clinica-scheda';
+    else if (state.currentView === 'modulo-edit') targetRoute = 'modulo';
+    else if (state.currentView === 'tabella-edit') targetRoute = 'tabella';
+    // Aggiorno stato edit mode e UI
+    navState.editMode = false;
+    document.body.classList.toggle('edit-mode', false);
+    const banner = document.getElementById('edit-mode-banner');
+    if (banner) banner.classList.add('hidden');
+    document.documentElement.style.removeProperty('--edit-banner-height');
+    const btnEditMode = document.getElementById('btn-edit-mode');
+    if (btnEditMode) btnEditMode.classList.remove('active');
+    updateEditBanner();
+    renderNavTree();
+    if (targetRoute) navigate(targetRoute, targetParams);
+    else if (state.currentView) navigate(state.currentView, state.currentParams || {});
+    return;
+  }
+
+  // Se stiamo uscendo da edit mode con modifiche pending sui tag, chiedi conferma
   if (wasEdit && !willEdit && state.pendingTagEdits && state.pendingTagEdits.size > 0) {
     if (!confirm(`Hai ${state.pendingTagEdits.size} modifica/modifiche ai tag non salvate. Uscire comunque e perderle?`)) {
       return;
@@ -8413,7 +8456,17 @@ function toggleEditMode(force) {
   }
   navState.editMode = willEdit;
   document.body.classList.toggle('edit-mode', navState.editMode);
-  document.getElementById('edit-mode-banner').classList.toggle('hidden', !navState.editMode);
+  const banner = document.getElementById('edit-mode-banner');
+  banner.classList.toggle('hidden', !navState.editMode);
+  // Aggiorna --edit-banner-height per far scorrere correttamente la sidebar sticky
+  if (navState.editMode) {
+    requestAnimationFrame(() => {
+      const h = banner.offsetHeight;
+      document.documentElement.style.setProperty('--edit-banner-height', h + 'px');
+    });
+  } else {
+    document.documentElement.style.removeProperty('--edit-banner-height');
+  }
   document.getElementById('btn-edit-mode').classList.toggle('active', navState.editMode);
   updateEditBanner();
   renderNavTree();
