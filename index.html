@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<script>
+// === ANTI-FOUC ===
+// Script blocking inline: applica subito tema/font da sessionStorage cache prima
+// che il browser renderizzi anything. Evita il flash dark→light durante refresh
+// o login (perché userPrefs.load() fa una fetch GitHub e impiega centinaia di ms).
+// La cache viene popolata da applyTheme/applyFontSize ed è solo per-sessione.
+(function() {
+  try {
+    var theme = sessionStorage.getItem('collinettaai.theme-cache') || 'auto';
+    var effective = theme;
+    if (theme === 'auto') {
+      effective = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', effective);
+    document.documentElement.setAttribute('data-theme-pref', theme);
+    var font = sessionStorage.getItem('collinettaai.font-cache') || 'md';
+    document.documentElement.setAttribute('data-font-size', font);
+  } catch (e) { /* sessionStorage non disponibile, fallback ai default CSS */ }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>CollinettaAI</title>
@@ -81,6 +101,48 @@ a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;t
 a:hover{border-color:var(--accent)}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 code{font-family:var(--mono);font-size:.92em;background:var(--bg-sink);padding:2px 5px;border-radius:2px}
+
+/* === BOOT SPLASH ===
+   Coperta visibile dal primo render fino a quando JS dichiara l'app pronta.
+   Usa le CSS variables, quindi rispetta tema chiaro/scuro applicato dallo script anti-FOUC.
+   Si nasconde con html.splash-done con un fade morbido. */
+#boot-splash{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  opacity:1;
+  transition:opacity .25s ease-out;
+  pointer-events:auto;
+}
+.boot-splash-inner{
+  display:flex;flex-direction:column;align-items:center;gap:24px;
+}
+.boot-splash-logo{
+  width:80px;height:80px;object-fit:contain;
+  opacity:.92;
+}
+.boot-splash-logo-dark{display:none}
+[data-theme="dark"] .boot-splash-logo-light{display:none}
+[data-theme="dark"] .boot-splash-logo-dark{display:block}
+.boot-splash-spinner{
+  width:24px;height:24px;
+  border:2px solid var(--rule);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:boot-splash-spin .8s linear infinite;
+}
+@keyframes boot-splash-spin{
+  to{transform:rotate(360deg)}
+}
+html.splash-done #boot-splash{
+  opacity:0;
+  pointer-events:none;
+}
+/* Dopo il fade, rimuoviamo proprio l'elemento dal flusso (con un piccolo delay
+   gestito da JS via setTimeout per coprire la durata della transizione) */
+html.splash-removed #boot-splash{
+  display:none;
+}
 
 /* LOGIN */
 #login-view{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px}
@@ -1179,6 +1241,16 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 </style>
 </head>
 <body>
+
+<!-- Splash screen: visibile finché l'app non è pronta. Si nasconde quando JS imposta
+     html.splash-done. Logo neutrale + spinner. Coerente con design system. -->
+<div id="boot-splash" aria-hidden="true">
+  <div class="boot-splash-inner">
+    <img src="icons/logo-light.png?v=2" alt="" class="boot-splash-logo boot-splash-logo-light">
+    <img src="icons/logo-dark.png?v=2" alt="" class="boot-splash-logo boot-splash-logo-dark">
+    <div class="boot-splash-spinner" aria-label="Caricamento"></div>
+  </div>
+</div>
 
 <div id="login-view">
   <div class="login-card">
@@ -2476,6 +2548,12 @@ function loadSession() {
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY);
+  // Pulisco la cache tema/font: al prossimo login, l'utente vedrà i suoi
+  // device_prefs caricati da userPrefs.load(), non quelli del precedente utente.
+  try {
+    sessionStorage.removeItem('collinettaai.theme-cache');
+    sessionStorage.removeItem('collinettaai.font-cache');
+  } catch {}
   state.session = null;
 }
 
@@ -3082,6 +3160,15 @@ async function attemptLogin(username, passphrase) {
 }
 
 async function enterApp() {
+  // Carica le preferenze utente PRIMA di mostrare l'app: applyTheme/applyFontSize
+  // vengono chiamate dentro userPrefs.load(), così quando rivelo app-view il tema
+  // è già quello corretto (zero flash, anche al primo login della sessione).
+  // Lo spinner sul bottone "Accedi" del login resta visibile fino a qui.
+  try {
+    await userPrefs.load();
+  } catch (e) {
+    console.warn('[enterApp] userPrefs.load failed, proseguo con default:', e);
+  }
   $('login-view').classList.add('hidden');
   $('app-view').classList.remove('hidden');
   const displayName = (state.session.nome && state.session.cognome)
@@ -3106,7 +3193,6 @@ async function enterApp() {
   renderLoading('Caricamento…');
   try {
     await buildIndex();
-    await userPrefs.load();
     // Inizializza il router URL (listeners) e leggi lo stato iniziale dall'URL.
     // Se l'URL contiene una rotta valida (es. l'utente è arrivato su #/procedura/rachicentesi
     // tramite bookmark/refresh/link da NotebookLM), atterra direttamente lì.
@@ -3198,6 +3284,8 @@ function changeFontSize(delta) {
 
 // applyTheme/applyFontSize: applicano solo a livello DOM, senza toccare le preferenze.
 // Usate sia in init (default auto/md) sia in load() di userPrefs (con preferenze caricate).
+// Scrivono anche in sessionStorage per essere lette dallo script inline al prossimo refresh
+// (evita il FOUC: flash of unstyled content tra default scuro/chiaro e preferenza utente).
 function applyTheme(theme) {
   let effective = theme;
   if (theme === 'auto' || !theme) {
@@ -3206,12 +3294,17 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', effective);
   // Memorizzo la scelta utente (auto/light/dark) per il listener prefers-color-scheme
   document.documentElement.setAttribute('data-theme-pref', theme || 'auto');
+  // Cache in sessionStorage: il prossimo refresh nella stessa sessione applica subito
+  // il tema giusto, senza aspettare la fetch di userPrefs da GitHub.
+  try { sessionStorage.setItem('collinettaai.theme-cache', theme || 'auto'); } catch {}
   // Aggiorno UI dei pulsanti scelta tema
   document.querySelectorAll('.theme-opt').forEach(b => b.classList.toggle('active', b.dataset.theme === (theme || 'auto')));
 }
 function applyFontSize(size) {
   if (!FONT_SIZES.includes(size)) size = 'md';
   document.documentElement.setAttribute('data-font-size', size);
+  // Cache anche il font_size per evitare layout shift al refresh
+  try { sessionStorage.setItem('collinettaai.font-cache', size); } catch {}
   const label = document.getElementById('font-size-label');
   if (label) label.textContent = FONT_LABELS[size];
   const btns = document.querySelectorAll('.font-step-btn');
@@ -11702,6 +11795,7 @@ async function init() {
       });
       if (testRes.ok) {
         await enterApp();
+        hideBootSplash();  // app pronta dopo enterApp (preferenze caricate, primo render fatto)
         return;
       }
     } catch {}
@@ -11712,9 +11806,32 @@ async function init() {
   $('login-view').classList.remove('hidden');
   $('app-view').classList.add('hidden');
   setTimeout(() => $('login-username').focus(), 100);
+  hideBootSplash();  // non c'è sessione, mostra login
+}
+
+/**
+ * Nasconde lo splash di boot con un fade. Coperto da CSS:
+ * - aggiunge .splash-done → opacity:0
+ * - dopo 250ms (durata fade) aggiunge .splash-removed → display:none
+ * Idempotente: chiamarlo più volte non fa danno.
+ */
+function hideBootSplash() {
+  if (document.documentElement.classList.contains('splash-done')) return;
+  document.documentElement.classList.add('splash-done');
+  setTimeout(() => {
+    document.documentElement.classList.add('splash-removed');
+  }, 280);
 }
 
 document.addEventListener('DOMContentLoaded', init);
+// Safety net: se per qualche motivo init non chiama hideBootSplash entro 8s,
+// lo nascondo comunque per evitare che l'utente resti bloccato sullo splash.
+setTimeout(() => {
+  if (!document.documentElement.classList.contains('splash-done')) {
+    console.warn('[boot] splash safety timeout — hide forced');
+    hideBootSplash();
+  }
+}, 8000);
 </script>
 </body>
 </html>
