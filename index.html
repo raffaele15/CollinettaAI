@@ -915,23 +915,11 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sr-contact-meta{font-size:10px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--danger);opacity:.85;margin-top:2px}
 .sr-contact-num-guardia{color:var(--danger);font-weight:500;font-size:13px}
 
-/* Barra contesto "UOC · Sezione" sopra il contatto — visibile SOLO su mobile.
-   Su desktop la gerarchia visiva (header gruppo + bucket sede) è sufficiente. */
-.numero-row-context,.sr-contact-context{display:none}
-@media (max-width:700px){
-  .numero-row-context,.sr-contact-context{
-    display:block;font-size:10px;font-family:var(--mono);letter-spacing:.04em;
-    color:var(--ink-muted);text-transform:uppercase;font-weight:500;
-    margin-bottom:3px;line-height:1.3;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  }
-  /* Items cliccabili nella barra contesto: UOC e sezione */
-  .ctx-uoc,.ctx-sezione{cursor:pointer;color:var(--accent);transition:color .12s}
-  .ctx-uoc:active,.ctx-sezione:active{color:var(--accent-dark);text-decoration:underline}
-  .ctx-sep{color:var(--ink-faint)}
-  /* La sezione inline al label diventa ridondante quando c'è la barra contesto */
-  .sr-contact-sezione{display:none}
-}
+/* Items cliccabili UOC/Sezione — usati negli header dei rettangoli collassati durante la ricerca. */
+.ctx-uoc,.ctx-sezione{cursor:pointer;color:var(--accent);transition:color .12s}
+.ctx-uoc:hover,.ctx-sezione:hover{color:var(--accent-dark);text-decoration:underline}
+.ctx-uoc:active,.ctx-sezione:active{color:var(--accent-dark);text-decoration:underline}
+.ctx-sep{color:var(--ink-faint)}
 .sr-uoc-more{font-size:12px;color:var(--ink-muted);padding:6px 10px 0;font-style:italic}
 .sede-operativa{display:flex;flex-direction:column;gap:4px;padding:7px 11px;background:var(--bg-sink);border-radius:3px;margin-bottom:12px;font-size:13px}
 .sede-operativa-row{display:flex;align-items:baseline;gap:10px}
@@ -973,6 +961,9 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 /* Versione statica per ricerca collassata: stesso stile, niente cursor pointer, niente caret */
 .sede-bucket-toggle.sede-bucket-static{cursor:default;background:var(--bg-sink)}
 .sede-bucket-toggle.sede-bucket-static:hover{background:var(--bg-sink)}
+/* Versione "navigate": match per nome UOC durante ricerca, il bucket apre la UOC con sezione espansa */
+.sede-bucket-toggle.sede-bucket-navigate::after{content:'→';margin-left:auto;color:var(--ink-muted);font-size:13px;opacity:.5;transition:transform .15s,opacity .15s}
+.sede-bucket-toggle.sede-bucket-navigate:hover::after{opacity:1;transform:translateX(2px)}
 .sede-bucket-sep{color:var(--ink-faint);margin:0 4px;font-weight:400}
 /* Layout collassato durante ricerca per contatto/sezione: niente header UOC, niente padding extra */
 .numeri-group-collapsed{margin-bottom:14px}
@@ -6226,28 +6217,25 @@ function renderNumeri(filter) {
       ].filter(Boolean).join(' ').toLowerCase();
     };
     
-    // Testo del gruppo (per matchGroupOnly): solo nome/email/alias.
-    // Le sezioni NON sono incluse qui perché riguardano i singoli contatti:
-    // cercare "ucic" deve tornare i contatti UCIC, non tutti quelli della UOC che ha UCIC.
+    // Testo del gruppo per matchGroupOnly: nome + alias del gruppo.
+    // Le sezioni NON sono incluse: cercare "ucic" deve tornare i contatti UCIC, non
+    // tutti quelli della UOC che ha UCIC tra le sue sezioni.
     const groupText = (g) => {
       return [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
     };
-    // Invece per matchContactWithGroup il contesto gruppo include ANCHE le sedi:
-    // così cercando "ucic cardiologia" funziona — "cardiologia" matcha nel gruppo,
-    // "ucic" matcha nel contatto (sezione).
-    const groupContext = (g) => {
-      const base = groupText(g);
-      const sedi = (g.sezioni || []).map(s =>
-        `${s.tipo || ''} ${s.edificio || ''} ${s.piano || ''} ${s.area || ''}`
-      ).join(' ');
-      return base + ' ' + sedi.toLowerCase();
-    };
     
-    // Un contatto (o il suo gruppo) matcha se OGNI token della query è trovato
-    // almeno in uno dei campi del contatto OPPURE nel contesto del gruppo (incluse sedi)
-    const matchContactWithGroup = (c, gCtx, gId) => {
+    // Un contatto matcha se OGNI token è soddisfatto. Per ogni token, le regole sono:
+    // - Se il token è nel testo "puro" del gruppo (nome+alias), passa per tutti i contatti del gruppo.
+    //   Esempio: "cardiologia" è nel nome, quindi tutti i contatti di Cardiologia matchano "cardiologia".
+    // - Altrimenti DEVE matchare il testo del singolo contatto (etichetta, sezione, luogo, ecc.).
+    //   Questo evita che un token tipo "ucic" — che è solo una sezione di Cardiologia — faccia
+    //   matchare tutti i contatti del gruppo (gli "altri reparti"). Ora matcha solo i contatti
+    //   la cui sezione/luogo/etc. contiene "ucic".
+    const matchContactWithGroup = (c, gTxt, gId) => {
       const cTxt = contactText(c, gId);
-      return tokens.every(tok => tokenMatchesText(tok, cTxt) || tokenMatchesText(tok, gCtx));
+      return tokens.every(tok =>
+        tokenMatchesText(tok, gTxt) || tokenMatchesText(tok, cTxt)
+      );
     };
     const matchGroupOnly = (gTxt) => tokens.every(tok => tokenMatchesText(tok, gTxt));
     
@@ -6257,21 +6245,38 @@ function renderNumeri(filter) {
     // Traccio quali gruppi matchano per nome UOC (non per singoli contatti).
     // Questo determina il layout di rendering: match-per-UOC mostra header + sezioni espandibili,
     // match-per-contatto mostra solo rettangoli "UOC · Sezione" collassati.
+    // NB: dentro la vista UOC singola (filter=ID), il layout collassato non si applica mai —
+    // la UOC è già il "soggetto" della pagina, l'header gerarchico ha senso anche ricercando.
     state._matchedGroupNames = new Set();
+    state._isInsideSpecificUoc = !!isInsideSpecificUoc;
     filteredGruppi = filteredGruppi.map(g => {
-      const gTxt = groupText(g);       // senza sedi (per matchGroupOnly)
-      const gCtx = groupContext(g);    // con sedi (per match contatto+contesto)
+      const gTxt = groupText(g);       // nome+alias del gruppo
       const groupNameMatches = matchGroupOnly(gTxt);
-      if (groupNameMatches) state._matchedGroupNames.add(g.id);
+      // Se sono dentro la UOC, considero sempre il gruppo "matched" così il layout resta gerarchico
+      if (groupNameMatches || isInsideSpecificUoc) state._matchedGroupNames.add(g.id);
       // Se il gruppo è espanso manualmente o il gruppo stesso matcha completamente, mostra tutti i contatti
       // Eccetto quando siamo dentro una UOC specifica: lì dobbiamo sempre filtrare sui contatti
       if (!isInsideSpecificUoc && (expandedSet.has(g.id) || groupNameMatches)) return g;
-      // Altrimenti filtra i singoli contatti (tenendo conto del contesto gruppo per completare i token)
-      const contatti = (g.contatti || []).filter(c => matchContactWithGroup(c, gCtx, g.id));
+      // Altrimenti filtra i singoli contatti: i token non matchati dal nome del gruppo devono
+      // matchare il testo del singolo contatto (sezione, luogo, etichetta, numeri).
+      const contatti = (g.contatti || []).filter(c => matchContactWithGroup(c, gTxt, g.id));
       return contatti.length ? { ...g, contatti } : null;
     }).filter(Boolean);
+    // Sort per rilevanza durante la ricerca:
+    // 1. Gruppi che matchano per NOME UOC vengono prima (es. "infettive" → Mal. Infettive prima di Ematologia,
+    //    che ha solo contatti la cui sede contiene "infettive").
+    // 2. A parità: ordine alfabetico (per nome senza prefisso U.O.C.).
+    if (filteredGruppi.length > 1) {
+      filteredGruppi.sort((a, b) => {
+        const aMatched = state._matchedGroupNames.has(a.id) ? 0 : 1;
+        const bMatched = state._matchedGroupNames.has(b.id) ? 0 : 1;
+        if (aMatched !== bMatched) return aMatched - bMatched;
+        return stripPrefixNome(a.nome).localeCompare(stripPrefixNome(b.nome), 'it');
+      });
+    }
   } else {
     state._matchedGroupNames = null; // nessuna ricerca attiva
+    state._isInsideSpecificUoc = !!(filter && allGroups.find(g => g.id === filter));
   }
 
   // Group by ospedale source for visual sectioning
@@ -6476,9 +6481,23 @@ function renderNumeri(filter) {
                 if (isCollapsedSearch) {
                   const uocShort = shortenUocName(g);
                   const sezioneLabel = bucketSezioneLabel(b);
+                  // UOC e Sezione cliccabili separatamente: UOC → overview UOC, Sezione → UOC + sezione espansa
                   bucketHeaderHtml = `<div class="sede-bucket-toggle sede-bucket-static">
-                    <span class="sede-bucket-tipo">${escapeHtml(uocShort)}<span class="sede-bucket-sep"> · </span>${escapeHtml(sezioneLabel)}</span>
+                    <span class="sede-bucket-tipo">
+                      <span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(g.id)}'})" title="Apri ${escapeHtml(g.nome)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(g.nome)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
+                    </span>
                   </div>`;
+                } else if (matchedByName) {
+                  // Match per nome UOC durante ricerca: il bucket sezione è un link che apre la
+                  // overview UOC con la sezione espansa (coerente con la ricerca globale).
+                  const headerInner = b.sede
+                    ? renderSedeBucketHeader(b.sede, null, g)
+                    : (b.customLabel
+                      ? renderSedeBucketHeader(null, b.customLabel, g)
+                      : `<span class="sede-bucket-tipo">Altro</span>`);
+                  bucketHeaderHtml = `<button class="sede-bucket-toggle sede-bucket-navigate" onclick="openUocWithSede('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(g.nome)} con questa sezione espansa">
+                    ${headerInner}
+                  </button>`;
                 } else {
                   const headerInner = b.sede
                     ? renderSedeBucketHeader(b.sede, null, g)
@@ -6505,9 +6524,7 @@ function renderNumeri(filter) {
                           hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
                         }
                       }
-                      // In modalità collassata, la barra contesto sopra il contatto è ridondante
-                      // (l'header bucket già la contiene); skip via flag suppressContext.
-                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, gruppo: g, suppressContext: isCollapsedSearch });
+                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide });
                     };
                     // Se il bucket ha sottosezioni: renderizzo ogni subBucket come sezione nidificata
                     if (b.subBuckets && b.subBuckets.length) {
@@ -7118,38 +7135,12 @@ function openUocWithSede(gid, sedeKey) {
 
 function renderNumeroRow(c, gruppoId, classify, opts) {
   const hideLuogo = opts && opts.hideLuogo;
-  const gruppo = opts && opts.gruppo;
-  const suppressContext = opts && opts.suppressContext;
   const tags = c.tag || [];
   const cls = classify || (c._classify || classifyContatto(c));
   const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
     : cls.kind === 'reparto' ? 'numero-row numero-row-reparto'
     : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
-  // Barra contesto "UOC | Sezione" — visibile solo su mobile via CSS.
-  // Cliccando sul nome UOC si apre la pagina UOC; cliccando sulla sezione si apre
-  // la UOC con la sezione espansa e scroll automatico al bucket.
-  // Usa il nome_ridotto (custom o auto-calcolato) per essere compatto.
-  // Se suppressContext (es. layout collassato che ha già "UOC · Sezione" nell'header bucket),
-  // non rendo la barra per evitare ridondanza.
-  const uocShort = gruppo ? shortenUocName(gruppo) : '';
-  let contextBar = '';
-  if (!suppressContext && (uocShort || c.sezione)) {
-    const parts = [];
-    if (uocShort && gruppo) {
-      parts.push(`<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(gruppo.id)}'})">${escapeHtml(uocShort)}</span>`);
-    } else if (uocShort) {
-      parts.push(`<span>${escapeHtml(uocShort)}</span>`);
-    }
-    if (c.sezione && gruppo) {
-      // Sezione cliccabile: usa il bucket key derivato (sezione lowercased come fa groupContattiBySede)
-      const sedeKeyEsc = escapeJs(c.sezione.toLowerCase().trim());
-      parts.push(`<span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(gruppo.id)}','${sedeKeyEsc}')">${escapeHtml(c.sezione)}</span>`);
-    } else if (c.sezione) {
-      parts.push(`<span>${escapeHtml(c.sezione)}</span>`);
-    }
-    contextBar = `<div class="numero-row-context">${parts.join('<span class="ctx-sep"> · </span>')}</div>`;
-  }
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge badge-guardia">● Guardia</span>` : '';
   const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Guardiola</span>` : '';
   const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Reparto</span>` : '';
@@ -7200,10 +7191,14 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     ${effectiveKind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
     ${hasPending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
   </div>` : '';
+  // Click sull'intera riga: porta alla overview UOC con questo contatto isolato.
+  // Eccetto quando il click è su un button/link interno (numeri da copiare, edit, pin, kind).
+  const rowClickHandler = c.id
+    ? `onclick="if(event.target.closest('button,a,input,.kind-selector,.kind-chip,.kind-chip-reset')) return; navigate('numeri', {filter:'${escapeJs(c.id)}'})" style="cursor:pointer;"`
+    : '';
   return `
-    <div class="${rowClass}">
+    <div class="${rowClass}" ${rowClickHandler}>
       <div>
-        ${contextBar}
         <div class="numero-label">${guardiaBadge}${guardiolaBadge}${repartoBadge}${utileBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
         ${luogo}
         ${email}
@@ -11334,30 +11329,6 @@ function renderSearchResults(query, targetId) {
     const sezioneHtml = (c.sezione && !opts.hideSedeMeta) ? `<span class="sr-contact-sezione">· ${escapeHtml(c.sezione)}</span>` : '';
     const tagChips = renderInlineTagChips(c);
     const labelHtml = `${escapeHtml(c.etichetta)}${sezioneHtml}`;
-    // Barra contesto "UOC | Sezione" — visibile SOLO su mobile via CSS (.sr-contact-context).
-    // UOC e sezione cliccabili: porta alla UOC o alla UOC con sezione espansa.
-    // Usa nome ridotto (custom da gruppo.nome_ridotto se presente, altrimenti auto-calcolato).
-    // Se suppressContext (layout collassato che ha già "UOC · Sezione" nell'header bucket),
-    // non rendo la barra per evitare ridondanza.
-    const ctxGruppo = opts.gruppo;
-    const suppressContext = opts.suppressContext;
-    const uocShort = ctxGruppo ? shortenUocName(ctxGruppo) : '';
-    let contextBar = '';
-    if (!suppressContext && (uocShort || c.sezione)) {
-      const ctxItems = [];
-      if (uocShort && ctxGruppo) {
-        ctxItems.push(`<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(ctxGruppo.id)}'})">${escapeHtml(uocShort)}</span>`);
-      } else if (uocShort) {
-        ctxItems.push(`<span>${escapeHtml(uocShort)}</span>`);
-      }
-      if (c.sezione && ctxGruppo) {
-        const sedeKeyEsc = escapeJs(c.sezione.toLowerCase().trim());
-        ctxItems.push(`<span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(ctxGruppo.id)}','${sedeKeyEsc}')">${escapeHtml(c.sezione)}</span>`);
-      } else if (c.sezione) {
-        ctxItems.push(`<span>${escapeHtml(c.sezione)}</span>`);
-      }
-      contextBar = `<div class="sr-contact-context">${ctxItems.join('<span class="ctx-sep"> · </span>')}</div>`;
-    }
     const numChipClass = isGuardia ? 'sr-num-chip-guardia' : isReparto ? 'sr-num-chip-reparto' : isUtile ? 'sr-num-chip-utile' : 'sr-num-chip';
     const numChipsHtml = parts.length
       ? parts.map(p => `<span class="sr-num-chip ${numChipClass}">${escapeHtml(p)}</span>`).join('')
@@ -11366,7 +11337,6 @@ function renderSearchResults(query, targetId) {
     if (isGuardia) {
       return `<div class="sr-contact sr-contact-guardia" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
-          ${contextBar}
           <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">${c.tag && c.tag.length ? escapeHtml(c.tag.join(' · ')) : 'guardia'}</div>
           ${luogoHtml}
@@ -11378,7 +11348,6 @@ function renderSearchResults(query, targetId) {
     if (isUtile) {
       return `<div class="sr-contact sr-contact-utile" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
-          ${contextBar}
           <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">utili</div>
           ${luogoHtml}
@@ -11391,7 +11360,6 @@ function renderSearchResults(query, targetId) {
       const repartoMeta = isGuardiola ? 'guardiola' : 'reparto';
       return `<div class="sr-contact sr-contact-reparto" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
-          ${contextBar}
           <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">${escapeHtml(repartoMeta)}</div>
           ${luogoHtml}
@@ -11402,7 +11370,6 @@ function renderSearchResults(query, targetId) {
     }
     return `<div class="sr-contact" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
       <div class="sr-contact-left">
-        ${contextBar}
         <div class="sr-contact-label">${labelHtml}</div>
         ${luogoHtml}
         ${tagChips}
@@ -11466,15 +11433,17 @@ function renderSearchResults(query, targetId) {
         const contattiItems = b.contatti.map(c => {
           const cLuogo = (c.luogo || '').toLowerCase().trim();
           const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
-          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede, gruppo: u.fullGroup, suppressContext: isCollapsed });
+          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
         }).join('');
         if (isCollapsed) {
-          // Layout collassato: header bucket = "UOC ridotta · Sezione" non cliccabile
+          // Layout collassato: header bucket = "UOC ridotta · Sezione" con UOC e Sezione cliccabili separatamente
           const uocShort = shortenUocName(u.fullGroup);
           const sezioneLabel = bucketSezioneLabel(b);
           return `<div class="sr-sede-bucket">
             <div class="sr-sede-bucket-header sr-sede-bucket-static">
-              <span class="sede-bucket-tipo">${escapeHtml(uocShort)}<span class="sede-bucket-sep"> · </span>${escapeHtml(sezioneLabel)}</span>
+              <span class="sede-bucket-tipo">
+                <span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gruppoId)}'})" title="Apri ${escapeHtml(u.gruppo)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
+              </span>
             </div>
             <div class="sr-sede-bucket-contatti">${contattiItems}</div>
           </div>`;
@@ -11496,7 +11465,7 @@ function renderSearchResults(query, targetId) {
         </div>`;
       }).join('');
     } else {
-      contattiHtml = topContatti.map(c => renderContatto(c, { gruppo: u.fullGroup, suppressContext: isCollapsed })).join('');
+      contattiHtml = topContatti.map(c => renderContatto(c)).join('');
     }
     // In modalità collassata: niente header UOC, niente sede grande, niente "+N altri".
     // Solo la lista dei rettangoli "UOC · Sezione" con i contatti sotto.
