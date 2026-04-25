@@ -178,7 +178,8 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
   .search-wrap input{font-size:16px;padding:8px 12px 8px 34px;max-width:100%;box-sizing:border-box}
   header.topbar > .topbar-actions{grid-area:actions;justify-self:end;min-width:0;flex-shrink:0}
   .brand-divider,.brand-sub{display:none}
-  .brand-mark{font-size:18px}
+  /* Su mobile, riduci lo spazio tra logo e titolo */
+  .brand-home-link{gap:4px}
   .search-kbd{display:none}
   /* Compact icon-btn on mobile */
   .topbar-actions .user-name{display:none}
@@ -188,22 +189,20 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 }
 @media (max-width:420px){
   :root{--topbar-height:60px}
-  .brand-mark{display:none!important}
-  .brand-mark-compact{display:inline-flex!important;align-items:baseline}
   header.topbar{padding:10px 10px;gap:8px 8px}
   #rate-limit-indicator{display:none!important}
 }
-.brand{display:flex;align-items:center;gap:10px}
-.brand-home-link{display:flex;align-items:center;gap:10px;cursor:pointer}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-home-link{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0}
 .brand-logo{width:32px;height:32px;object-fit:contain;flex-shrink:0}
 .brand-logo-dark{display:none}
 [data-theme="dark"] .brand-logo-light{display:none}
 [data-theme="dark"] .brand-logo-dark{display:block}
 [data-theme="dark"] .login-logo-light{display:none!important}
 [data-theme="dark"] .login-logo-dark{display:block!important}
-.brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
-.brand-mark-compact{display:none;font-family:var(--serif);font-weight:500;font-style:italic;font-size:20px;letter-spacing:-.02em;color:var(--ink)}
-.brand-mark-compact-ai{font-size:.7em;letter-spacing:.02em;margin-left:1px}
+/* Titolo CollinettaAI: scaling automatico tra 13px (schermi minuscoli) e 22px (desktop).
+   Il valore preferito 4.5vw fa scalare in modo proporzionale alla larghezza viewport. */
+.brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(13px,4.5vw,22px);letter-spacing:-.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand-divider{width:1px;height:16px;background:var(--rule-strong)}
 .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
 .search-wrap{position:relative;flex:1;min-width:0}
@@ -313,8 +312,14 @@ html[data-theme="dark"]{
 .rate-limit-pill.danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
 
 /* Edit mode */
-.edit-banner{position:sticky;top:var(--topbar-height);z-index:40;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--accent);font-size:13px;gap:12px}
-.edit-banner-text{display:inline-flex;align-items:center;gap:8px;font-weight:500}
+.edit-banner{position:sticky;top:var(--topbar-height);z-index:40;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--accent);font-size:13px;gap:12px;flex-wrap:wrap}
+.edit-banner-text{display:inline-flex;align-items:center;gap:8px;font-weight:500;min-width:0;flex:1}
+@media (max-width:700px){
+  .edit-banner{padding:6px 10px;font-size:12px;gap:6px;flex-wrap:nowrap}
+  .edit-banner-text{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .edit-banner-text > span:nth-child(2){display:none}  /* nasconde label "Modalità modifica attiva", lascia solo l'icona */
+  .edit-banner .btn.sm{font-size:11px;padding:5px 8px;white-space:nowrap}
+}
 .icon-btn.active{background:var(--accent);color:var(--bg-paper)}
 body.edit-mode .app-body{outline:2px solid var(--accent);outline-offset:-1px}
 .edit-only{display:none !important}
@@ -840,6 +845,20 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sr-contact-guardia .sr-contact-label{color:var(--danger);font-weight:500}
 .sr-contact-meta{font-size:10px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--danger);opacity:.85;margin-top:2px}
 .sr-contact-num-guardia{color:var(--danger);font-weight:500;font-size:13px}
+
+/* Barra contesto "UOC · Sezione" sopra il contatto — visibile SOLO su mobile.
+   Su desktop la gerarchia visiva (header gruppo + bucket sede) è sufficiente. */
+.numero-row-context,.sr-contact-context{display:none}
+@media (max-width:700px){
+  .numero-row-context,.sr-contact-context{
+    display:block;font-size:10px;font-family:var(--mono);letter-spacing:.04em;
+    color:var(--ink-muted);text-transform:uppercase;font-weight:500;
+    margin-bottom:3px;line-height:1.3;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  /* La sezione inline al label diventa ridondante quando c'è la barra contesto */
+  .sr-contact-sezione{display:none}
+}
 .sr-uoc-more{font-size:12px;color:var(--ink-muted);padding:6px 10px 0;font-style:italic}
 .sede-operativa{display:flex;flex-direction:column;gap:4px;padding:7px 11px;background:var(--bg-sink);border-radius:3px;margin-bottom:12px;font-size:13px}
 .sede-operativa-row{display:flex;align-items:baseline;gap:10px}
@@ -919,8 +938,18 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 
 /* ============================ BLOCCHI TIPIZZATI ============================ */
 .scheda-blocchi{display:flex;flex-direction:column;gap:18px;padding:4px 0}
-.bl{scroll-margin-top:calc(var(--topbar-height) + 12px);transition:box-shadow .3s,background-color .3s}
+.bl{position:relative;scroll-margin-top:calc(var(--topbar-height) + 12px);transition:box-shadow .3s,background-color .3s}
 .bl-flash{animation:bl-flash-pulse 2s ease-out}
+
+/* Bottone condividi blocco — overlay top-right, appare al hover */
+.bl-share-btn{position:absolute;top:6px;right:6px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-paper);color:var(--ink-muted);border:1px solid var(--rule);border-radius:3px;cursor:pointer;opacity:0;transition:opacity .15s,color .12s,border-color .12s;padding:0;z-index:2}
+.bl:hover .bl-share-btn,.bl-share-btn:focus-visible{opacity:1}
+.bl-share-btn:hover{color:var(--accent);border-color:var(--accent)}
+/* Su mobile (touch device) il hover non funziona bene — mostra sempre con bassa opacità */
+@media (hover:none){
+  .bl-share-btn{opacity:.4}
+  .bl-share-btn:active{opacity:1}
+}
 @keyframes bl-flash-pulse{
   0%{box-shadow:0 0 0 3px var(--accent);background-color:var(--accent-soft)}
   50%{box-shadow:0 0 0 2px var(--accent)}
@@ -1181,7 +1210,6 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
         <img src="icons/logo-light-small.png?v=2" alt="" class="brand-logo brand-logo-light">
         <img src="icons/logo-dark-small.png?v=2" alt="" class="brand-logo brand-logo-dark">
         <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
-        <span class="brand-mark-compact">C.<span class="brand-mark-compact-ai">AI</span></span>
       </span>
       <span class="brand-divider"></span>
       <span class="brand-sub">Neurologia · AOPD</span>
@@ -1333,49 +1361,116 @@ function timeAgo(iso) {
 
 function nowIso() { return new Date().toISOString(); }
 
-// Navigation history bidirezionale: back/forward
-const navHistory = [];
-let navHistoryIndex = -1;
-let navHistoryMoving = false; // evita push durante goBack/goForward
-function pushHistory(route, params) {
-  if (navHistoryMoving) return;
-  const top = navHistory[navHistoryIndex];
-  if (top && top.route === route && JSON.stringify(top.params || {}) === JSON.stringify(params || {})) return;
-  // Nuova navigazione: taglia via la coda (forward) oltre l'index attuale
-  if (navHistoryIndex < navHistory.length - 1) {
-    navHistory.length = navHistoryIndex + 1;
+// Navigazione: usa la history del browser come unica fonte di verità.
+// Tracciamo solo la posizione corrente per sapere se i pulsanti back/forward devono
+// essere abilitati. Compatibile con PWA installata (history.back/forward funzionano
+// anche in standalone mode su iOS/Android).
+let _historyPos = 0;       // posizione corrente nella history del browser
+let _historyMax = 0;       // entry massima raggiunta (per sapere se "forward" è disponibile)
+
+// === GUARDIA BACK (anti-uscita accidentale) ===
+// Quando l'utente è in un editor file o sulla home in PWA standalone, intercettiamo
+// il primo "back" inserendo un'entry "guardia" nella history. Il secondo back entro
+// 2 secondi lascia procedere; oltre, riarmiamo la guardia.
+const BACK_GUARD_TIMEOUT_MS = 2000;
+let _backGuardArmed = false;     // c'è una guardia attiva nella history corrente?
+let _backGuardLastBack = 0;      // timestamp dell'ultima pressione back consumata
+let _backGuardSilent = false;    // se true, niente toast (caso home PWA)
+
+function isPwaStandalone() {
+  // Detection: app installata e aperta in modalità standalone (icona home)
+  return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true; // iOS Safari
+}
+
+function shouldGuardBack() {
+  // Cattura editor file aperto (qualsiasi tipo): protezione dall'uscita accidentale
+  if (state.editingContext) return { active: true, silent: false };
+  // Cattura home in PWA: doppio tasto back per uscire dall'app
+  const onHome = (state.currentView === 'home' || !state.currentView);
+  if (onHome && isPwaStandalone()) return { active: true, silent: true };
+  return { active: false, silent: false };
+}
+
+function armBackGuard(silent) {
+  if (_backGuardArmed) return;
+  // Aggiungo entry "guardia" con stesso URL corrente: l'utente non vede flicker
+  try {
+    window.history.pushState({ guard: true, pos: _historyPos }, '', window.location.href);
+    _backGuardArmed = true;
+    _backGuardSilent = !!silent;
+  } catch {}
+}
+
+function disarmBackGuard() {
+  _backGuardArmed = false;
+  _backGuardSilent = false;
+}
+
+function _handleGuardConsumed() {
+  // popstate ha consumato la guardia. Decidi se: (a) lasciar passare, (b) riarmare.
+  const now = Date.now();
+  // "within" è true SOLO se c'è stata una pressione precedente recente.
+  // Se _backGuardLastBack è 0 (mai consumata prima) trattiamo questo come prima pressione.
+  const within = _backGuardLastBack > 0 && (now - _backGuardLastBack) < BACK_GUARD_TIMEOUT_MS;
+  _backGuardLastBack = now;
+  const ctx = shouldGuardBack();
+
+  if (within) {
+    // Secondo back entro 2s: lascia che il browser processi normalmente.
+    // Reset del timestamp così la prossima sessione di guardia riparte pulita.
+    _backGuardLastBack = 0;
+    disarmBackGuard();
+    return false; // false = non intercetta, lascia procedere il routing normale
   }
-  navHistory.push({ route, params: params || {} });
-  navHistoryIndex = navHistory.length - 1;
-  if (navHistory.length > 50) {
-    navHistory.shift();
-    navHistoryIndex--;
+
+  // Prima pressione back (o oltre 2s): riarmiamo la guardia e mostriamo toast (se non silent).
+  if (ctx.active) {
+    if (!ctx.silent && !_backGuardSilent && state.editingContext) {
+      toast('Premi di nuovo "indietro" per uscire dall\'editor', 'info', BACK_GUARD_TIMEOUT_MS);
+    }
+    armBackGuard(ctx.silent);
+    return true; // true = intercettato, popstate non deve navigare
+  }
+  // Non più in zona protetta: lascia procedere
+  _backGuardLastBack = 0;
+  disarmBackGuard();
+  return false;
+}
+
+function _onHistoryPush() {
+  // Chiamato dopo ogni pushState fatto da urlRouter (nuova navigazione)
+  _historyPos++;
+  _historyMax = _historyPos;
+  // Una nuova navigazione invalida la guardia (l'utente è tornato attivo)
+  disarmBackGuard();
+  updateNavHistoryButtons();
+  // Se atterriamo in zona protetta, arma subito la guardia
+  // (es. apri un editor → la prima pressione back deve già essere intercettata)
+  const ctx = shouldGuardBack();
+  if (ctx.active) armBackGuard(ctx.silent);
+}
+function _onHistoryPop(state) {
+  // Chiamato da popstate. Lo state contiene { pos } messo in pushState.
+  if (state && typeof state.pos === 'number') {
+    _historyPos = state.pos;
   }
   updateNavHistoryButtons();
 }
 function goBack() {
-  if (navHistoryIndex <= 0) return;
-  navHistoryIndex--;
-  const prev = navHistory[navHistoryIndex];
-  navHistoryMoving = true;
-  navigate(prev.route, prev.params);
-  navHistoryMoving = false;
-  updateNavHistoryButtons();
+  if (_historyPos <= 0) return;
+  // Usa la history del browser. popstate aggiornerà _historyPos e routerà la pagina.
+  window.history.back();
 }
 function goForward() {
-  if (navHistoryIndex >= navHistory.length - 1) return;
-  navHistoryIndex++;
-  const next = navHistory[navHistoryIndex];
-  navHistoryMoving = true;
-  navigate(next.route, next.params);
-  navHistoryMoving = false;
-  updateNavHistoryButtons();
+  if (_historyPos >= _historyMax) return;
+  window.history.forward();
 }
 function updateNavHistoryButtons() {
   const back = document.getElementById('btn-nav-back');
   const fwd = document.getElementById('btn-nav-forward');
-  if (back) back.disabled = navHistoryIndex <= 0;
-  if (fwd) fwd.disabled = navHistoryIndex >= navHistory.length - 1;
+  if (back) back.disabled = _historyPos <= 0;
+  if (fwd) fwd.disabled = _historyPos >= _historyMax;
 }
 
 // Standardized breadcrumb: ← Level1 › Level2 › Level3
@@ -1582,19 +1677,34 @@ const userPrefs = {
     try {
       const file = await gh.getFile(path);
       if (!file) {
-        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, _sha: null };
+        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, _sha: null };
         return;
       }
       const parsed = jsyaml.load(file.content) || {};
+      // Migrazione one-shot: vecchio schema aveva tema/font_size al top level.
+      // Se trovo i vecchi campi e device_prefs è assente, sposto i valori nella categoria corrente.
+      const cat = getDeviceCategory();
+      const devicePrefs = (parsed.device_prefs && typeof parsed.device_prefs === 'object') ? parsed.device_prefs : {};
+      if ((parsed.tema || parsed.font_size) && !parsed.device_prefs) {
+        devicePrefs[cat] = {
+          tema: parsed.tema || null,
+          font_size: parsed.font_size || null
+        };
+      }
       state.userPrefs = {
         pins: Array.isArray(parsed.pins) ? parsed.pins : [],
         home_numeri: Array.isArray(parsed.home_numeri) ? parsed.home_numeri : [],
         pin_order: (parsed.pin_order && typeof parsed.pin_order === 'object') ? parsed.pin_order : {},
+        device_prefs: devicePrefs,
         _sha: file.sha
       };
+      // Applica subito tema e font dalla categoria di dispositivo corrente
+      const myPrefs = state.userPrefs.device_prefs[cat] || {};
+      if (myPrefs.tema) applyTheme(myPrefs.tema);
+      if (myPrefs.font_size) applyFontSize(myPrefs.font_size);
     } catch (e) {
       console.warn('[userPrefs] load failed:', e);
-      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, _sha: null };
+      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, _sha: null };
     }
   },
 
@@ -1616,6 +1726,7 @@ const userPrefs = {
       pins: state.userPrefs.pins,
       home_numeri: state.userPrefs.home_numeri || [],
       pin_order: state.userPrefs.pin_order || {},
+      device_prefs: state.userPrefs.device_prefs || {},
       ultima_modifica: nowIso(),
       modificato_da: state.session.username
     };
@@ -2001,6 +2112,47 @@ function toast(message, level = 'info', duration = 3500) {
   setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 220); }, duration);
 }
 
+/* ============================ CONDIVISIONE LINK ============================
+   shareLink usa Web Share API quando disponibile (tipicamente su mobile),
+   altrimenti copia il link in clipboard con feedback toast. Esperienza nativa
+   su iOS/Android, comportamento standard "copy link" su desktop. */
+async function shareLink(url, title) {
+  // Web Share API: tipicamente disponibile su mobile (iOS Safari, Chrome Android)
+  // e su Edge/Chrome desktop in alcune versioni. È la via canonica.
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: title || 'CollinettaAI', url });
+      return;
+    } catch (err) {
+      // L'utente potrebbe aver chiuso il foglio di condivisione: non è un errore
+      // Se invece è un fallimento reale, ricado sul clipboard
+      if (err && err.name === 'AbortError') return;
+    }
+  }
+  // Fallback: copia in clipboard (desktop)
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Link copiato', 'success', 1800);
+  } catch {
+    // Fallback estremo: prompt visibile per copia manuale
+    try { prompt('Copia il link:', url); } catch {}
+  }
+}
+
+/* Costruisce un URL completo a partire da route+params (per condivisione esterna).
+   A differenza di urlRouter.buildHash, restituisce URL assoluto includendo origin+pathname. */
+function buildShareUrl(route, params, blockId) {
+  if (typeof urlRouter === 'undefined') return window.location.href;
+  let hash = urlRouter.buildHash(route, params);
+  if (blockId) {
+    // blockId è del tipo "bl-rachicentesi-5" → estraggo il numero per il formato URL
+    const m = blockId.match(/^bl-[a-z0-9-]+-(\d+)$/i);
+    if (m) hash += '/bl-' + m[1];
+  }
+  // location.origin + location.pathname taglia eventuali ?query e #hash residui
+  return window.location.origin + window.location.pathname + hash;
+}
+
 /* ============================ CRYPTO ============================ */
 function base64ToBuffer(base64) {
   const binary = atob(base64);
@@ -2279,19 +2431,6 @@ const state = {
   pendingTagEdits: new Map(),  // Map<contactId, newKind|null> — modifiche pending ai tag kind (guardia/reparto/utile)
   pendingBlockHash: null       // id blocco (es. "bl-rachicentesi-5") da scrollare dopo il prossimo render scheda
 };
-
-/* Deep-link a blocchi specifici — es. condivisione/citazioni AI con URL tipo
-   https://app/#bl-rachicentesi-5 che dovrebbe aprire la scheda e scrollare
-   al blocco 5 con un flash visivo. Chiamata al boot e a ogni hashchange.
-   Ritorna true se l'hash è stato catturato, false altrimenti. */
-function tryCaptureBlockHash() {
-  const h = (window.location.hash || '').replace(/^#/, '');
-  if (/^bl-[a-z0-9-]+-\d+$/i.test(h)) {
-    state.pendingBlockHash = h;
-    return true;
-  }
-  return false;
-}
 
 /* Dopo il render di una scheda, chiama questa per scrollare al blocco in attesa.
    Se l'elemento esiste, scrolla con flash; poi consuma pendingBlockHash.
@@ -2968,7 +3107,20 @@ async function enterApp() {
   try {
     await buildIndex();
     await userPrefs.load();
-    navigate('home');
+    // Inizializza il router URL (listeners) e leggi lo stato iniziale dall'URL.
+    // Se l'URL contiene una rotta valida (es. l'utente è arrivato su #/procedura/rachicentesi
+    // tramite bookmark/refresh/link da NotebookLM), atterra direttamente lì.
+    urlRouter.init();
+    const initial = urlRouter.readUrl();
+    if (initial.blockHash) state.pendingBlockHash = initial.blockHash;
+    navigate(initial.route, initial.params);
+    // Se atterriamo sulla home in PWA standalone, arma la guardia anti-uscita
+    // (silenziosa, senza toast). Necessario qui perché updateUrl non riapplica
+    // pushState se l'URL è già quello atteso.
+    if (!_backGuardArmed) {
+      const ctx = shouldGuardBack();
+      if (ctx.active) armBackGuard(ctx.silent);
+    }
   } catch (e) {
     renderError('Errore caricamento indice', e.message);
   }
@@ -2983,58 +3135,105 @@ function closeUserMenu() {
   const dd = document.getElementById('user-menu-dropdown');
   if (dd) dd.classList.add('hidden');
 }
+// === DEVICE CATEGORY ===
+// 3 categorie per le preferenze tema/font: mobile (<=700px), tablet (701-1024px), desktop (>=1025px).
+// La categoria viene "congelata" al primo accesso della sessione per evitare che ridimensionando
+// la finestra del browser le preferenze cambino al volo (sarebbe disorientante).
+function _detectDeviceCategoryNow() {
+  const w = window.innerWidth;
+  if (w <= 700) return 'mobile';
+  if (w <= 1024) return 'tablet';
+  return 'desktop';
+}
+function getDeviceCategory() {
+  // Memorizzato in sessionStorage solo per stabilità nella sessione corrente,
+  // non come preferenza persistente. Sparisce a chiusura tab.
+  try {
+    const cached = sessionStorage.getItem('collinettaai.device-category');
+    if (cached === 'mobile' || cached === 'tablet' || cached === 'desktop') return cached;
+  } catch {}
+  const cat = _detectDeviceCategoryNow();
+  try { sessionStorage.setItem('collinettaai.device-category', cat); } catch {}
+  return cat;
+}
+
+// === TEMA E FONT ===
+// Le preferenze sono salvate nel repo dati come parte di userPrefs.yml, separate per categoria
+// di dispositivo (mobile/tablet/desktop). Niente più localStorage: l'utente ritrova tema/font
+// su qualsiasi dispositivo dello stesso tipo dove fa login con la stessa identità, ma può
+// avere preferenze diverse tra mobile e desktop (es. dark sul telefono, light sul Mac).
+// Pre-login si usano i default: tema 'auto' e font 'md'.
 function setTheme(theme) {
-  try { localStorage.setItem('collinetta-theme', theme); } catch {}
   applyTheme(theme);
   document.querySelectorAll('.theme-opt').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+  // Salva nelle preferenze utente per la categoria di dispositivo corrente (solo se loggato)
+  if (state.userPrefs) {
+    const cat = getDeviceCategory();
+    if (!state.userPrefs.device_prefs) state.userPrefs.device_prefs = {};
+    if (!state.userPrefs.device_prefs[cat]) state.userPrefs.device_prefs[cat] = {};
+    state.userPrefs.device_prefs[cat].tema = theme;
+    if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
+  }
 }
 const FONT_SIZES = ['sm', 'md', 'lg', 'xl'];
 const FONT_LABELS = { sm: 'Piccolo', md: 'Medio', lg: 'Grande', xl: 'Extra grande' };
 function setFontSize(size) {
   if (!FONT_SIZES.includes(size)) size = 'md';
-  try { localStorage.setItem('collinetta-font-size', size); } catch {}
-  document.documentElement.setAttribute('data-font-size', size);
-  const label = document.getElementById('font-size-label');
-  if (label) label.textContent = FONT_LABELS[size];
-  // Update button states
-  const idx = FONT_SIZES.indexOf(size);
-  const btns = document.querySelectorAll('.font-step-btn');
-  if (btns.length === 2) {
-    btns[0].disabled = idx === 0;
-    btns[1].disabled = idx === FONT_SIZES.length - 1;
+  applyFontSize(size);
+  if (state.userPrefs) {
+    const cat = getDeviceCategory();
+    if (!state.userPrefs.device_prefs) state.userPrefs.device_prefs = {};
+    if (!state.userPrefs.device_prefs[cat]) state.userPrefs.device_prefs[cat] = {};
+    state.userPrefs.device_prefs[cat].font_size = size;
+    if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
   }
 }
 function changeFontSize(delta) {
-  let current = 'md';
-  try { current = localStorage.getItem('collinetta-font-size') || 'md'; } catch {}
+  // Legge il valore corrente dall'attributo DOM (sempre aggiornato)
+  const current = document.documentElement.getAttribute('data-font-size') || 'md';
   const idx = FONT_SIZES.indexOf(current);
   const next = Math.max(0, Math.min(FONT_SIZES.length - 1, idx + delta));
   setFontSize(FONT_SIZES[next]);
 }
+
+// applyTheme/applyFontSize: applicano solo a livello DOM, senza toccare le preferenze.
+// Usate sia in init (default auto/md) sia in load() di userPrefs (con preferenze caricate).
 function applyTheme(theme) {
   let effective = theme;
   if (theme === 'auto' || !theme) {
     effective = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
   document.documentElement.setAttribute('data-theme', effective);
+  // Memorizzo la scelta utente (auto/light/dark) per il listener prefers-color-scheme
+  document.documentElement.setAttribute('data-theme-pref', theme || 'auto');
+  // Aggiorno UI dei pulsanti scelta tema
+  document.querySelectorAll('.theme-opt').forEach(b => b.classList.toggle('active', b.dataset.theme === (theme || 'auto')));
+}
+function applyFontSize(size) {
+  if (!FONT_SIZES.includes(size)) size = 'md';
+  document.documentElement.setAttribute('data-font-size', size);
+  const label = document.getElementById('font-size-label');
+  if (label) label.textContent = FONT_LABELS[size];
+  const btns = document.querySelectorAll('.font-step-btn');
+  if (btns.length === 2) {
+    const idx = FONT_SIZES.indexOf(size);
+    btns[0].disabled = idx === 0;
+    btns[1].disabled = idx === FONT_SIZES.length - 1;
+  }
 }
 function initTheme() {
-  let saved = 'auto';
-  try { saved = localStorage.getItem('collinetta-theme') || 'auto'; } catch {}
-  applyTheme(saved);
-  // Font size init
-  let fontSize = 'md';
-  try { fontSize = localStorage.getItem('collinetta-font-size') || 'md'; } catch {}
-  document.documentElement.setAttribute('data-font-size', fontSize);
-  setTimeout(() => {
-    document.querySelectorAll('.theme-opt').forEach(b => b.classList.toggle('active', b.dataset.theme === saved));
-    setFontSize(fontSize);
-  }, 0);
+  // Cleanup: rimuovi le vecchie chiavi localStorage usate prima del refactor.
+  // Le preferenze tema/font ora vivono nel repo dati (userPrefs).
+  try { localStorage.removeItem('collinetta-theme'); } catch {}
+  try { localStorage.removeItem('collinetta-font-size'); } catch {}
+  // Pre-login: usa default. Le preferenze utente verranno applicate da userPrefs.load() al login.
+  applyTheme('auto');
+  applyFontSize('md');
   if (window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      let s = 'auto';
-      try { s = localStorage.getItem('collinetta-theme') || 'auto'; } catch {}
-      if (s === 'auto') applyTheme('auto');
+      // Se la preferenza utente è "auto", aggiorno il tema effettivo quando il sistema cambia
+      const pref = document.documentElement.getAttribute('data-theme-pref') || 'auto';
+      if (pref === 'auto') applyTheme('auto');
     });
   }
 }
@@ -3075,6 +3274,189 @@ function logout() {
 
 
 /* ============================ ROUTER ============================ */
+/* ============================ URL ROUTER ============================
+   Sincronizza stato app ↔ URL hash. Formato path-based stile A:
+     #/home
+     #/numeri
+     #/numeri/lab-neurologia                (con filter contatto)
+     #/procedura/rachicentesi
+     #/procedura/rachicentesi/bl-5          (deep-link a blocco)
+     #/clinica/alzheimer
+     #/modulo/consenso-rachicentesi/bl-3
+   Permette: bookmark, refresh F5, bottone indietro browser, condivisione link,
+   deep-link da NotebookLM. Non aggiunge chiamate di rete.
+*/
+const urlRouter = (function() {
+  let _suppress = false; // evita loop navigate→hashchange→navigate
+
+  // Mappa interna route+params → segmenti URL
+  function _routeToSegments(route, params) {
+    const p = params || {};
+    switch (route) {
+      case 'home':            return ['home'];
+      case 'manuale':         return ['manuale'];
+      case 'capitolo':        return ['capitolo', p.id];
+      case 'procedure':       return ['procedure'];
+      case 'procedure-cat':   return ['procedure', p.cat, p.sub].filter(Boolean);
+      case 'procedura':       return ['procedura', p.slug];
+      case 'procedura-edit':  return ['procedura', p.slug, 'edit'];
+      case 'clinica':         return p.sub ? ['clinica', p.sub] : ['clinica'];
+      case 'clinica-scheda':  return ['clinica-scheda', p.slug];
+      case 'clinica-edit':    return ['clinica-scheda', p.slug, 'edit'];
+      case 'numeri':          return p.filter ? ['numeri', p.filter] : ['numeri'];
+      case 'moduli':          return ['moduli'];
+      case 'modulo':          return ['modulo', p.slug];
+      case 'modulo-edit':     return ['modulo', p.slug, 'edit'];
+      case 'tabelle':         return ['tabelle'];
+      case 'tabella':         return ['tabella', p.slug];
+      case 'tabella-edit':    return ['tabella', p.slug, 'edit'];
+      case 'calendario':      return ['calendario'];
+      case 'cestino':         return ['cestino'];
+      case 'cestino-utenti':  return ['cestino-utenti'];
+      case 'utenti':          return ['utenti'];
+      case 'attivita':        return ['attivita'];
+      case 'search':          return p.query ? ['search', encodeURIComponent(p.query)] : ['search'];
+      case 'tag':             return ['tag', p.tag];
+      default:                return ['home'];
+    }
+  }
+
+  // Mappa inversa: segmenti URL → {route, params}
+  // I segmenti arrivano già senza il leading "#/". Ultimo segmento può essere "bl-N" che
+  // viene estratto come blockHash separato (per scrollare al blocco dopo il render).
+  function _segmentsToRoute(segments) {
+    let blockHash = null;
+    // Se l'ultimo segmento è "bl-<numero>", lo separo
+    if (segments.length > 0 && /^bl-\d+$/i.test(segments[segments.length - 1])) {
+      const blNum = segments.pop().toLowerCase();
+      // Ricostruisco "bl-<slug>-<n>" usando il segmento precedente come slug
+      // (di solito segments[len-1] è lo slug della scheda)
+      const slug = segments[segments.length - 1] || '';
+      blockHash = `bl-${slug}-${blNum.replace(/^bl-/, '')}`;
+    }
+    if (segments.length === 0) return { route: 'home', params: {}, blockHash };
+    const head = segments[0];
+    const second = segments[1];
+    const third = segments[2];
+    switch (head) {
+      case 'home': return { route: 'home', params: {}, blockHash };
+      case 'manuale': return { route: 'manuale', params: {}, blockHash };
+      case 'capitolo': return { route: 'capitolo', params: { id: second }, blockHash };
+      case 'procedure':
+        if (!second) return { route: 'procedure', params: {}, blockHash };
+        return { route: 'procedure-cat', params: { cat: second, sub: third }, blockHash };
+      case 'procedura':
+        if (third === 'edit') return { route: 'procedura-edit', params: { slug: second }, blockHash };
+        return { route: 'procedura', params: { slug: second }, blockHash };
+      case 'clinica':
+        return { route: 'clinica', params: { sub: second }, blockHash };
+      case 'clinica-scheda':
+        if (third === 'edit') return { route: 'clinica-edit', params: { slug: second }, blockHash };
+        return { route: 'clinica-scheda', params: { slug: second }, blockHash };
+      case 'numeri':
+        return { route: 'numeri', params: second ? { filter: second } : {}, blockHash };
+      case 'moduli': return { route: 'moduli', params: {}, blockHash };
+      case 'modulo':
+        if (third === 'edit') return { route: 'modulo-edit', params: { slug: second }, blockHash };
+        return { route: 'modulo', params: { slug: second }, blockHash };
+      case 'tabelle': return { route: 'tabelle', params: {}, blockHash };
+      case 'tabella':
+        if (third === 'edit') return { route: 'tabella-edit', params: { slug: second }, blockHash };
+        return { route: 'tabella', params: { slug: second }, blockHash };
+      case 'calendario': return { route: 'calendario', params: {}, blockHash };
+      case 'cestino': return { route: 'cestino', params: {}, blockHash };
+      case 'cestino-utenti': return { route: 'cestino-utenti', params: {}, blockHash };
+      case 'utenti': return { route: 'utenti', params: {}, blockHash };
+      case 'attivita': return { route: 'attivita', params: {}, blockHash };
+      case 'search': return { route: 'search', params: { query: second ? decodeURIComponent(second) : '' }, blockHash };
+      case 'tag': return { route: 'tag', params: { tag: second }, blockHash };
+      default: return { route: 'home', params: {}, blockHash };
+    }
+  }
+
+  // Costruisce stringa hash a partire da route+params (senza # iniziale)
+  function buildHash(route, params) {
+    const segs = _routeToSegments(route, params).filter(s => s != null && s !== '');
+    return '#/' + segs.join('/');
+  }
+
+  // Aggiorna URL senza scatenare il listener (uso replaceState/hash silente)
+  function updateUrl(route, params) {
+    const newHash = buildHash(route, params);
+    if (newHash === window.location.hash) return;
+    _suppress = true;
+    try {
+      // Uso pushState così il browser registra l'entry per il bottone indietro.
+      // Salvo nello state la posizione (pos) per sapere se siamo andati avanti/indietro
+      // a seguito di popstate (necessario per abilitare/disabilitare pulsanti freccia).
+      const newPos = (_historyPos || 0) + 1;
+      window.history.pushState({ route, params, pos: newPos }, '', newHash);
+      _onHistoryPush();
+    } catch {
+      window.location.hash = newHash;
+    }
+    setTimeout(() => { _suppress = false; }, 0);
+  }
+
+  // Legge hash corrente e ritorna {route, params, blockHash}
+  function readUrl() {
+    let hash = (window.location.hash || '').replace(/^#\/?/, '');
+    if (!hash) return { route: 'home', params: {}, blockHash: null };
+    const segments = hash.split('/').filter(Boolean);
+    return _segmentsToRoute(segments);
+  }
+
+  // Listener hashchange: viene attivato sia da pushState (in alcuni browser) sia
+  // dal bottone indietro/avanti del browser. Se _suppress è true (cambio fatto da noi),
+  // ignora. Altrimenti rileggi l'URL e naviga di conseguenza.
+  function _onHashChange() {
+    if (_suppress) return;
+    const { route, params, blockHash } = readUrl();
+    if (blockHash) state.pendingBlockHash = blockHash;
+    navigate(route, params);
+  }
+
+  // Listener popstate: per pushState/replaceState. Stesso comportamento di hashchange
+  // ma necessario perché in alcuni browser pushState non scatena hashchange.
+  // Cattura back/forward del browser, gesto swipe iOS/Android, tasto back hardware su PWA.
+  function _onPopState(e) {
+    if (_suppress) return;
+    // Se c'era una guardia armata, popstate l'ha appena consumata.
+    // Decido se intercettare (riarmare guardia + toast) o lasciar passare.
+    if (_backGuardArmed) {
+      const intercepted = _handleGuardConsumed();
+      if (intercepted) return; // Guardia riarmata, non navigare
+      // Guardia ha lasciato passare (secondo back rapido). Se siamo nell'editor con
+      // modifiche dirty, chiedo conferma prima di procedere — altrimenti l'utente perderebbe
+      // tutto silenziosamente. Se annulla, riportiamo l'URL all'editor (forward + riarmo).
+      if (state.editingContext && state.editingContext.isDirty) {
+        if (!confirm("Hai modifiche non salvate. Sicuro di uscire dall'editor?")) {
+          // Riporto avanti nella history per restare sull'URL dell'editor
+          _suppress = true;
+          window.history.forward();
+          setTimeout(() => {
+            _suppress = false;
+            armBackGuard(false); // riarma guardia perché siamo di nuovo nell'editor
+          }, 0);
+          return;
+        }
+      }
+    }
+    // Aggiorna il tracker di posizione history (per abilitare/disabilitare frecce interne)
+    _onHistoryPop(e.state);
+    const { route, params, blockHash } = readUrl();
+    if (blockHash) state.pendingBlockHash = blockHash;
+    navigate(route, params);
+  }
+
+  function init() {
+    window.addEventListener('hashchange', _onHashChange);
+    window.addEventListener('popstate', _onPopState);
+  }
+
+  return { buildHash, updateUrl, readUrl, init };
+})();
+
 function navigate(route, params = {}) {
   if (state.editingContext && state.editingContext.isDirty) {
     if (!confirm("Hai modifiche non salvate. Sicuro di uscire dall'editor?")) return;
@@ -3103,7 +3485,10 @@ function navigate(route, params = {}) {
   // Save current view+params for re-render after edit toggle
   state.currentView = route;
   state.currentParams = params;
-  pushHistory(route, params);
+  // Sincronizza l'URL del browser per supportare bookmark, refresh, bottone indietro,
+  // condivisione link, deep-link da NotebookLM/altre app. Aggiorna anche il contatore
+  // di posizione history per i pulsanti freccia interni.
+  if (typeof urlRouter !== 'undefined') urlRouter.updateUrl(route, params);
   if (route !== 'search') $('global-search').value = '';
 
   switch (route) {
@@ -3581,9 +3966,12 @@ function renderProcedureByCategoria(cat, subFilter) {
 */
 function renderBlocco(b, idx, scheda) {
   if (!b || typeof b !== 'object' || !b.tipo) return '';
-  // ID DOM stabile per ogni blocco — usato per deep-link, scroll, AI citations
+  // ID DOM stabile per ogni blocco — usato per deep-link, scroll, AI citations, condivisione
   const schedaId = (scheda && (scheda.id || scheda.slug)) || 'x';
   const blockId = `bl-${schedaId}-${idx}`;
+  // URL condivisibile del blocco specifico (se sappiamo il tipo di scheda)
+  const routeType = (scheda && scheda._routeType) || 'procedura';
+  const slug = scheda && scheda.slug;
   let html;
   switch (b.tipo) {
     case 'text':          html = renderBloccoText(b, scheda); break;
@@ -3601,9 +3989,13 @@ function renderBlocco(b, idx, scheda) {
       console.warn('[renderBlocco] tipo sconosciuto:', b.tipo);
       html = `<div class="bl bl-unknown">Blocco non supportato: <code>${escapeHtml(b.tipo)}</code></div>`;
   }
-  // Inietto l'id nell'elemento radice del blocco se è un div o un'altra tag con classi
-  // Il primo elemento ha sempre class="bl ..." — ci metto id subito dopo class attribute
-  return html.replace(/^(<[a-z]+\s+[^>]*?class="bl[^"]*")/i, `$1 id="${blockId}"`);
+  // Inietto l'id e il bottone di condivisione nell'elemento radice del blocco.
+  // Il primo elemento ha sempre class="bl ..." — aggiungo id e un piccolo bottone overlay.
+  const shareBtn = slug
+    ? `<button class="bl-share-btn" onclick="event.stopPropagation();event.preventDefault();shareLink(buildShareUrl('${routeType}', {slug:'${escapeJs(slug)}'}, '${blockId}'), 'CollinettaAI · blocco')" title="Condividi link a questo blocco" aria-label="Condividi blocco"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>`
+    : '';
+  return html.replace(/^(<[a-z]+\s+[^>]*?class="bl[^"]*")/i, `$1 id="${blockId}"`)
+             .replace(/^(<[a-z]+\s+[^>]*?class="bl[^"]*"[^>]*>)/i, `$1${shareBtn}`);
 }
 
 function renderBloccoText(b, scheda) {
@@ -3972,6 +4364,8 @@ function renderSchedaRelated(scheda, isClinica) {
 function renderProcedura(slug) {
   const proc = state.index.procedure.find(p => p.slug === slug);
   if (!proc) return renderError('Procedura non trovata', slug);
+  // Marca il tipo di scheda per renderBlocco (per costruire URL di condivisione corretti)
+  proc._routeType = 'procedura';
   const tagsHtml = (proc.tag || []).map(t => `<span class="tag tag-procedura clickable" onclick="navigate('tag', {tag:'${escapeJs(t)}'})">${escapeHtml(t)}</span>`).join('');
 
   const catLabel = proc.categoria ? CATEGORIA_LABELS[proc.categoria] || proc.categoria : 'Procedure';
@@ -3998,6 +4392,7 @@ function renderProcedura(slug) {
         <div class="page-meta-item">Aggiornata ${timeAgo(proc.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(proc.modificato_da || '—')}</strong></div>
       </div>
       <div class="page-actions">
+        <button class="btn ghost" onclick="shareLink(buildShareUrl('procedura', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(proc.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questa scheda"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
         <button class="btn edit-only" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
         <button class="btn ghost edit-only" onclick="showHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
         <button class="btn ghost edit-only" onclick="confirmDelete('procedura', '${escapeHtml(slug)}')">Elimina</button>
@@ -4085,6 +4480,8 @@ function renderClinicaCard(c) {
 function renderSchedaClinica(slug) {
   const scheda = (state.index.clinica || []).find(c => c.slug === slug);
   if (!scheda) return renderError('Scheda clinica non trovata', slug);
+  // Marca tipo di scheda per renderBlocco (URL condivisione corretti)
+  scheda._routeType = 'clinica-scheda';
   const tagsHtml = (scheda.tag || []).map(t => `<span class="tag tag-procedura clickable" onclick="navigate('tag', {tag:'${escapeJs(t)}'})">${escapeHtml(t)}</span>`).join('');
   const subLabel = scheda.sottocategoria ? SOTTO_LABELS[scheda.sottocategoria] || scheda.sottocategoria : null;
   const breadcrumb = buildBreadcrumb([
@@ -4102,6 +4499,7 @@ function renderSchedaClinica(slug) {
         <div class="page-meta-item">Aggiornata ${timeAgo(scheda.ultima_modifica)} da <strong style="color:var(--ink-soft);font-family:var(--mono);font-size:12px;margin-left:4px;">${escapeHtml(scheda.modificato_da || '—')}</strong></div>
       </div>
       <div class="page-actions">
+        <button class="btn ghost" onclick="shareLink(buildShareUrl('clinica-scheda', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(scheda.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questa scheda"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
         <button class="btn edit-only" onclick="navigate('clinica-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
         <button class="btn ghost edit-only" onclick="showClinicaHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
       </div>
@@ -4157,6 +4555,7 @@ async function proceedToEditClinica(slug, forceOverride) {
     };
     renderEditorUIClinica(slug, frontmatter, body);
     window.addEventListener('beforeunload', beforeUnloadHandler);
+    armBackGuard(false); // proteggi dalla pressione back accidentale
   } catch (e) {
     renderError('Errore apertura editor', e.message);
   }
@@ -4552,6 +4951,7 @@ async function proceedToEdit(slug, forceOverride) {
     };
     renderEditorUI(slug, frontmatter, body);
     window.addEventListener('beforeunload', beforeUnloadHandler);
+    armBackGuard(false); // proteggi dalla pressione back accidentale
   } catch (e) {
     renderError('Errore apertura editor', e.message);
   }
@@ -4698,7 +5098,7 @@ const blockEditor = (function() {
       ]
     },
     internal_ref: {
-      label: 'Rimando interno',
+      label: 'Link interno',
       descrizione: 'Link ad altra scheda, modulo, tabella o contatto',
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l10-10M7 7h10v10"/></svg>',
       defaults: { target_tipo: 'procedura', target: '' },
@@ -5441,21 +5841,30 @@ function onRubricaSearchInput(value) {
   }
   state.rubricaSearch = value;
   if (rubricaSearchDebounce) clearTimeout(rubricaSearchDebounce);
+  // Debounce 250ms (era 120ms): su mobile la tastiera si "inceppa" se il render
+  // parte tra un keystroke e l'altro. 250ms è il giusto compromesso tra reattività
+  // e fluidità di scrittura. requestIdleCallback (Chrome/Edge) permette al browser
+  // di rinviare il render quando il thread è davvero libero. Fallback su rAF.
   rubricaSearchDebounce = setTimeout(() => {
-    // Ri-render preservando focus e cursore
-    const input = document.getElementById('rubrica-search-input');
-    const selStart = input ? input.selectionStart : null;
-    const selEnd = input ? input.selectionEnd : null;
-    const params = state.currentParams || {};
-    renderNumeri(params.filter);
-    const newInput = document.getElementById('rubrica-search-input');
-    if (newInput) {
-      newInput.focus();
-      if (selStart !== null) {
-        try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
+    const schedule = window.requestIdleCallback
+      ? (cb) => window.requestIdleCallback(cb, { timeout: 200 })
+      : (cb) => requestAnimationFrame(cb);
+    schedule(() => {
+      // Ri-render preservando focus e cursore
+      const input = document.getElementById('rubrica-search-input');
+      const selStart = input ? input.selectionStart : null;
+      const selEnd = input ? input.selectionEnd : null;
+      const params = state.currentParams || {};
+      renderNumeri(params.filter);
+      const newInput = document.getElementById('rubrica-search-input');
+      if (newInput) {
+        newInput.focus();
+        if (selStart !== null) {
+          try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
+        }
       }
-    }
-  }, 120);
+    });
+  }, 250);
 }
 
 function clearRubricaSearch() {
@@ -5868,8 +6277,9 @@ function renderNumeri(filter) {
               const isGuardiaFilter2 = filter === 'guardia';
               // Modalità:
               //   - overview UOC / filtro UOC singolo → "default aperto", toggle chiude singoli bucket
-              //   - ricerca / filtro guardia → "default chiuso", toggle apre singoli bucket
-              const defaultOpen = !isSearchingGlobal && !isGuardiaFilter2;
+              //   - ricerca → "default aperto" (l'utente vuole vedere i match, non scrollare header chiusi)
+              //   - filtro guardia → "default chiuso", toggle apre singoli bucket
+              const defaultOpen = !isGuardiaFilter2;
               if (!state.expandedSedi) state.expandedSedi = {};
               if (!state.collapsedSedi) state.collapsedSedi = {};
               const expanded = state.expandedSedi[g.id] || new Set();
@@ -5909,7 +6319,7 @@ function renderNumeri(filter) {
                           hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
                         }
                       }
-                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide });
+                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, gruppoNome: g.nome });
                     };
                     // Se il bucket ha sottosezioni: renderizzo ogni subBucket come sezione nidificata
                     if (b.subBuckets && b.subBuckets.length) {
@@ -6519,12 +6929,21 @@ function openUocWithSede(gid, sedeKey) {
 
 function renderNumeroRow(c, gruppoId, classify, opts) {
   const hideLuogo = opts && opts.hideLuogo;
+  const gruppoNome = opts && opts.gruppoNome;
   const tags = c.tag || [];
   const cls = classify || (c._classify || classifyContatto(c));
   const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
     : cls.kind === 'reparto' ? 'numero-row numero-row-reparto'
     : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
+  // Barra contesto "UOC | Sezione" — visibile solo su mobile via CSS.
+  // Su desktop gli header gerarchici (gruppo + bucket) bastano. Su mobile lo spazio è
+  // più stretto e il contesto serve per capire al volo da dove viene il contatto, soprattutto
+  // durante una ricerca quando i risultati sono frammentati.
+  const ctxParts = [gruppoNome, c.sezione].filter(Boolean);
+  const contextBar = ctxParts.length
+    ? `<div class="numero-row-context">${escapeHtml(ctxParts.join(' · '))}</div>`
+    : '';
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge badge-guardia">● Guardia</span>` : '';
   const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Guardiola</span>` : '';
   const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Reparto</span>` : '';
@@ -6578,6 +6997,7 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   return `
     <div class="${rowClass}">
       <div>
+        ${contextBar}
         <div class="numero-label">${guardiaBadge}${guardiolaBadge}${repartoBadge}${utileBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
         ${luogo}
         ${email}
@@ -6637,6 +7057,7 @@ function renderModulo(slug) {
         <div class="page-meta-item">Aggiornato ${timeAgo(m.ultima_modifica)}</div>
       </div>
       <div class="page-actions">
+        <button class="btn ghost" onclick="shareLink(buildShareUrl('modulo', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(m.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questo modulo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
         ${imgUrl ? `<a class="btn ghost" href="${imgUrl}" target="_blank" rel="noopener">Apri immagine</a>` : ''}
       </div>
     </div>
@@ -6658,6 +7079,7 @@ function renderModulo(slug) {
             <div class="related-card-title">${escapeHtml(p.titolo)}</div>
           </div>`).join('')}
       </div>` : ''}`;
+  scrollToPendingBlock();
 }
 
 /* ============================ VIEW — CALENDARIO ============================ */
@@ -7245,6 +7667,7 @@ function renderTabella(slug) {
         <div class="page-meta-item">Aggiornata ${timeAgo(t.ultima_modifica)} da <span style="font-family:var(--mono);color:var(--ink-soft);">${escapeHtml(t.modificato_da || '—')}</span></div>
       </div>
       <div class="page-actions">
+        <button class="btn ghost" onclick="shareLink(buildShareUrl('tabella', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(t.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questa tabella"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
       </div>
     </div>
     <article class="procedura-body">${bodyHtml}</article>
@@ -7256,6 +7679,7 @@ function renderTabella(slug) {
             <div class="related-card-title">${escapeHtml(p.titolo)}</div>
           </div>`).join('')}
       </div>` : ''}`;
+  scrollToPendingBlock();
 }
 
 /* ============================ VIEW — CESTINO ============================ */
@@ -8458,12 +8882,18 @@ function toggleEditMode(force) {
   document.body.classList.toggle('edit-mode', navState.editMode);
   const banner = document.getElementById('edit-mode-banner');
   banner.classList.toggle('hidden', !navState.editMode);
-  // Aggiorna --edit-banner-height per far scorrere correttamente la sidebar sticky
+  // Aggiorna --edit-banner-height per far scorrere correttamente la sidebar sticky.
+  // Doppio requestAnimationFrame per essere sicuri che il layout sia stabilizzato
+  // (su mobile il primo rAF può ancora restituire altezze transitorie esagerate).
+  // Inoltre clampo il valore in un range sensato per evitare effetti visivi sbagliati
+  // anche se la lettura fallisce per qualunque motivo.
   if (navState.editMode) {
-    requestAnimationFrame(() => {
-      const h = banner.offsetHeight;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const raw = banner.offsetHeight;
+      // Banner sane: ~30-60px desktop, ~30-50px mobile. Clamp per sicurezza.
+      const h = Math.max(30, Math.min(80, raw));
       document.documentElement.style.setProperty('--edit-banner-height', h + 'px');
-    });
+    }));
   } else {
     document.documentElement.style.removeProperty('--edit-banner-height');
   }
@@ -10682,6 +11112,13 @@ function renderSearchResults(query, targetId) {
     const sezioneHtml = (c.sezione && !opts.hideSedeMeta) ? `<span class="sr-contact-sezione">· ${escapeHtml(c.sezione)}</span>` : '';
     const tagChips = renderInlineTagChips(c);
     const labelHtml = `${escapeHtml(c.etichetta)}${sezioneHtml}`;
+    // Barra contesto "UOC · Sezione" — visibile SOLO su mobile via CSS (.sr-contact-context).
+    // Su desktop il contesto è nei header gerarchici (gruppo + sede), su mobile invece la
+    // ricerca arriva senza header e questa stringa serve per orientarsi al volo.
+    const ctxParts = [opts.gruppoNome, c.sezione].filter(Boolean);
+    const contextBar = ctxParts.length
+      ? `<div class="sr-contact-context">${escapeHtml(ctxParts.join(' · '))}</div>`
+      : '';
     const numChipClass = isGuardia ? 'sr-num-chip-guardia' : isReparto ? 'sr-num-chip-reparto' : isUtile ? 'sr-num-chip-utile' : 'sr-num-chip';
     const numChipsHtml = parts.length
       ? parts.map(p => `<span class="sr-num-chip ${numChipClass}">${escapeHtml(p)}</span>`).join('')
@@ -10690,6 +11127,7 @@ function renderSearchResults(query, targetId) {
     if (isGuardia) {
       return `<div class="sr-contact sr-contact-guardia" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
+          ${contextBar}
           <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">${c.tag && c.tag.length ? escapeHtml(c.tag.join(' · ')) : 'guardia'}</div>
           ${luogoHtml}
@@ -10701,6 +11139,7 @@ function renderSearchResults(query, targetId) {
     if (isUtile) {
       return `<div class="sr-contact sr-contact-utile" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
+          ${contextBar}
           <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">utili</div>
           ${luogoHtml}
@@ -10713,6 +11152,7 @@ function renderSearchResults(query, targetId) {
       const repartoMeta = isGuardiola ? 'guardiola' : 'reparto';
       return `<div class="sr-contact sr-contact-reparto" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
+          ${contextBar}
           <div class="sr-contact-label">${labelHtml}</div>
           <div class="sr-contact-meta">${escapeHtml(repartoMeta)}</div>
           ${luogoHtml}
@@ -10723,6 +11163,7 @@ function renderSearchResults(query, targetId) {
     }
     return `<div class="sr-contact" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
       <div class="sr-contact-left">
+        ${contextBar}
         <div class="sr-contact-label">${labelHtml}</div>
         ${luogoHtml}
         ${tagChips}
@@ -10783,7 +11224,7 @@ function renderSearchResults(query, targetId) {
         const contattiItems = b.contatti.map(c => {
           const cLuogo = (c.luogo || '').toLowerCase().trim();
           const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
-          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
+          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede, gruppoNome: u.gruppo });
         }).join('');
         if (b.sede) {
           const headerInner = renderSedeBucketHeader(b.sede, null, u.fullGroup);
@@ -10802,7 +11243,7 @@ function renderSearchResults(query, targetId) {
         </div>`;
       }).join('');
     } else {
-      contattiHtml = topContatti.map(c => renderContatto(c)).join('');
+      contattiHtml = topContatti.map(c => renderContatto(c, { gruppoNome: u.gruppo })).join('');
     }
     return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact, .sr-sede-bucket-header, .sr-sede-bucket-contatti') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
       <div class="sr-uoc-head">
@@ -11191,11 +11632,18 @@ function initEventListeners() {
       doSearch(q);
       return;
     }
-    // Debounce 300ms per ricerche: evita lag durante typing veloce
+    // Debounce 350ms per ricerche: evita lag durante typing veloce.
+    // Più lungo che desktop perché su mobile la digitazione è naturalmente più lenta
+    // e il rendering è più costoso; partire al primo pause vero è meglio che provare
+    // a stare dietro a ogni keystroke.
     searchTimeout = setTimeout(() => {
-      // Differisco il rendering al prossimo frame per non bloccare l'input
-      requestAnimationFrame(() => doSearch(q));
-    }, 300);
+      // requestIdleCallback se disponibile (Chrome/Edge): permette al browser di
+      // schedulare il render solo quando il thread principale è libero. Fallback rAF.
+      const schedule = window.requestIdleCallback
+        ? (cb) => window.requestIdleCallback(cb, { timeout: 200 })
+        : (cb) => requestAnimationFrame(cb);
+      schedule(() => doSearch(q));
+    }, 350);
   });
   if (searchClear) {
     searchClear.addEventListener('click', () => {
@@ -11230,15 +11678,6 @@ function initEventListeners() {
 async function init() {
   initTheme();
   initEventListeners();
-
-  // Deep-link: se l'URL ha un hash del tipo #bl-<schedaId>-<idx>, memorizzalo
-  // per essere scrollato dopo il render della scheda. Utile per citazioni AI future.
-  tryCaptureBlockHash();
-  window.addEventListener('hashchange', () => {
-    if (tryCaptureBlockHash()) {
-      scrollToPendingBlock();
-    }
-  });
 
   // Kbd indicator: Ctrl su Windows/Linux, ⌘ su Mac
   const kbdEl = document.getElementById('search-kbd-indicator');
