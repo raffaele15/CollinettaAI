@@ -875,6 +875,13 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sr-sede-bucket-header .sede-bucket-loc{font-size:11px;color:var(--ink-muted)}
 .sr-sede-bucket-header::after{content:'→';margin-left:auto;color:var(--ink-muted);font-size:13px;opacity:.5;transition:transform .15s,opacity .15s}
 .sr-sede-bucket-header:hover::after{opacity:1;transform:translateX(2px)}
+/* Variante statica per layout collassato (match per contatto/sezione, non per UOC) */
+.sr-sede-bucket-header.sr-sede-bucket-static{cursor:default}
+.sr-sede-bucket-header.sr-sede-bucket-static:hover{background:var(--bg-sink)}
+.sr-sede-bucket-header.sr-sede-bucket-static::after{display:none}
+/* sr-uoc collassato: container minimale, niente bordi extra (i bucket hanno già il loro stile) */
+.sr-uoc-collapsed{padding:0;background:transparent;cursor:default}
+.sr-uoc-collapsed:hover{background:transparent}
 .sr-sede-bucket-contatti{padding:6px 10px;display:grid;gap:4px}
 .sr-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:2px;cursor:pointer;transition:background .1s}
 .sr-contact:hover{background:var(--bg-sink)}
@@ -963,6 +970,13 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sede-bucket-toggle{display:flex;align-items:baseline;gap:10px;width:100%;padding:8px 12px;background:var(--bg-sink);border:none;border-radius:4px;margin:8px 0 0;cursor:pointer;text-align:left;font-family:inherit;color:inherit;transition:background .12s}
 .sede-bucket-toggle:hover{background:var(--bg-raised)}
 .sede-bucket-toggle.open{background:var(--bg-raised)}
+/* Versione statica per ricerca collassata: stesso stile, niente cursor pointer, niente caret */
+.sede-bucket-toggle.sede-bucket-static{cursor:default;background:var(--bg-sink)}
+.sede-bucket-toggle.sede-bucket-static:hover{background:var(--bg-sink)}
+.sede-bucket-sep{color:var(--ink-faint);margin:0 4px;font-weight:400}
+/* Layout collassato durante ricerca per contatto/sezione: niente header UOC, niente padding extra */
+.numeri-group-collapsed{margin-bottom:14px}
+.numeri-group-collapsed > .sede-bucket{margin-bottom:8px}
 .sede-bucket-caret{font-family:var(--mono);font-size:10px;color:var(--ink-muted);width:10px;display:inline-block;flex-shrink:0}
 .sede-bucket-loc{font-size:11px;color:var(--ink-muted);flex:1}
 .sede-bucket-header{display:flex;align-items:baseline;gap:10px;padding:8px 12px;background:var(--bg-sink);border-radius:4px;margin:14px 0 6px}
@@ -1966,6 +1980,27 @@ function shortenUocName(group) {
   if (custom) return custom;
   // Fallback minimale per UOC senza nome_ridotto: rimuovi solo il prefisso
   return stripPrefixNome(group.nome || '');
+}
+
+// Mappa tipi sezione → etichette leggibili. Condivisa tra renderSedeBucketHeader e i layout collassati.
+const SEZIONE_TIPO_LABELS = {
+  degenze:'Degenze', sala_operatoria:'Sala operatoria', diagnostica:'Esami',
+  ambulatori:'Ambulatori', day_hospital:'Day Hospital', segreteria:'Segreteria',
+  segreteria_direzione:'Segreteria e Direzione', portineria:'Portineria',
+  ucic:'UCIC', utic:'UTIC', emodinamica:'Emodinamica',
+  elettrofisiologia:'Elettrofisiologia', riabilitazione:'Riabilitazione',
+  laboratorio:'Laboratorio', terapia_intensiva:'Terapia Intensiva',
+  semi_intensiva:'Semi Intensiva', studi_medici:'Studi Medici',
+  ricoveri:'Ricoveri', libera_professione:'Libera Professione'
+};
+
+/** Etichetta leggibile di una sezione (bucket) — utilizzata nei layout collassati di ricerca. */
+function bucketSezioneLabel(b) {
+  if (!b) return '—';
+  if (b.sede) {
+    return b.sede.nome || SEZIONE_TIPO_LABELS[b.sede.tipo] || (b.sede.tipo || '—').replace(/_/g, ' ');
+  }
+  return b.customLabel || 'Altro';
 }
 
 function isPinned(type, id) {
@@ -6219,16 +6254,24 @@ function renderNumeri(filter) {
     const expandedSet = state.rubricaExpandedGroups || new Set();
     // Se stiamo filtrando per una UOC specifica, la ricerca deve filtrare sui contatti
     const isInsideSpecificUoc = filter && allGroups.find(g => g.id === filter);
+    // Traccio quali gruppi matchano per nome UOC (non per singoli contatti).
+    // Questo determina il layout di rendering: match-per-UOC mostra header + sezioni espandibili,
+    // match-per-contatto mostra solo rettangoli "UOC · Sezione" collassati.
+    state._matchedGroupNames = new Set();
     filteredGruppi = filteredGruppi.map(g => {
       const gTxt = groupText(g);       // senza sedi (per matchGroupOnly)
       const gCtx = groupContext(g);    // con sedi (per match contatto+contesto)
+      const groupNameMatches = matchGroupOnly(gTxt);
+      if (groupNameMatches) state._matchedGroupNames.add(g.id);
       // Se il gruppo è espanso manualmente o il gruppo stesso matcha completamente, mostra tutti i contatti
       // Eccetto quando siamo dentro una UOC specifica: lì dobbiamo sempre filtrare sui contatti
-      if (!isInsideSpecificUoc && (expandedSet.has(g.id) || matchGroupOnly(gTxt))) return g;
+      if (!isInsideSpecificUoc && (expandedSet.has(g.id) || groupNameMatches)) return g;
       // Altrimenti filtra i singoli contatti (tenendo conto del contesto gruppo per completare i token)
       const contatti = (g.contatti || []).filter(c => matchContactWithGroup(c, gCtx, g.id));
       return contatti.length ? { ...g, contatti } : null;
     }).filter(Boolean);
+  } else {
+    state._matchedGroupNames = null; // nessuna ricerca attiva
   }
 
   // Group by ospedale source for visual sectioning
@@ -6366,10 +6409,18 @@ function renderNumeri(filter) {
         ${list.map(g => {
           const isManuallyExpanded = rubricaQuery && (state.rubricaExpandedGroups || new Set()).has(g.id);
           const isGuardiaFilter = filter === 'guardia';
-          const displayName = isGuardiaFilter ? stripPrefixNome(g.nome) : g.nome;
+          // Determina il modo di rendering durante una ricerca:
+          // - matchedByName: il nome UOC matcha la query → header UOC ridotto + sezioni espandibili
+          // - !matchedByName + ricerca attiva: layout collassato (no header UOC, header sezione = "UOC · Sezione")
+          const matchedByName = rubricaQuery && state._matchedGroupNames && state._matchedGroupNames.has(g.id);
+          const isCollapsedSearch = !!rubricaQuery && !matchedByName;
+          // displayName: durante ricerca uso il nome ridotto (compatto), altrove nome completo
+          const displayName = isGuardiaFilter
+            ? stripPrefixNome(g.nome)
+            : (rubricaQuery ? shortenUocName(g) : g.nome);
           return `
-          <div class="numeri-group">
-            <h2 class="numeri-group-title">
+          <div class="numeri-group${isCollapsedSearch ? ' numeri-group-collapsed' : ''}">
+            ${isCollapsedSearch ? '' : `<h2 class="numeri-group-title">
               ${rubricaQuery
                 ? `<a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Mostra tutti i numeri di questa UOC">${escapeHtml(displayName)}</a>`
                 : (filter && filter !== g.id)
@@ -6383,9 +6434,9 @@ function renderNumeri(filter) {
                   <button class="btn-icon-mini" onclick="deleteGruppoNumeri('${escapeJs(g.id)}')" title="Elimina gruppo">🗑</button>
                 </span>
               </span>
-            </h2>
-            ${g.direttore && filter !== 'guardia' ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
-            ${g.email && filter !== 'guardia' ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
+            </h2>`}
+            ${(g.direttore && filter !== 'guardia' && !rubricaQuery) ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
+            ${(g.email && filter !== 'guardia' && !rubricaQuery) ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
             ${(function(){
               const sorted = sortContattiForDisplay(g.contatti || []);
               const buckets = groupContattiBySede(sorted, g.sezioni);
@@ -6418,17 +6469,29 @@ function renderNumeri(filter) {
                 const sedeLocN = normalize(sedeLoc);
                 // Se siamo in modalità "default aperto": il bucket è aperto salvo che l'utente non l'abbia chiuso
                 // Se siamo in modalità "default chiuso": il bucket è chiuso salvo che l'utente non l'abbia aperto
-                const isOpen = defaultOpen ? !collapsed.has(b.sedeKey) : expanded.has(b.sedeKey);
-                const headerInner = b.sede
-                  ? renderSedeBucketHeader(b.sede, null, g)
-                  : (b.customLabel
-                    ? renderSedeBucketHeader(null, b.customLabel, g)
-                    : `<span class="sede-bucket-tipo">Altro</span>`);
-                return `<div class="sede-bucket" data-bucket="${escapeHtml(b.sedeKey)}">
-                  <button class="sede-bucket-toggle ${isOpen ? 'open' : ''}" onclick="toggleSedeBucket('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}', ${defaultOpen})">
+                // In modalità isCollapsedSearch (match per contatto/sezione): SEMPRE aperto, NIENTE toggle.
+                const isOpen = isCollapsedSearch ? true : (defaultOpen ? !collapsed.has(b.sedeKey) : expanded.has(b.sedeKey));
+                // Header del bucket: in modalità collassata mostra "UOC ridotta · Sezione" senza caret/toggle
+                let bucketHeaderHtml;
+                if (isCollapsedSearch) {
+                  const uocShort = shortenUocName(g);
+                  const sezioneLabel = bucketSezioneLabel(b);
+                  bucketHeaderHtml = `<div class="sede-bucket-toggle sede-bucket-static">
+                    <span class="sede-bucket-tipo">${escapeHtml(uocShort)}<span class="sede-bucket-sep"> · </span>${escapeHtml(sezioneLabel)}</span>
+                  </div>`;
+                } else {
+                  const headerInner = b.sede
+                    ? renderSedeBucketHeader(b.sede, null, g)
+                    : (b.customLabel
+                      ? renderSedeBucketHeader(null, b.customLabel, g)
+                      : `<span class="sede-bucket-tipo">Altro</span>`);
+                  bucketHeaderHtml = `<button class="sede-bucket-toggle ${isOpen ? 'open' : ''}" onclick="toggleSedeBucket('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}', ${defaultOpen})">
                     <span class="sede-bucket-caret">${isOpen ? '▾' : '▸'}</span>
                     ${headerInner}
-                  </button>
+                  </button>`;
+                }
+                return `<div class="sede-bucket" data-bucket="${escapeHtml(b.sedeKey)}">
+                  ${bucketHeaderHtml}
                   ${isOpen ? `<div class="sede-bucket-contatti">${(function(){
                     // Helper: renderizza un singolo contatto nel bucket
                     const renderC = (c) => {
@@ -6442,7 +6505,9 @@ function renderNumeri(filter) {
                           hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
                         }
                       }
-                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, gruppo: g });
+                      // In modalità collassata, la barra contesto sopra il contatto è ridondante
+                      // (l'header bucket già la contiene); skip via flag suppressContext.
+                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, gruppo: g, suppressContext: isCollapsedSearch });
                     };
                     // Se il bucket ha sottosezioni: renderizzo ogni subBucket come sezione nidificata
                     if (b.subBuckets && b.subBuckets.length) {
@@ -7054,6 +7119,7 @@ function openUocWithSede(gid, sedeKey) {
 function renderNumeroRow(c, gruppoId, classify, opts) {
   const hideLuogo = opts && opts.hideLuogo;
   const gruppo = opts && opts.gruppo;
+  const suppressContext = opts && opts.suppressContext;
   const tags = c.tag || [];
   const cls = classify || (c._classify || classifyContatto(c));
   const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
@@ -7064,9 +7130,11 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   // Cliccando sul nome UOC si apre la pagina UOC; cliccando sulla sezione si apre
   // la UOC con la sezione espansa e scroll automatico al bucket.
   // Usa il nome_ridotto (custom o auto-calcolato) per essere compatto.
+  // Se suppressContext (es. layout collassato che ha già "UOC · Sezione" nell'header bucket),
+  // non rendo la barra per evitare ridondanza.
   const uocShort = gruppo ? shortenUocName(gruppo) : '';
   let contextBar = '';
-  if (uocShort || c.sezione) {
+  if (!suppressContext && (uocShort || c.sezione)) {
     const parts = [];
     if (uocShort && gruppo) {
       parts.push(`<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(gruppo.id)}'})">${escapeHtml(uocShort)}</span>`);
@@ -11269,10 +11337,13 @@ function renderSearchResults(query, targetId) {
     // Barra contesto "UOC | Sezione" — visibile SOLO su mobile via CSS (.sr-contact-context).
     // UOC e sezione cliccabili: porta alla UOC o alla UOC con sezione espansa.
     // Usa nome ridotto (custom da gruppo.nome_ridotto se presente, altrimenti auto-calcolato).
+    // Se suppressContext (layout collassato che ha già "UOC · Sezione" nell'header bucket),
+    // non rendo la barra per evitare ridondanza.
     const ctxGruppo = opts.gruppo;
+    const suppressContext = opts.suppressContext;
     const uocShort = ctxGruppo ? shortenUocName(ctxGruppo) : '';
     let contextBar = '';
-    if (uocShort || c.sezione) {
+    if (!suppressContext && (uocShort || c.sezione)) {
       const ctxItems = [];
       if (uocShort && ctxGruppo) {
         ctxItems.push(`<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(ctxGruppo.id)}'})">${escapeHtml(uocShort)}</span>`);
@@ -11379,6 +11450,9 @@ function renderSearchResults(query, targetId) {
     const sedeHtml = (groupFullyMatched && u.fullGroup)
       ? renderSedeOperativa(null, u.fullGroup.sezioni)
       : '';
+    // Layout collassato: quando il match è per contatto/sezione (non per nome UOC),
+    // niente header UOC + bucket header tipo "UOC ridotta · Sezione" non espandibile.
+    const isCollapsed = !groupFullyMatched;
     // Raggruppo topContatti per sede operativa usando groupContattiBySede.
     // Ogni bucket ha un header con il nome della sede + luogo.
     let contattiHtml = '';
@@ -11392,8 +11466,19 @@ function renderSearchResults(query, targetId) {
         const contattiItems = b.contatti.map(c => {
           const cLuogo = (c.luogo || '').toLowerCase().trim();
           const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
-          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede, gruppo: u.fullGroup });
+          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede, gruppo: u.fullGroup, suppressContext: isCollapsed });
         }).join('');
+        if (isCollapsed) {
+          // Layout collassato: header bucket = "UOC ridotta · Sezione" non cliccabile
+          const uocShort = shortenUocName(u.fullGroup);
+          const sezioneLabel = bucketSezioneLabel(b);
+          return `<div class="sr-sede-bucket">
+            <div class="sr-sede-bucket-header sr-sede-bucket-static">
+              <span class="sede-bucket-tipo">${escapeHtml(uocShort)}<span class="sede-bucket-sep"> · </span>${escapeHtml(sezioneLabel)}</span>
+            </div>
+            <div class="sr-sede-bucket-contatti">${contattiItems}</div>
+          </div>`;
+        }
         if (b.sede) {
           const headerInner = renderSedeBucketHeader(b.sede, null, u.fullGroup);
           return `<div class="sr-sede-bucket">
@@ -11411,13 +11496,22 @@ function renderSearchResults(query, targetId) {
         </div>`;
       }).join('');
     } else {
-      contattiHtml = topContatti.map(c => renderContatto(c, { gruppo: u.fullGroup })).join('');
+      contattiHtml = topContatti.map(c => renderContatto(c, { gruppo: u.fullGroup, suppressContext: isCollapsed })).join('');
+    }
+    // In modalità collassata: niente header UOC, niente sede grande, niente "+N altri".
+    // Solo la lista dei rettangoli "UOC · Sezione" con i contatti sotto.
+    if (isCollapsed) {
+      return `<div class="sr-uoc sr-uoc-collapsed">
+        <div class="sr-uoc-contatti">
+          ${contattiHtml}
+        </div>
+      </div>`;
     }
     return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact, .sr-sede-bucket-header, .sr-sede-bucket-contatti') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
       <div class="sr-uoc-head">
         ${ospBadge}
       </div>
-      <div class="sr-uoc-title">${escapeHtml(u.gruppo)}</div>
+      <div class="sr-uoc-title">${escapeHtml(shortenUocName(u.fullGroup) || u.gruppo)}</div>
       ${sedeHtml}
       <div class="sr-uoc-contatti">
         ${contattiHtml}
