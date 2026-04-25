@@ -918,6 +918,10 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
     margin-bottom:3px;line-height:1.3;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
+  /* Items cliccabili nella barra contesto: UOC e sezione */
+  .ctx-uoc,.ctx-sezione{cursor:pointer;color:var(--accent);transition:color .12s}
+  .ctx-uoc:active,.ctx-sezione:active{color:var(--accent-dark);text-decoration:underline}
+  .ctx-sep{color:var(--ink-faint)}
   /* La sezione inline al label diventa ridondante quando c'è la barra contesto */
   .sr-contact-sezione{display:none}
 }
@@ -1951,6 +1955,17 @@ function togglePin(type, ...args) {
 // Rimuove prefisso tipo "U.O.C." / "U.O.S.D." / "U.O.S." dal nome UOC
 function stripPrefixNome(name) {
   return String(name || '').replace(/^(U\.?O\.?C\.?|U\.?O\.?S\.?D\.?|U\.?O\.?S\.?|S\.?S\.?D\.?|S\.?S\.?|U\.?O\.?)\s+/i, '').trim();
+}
+
+/** Ritorna il nome ridotto della UOC, da usare nelle barre contesto compatte su mobile.
+ *  Il valore è salvato nello YAML come campo `nome_ridotto` di ogni gruppo.
+ *  Per UOC nuove o non ancora processate, fallback al nome senza prefisso (U.O.C., ecc.). */
+function shortenUocName(group) {
+  if (!group) return '';
+  const custom = group.nome_ridotto && String(group.nome_ridotto).trim();
+  if (custom) return custom;
+  // Fallback minimale per UOC senza nome_ridotto: rimuovi solo il prefisso
+  return stripPrefixNome(group.nome || '');
 }
 
 function isPinned(type, id) {
@@ -5927,41 +5942,55 @@ async function handleConflict(ctx, ourNewContent, commitMsg) {
 
 /* ============================ VIEW — NUMERI ============================ */
 let rubricaSearchDebounce = null;
+let _lastRenderedRubricaQuery = null;
 function onRubricaSearchInput(value) {
-  // Se la query è cambiata, resetta i gruppi espansi manualmente
-  if ((state.rubricaSearch || '') !== value) {
-    if (state.rubricaExpandedGroups) state.rubricaExpandedGroups.clear();
-  }
-  state.rubricaSearch = value;
+  // Allineato al pattern della ricerca globale: solo debounce + schedule, niente
+  // scritture sincrone su state ad ogni keystroke. Lo state viene aggiornato dentro
+  // la callback differita, riducendo il lavoro per battuta.
   if (rubricaSearchDebounce) clearTimeout(rubricaSearchDebounce);
-  // Debounce 250ms (era 120ms): su mobile la tastiera si "inceppa" se il render
-  // parte tra un keystroke e l'altro. 250ms è il giusto compromesso tra reattività
-  // e fluidità di scrittura. requestIdleCallback (Chrome/Edge) permette al browser
-  // di rinviare il render quando il thread è davvero libero. Fallback su rAF.
+  // Cancellazione veloce (q vuoto o 1 carattere): reagisco subito senza debounce
+  if (!value || value.length < 2) {
+    _doRubricaSearch(value || '');
+    return;
+  }
+  // Debounce 350ms (allineato a global search): su mobile la digitazione è naturalmente
+  // più lenta e il render è costoso (3300+ contatti). Partire al primo pause vero è
+  // meglio che provare a stare dietro a ogni keystroke.
   rubricaSearchDebounce = setTimeout(() => {
     const schedule = window.requestIdleCallback
       ? (cb) => window.requestIdleCallback(cb, { timeout: 200 })
       : (cb) => requestAnimationFrame(cb);
-    schedule(() => {
-      // Ri-render preservando focus e cursore
-      const input = document.getElementById('rubrica-search-input');
-      const selStart = input ? input.selectionStart : null;
-      const selEnd = input ? input.selectionEnd : null;
-      const params = state.currentParams || {};
-      renderNumeri(params.filter);
-      const newInput = document.getElementById('rubrica-search-input');
-      if (newInput) {
-        newInput.focus();
-        if (selStart !== null) {
-          try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
-        }
-      }
-    });
-  }, 250);
+    schedule(() => _doRubricaSearch(value));
+  }, 350);
+}
+
+function _doRubricaSearch(value) {
+  // Memo: se la query non è cambiata dall'ultimo render, niente da fare
+  if (value === _lastRenderedRubricaQuery) return;
+  _lastRenderedRubricaQuery = value;
+  // Aggiorna state (qui, non a ogni keystroke)
+  if ((state.rubricaSearch || '') !== value) {
+    if (state.rubricaExpandedGroups) state.rubricaExpandedGroups.clear();
+  }
+  state.rubricaSearch = value;
+  // Ri-render preservando focus e cursore
+  const input = document.getElementById('rubrica-search-input');
+  const selStart = input ? input.selectionStart : null;
+  const selEnd = input ? input.selectionEnd : null;
+  const params = state.currentParams || {};
+  renderNumeri(params.filter);
+  const newInput = document.getElementById('rubrica-search-input');
+  if (newInput) {
+    newInput.focus();
+    if (selStart !== null) {
+      try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
+    }
+  }
 }
 
 function clearRubricaSearch() {
   state.rubricaSearch = '';
+  _lastRenderedRubricaQuery = null;
   if (state.rubricaExpandedGroups) state.rubricaExpandedGroups.clear();
   const params = state.currentParams || {};
   renderNumeri(params.filter);
@@ -5978,6 +6007,7 @@ function filterRubricaByInitial(letter) {
 
 function openGuardieRubrica() {
   state.rubricaSearch = '';
+  _lastRenderedRubricaQuery = null;
   navigate('numeri', { filter: 'guardia' });
   // Focus sull'input di ricerca dopo il render
   setTimeout(() => {
@@ -6412,7 +6442,7 @@ function renderNumeri(filter) {
                           hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
                         }
                       }
-                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, gruppoNome: g.nome });
+                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, gruppo: g });
                     };
                     // Se il bucket ha sottosezioni: renderizzo ogni subBucket come sezione nidificata
                     if (b.subBuckets && b.subBuckets.length) {
@@ -7004,6 +7034,7 @@ function openUocWithSede(gid, sedeKey) {
   state.expandedSedi[gid] = new Set([sedeKey]);
   // Pulisco la search globale (l'overlay ricerca si chiude da solo via click handler)
   state.rubricaSearch = '';
+  _lastRenderedRubricaQuery = null;
   navigate('numeri', { filter: gid });
   // Scroll al bucket dopo il render
   requestAnimationFrame(() => {
@@ -7022,7 +7053,7 @@ function openUocWithSede(gid, sedeKey) {
 
 function renderNumeroRow(c, gruppoId, classify, opts) {
   const hideLuogo = opts && opts.hideLuogo;
-  const gruppoNome = opts && opts.gruppoNome;
+  const gruppo = opts && opts.gruppo;
   const tags = c.tag || [];
   const cls = classify || (c._classify || classifyContatto(c));
   const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
@@ -7030,13 +7061,27 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
   // Barra contesto "UOC | Sezione" — visibile solo su mobile via CSS.
-  // Su desktop gli header gerarchici (gruppo + bucket) bastano. Su mobile lo spazio è
-  // più stretto e il contesto serve per capire al volo da dove viene il contatto, soprattutto
-  // durante una ricerca quando i risultati sono frammentati.
-  const ctxParts = [gruppoNome, c.sezione].filter(Boolean);
-  const contextBar = ctxParts.length
-    ? `<div class="numero-row-context">${escapeHtml(ctxParts.join(' · '))}</div>`
-    : '';
+  // Cliccando sul nome UOC si apre la pagina UOC; cliccando sulla sezione si apre
+  // la UOC con la sezione espansa e scroll automatico al bucket.
+  // Usa il nome_ridotto (custom o auto-calcolato) per essere compatto.
+  const uocShort = gruppo ? shortenUocName(gruppo) : '';
+  let contextBar = '';
+  if (uocShort || c.sezione) {
+    const parts = [];
+    if (uocShort && gruppo) {
+      parts.push(`<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(gruppo.id)}'})">${escapeHtml(uocShort)}</span>`);
+    } else if (uocShort) {
+      parts.push(`<span>${escapeHtml(uocShort)}</span>`);
+    }
+    if (c.sezione && gruppo) {
+      // Sezione cliccabile: usa il bucket key derivato (sezione lowercased come fa groupContattiBySede)
+      const sedeKeyEsc = escapeJs(c.sezione.toLowerCase().trim());
+      parts.push(`<span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(gruppo.id)}','${sedeKeyEsc}')">${escapeHtml(c.sezione)}</span>`);
+    } else if (c.sezione) {
+      parts.push(`<span>${escapeHtml(c.sezione)}</span>`);
+    }
+    contextBar = `<div class="numero-row-context">${parts.join('<span class="ctx-sep"> · </span>')}</div>`;
+  }
   const guardiaBadge = tags.includes('guardia') ? `<span class="badge badge-guardia">● Guardia</span>` : '';
   const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Guardiola</span>` : '';
   const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Reparto</span>` : '';
@@ -10713,6 +10758,10 @@ function openGruppoEditor({ mode, gruppo, source }) {
         <input type="text" id="ge-nome" value="${escapeHtml(g.nome || '')}" placeholder="es. U.O.S.D. Stroke Unit" required>
       </div>
       <div class="field">
+        <label>Nome ridotto <span style="color:var(--ink-muted);font-weight:400;text-transform:none;letter-spacing:0;">(versione compatta usata nelle barre contesto su mobile)</span></label>
+        <input type="text" id="ge-nome-ridotto" value="${escapeHtml(g.nome_ridotto || '')}" placeholder="es. Cardiologia, ORL, Mal. Infettive">
+      </div>
+      <div class="field">
         <label>Ospedale</label>
         <select id="ge-source" ${isNew ? '' : 'disabled'}>${sourceOptions}</select>
         ${!isNew ? '<div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Spostamento tra ospedali non supportato — eliminare e ricreare se necessario</div>' : ''}
@@ -10750,6 +10799,8 @@ function openGruppoEditor({ mode, gruppo, source }) {
         const id = g.id || slugifyLocal(nome).slice(0, 60);
         if (isNew && gruppi.find(x => x.id === id)) return toast('Esiste già un gruppo con questo id', 'error');
         const updatedGroup = { id, nome };
+        const nomeRidotto = $('ge-nome-ridotto').value.trim();
+        if (nomeRidotto) updatedGroup.nome_ridotto = nomeRidotto;
         const direttore = $('ge-direttore').value.trim();
         const email = $('ge-email').value.trim();
         const struttura = $('ge-struttura').value.trim();
@@ -10764,7 +10815,17 @@ function openGruppoEditor({ mode, gruppo, source }) {
         if (indirizzo) ubicazione.indirizzo = indirizzo;
         if (sede) ubicazione.ospedale_sede = sede;
         if (Object.keys(ubicazione).length) updatedGroup.ubicazione = ubicazione;
-        // Preserve existing contatti when editing
+        // Preserve existing contatti and any other group-level fields (alias, sezioni, tag, etc.)
+        // che non vengono toccati dal form. Senza questo passaggio le UOC perderebbero le
+        // sezioni custom o altri campi al primo "Salva" da editor.
+        if (!isNew) {
+          const knownEditedFields = new Set(['id','nome','nome_ridotto','direttore','email','ubicazione','contatti']);
+          for (const key of Object.keys(g)) {
+            if (!knownEditedFields.has(key)) {
+              updatedGroup[key] = g[key];
+            }
+          }
+        }
         updatedGroup.contatti = isNew ? [] : (g.contatti || []);
         const newGruppi = isNew ? [...gruppi, updatedGroup] : gruppi.map(x => x.id === id ? updatedGroup : x);
         try {
@@ -11205,13 +11266,27 @@ function renderSearchResults(query, targetId) {
     const sezioneHtml = (c.sezione && !opts.hideSedeMeta) ? `<span class="sr-contact-sezione">· ${escapeHtml(c.sezione)}</span>` : '';
     const tagChips = renderInlineTagChips(c);
     const labelHtml = `${escapeHtml(c.etichetta)}${sezioneHtml}`;
-    // Barra contesto "UOC · Sezione" — visibile SOLO su mobile via CSS (.sr-contact-context).
-    // Su desktop il contesto è nei header gerarchici (gruppo + sede), su mobile invece la
-    // ricerca arriva senza header e questa stringa serve per orientarsi al volo.
-    const ctxParts = [opts.gruppoNome, c.sezione].filter(Boolean);
-    const contextBar = ctxParts.length
-      ? `<div class="sr-contact-context">${escapeHtml(ctxParts.join(' · '))}</div>`
-      : '';
+    // Barra contesto "UOC | Sezione" — visibile SOLO su mobile via CSS (.sr-contact-context).
+    // UOC e sezione cliccabili: porta alla UOC o alla UOC con sezione espansa.
+    // Usa nome ridotto (custom da gruppo.nome_ridotto se presente, altrimenti auto-calcolato).
+    const ctxGruppo = opts.gruppo;
+    const uocShort = ctxGruppo ? shortenUocName(ctxGruppo) : '';
+    let contextBar = '';
+    if (uocShort || c.sezione) {
+      const ctxItems = [];
+      if (uocShort && ctxGruppo) {
+        ctxItems.push(`<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(ctxGruppo.id)}'})">${escapeHtml(uocShort)}</span>`);
+      } else if (uocShort) {
+        ctxItems.push(`<span>${escapeHtml(uocShort)}</span>`);
+      }
+      if (c.sezione && ctxGruppo) {
+        const sedeKeyEsc = escapeJs(c.sezione.toLowerCase().trim());
+        ctxItems.push(`<span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(ctxGruppo.id)}','${sedeKeyEsc}')">${escapeHtml(c.sezione)}</span>`);
+      } else if (c.sezione) {
+        ctxItems.push(`<span>${escapeHtml(c.sezione)}</span>`);
+      }
+      contextBar = `<div class="sr-contact-context">${ctxItems.join('<span class="ctx-sep"> · </span>')}</div>`;
+    }
     const numChipClass = isGuardia ? 'sr-num-chip-guardia' : isReparto ? 'sr-num-chip-reparto' : isUtile ? 'sr-num-chip-utile' : 'sr-num-chip';
     const numChipsHtml = parts.length
       ? parts.map(p => `<span class="sr-num-chip ${numChipClass}">${escapeHtml(p)}</span>`).join('')
@@ -11317,7 +11392,7 @@ function renderSearchResults(query, targetId) {
         const contattiItems = b.contatti.map(c => {
           const cLuogo = (c.luogo || '').toLowerCase().trim();
           const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
-          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede, gruppoNome: u.gruppo });
+          return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede, gruppo: u.fullGroup });
         }).join('');
         if (b.sede) {
           const headerInner = renderSedeBucketHeader(b.sede, null, u.fullGroup);
@@ -11336,7 +11411,7 @@ function renderSearchResults(query, targetId) {
         </div>`;
       }).join('');
     } else {
-      contattiHtml = topContatti.map(c => renderContatto(c, { gruppoNome: u.gruppo })).join('');
+      contattiHtml = topContatti.map(c => renderContatto(c, { gruppo: u.fullGroup })).join('');
     }
     return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact, .sr-sede-bucket-header, .sr-sede-bucket-contatti') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
       <div class="sr-uoc-head">
