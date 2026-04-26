@@ -6467,8 +6467,16 @@ function renderNumeri(filter) {
               return buckets.map(b => {
                 // Calcolo la "location string" del bucket per confrontarla col luogo del singolo contatto.
                 // Edificio + piano: se il c.luogo li contiene è ridondante e va nascosto.
+                // sedeLoc: edificio + piano del bucket. Se la sezione non ha edificio,
+                // ereditalo da g.ubicazione.struttura (struttura dell'UOC).
+                // Esempio: Cardiologia ha ubicazione=Centro Gallucci. La sezione Emodinamica ha
+                // solo piano="1° piano". sedeLoc effettivo = "Centro Gallucci 1° piano".
+                // Così il c.luogo "Centro Gallucci" matcha → hide.
+                const inheritedEdif = (b.sede && !b.sede.edificio)
+                  ? (g.ubicazione && g.ubicazione.struttura) || ''
+                  : '';
                 const sedeLoc = b.sede
-                  ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
+                  ? [b.sede.edificio || inheritedEdif, b.sede.piano].filter(Boolean).join(' ')
                   : '';
                 const sedeLocLower = sedeLoc.toLowerCase().trim();
                 // Normalizza: rimuove separatori per confronto più tollerante
