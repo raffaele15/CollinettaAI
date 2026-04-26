@@ -2954,7 +2954,7 @@ function rebuildSearchIndex() {
       const cellPubFlat = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
       const numeriStr = [...(c.numeri || []), cellFlat, cellPubFlat, c.breve].filter(Boolean).join(' ');
       const sedi = g.sezioni || [];
-      const sedeStr = sedi.map(s => [s.edificio, s.piano, s.area].filter(Boolean).join(' ')).join(' ');
+      const sedeStr = sedi.map(s => [s.edificio, s.piano].filter(Boolean).join(' ')).join(' ');
       const kind = (typeof classifyContatto === 'function') ? classifyContatto(c).kind : '';
       const kindAliases = {
         guardia: 'guardia mdg reperibile',
@@ -6447,7 +6447,8 @@ function renderNumeri(filter) {
               const buckets = groupContattiBySede(sorted, g.sezioni);
               // Se c'è una sola bucket senza sede (UOC senza sedi strutturate), render flat senza header
               if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
-                return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify)).join('');
+                const suppressCtxFlat = !!state._isInsideSpecificUoc;
+                return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify, { gruppo: g, suppressContext: suppressCtxFlat })).join('');
               }
               // Logica inversa: espansi di default quando si apre la UOC in overview.
               // Quando si fa una ricerca (rubricaQuery) o filtro guardia: collassati,
@@ -6464,9 +6465,10 @@ function renderNumeri(filter) {
               const expanded = state.expandedSedi[g.id] || new Set();
               const collapsed = state.collapsedSedi[g.id] || new Set();
               return buckets.map(b => {
-                // Calcolo la "location string" del bucket per confrontarla col luogo del singolo contatto
+                // Calcolo la "location string" del bucket per confrontarla col luogo del singolo contatto.
+                // Edificio + piano: se il c.luogo li contiene è ridondante e va nascosto.
                 const sedeLoc = b.sede
-                  ? [b.sede.edificio, b.sede.piano, b.sede.area].filter(Boolean).join(' ')
+                  ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
                   : '';
                 const sedeLocLower = sedeLoc.toLowerCase().trim();
                 // Normalizza: rimuove separatori per confronto più tollerante
@@ -6841,7 +6843,6 @@ function renderSedeOperativa(sede, sediArray) {
     const parts = [];
     if (s.edificio) parts.push(escapeHtml(s.edificio));
     if (s.piano) parts.push(escapeHtml(s.piano));
-    if (s.area) parts.push(escapeHtml(s.area));
     const value = parts.join(' · ');
     return `<div class="sede-operativa-row">
       <div class="sede-operativa-label">${escapeHtml(label)}</div>
@@ -7076,7 +7077,6 @@ function renderSedeBucketHeader(s, customLabel, gruppo) {
   const edif = s.edificio || (gruppo && gruppo.ubicazione && gruppo.ubicazione.struttura);
   if (edif) parts.push(escapeHtml(edif));
   if (s.piano) parts.push(escapeHtml(s.piano));
-  if (s.area) parts.push(escapeHtml(s.area));
   // Indirizzo: se la sezione o il gruppo ne ha uno e l'edificio non è già descrittivo dell'indirizzo
   const ind = s.indirizzo || (gruppo && gruppo.ubicazione && gruppo.ubicazione.indirizzo);
   if (ind && !parts.some(p => p.includes(ind))) parts.push(escapeHtml(ind));
