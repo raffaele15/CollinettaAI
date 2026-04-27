@@ -384,13 +384,13 @@ html[data-theme="dark"]{
 .rate-limit-pill.danger{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
 
 /* Edit mode */
-.edit-banner{position:sticky;top:var(--topbar-height);z-index:40;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--accent);font-size:13px;gap:12px;flex-wrap:wrap}
+.edit-banner{position:sticky;top:var(--topbar-height);z-index:40;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--accent);font-size:13px;gap:12px;flex-wrap:wrap;max-height:80px;box-sizing:border-box;overflow:hidden}
 .edit-banner-text{display:inline-flex;align-items:center;gap:8px;font-weight:500;min-width:0;flex:1}
 /* Label swap: full visibile su desktop, short su mobile */
 .banner-label-full{display:inline}
 .banner-label-short{display:none}
 @media (max-width:700px){
-  .edit-banner{padding:6px 8px;font-size:12px;gap:6px;flex-wrap:nowrap}
+  .edit-banner{padding:6px 8px;font-size:12px;gap:6px;flex-wrap:nowrap;max-height:48px}
   .edit-banner-text{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .edit-banner-text > span:nth-child(2){display:none}  /* nasconde label "Modalità modifica attiva", lascia solo l'icona */
   .edit-banner .btn.sm{font-size:11px;padding:5px 7px;white-space:nowrap}
@@ -898,12 +898,13 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sr-uoc-collapsed{padding:0;background:transparent;cursor:default}
 .sr-uoc-collapsed:hover{background:transparent}
 .sr-sede-bucket-contatti{padding:6px 10px;display:grid;gap:4px}
-.sr-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:2px;cursor:pointer;transition:background .1s}
+.sr-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:2px;cursor:pointer;transition:background .1s;min-width:0;overflow:hidden}
 .sr-contact:hover{background:var(--bg-sink)}
 .sr-contact-label{font-size:13px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sr-contact-nums{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;max-width:55%;align-items:center}
-@media (max-width:600px){.sr-contact-nums{max-width:60%}}
-.sr-num-chip{display:inline-block;font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:3px;background:var(--bg-sink);border:1px solid var(--rule-soft);color:var(--ink-soft);white-space:nowrap;line-height:1.3}
+.sr-contact-nums{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;align-items:center;flex-shrink:0;max-width:60%}
+@media (max-width:600px){.sr-contact-nums{max-width:65%;gap:3px}}
+@media (max-width:420px){.sr-contact-nums{max-width:70%;gap:3px}}
+.sr-num-chip{display:inline-block;font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:3px;background:var(--bg-sink);border:1px solid var(--rule-soft);color:var(--ink-soft);white-space:nowrap;line-height:1.3;min-width:0}
 .sr-num-chip-guardia{background:#fef0ef;color:var(--danger);border-color:#f5c2bf;font-weight:500}
 .sr-num-chip-reparto{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:500}
 .sr-num-chip-utile{background:#e8f5e9;color:#2e7d32;border-color:#b2d8b4;font-weight:500}
@@ -929,6 +930,47 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sr-contact-guardia .sr-contact-label{color:var(--danger);font-weight:500}
 .sr-contact-meta{font-size:10px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--danger);opacity:.85;margin-top:2px}
 .sr-contact-num-guardia{color:var(--danger);font-weight:500;font-size:13px}
+
+/* Menu di azioni che appare al click su un contatto già nella sua UOC.
+   Position absolute relativo alla numero-row, posizionato in basso a destra. */
+.contatto-action-menu{
+  position:absolute;
+  right:8px;
+  bottom:-4px;
+  transform:translateY(100%);
+  z-index:30;
+  background:var(--bg-paper);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.10);
+  padding:4px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:160px;
+  animation:contatto-menu-in 0.12s ease-out;
+}
+@keyframes contatto-menu-in{
+  from{opacity:0;transform:translateY(calc(100% - 4px))}
+  to{opacity:1;transform:translateY(100%)}
+}
+.contatto-action-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  background:none;
+  border:none;
+  border-radius:2px;
+  cursor:pointer;
+  font:inherit;
+  font-size:13px;
+  color:var(--ink);
+  text-align:left;
+  white-space:nowrap;
+}
+.contatto-action-btn:hover{background:var(--rule-soft)}
+.contatto-action-btn svg{flex-shrink:0;color:var(--ink-muted)}
 
 /* Items cliccabili UOC/Sezione — usati negli header dei rettangoli collassati durante la ricerca. */
 .ctx-uoc,.ctx-sezione{cursor:pointer;color:var(--accent);transition:color .12s}
@@ -980,6 +1022,24 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .sede-bucket-toggle.sede-bucket-navigate::after{content:'→';margin-left:auto;color:var(--ink-muted);font-size:13px;opacity:.5;transition:transform .15s,opacity .15s}
 .sede-bucket-toggle.sede-bucket-navigate:hover::after{opacity:1;transform:translateX(2px)}
 .sede-bucket-sep{color:var(--ink-faint);margin:0 4px;font-weight:400}
+/* Search section pills: quando una UOC matcha per nome durante ricerca, mostra le sezioni
+   come pillole compatte cliccabili invece dei contatti aperti */
+.search-section-pills{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
+.search-section-pill{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;background:var(--bg-sink);border:1px solid var(--rule-soft);border-radius:4px;cursor:pointer;text-align:left;font-family:inherit;color:inherit;transition:background .12s,border-color .12s}
+.search-section-pill:hover{background:var(--bg-raised);border-color:var(--rule)}
+.search-section-pill::after{content:'→';margin-left:auto;color:var(--ink-muted);font-size:13px;opacity:.5;transition:transform .15s,opacity .15s}
+.search-section-pill:hover::after{opacity:1;transform:translateX(2px)}
+.search-section-pill .ssp-name{font-family:var(--serif);font-weight:500;font-size:14px;color:var(--ink)}
+.search-section-pill .ssp-loc{font-family:var(--mono);font-size:11px;color:var(--ink-muted);letter-spacing:.02em}
+.search-section-pill .ssp-count{font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--bg-paper);padding:2px 7px;border-radius:10px;border:1px solid var(--rule-soft);min-width:16px;text-align:center}
+.sede-bucket-header-row{display:flex;align-items:stretch;gap:4px}
+.sede-bucket-header-row > .sede-bucket-toggle{flex:1;min-width:0}
+.search-section-pill-wrap{position:relative;display:flex;align-items:stretch;gap:4px}
+.search-section-pill-wrap .search-section-pill{flex:1;min-width:0}
+.ssp-reorder{display:flex;flex-direction:column;justify-content:center;gap:2px}
+.ssp-reorder .btn-icon-mini{width:22px;height:18px;font-size:11px;line-height:1;padding:0;border:1px solid var(--rule-soft);background:var(--bg-paper);color:var(--ink-soft);border-radius:3px;cursor:pointer}
+.ssp-reorder .btn-icon-mini:hover:not(:disabled){background:var(--bg-raised);border-color:var(--rule)}
+.ssp-reorder .btn-icon-mini:disabled{opacity:.3;cursor:not-allowed}
 /* Layout collassato durante ricerca per contatto/sezione: niente header UOC, niente padding extra */
 .numeri-group-collapsed{margin-bottom:14px}
 .numeri-group-collapsed > .sede-bucket{margin-bottom:8px}
@@ -2004,7 +2064,7 @@ const SEZIONE_TIPO_LABELS = {
   degenze:'Degenze', sala_operatoria:'Sala operatoria', diagnostica:'Esami',
   ambulatori:'Ambulatori', day_hospital:'Day Hospital', segreteria:'Segreteria',
   segreteria_direzione:'Segreteria e Direzione', portineria:'Portineria',
-  ucic:'UCIC', utic:'UTIC', emodinamica:'Emodinamica',
+  emodinamica:'Emodinamica',
   elettrofisiologia:'Elettrofisiologia', riabilitazione:'Riabilitazione',
   laboratorio:'Laboratorio', terapia_intensiva:'Terapia Intensiva',
   semi_intensiva:'Semi Intensiva', studi_medici:'Studi Medici',
@@ -2276,6 +2336,97 @@ async function shareLink(url, title) {
     // Fallback estremo: prompt visibile per copia manuale
     try { prompt('Copia il link:', url); } catch {}
   }
+}
+
+/* Gestisce il click su una riga contatto in vista rubrica.
+   Comportamento contesto-sensibile:
+   - Se siamo già nella UOC di quel contatto E nella sezione corrispondente è già visibile,
+     mostra un mini-menu con azione "Condividi" (per evitare scroll inutile).
+   - Altrimenti, naviga alla UOC con scroll al contatto (comportamento standard). */
+function handleContattoRowClick(contattoId, evt) {
+  if (evt && (evt.target.closest('button,a,input,.kind-selector,.kind-chip,.kind-chip-reset'))) return;
+  // Determina lo stato corrente: siamo dentro la stessa UOC del contatto?
+  const params = state.currentParams || {};
+  const currentFilter = params.filter;
+  // Trova il gruppo proprietario del contatto
+  let ownerGroup = null;
+  for (const sourceId of ['aopd','osa','iov']) {
+    const data = (typeof getNumeriDataForSource === 'function') ? getNumeriDataForSource(sourceId) : null;
+    if (!data) continue;
+    for (const g of (data.gruppi || [])) {
+      if ((g.contatti || []).some(x => x.id === contattoId)) { ownerGroup = g; break; }
+    }
+    if (ownerGroup) break;
+  }
+  if (!ownerGroup) {
+    // Fallback: comportamento standard
+    navigate('numeri', { filter: contattoId });
+    return;
+  }
+  // Sono già dentro questa UOC?
+  const alreadyInsideUoc = (currentFilter === ownerGroup.id) || (currentFilter === contattoId);
+  if (alreadyInsideUoc && state.currentView === 'numeri') {
+    // Mostro mini-menu di azioni invece di re-renderare
+    showContattoActionMenu(contattoId, evt);
+    return;
+  }
+  // Comportamento standard: naviga alla UOC con scroll/expand sezione
+  navigate('numeri', { filter: contattoId });
+}
+
+/* Mini menu di azioni che appare al click su un contatto già nella sua UOC.
+   Posizione: sopra la riga cliccata, allineato alla destra del nome.
+   Azioni: Condividi link al contatto, Pinna alla home. */
+function showContattoActionMenu(contattoId, evt) {
+  // Rimuovi un menu già aperto
+  document.querySelectorAll('.contatto-action-menu').forEach(m => m.remove());
+  // Trova la riga del contatto (target dello stesso click o ricerca DOM)
+  let row = evt && evt.currentTarget && evt.currentTarget.closest ? evt.currentTarget.closest('.numero-row') : null;
+  if (!row) {
+    row = document.querySelector(`.numero-row[onclick*="filter:'${contattoId}'"]`);
+  }
+  if (!row) return;
+  // URL share del contatto
+  const url = (typeof buildShareUrl === 'function')
+    ? buildShareUrl('numeri', { filter: contattoId })
+    : (window.location.origin + window.location.pathname + '#/numeri/' + contattoId);
+  // Trova etichetta del contatto per il titolo del share
+  let etichetta = '';
+  for (const sourceId of ['aopd','osa','iov']) {
+    const data = (typeof getNumeriDataForSource === 'function') ? getNumeriDataForSource(sourceId) : null;
+    if (!data) continue;
+    for (const g of (data.gruppi || [])) {
+      const c = (g.contatti || []).find(x => x.id === contattoId);
+      if (c) { etichetta = c.etichetta || ''; break; }
+    }
+    if (etichetta) break;
+  }
+  const shareTitle = etichetta ? `CollinettaAI · ${etichetta}` : 'CollinettaAI';
+  // Costruisco il menu
+  const menu = document.createElement('div');
+  menu.className = 'contatto-action-menu';
+  menu.innerHTML = `
+    <button class="contatto-action-btn" onclick="event.stopPropagation();shareLink('${escapeJs(url)}','${escapeJs(shareTitle)}');document.querySelectorAll('.contatto-action-menu').forEach(m=>m.remove());">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Condividi link
+    </button>
+    <button class="contatto-action-btn" onclick="event.stopPropagation();copyNumber('${escapeJs(url)}');document.querySelectorAll('.contatto-action-menu').forEach(m=>m.remove());">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copia link
+    </button>`;
+  // Posiziono il menu come overlay vicino alla riga
+  row.style.position = 'relative';
+  row.appendChild(menu);
+  // Close on click outside
+  setTimeout(() => {
+    const closeFn = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeFn, true);
+      }
+    };
+    document.addEventListener('click', closeFn, true);
+  }, 0);
 }
 
 /* Costruisce un URL completo a partire da route+params (per condivisione esterna).
@@ -3013,12 +3164,10 @@ function rebuildSearchIndex() {
     });
     // Sinonimi per tipi di sede, così cercare "ucic" matcha anche "unità coronarica"
     const sedeTipoAliases = {
-      ucic: 'ucic unità coronarica terapia intensiva cardiologica',
-      utic: 'utic unità terapia intensiva',
       emodinamica: 'emodinamica cardiologia interventistica',
       elettrofisiologia: 'elettrofisiologia',
       riabilitazione: 'riabilitazione',
-      terapia_intensiva: 'terapia intensiva rianimazione',
+      terapia_intensiva: 'terapia intensiva rianimazione ucic utic unità coronarica unità terapia intensiva cardiologica tipo tin terapia intensiva post-operatoria terapia intensiva neonatale',
       semi_intensiva: 'semi intensiva subintensiva',
       day_hospital: 'day hospital dh',
       sala_operatoria: 'sala operatoria so',
@@ -6067,15 +6216,18 @@ function onRubricaSearchInput(value) {
     _doRubricaSearch(value || '');
     return;
   }
-  // Debounce 350ms (allineato a global search): su mobile la digitazione è naturalmente
-  // più lenta e il render è costoso (3300+ contatti). Partire al primo pause vero è
-  // meglio che provare a stare dietro a ogni keystroke.
+  // Debounce dinamico: dentro una UOC specifica i contatti sono <200, il render è veloce
+  // → 120ms (reattivo). Fuori da UOC (rubrica intera, 4400+ contatti) → 350ms per evitare
+  // lag durante typing veloce.
+  const insideUoc = !!(state.currentParams && state.currentParams.filter
+    && state.index?.numeri?.gruppi?.find(g => g.id === state.currentParams.filter));
+  const delay = insideUoc ? 120 : 350;
   rubricaSearchDebounce = setTimeout(() => {
     const schedule = window.requestIdleCallback
       ? (cb) => window.requestIdleCallback(cb, { timeout: 200 })
       : (cb) => requestAnimationFrame(cb);
     schedule(() => _doRubricaSearch(value));
-  }, 350);
+  }, delay);
 }
 
 function _doRubricaSearch(value) {
@@ -6100,6 +6252,13 @@ function _doRubricaSearch(value) {
       try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
     }
   }
+  // La query è cambiata (siamo passati il memo check sopra): riporta lo scroll in cima
+  // così i nuovi risultati sono immediatamente visibili. Senza questo l'utente che aveva
+  // scrollato nei risultati precedenti rimaneva con la pagina ferma in basso e non vedeva
+  // i nuovi match in cima.
+  // NB: 'instant' per evitare animazione che ruba focus all'input su mobile.
+  try { window.scrollTo({ top: 0, behavior: 'instant' }); }
+  catch { window.scrollTo(0, 0); }
 }
 
 function clearRubricaSearch() {
@@ -6383,9 +6542,17 @@ function renderNumeri(filter) {
     // 2. A parità: ordine alfabetico (per nome senza prefisso U.O.C.).
     if (filteredGruppi.length > 1) {
       filteredGruppi.sort((a, b) => {
+        // 1. Priority: gruppi con priority numerica esplicita (es. PS) vengono PRIMA di tutti
+        //    gli altri match-by-name, indipendentemente dall'ordine alfabetico.
+        //    Valori più bassi = più alta priorità (1 prima di 2). Default 99 per gruppi senza.
+        const aPrio = (typeof a.priority === 'number') ? a.priority : 99;
+        const bPrio = (typeof b.priority === 'number') ? b.priority : 99;
+        if (aPrio !== bPrio) return aPrio - bPrio;
+        // 2. Match-by-name prima di match-by-content
         const aMatched = state._matchedGroupNames.has(a.id) ? 0 : 1;
         const bMatched = state._matchedGroupNames.has(b.id) ? 0 : 1;
         if (aMatched !== bMatched) return aMatched - bMatched;
+        // 3. Alfabetico (escluso prefisso U.O.C.)
         return stripPrefixNome(a.nome).localeCompare(stripPrefixNome(b.nome), 'it');
       });
     }
@@ -6424,10 +6591,10 @@ function renderNumeri(filter) {
 
     <div class="rubrica-search" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
       <div style="position:relative;flex:1;display:flex;align-items:center;">
-        <input type="text" id="rubrica-search-input" placeholder="${filter && allGroups.find(g => g.id === filter) ? `Cerca in ${escapeHtml(stripPrefixNome(allGroups.find(g => g.id === filter).nome))}…` : 'Cerca in rubrica: nome, interno, reparto…'}"
+        <input type="text" id="rubrica-search-input" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="${filter && allGroups.find(g => g.id === filter) ? `Cerca in ${escapeHtml(stripPrefixNome(allGroups.find(g => g.id === filter).nome))}…` : 'Cerca in rubrica: nome, interno, reparto…'}"
           value="${escapeHtml(state.rubricaSearch || '')}"
           oninput="onRubricaSearchInput(this.value)"
-          style="flex:1;font-family:var(--sans);font-size:14px;padding:10px 36px 10px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);width:100%;box-sizing:border-box;">
+          style="flex:1;font-family:var(--sans);font-size:16px;padding:10px 36px 10px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);width:100%;box-sizing:border-box;">
         ${rubricaQuery ? `<button type="button" onclick="clearRubricaSearch()" aria-label="Cancella" title="Cancella" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--bg-paper);color:var(--ink-muted);border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;">✕</button>` : ''}
       </div>
       ${rubricaQuery ? `<span style="font-size:12px;color:var(--ink-muted);font-family:var(--mono);white-space:nowrap;">${filteredGruppi.length} UOC · ${totalContattiVisibili} contatti</span>` : ''}
@@ -6563,6 +6730,53 @@ function renderNumeri(filter) {
             ${(function(){
               const sorted = sortContattiForDisplay(g.contatti || []);
               const buckets = groupContattiBySede(sorted, g.sezioni);
+              // Caso speciale: durante una ricerca, se la UOC matcha per NOME (matchedByName)
+              // e NON siamo dentro una UOC specifica, mostriamo SOLO le sezioni come pillole
+              // chiuse, ognuna cliccabile per aprire la UOC overview con quella sezione espansa.
+              // Questo evita di overwhelmare l'utente con tutti i contatti di una UOC grande
+              // quando ha cercato il nome della UOC stessa.
+              // Se l'utente ha espanso manualmente la UOC (showAllFromGroup), mostra tutto come prima.
+              const showSectionPills = matchedByName && !state._isInsideSpecificUoc
+                && !isManuallyExpanded
+                && buckets.length > 0 && !(buckets.length === 1 && buckets[0].sedeKey === '_all');
+              if (showSectionPills) {
+                const uocEdif = (g.ubicazione && g.ubicazione.struttura) || '';
+                // Filtra le sezioni "valide" (per indici di riordino). Skip _all bucket vuoto.
+                const validBuckets = buckets.filter(b => {
+                  if (b.sedeKey === '_all' && !(b.contatti || []).length) return false;
+                  return true;
+                });
+                // Render sezioni come pillole chiuse cliccabili.
+                // In edit-mode mostra anche frecce ↑/↓ per riordinare le sezioni nel YAML
+                // (aggiorna g.sezioni[i].priority basandosi sul nuovo ordine).
+                return `<div class="search-section-pills">
+                  ${validBuckets.map((b, idx) => {
+                    const isAllBucket = b.sedeKey === '_all';
+                    const sezioneLabel = isAllBucket ? 'Altri contatti' : bucketSezioneLabel(b);
+                    const sezEdif = (b.sede && b.sede.edificio) || uocEdif || '';
+                    const sezPiano = (b.sede && b.sede.piano) || '';
+                    const showEdif = sezEdif && sezEdif !== uocEdif;
+                    const sedeLoc = [showEdif ? sezEdif : '', sezPiano].filter(Boolean).join(' · ');
+                    const nContatti = (b.contatti || []).length;
+                    // Le frecce sono attive solo per sezioni reali (con b.sede), non _all
+                    const isReorderable = !isAllBucket && b.sede && b.sede.nome;
+                    const isFirst = idx === 0;
+                    const isLast = idx === validBuckets.length - 1;
+                    const sezNomeEsc = isReorderable ? escapeJs(b.sede.nome) : '';
+                    return `<div class="search-section-pill-wrap">
+                      <button class="search-section-pill" onclick="openUocWithSede('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(g.nome)} con ${escapeHtml(sezioneLabel)} espansa">
+                        <span class="ssp-name">${escapeHtml(sezioneLabel)}</span>
+                        ${sedeLoc ? `<span class="ssp-loc">${escapeHtml(sedeLoc)}</span>` : ''}
+                        <span class="ssp-count">${nContatti}</span>
+                      </button>
+                      ${isReorderable ? `<span class="ssp-reorder edit-only">
+                        <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${sezNomeEsc}',-1)" title="Sposta su" ${isFirst ? 'disabled' : ''}>↑</button>
+                        <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${sezNomeEsc}',1)" title="Sposta giù" ${isLast ? 'disabled' : ''}>↓</button>
+                      </span>` : ''}
+                    </div>`;
+                  }).join('')}
+                </div>`;
+              }
               // Se c'è una sola bucket senza sede (UOC senza sedi strutturate), render flat senza header
               if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
                 const suppressCtxFlat = !!state._isInsideSpecificUoc;
@@ -6591,7 +6805,7 @@ function renderNumeri(filter) {
               if (!state.collapsedSedi) state.collapsedSedi = {};
               const expanded = state.expandedSedi[g.id] || new Set();
               const collapsed = state.collapsedSedi[g.id] || new Set();
-              return buckets.map(b => {
+              return buckets.map((b, bIdx, allB) => {
                 // Calcolo la "location string" del bucket per confrontarla col luogo del singolo contatto.
                 // Edificio + piano: se il c.luogo li contiene è ridondante e va nascosto.
                 // sedeLoc: edificio + piano del bucket. Se la sezione non ha edificio,
@@ -6647,7 +6861,13 @@ function renderNumeri(filter) {
                   </button>`;
                 }
                 return `<div class="sede-bucket" data-bucket="${escapeHtml(b.sedeKey)}">
-                  ${bucketHeaderHtml}
+                  <div class="sede-bucket-header-row">
+                    ${bucketHeaderHtml}
+                    ${(b.sede && b.sede.nome) ? `<span class="ssp-reorder edit-only">
+                      <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${escapeJs(b.sede.nome)}',-1)" title="Sposta sezione su" ${bIdx === 0 ? 'disabled' : ''}>↑</button>
+                      <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${escapeJs(b.sede.nome)}',1)" title="Sposta sezione giù" ${bIdx === allB.length - 1 ? 'disabled' : ''}>↓</button>
+                    </span>` : ''}
+                  </div>
                   ${isOpen ? `<div class="sede-bucket-contatti">${(function(){
                     // Helper: renderizza un singolo contatto nel bucket
                     const renderC = (c) => {
@@ -6766,9 +6986,9 @@ function renderHomeNumeriSection() {
 
   const itemsHtml = items.map(({ c, g }) => {
     const nums = (c.numeri || []).join(' · ');
-    const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).map(n => `pers. ${n}`).join(' · ') : '';
-    const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).map(n => `cel. ${n}`).join(' · ') : '';
-    const extra = [c.breve ? `br. ${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
+    const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).join(' · ') : '';
+    const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).join(' · ') : '';
+    const extra = [c.breve ? `${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
     const dispNum = [nums, extra].filter(Boolean).join(' · ');
     return `<div class="home-numero-row" data-cid="${escapeHtml(c.id)}">
       ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
@@ -6915,9 +7135,9 @@ function renderPinnedContattiSection(allGroups) {
   const groupsHtml = pinnedGroups.map(pg => {
     const contattiHtml = pg.contatti.map(c => {
       const nums = (c.numeri || []).join(' · ');
-      const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).map(n => `pers. ${n}`).join(' · ') : '';
-      const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).map(n => `cel. ${n}`).join(' · ') : '';
-      const extra = [c.breve ? `br. ${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
+      const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).join(' · ') : '';
+      const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).join(' · ') : '';
+      const extra = [c.breve ? `${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
       const dispNum = [nums, extra].filter(Boolean).join(' · ');
       const cls = (typeof classifyContatto === 'function') ? classifyContatto(c) : { kind: '' };
       const isGuardia = cls.kind === 'guardia' || (c.tag || []).includes('guardia');
@@ -7072,12 +7292,11 @@ function groupContattiBySede(contatti, sezioni) {
   }
   // Mapping tipo sede → regex su sezione contatto
   const sedeMatchers = [
-    { tipo: 'ucic',             re: /ucic|unit[àa] coronarica|terapia intensiva cardiolog/i },
-    { tipo: 'utic',             re: /utic/i },
     { tipo: 'emodinamica',      re: /emodinamica|cardiologia intervent/i },
     { tipo: 'elettrofisiologia', re: /elettrofisiolog/i },
     { tipo: 'riabilitazione',   re: /riabilit/i },
-    { tipo: 'terapia_intensiva', re: /terapia intensiva|rianimaz/i },
+    // terapia_intensiva include UCIC, UTIC, TIPO, TIN, rianimazione, ecc.
+    { tipo: 'terapia_intensiva', re: /terapia intensiva|rianimaz|\bucic\b|\butic\b|unit[àa] coronarica|\btipo\b|\btin\b/i },
     { tipo: 'semi_intensiva',   re: /semi.?intensiva|sub.?intensiva/i },
     { tipo: 'day_hospital',     re: /day hospital|\bdh\b/i },
     { tipo: 'sala_operatoria',  re: /sala operator|sale operator|\bso\b/i },
@@ -7156,27 +7375,36 @@ function groupContattiBySede(contatti, sezioni) {
   // Ritorno solo bucket non vuoti, ordinati per priorità clinica
   // (sedi cliniche/operative prima, poi supporto, poi amministrativo)
   const tipoPriority = {
-    // Sedi cliniche / sale operatorie (priorità alta)
-    ucic: 1, utic: 2, terapia_intensiva: 3, semi_intensiva: 4,
+    // Terapia intensiva (tipo unificato per tutte le TI: rianimazione, UCIC, UTIC, TIPO, TIN, ecc.)
+    terapia_intensiva: 1, semi_intensiva: 2,
+    // Sale operatorie / interventistica
     emodinamica: 5, elettrofisiologia: 6,
     sala_operatoria: 7,
-    // Diagnostica per immagini e affini (priorità medio-alta, prima di studi medici)
+    // Diagnostica per immagini e affini (priorità medio-alta)
     diagnostica: 8, tc: 8, rm: 8, rx: 8, angiografia: 8, ecografia: 8,
     endoscopia: 8, neurofisiologia: 8, eeg: 8, emg: 8,
     degenze: 10, day_hospital: 11, riabilitazione: 12,
-    studi_medici: 13,
-    // Ambulatori (priorità media)
-    ambulatori: 20,
+    // Ambulatori (priorità media-alta) - prima di studi medici per orientamento clinico
+    ambulatori: 13,
+    studi_medici: 14,
     laboratorio: 25,
     // Amministrativo / servizi (priorità bassa)
     segreteria: 40, segreteria_direzione: 40,
     libera_professione: 41, portineria: 42,
     altro: 50,
   };
+  // Sort: priorità manuale (s.priority del YAML) prima, fallback a tipoPriority del tipo
+  const getBucketSort = (b) => {
+    // s.priority esplicita (numerica) ha precedenza assoluta
+    if (b.sede && typeof b.sede.priority === 'number') return b.sede.priority;
+    // Altrimenti usa tipoPriority (mappato a range 1000+ per non collidere con priority manuali)
+    return 1000 + (tipoPriority[b.tipo] || 30);
+  };
   const result = buckets
     .filter(b => b.contatti.length || (b.subBuckets && b.subBuckets.some(sb => sb.contatti.length)))
-    .sort((a, b) => (tipoPriority[a.tipo] || 30) - (tipoPriority[b.tipo] || 30));
+    .sort((a, b) => getBucketSort(a) - getBucketSort(b));
   // Aggiungo i bucket dinamici (basati su sezione contatto) ordinati per priorità/alfabetico
+  // (i dynamic buckets non hanno s.priority, quindi sempre fallback su tipoPriority)
   const dynList = [...dynamicBuckets.values()].sort((a, b) => {
     const pa = tipoPriority[a.tipo] || 30;
     const pb = tipoPriority[b.tipo] || 30;
@@ -7278,6 +7506,45 @@ function openUocWithSede(gid, sedeKey) {
   });
 }
 
+// Sposta una sezione su (-1) o giù (+1) all'interno della sua UOC.
+// Aggiorna i campi `priority` di tutte le sezioni del gruppo per riflettere il nuovo ordine
+// (1, 2, 3, ... — sequenziale e rinumerato a ogni swap).
+async function moveSezione(gid, sezNome, direction) {
+  if (!state.session || !state.session.username) {
+    return toast('Login richiesto per modificare', 'warning');
+  }
+  const src = findNumeriSource({ groupId: gid }) || 'aopd';
+  const data = { ...getNumeriDataForSource(src) };
+  const gruppi = data.gruppi || [];
+  const gIdx = gruppi.findIndex(g => g.id === gid);
+  if (gIdx < 0) return toast('Gruppo non trovato', 'error');
+  const g = gruppi[gIdx];
+  const sezioni = [...(g.sezioni || [])];
+  const sIdx = sezioni.findIndex(s => (s.nome || '').trim() === sezNome);
+  if (sIdx < 0) return toast('Sezione non trovata', 'error');
+  const targetIdx = sIdx + direction;
+  if (targetIdx < 0 || targetIdx >= sezioni.length) return; // bordi
+  // Swap fisico nell'array
+  [sezioni[sIdx], sezioni[targetIdx]] = [sezioni[targetIdx], sezioni[sIdx]];
+  // Rinumera tutte le priority sequenzialmente (1, 2, 3, ...).
+  // Eventuali sezioni aggiunte successivamente senza priority verranno comunque
+  // riassegnate correttamente al primo riordino.
+  const newSezioni = sezioni.map((s, i) => ({ ...s, priority: i + 1 }));
+  // Aggiorno il gruppo
+  const newGruppi = gruppi.map((gg, i) => i === gIdx ? { ...gg, sezioni: newSezioni } : gg);
+  try {
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi },
+      `riordina sezioni in ${g.nome}: sposta ${sezNome} ${direction < 0 ? 'su' : 'giù'}`);
+    toast('Sezione spostata', 'success');
+    await buildIndex();
+    if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
+    if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
+    if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
+  } catch (e) {
+    toast('Errore: ' + e.message, 'error');
+  }
+}
+
 function renderNumeroRow(c, gruppoId, classify, opts) {
   const hideLuogo = opts && opts.hideLuogo;
   const tags = c.tag || [];
@@ -7310,11 +7577,11 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   if (c.cellulare_aziendale) {
     const cells = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale];
     cells.forEach(cell => {
-      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare aziendale">cel. ${escapeHtml(String(cell))}</button>`);
+      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare aziendale">${escapeHtml(String(cell))}</button>`);
     });
   }
   if (c.breve) {
-    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(c.breve))}')" title="Numero breve" style="background:var(--rule-soft);">br. ${escapeHtml(String(c.breve))}</button>`);
+    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(c.breve))}')" title="Numero breve" style="background:var(--rule-soft);">${escapeHtml(String(c.breve))}</button>`);
   }
   const editControls = c.id ? `<span class="edit-only" style="display:inline-flex;gap:4px;margin-left:6px;">
     <button class="btn-icon-mini" onclick="editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
@@ -7337,10 +7604,12 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     ${effectiveKind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
     ${hasPending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
   </div>` : '';
-  // Click sull'intera riga: porta alla overview UOC con questo contatto isolato.
-  // Eccetto quando il click è su un button/link interno (numeri da copiare, edit, pin, kind).
+  // Click sull'intera riga: comportamento contesto-sensibile (vedi handleContattoRowClick).
+  // - Fuori UOC: naviga alla UOC con scroll al contatto
+  // - Già dentro UOC: mostra mini-menu con "Condividi link"
+  // Il click su button/link/kind interni non triggera il click row.
   const rowClickHandler = c.id
-    ? `onclick="if(event.target.closest('button,a,input,.kind-selector,.kind-chip,.kind-chip-reset')) return; navigate('numeri', {filter:'${escapeJs(c.id)}'})" style="cursor:pointer;"`
+    ? `onclick="handleContattoRowClick('${escapeJs(c.id)}', event)" style="cursor:pointer;"`
     : '';
   return `
     <div class="${rowClass}" ${rowClickHandler}>
@@ -10299,7 +10568,7 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
           <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Numero privato del singolo operatore</div>
         </div>
         <div class="field">
-          <label>Cellulare aziendale <span style="color:var(--ink-muted);font-weight:400;font-size:11px;">("cel.")</span></label>
+          <label>Cellulare aziendale</label>
           <input type="text" id="ce-cellulare-pub" value="${escapeHtml(cellulareAziendaleStr)}" class="mono-input" placeholder="es. 347.1234567">
           <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Numero pubblico dell'ospedale</div>
         </div>
@@ -11508,14 +11777,14 @@ function renderSearchResults(query, targetId) {
   const renderContatto = (c, opts = {}) => {
     const parts = [];
     if (c.numeri) c.numeri.forEach(n => { if (n) parts.push(String(n)); });
-    if (c.breve) parts.push(`br. ${c.breve}`);
+    if (c.breve) parts.push(`${c.breve}`);
     if (c.cellulare_personale) {
       const cells = Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale];
-      cells.forEach(cell => parts.push(`pers. ${cell}`));
+      cells.forEach(cell => parts.push(`${cell}`));
     }
     if (c.cellulare_aziendale) {
       const cells = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale];
-      cells.forEach(cell => parts.push(`cel. ${cell}`));
+      cells.forEach(cell => parts.push(`${cell}`));
     }
     const tagsLower = (c.tag || []).map(t => t.toLowerCase());
     const isGuardia = c._isGuardia;
@@ -12068,8 +12337,19 @@ function initEventListeners() {
     if (q === lastRenderedQuery) return;
     lastRenderedQuery = q;
     state.searchFilter = new Set();
-    if (q.length >= 2) openSearchOverlay(q);
-    else closeSearchOverlay();
+    if (q.length >= 2) {
+      openSearchOverlay(q);
+      // Riporta lo scroll in cima all'overlay quando la query cambia, così i nuovi
+      // risultati sono immediatamente visibili (senza questo, l'utente che aveva
+      // scrollato nei risultati precedenti restava fermo in basso digitando una nuova query).
+      const overlay = document.getElementById('search-overlay');
+      if (overlay) {
+        try { overlay.scrollTo({ top: 0, behavior: 'instant' }); }
+        catch { overlay.scrollTop = 0; }
+      }
+    } else {
+      closeSearchOverlay();
+    }
   };
   searchInput.addEventListener('input', (e) => {
     const q = e.target.value;
