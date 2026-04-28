@@ -74,7 +74,7 @@
   --bg:#F6F2EA; --bg-paper:#FBF8F2; --bg-raised:#FEFDF9; --bg-sink:#EFE9DC;
   --ink:#1A1A1A; --ink-soft:#44433F; --ink-muted:#7A7772; --ink-faint:#A29E96;
   --rule:#D9D2C3; --rule-soft:#E8E3D6; --rule-strong:#BEB5A1;
-  --accent:#2B4A6F; --accent-soft:#E6EBF2; --accent-dark:#1F3654;
+  --accent:#2B4A6F; --accent-soft:#E6EBF2; --accent-dark:#1F3654; --accent-muted:#6b88a8;
   --warning:#8A5A1F; --warning-soft:#F4EBD9;
   --danger:#8F2E2A; --danger-soft:#F4E3E2;
   --success:#2F5F3D; --success-soft:#E6F0E9;
@@ -329,6 +329,7 @@ html[data-theme="dark"]{
   --rule-strong:#444;
   --accent:#6ba4f5;
   --accent-soft:#1e3a5f;
+  --accent-muted:#5a7a9a;
   --danger:#f07070;
   --danger-soft:#4a1f1f;
   --warning:#f5a35f;
@@ -360,24 +361,22 @@ html[data-theme="dark"]{
 [data-theme="dark"] .numero-row-utile .numero-label,
 [data-theme="dark"] .sr-contact-utile .sr-contact-label{color:#a8d480}
 
-/* Numero come PILLOLA colorata piena (palette D) */
-[data-theme="dark"] .numero-row-guardia .numero-btn,
+/* Numero principale come pillola colorata piena (palette dark) */
+[data-theme="dark"] .numero-row-guardia .numero-num-primary,
 [data-theme="dark"] .sr-contact-num-guardia{
-  background:#f07070!important;color:#1a0808!important;border-color:#f07070!important;font-weight:600
+  background:#3a1f1f!important;color:#e07b7b!important;border-color:#e07b7b!important;font-weight:600
 }
-[data-theme="dark"] .numero-row-reparto .numero-btn,
+[data-theme="dark"] .numero-row-reparto .numero-num-primary,
 [data-theme="dark"] .sr-contact-num-reparto{
-  background:#6ba4f5!important;color:#081830!important;border-color:#6ba4f5!important;font-weight:600
+  background:#1f2d3f!important;color:#7ba3d4!important;border-color:#7ba3d4!important;font-weight:600
 }
-[data-theme="dark"] .numero-row-utile .numero-btn,
+[data-theme="dark"] .numero-row-utile .numero-num-primary,
 [data-theme="dark"] .sr-contact-num-utile{
-  background:#8fc857!important;color:#0a1804!important;border-color:#8fc857!important;font-weight:600
+  background:#1f3320!important;color:#7bc97e!important;border-color:#7bc97e!important;font-weight:600
 }
-[data-theme="dark"] .numero-row-guardia .numero-btn:hover,
-[data-theme="dark"] .numero-row-reparto .numero-btn:hover,
-[data-theme="dark"] .numero-row-utile .numero-btn:hover{
-  filter:brightness(1.1)
-}
+[data-theme="dark"] .numero-row-guardia .numero-num-primary:hover{background:#e07b7b!important;color:#1a0808!important}
+[data-theme="dark"] .numero-row-reparto .numero-num-primary:hover{background:#7ba3d4!important;color:#081830!important}
+[data-theme="dark"] .numero-row-utile .numero-num-primary:hover{background:#7bc97e!important;color:#0a1804!important}
 .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--bg-paper);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em}
 .rate-limit-pill{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:4px 8px;border-radius:2px;background:var(--bg-sink);color:var(--ink-muted);border:1px solid var(--rule-soft);white-space:nowrap}
 .rate-limit-pill.warning{background:var(--warning-soft);color:var(--warning);border-color:var(--warning)}
@@ -680,20 +679,40 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .filter-chip.active{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
 .numeri-group{margin-bottom:32px;scroll-margin-top:calc(var(--topbar-height) + 12px)}
 .numeri-group-title{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:12px;color:var(--ink);letter-spacing:-.01em}
-.numero-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule-soft)}
-.numero-row:last-child{border:none}
-@media (max-width:600px){
-  .numero-row{grid-template-columns:1fr;gap:8px;padding:14px 0}
-  .numero-nums{justify-content:flex-start}
-  .numero-btn{font-size:14px;padding:8px 14px;min-height:36px}
-  .numero-label{font-size:15px}
+/* ============================ NUMERO ROW (compact mobile-first) ============================
+   Layout:
+   - Bordo sinistro 3px colorato per il tag (guardia/reparto/utile)
+   - Riga superiore: label (flex 1, wrap libero) + numero principale (destra, fisso)
+   - Riga inferiore (se presente): meta sede + numeri extra (cellulari, brevi)
+   Il numero principale prende il colore del tag. Niente badge testuali. */
+.numero-row{padding:9px 12px 9px 14px;border-bottom:1px solid var(--rule-soft);border-left:3px solid transparent}
+.numero-row:last-child{border-bottom:none}
+.numero-row-top{display:flex;gap:8px;align-items:flex-start}
+.numero-label{flex:1;min-width:0;font-family:var(--serif);font-size:14.5px;line-height:1.3;color:var(--ink);word-wrap:break-word;overflow-wrap:anywhere}
+.numero-num-primary{flex-shrink:0;font-family:var(--mono);font-size:13px;background:var(--bg-raised);border:1px solid var(--rule);padding:3px 9px;border-radius:3px;white-space:nowrap;color:var(--ink);margin-top:1px;font-weight:500;letter-spacing:.02em;cursor:pointer;transition:background .12s,color .12s}
+.numero-num-primary:hover{background:var(--ink);color:var(--bg-paper)}
+.numero-row-bottom{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.numero-luogo{font-family:var(--mono);font-size:10.5px;color:var(--ink-muted);letter-spacing:.02em;flex:1;min-width:0}
+.numero-extras{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.numero-num-extra{font-family:var(--mono);font-size:11.5px;background:var(--bg-sink);border:1px solid var(--rule);padding:2px 7px;border-radius:3px;white-space:nowrap;color:var(--ink-soft);cursor:pointer;transition:background .12s,color .12s;font-weight:500}
+.numero-num-extra:hover{background:var(--ink-soft);color:var(--bg-paper)}
+
+/* Tag colorati: striscia sinistra + numero principale colorato */
+.numero-row-guardia{border-left-color:var(--danger)}
+.numero-row-guardia .numero-num-primary{background:#fef0ef;border-color:var(--danger);color:var(--danger)}
+.numero-row-guardia .numero-num-primary:hover{background:var(--danger);color:#fff}
+.numero-row-reparto{border-left-color:var(--accent)}
+.numero-row-reparto .numero-num-primary{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.numero-row-reparto .numero-num-primary:hover{background:var(--accent);color:#fff}
+.numero-row-utile{border-left-color:#2e7d32}
+.numero-row-utile .numero-num-primary{background:#e8f5e9;border-color:#2e7d32;color:#2e7d32}
+.numero-row-utile .numero-num-primary:hover{background:#2e7d32;color:#fff}
+
+/* Su schermo molto stretto: ridici padding e font etichetta */
+@media (max-width:380px){
+  .numero-row{padding:8px 10px 8px 12px}
+  .numero-label{font-size:14px}
 }
-.numero-row-guardia{background:linear-gradient(to right,#fef0ef 0%,transparent 100%);border-left:3px solid var(--danger);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
-.numero-row-guardia .numero-label{color:var(--danger);font-weight:500}
-.numero-row-reparto{background:linear-gradient(to right,var(--accent-soft) 0%,transparent 100%);border-left:3px solid var(--accent);padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
-.numero-row-reparto .numero-label{color:var(--accent);font-weight:500}
-.numero-row-utile{background:linear-gradient(to right,#e8f5e9 0%,transparent 100%);border-left:3px solid #2e7d32;padding-left:10px;margin:2px 0;border-bottom:1px solid var(--rule-soft)}
-.numero-row-utile .numero-label{color:#2e7d32;font-weight:500}
 .uoc-compact-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-top:4px}
 .uoc-compact-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;transition:border-color .12s,background .12s}
 .uoc-compact-item:hover{border-color:var(--rule-strong);background:var(--bg-sink)}
@@ -782,15 +801,6 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .numero-label .badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;margin-right:6px;border-radius:2px;background:var(--warning-soft);color:var(--warning)}
 .numero-label .badge-guardia{background:#fef0ef;color:#c1272d;font-weight:600}
 [data-theme="dark"] .numero-label .badge-guardia{background:#3a1515;color:#ff8585}
-.numero-nums{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.numero-btn{font-family:var(--mono);font-size:13px;font-weight:500;padding:6px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;color:var(--ink);cursor:pointer;transition:all .12s;letter-spacing:.02em}
-.numero-btn:hover{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
-.numero-row-guardia .numero-btn{background:#fef0ef;color:var(--danger);border-color:var(--danger)}
-.numero-row-guardia .numero-btn:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
-.numero-row-reparto .numero-btn{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
-.numero-row-reparto .numero-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.numero-row-utile .numero-btn{background:#e8f5e9;color:#2e7d32;border-color:#2e7d32}
-.numero-row-utile .numero-btn:hover{background:#2e7d32;color:#fff;border-color:#2e7d32}
 .numero-note{font-size:12px;color:var(--ink-muted);margin-top:4px;font-style:italic}
 .codici-banner{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:20px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;margin-bottom:32px}
 .codici-banner-item{display:flex;flex-direction:column;gap:4px}
@@ -841,8 +851,13 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* Search overlay: visivamente identico alla pagina normale, sopra al main area
    — l'utente non deve percepire la differenza. La topbar resta sopra, la sidebar dietro. */
-#search-overlay{position:fixed;top:65px;left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto}
+#search-overlay{position:fixed;top:65px;left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 #search-overlay.hidden{display:none}
+/* Quando l'overlay ricerca è aperto, blocca scroll del body sottostante.
+   Critico su mobile: senza questo, lo scroll-chaining fa scorrere la pagina sotto
+   e raggiunto il top può attivare la ricerca globale o mostrare la pagina sottostante
+   sotto la topbar mentre l'utente sta scrollando l'overlay. */
+body.search-overlay-open{overflow:hidden;position:fixed;width:100%;left:0;right:0}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:900px){
   #search-overlay{left:0;top:110px}
@@ -973,9 +988,10 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .contatto-action-btn svg{flex-shrink:0;color:var(--ink-muted)}
 
 /* Items cliccabili UOC/Sezione — usati negli header dei rettangoli collassati durante la ricerca. */
-.ctx-uoc,.ctx-sezione{cursor:pointer;color:var(--accent);transition:color .12s}
-.ctx-uoc:hover,.ctx-sezione:hover{color:var(--accent-dark);text-decoration:underline}
-.ctx-uoc:active,.ctx-sezione:active{color:var(--accent-dark);text-decoration:underline}
+.ctx-uoc{cursor:pointer;color:var(--ink);font-weight:700;transition:color .12s}
+.ctx-sezione{cursor:pointer;color:var(--accent-muted);font-weight:400;transition:color .12s}
+.ctx-uoc:hover,.ctx-uoc:active{color:var(--accent);text-decoration:underline}
+.ctx-sezione:hover,.ctx-sezione:active{color:var(--accent);text-decoration:underline}
 .ctx-sep{color:var(--ink-faint)}
 .sr-uoc-more{font-size:12px;color:var(--ink-muted);padding:6px 10px 0;font-style:italic}
 .sede-operativa{display:flex;flex-direction:column;gap:4px;padding:7px 11px;background:var(--bg-sink);border-radius:3px;margin-bottom:12px;font-size:13px}
@@ -2061,14 +2077,16 @@ function shortenUocName(group) {
 
 // Mappa tipi sezione → etichette leggibili. Condivisa tra renderSedeBucketHeader e i layout collassati.
 const SEZIONE_TIPO_LABELS = {
-  degenze:'Degenze', sala_operatoria:'Sala operatoria', diagnostica:'Esami',
-  ambulatori:'Ambulatori', day_hospital:'Day Hospital', segreteria:'Segreteria',
-  segreteria_direzione:'Segreteria e Direzione', portineria:'Portineria',
-  emodinamica:'Emodinamica',
-  elettrofisiologia:'Elettrofisiologia', riabilitazione:'Riabilitazione',
-  laboratorio:'Laboratorio', terapia_intensiva:'Terapia Intensiva',
-  semi_intensiva:'Semi Intensiva', studi_medici:'Studi Medici',
-  ricoveri:'Ricoveri', libera_professione:'Libera Professione'
+  degenze:'Degenze', reparto:'Reparto', sala_operatoria:'Sala operatoria',
+  diagnostica:'Diagnostica',
+  ambulatori:'Ambulatori', day_hospital:'Day Hospital',
+  segreteria_direzione:'Segreteria e Direzione',
+  emodinamica:'Emodinamica', elettrofisiologia:'Elettrofisiologia',
+  riabilitazione:'Riabilitazione',
+  laboratorio:'Laboratorio',
+  terapia_intensiva:'Terapia Intensiva', semi_intensiva:'Semi Intensiva',
+  studi_medici:'Studi Medici',
+  altro:'Altro'
 };
 
 /** Etichetta leggibile di una sezione (bucket) — utilizzata nei layout collassati di ricerca. */
@@ -2383,36 +2401,16 @@ function showContattoActionMenu(contattoId, evt) {
   // Trova la riga del contatto (target dello stesso click o ricerca DOM)
   let row = evt && evt.currentTarget && evt.currentTarget.closest ? evt.currentTarget.closest('.numero-row') : null;
   if (!row) {
-    row = document.querySelector(`.numero-row[onclick*="filter:'${contattoId}'"]`);
+    row = document.querySelector(`.numero-row[data-contatto-id="${CSS.escape(contattoId)}"]`);
   }
   if (!row) return;
-  // URL share del contatto
-  const url = (typeof buildShareUrl === 'function')
-    ? buildShareUrl('numeri', { filter: contattoId })
-    : (window.location.origin + window.location.pathname + '#/numeri/' + contattoId);
-  // Trova etichetta del contatto per il titolo del share
-  let etichetta = '';
-  for (const sourceId of ['aopd','osa','iov']) {
-    const data = (typeof getNumeriDataForSource === 'function') ? getNumeriDataForSource(sourceId) : null;
-    if (!data) continue;
-    for (const g of (data.gruppi || [])) {
-      const c = (g.contatti || []).find(x => x.id === contattoId);
-      if (c) { etichetta = c.etichetta || ''; break; }
-    }
-    if (etichetta) break;
-  }
-  const shareTitle = etichetta ? `CollinettaAI · ${etichetta}` : 'CollinettaAI';
-  // Costruisco il menu
+  // Costruisco il menu (passo solo l'id, il testo viene ricostruito al click per evitare quoting issues)
   const menu = document.createElement('div');
   menu.className = 'contatto-action-menu';
   menu.innerHTML = `
-    <button class="contatto-action-btn" onclick="event.stopPropagation();shareLink('${escapeJs(url)}','${escapeJs(shareTitle)}');document.querySelectorAll('.contatto-action-menu').forEach(m=>m.remove());">
+    <button class="contatto-action-btn" onclick="event.stopPropagation();shareContattoById('${escapeJs(contattoId)}');document.querySelectorAll('.contatto-action-menu').forEach(m=>m.remove());">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      Condividi link
-    </button>
-    <button class="contatto-action-btn" onclick="event.stopPropagation();copyNumber('${escapeJs(url)}');document.querySelectorAll('.contatto-action-menu').forEach(m=>m.remove());">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      Copia link
+      Condividi
     </button>`;
   // Posiziono il menu come overlay vicino alla riga
   row.style.position = 'relative';
@@ -2427,6 +2425,58 @@ function showContattoActionMenu(contattoId, evt) {
     };
     document.addEventListener('click', closeFn, true);
   }, 0);
+}
+
+/* Condivide un contatto via Web Share API (mobile) o copia negli appunti (desktop fallback).
+   Costruisce il testo come "Etichetta\nint. <numero>\npers. <cell>...". */
+async function shareContattoById(contattoId) {
+  // Trova il contatto in tutte le fonti dati
+  let contatto = null;
+  for (const sourceId of ['aopd','osa','iov']) {
+    const data = (typeof getNumeriDataForSource === 'function') ? getNumeriDataForSource(sourceId) : null;
+    if (!data) continue;
+    for (const g of (data.gruppi || [])) {
+      const c = (g.contatti || []).find(x => x.id === contattoId);
+      if (c) { contatto = c; break; }
+    }
+    if (contatto) break;
+  }
+  if (!contatto) {
+    if (typeof toast === 'function') toast('Contatto non trovato', 'error');
+    return;
+  }
+  const etichetta = contatto.etichetta || 'Contatto';
+  // Costruisci testo: etichetta + tutti i numeri disponibili, uno per riga
+  const lines = [];
+  (contatto.numeri || []).forEach(n => lines.push(`int. ${n}`));
+  if (contatto.breve) {
+    const brevi = Array.isArray(contatto.breve) ? contatto.breve : [contatto.breve];
+    brevi.forEach(b => lines.push(`breve ${b}`));
+  }
+  if (contatto.cellulare_aziendale) {
+    const cells = Array.isArray(contatto.cellulare_aziendale) ? contatto.cellulare_aziendale : [contatto.cellulare_aziendale];
+    cells.forEach(c => lines.push(c));
+  }
+  if (contatto.cellulare_personale) {
+    const cells = Array.isArray(contatto.cellulare_personale) ? contatto.cellulare_personale : [contatto.cellulare_personale];
+    cells.forEach(c => lines.push(`pers. ${c}`));
+  }
+  const text = lines.length ? `${etichetta}\n${lines.join('\n')}` : etichetta;
+  // Web Share API se disponibile (mobile), altrimenti clipboard
+  if (navigator.share) {
+    try {
+      await navigator.share({ text });
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    if (typeof toast === 'function') toast('Copiato negli appunti', 'success');
+  } catch (e) {
+    if (typeof toast === 'function') toast('Errore: ' + e.message, 'error');
+  }
 }
 
 /* Costruisce un URL completo a partire da route+params (per condivisione esterna).
@@ -3169,15 +3219,14 @@ function rebuildSearchIndex() {
       riabilitazione: 'riabilitazione',
       terapia_intensiva: 'terapia intensiva rianimazione ucic utic unità coronarica unità terapia intensiva cardiologica tipo tin terapia intensiva post-operatoria terapia intensiva neonatale',
       semi_intensiva: 'semi intensiva subintensiva',
+      diagnostica: 'diagnostica esami strumentali tc tac rm risonanza magnetica rx radiografia mammografia ecografia angiografia endoscopia neurofisiologia eeg emg densitometria piastra endoscopica',
       day_hospital: 'day hospital dh',
       sala_operatoria: 'sala operatoria so',
       degenze: 'degenze reparto',
       studi_medici: 'studi medici studio medico',
       ambulatori: 'ambulatori ambulatorio amb',
       laboratorio: 'laboratorio',
-      segreteria: 'segreteria',
-      portineria: 'portineria',
-      libera_professione: 'libera professione intramoenia'
+      segreteria_direzione: 'segreteria direzione segr portineria'
     };
     (g.contatti || []).forEach(c => {
       const cellFlat = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(' ') : (c.cellulare_personale || '');
@@ -4087,7 +4136,7 @@ function renderPinnedContatto(id) {
   }
   if (!foundContact) return null;
   const nums = (foundContact.numeri || []).map(n =>
-    `<button class="numero-btn" onclick="event.stopPropagation();copyNumber('${escapeHtml(String(n))}')" title="Copia">${escapeHtml(String(n))}</button>`
+    `<button onclick="event.stopPropagation();copyNumber('${escapeJs(String(n))}')" title="Copia" style="font-family:var(--mono);font-size:13px;font-weight:500;padding:4px 9px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:3px;color:var(--ink);cursor:pointer;">${escapeHtml(String(n))}</button>`
   ).join(' ');
   return `<div class="pinned-contact" onclick="navigate('numeri', {filter:'${escapeJs(id)}'})" style="cursor:pointer;">
     <span class="pinned-folder-icon">☎</span>
@@ -4640,14 +4689,23 @@ function renderSchedaBody(scheda) {
 
   if (Array.isArray(scheda.numeri_chiave) && scheda.numeri_chiave.length) {
     const numsHtml = scheda.numeri_chiave.map(n => {
-      const nums = (n.numeri || []).map(num => `<button class="numero-btn" onclick="copyNumber('${escapeHtml(num)}')">${escapeHtml(num)}</button>`).join(' ');
+      const allNums = (n.numeri || []).map(String);
+      const primary = allNums[0];
+      const extras = allNums.slice(1);
+      const primaryHtml = primary
+        ? `<button class="numero-num-primary" onclick="event.stopPropagation();copyNumber('${escapeJs(primary)}')" title="Copia ${escapeHtml(primary)}">${escapeHtml(primary)}</button>`
+        : `<span class="numero-num-primary" style="opacity:.5;color:var(--ink-muted);">—</span>`;
+      const extrasHtml = extras.map(num =>
+        `<button class="numero-num-extra" onclick="event.stopPropagation();copyNumber('${escapeJs(num)}')" title="Copia ${escapeHtml(num)}">${escapeHtml(num)}</button>`
+      ).join('');
       return `
         <div class="numero-row">
-          <div>
+          <div class="numero-row-top">
             <div class="numero-label">${escapeHtml(n.etichetta)}${n.orari ? ` <span style="color:var(--ink-muted);font-size:12px;">· ${escapeHtml(n.orari)}</span>` : ''}</div>
-            ${n.note ? `<div class="numero-note">${escapeHtml(n.note)}</div>` : ''}
+            ${primaryHtml}
           </div>
-          <div class="numero-nums">${nums}</div>
+          ${extrasHtml ? `<div class="numero-row-bottom"><span class="numero-luogo"></span><span class="numero-extras">${extrasHtml}</span></div>` : ''}
+          ${n.note ? `<div class="numero-note">${escapeHtml(n.note)}</div>` : ''}
         </div>`;
     }).join('');
     sections.push(schedaSection('Numeri chiave', numsHtml, true));
@@ -6216,12 +6274,13 @@ function onRubricaSearchInput(value) {
     _doRubricaSearch(value || '');
     return;
   }
-  // Debounce dinamico: dentro una UOC specifica i contatti sono <200, il render è veloce
-  // → 120ms (reattivo). Fuori da UOC (rubrica intera, 4400+ contatti) → 350ms per evitare
-  // lag durante typing veloce.
+  // Debounce dinamico: dentro una UOC specifica i contatti sono <200, ma il render completo
+  // di renderNumeri rifa innerHTML del main-content (header + search bar + bucket + righe).
+  // Su mobile è costoso. 250ms è un compromesso tra reattività e fluidità di digitazione.
+  // Fuori da UOC (rubrica intera, 4400+ contatti) → 350ms per evitare lag durante typing veloce.
   const insideUoc = !!(state.currentParams && state.currentParams.filter
     && state.index?.numeri?.gruppi?.find(g => g.id === state.currentParams.filter));
-  const delay = insideUoc ? 120 : 350;
+  const delay = insideUoc ? 250 : 350;
   rubricaSearchDebounce = setTimeout(() => {
     const schedule = window.requestIdleCallback
       ? (cb) => window.requestIdleCallback(cb, { timeout: 200 })
@@ -6252,13 +6311,6 @@ function _doRubricaSearch(value) {
       try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
     }
   }
-  // La query è cambiata (siamo passati il memo check sopra): riporta lo scroll in cima
-  // così i nuovi risultati sono immediatamente visibili. Senza questo l'utente che aveva
-  // scrollato nei risultati precedenti rimaneva con la pagina ferma in basso e non vedeva
-  // i nuovi match in cima.
-  // NB: 'instant' per evitare animazione che ruba focus all'input su mobile.
-  try { window.scrollTo({ top: 0, behavior: 'instant' }); }
-  catch { window.scrollTo(0, 0); }
 }
 
 function clearRubricaSearch() {
@@ -6394,8 +6446,15 @@ function renderNumeri(filter) {
           // Risolvi il sedeKey della sezione del contatto per espandere solo quella.
           // groupContattiBySede genera sedeKey come slug della sezione (vedi quella funzione).
           // Apriamo la sezione corrispondente settando state.expandedSedi[gruppoId].
+          //
+          // NB: questo blocco si esegue una SOLA volta — quando l'utente arriva qui via click
+          // dalla ricerca. Se l'utente clicca un altro bucket nella UOC overview, deve essere
+          // toggleSedeBucket a gestire l'expansion/collapse, NON questo reset.
+          // Usiamo state._lastFilterContattoInit come marcatore: settato a `filter` quando
+          // il reset è già stato fatto per questa navigazione specifica.
           if (!state.expandedSedi) state.expandedSedi = {};
-          if (c.sezione) {
+          const isFirstOpenForThisContatto = state._lastFilterContattoInit !== filter;
+          if (isFirstOpenForThisContatto && c.sezione) {
             // Cerca il bucket che contiene il contatto per ricavarne il sedeKey corretto
             const sezNorm = (c.sezione || '').toLowerCase().trim();
             const sezioneIdx = (ownerGroup.sezioni || []).findIndex(s =>
@@ -6407,9 +6466,12 @@ function renderNumeri(filter) {
               // Fallback: sezione dinamica (definita solo dai contatti, non da g.sezioni)
               state.expandedSedi[ownerGroup.id] = new Set([`dyn_${sezNorm.replace(/\s+/g,'_')}`]);
             }
+            state._lastFilterContattoInit = filter;
           }
-          // Schedula lo scroll al contatto dopo il render
-          state.pendingContattoScrollId = filter;
+          // Schedula lo scroll al contatto dopo il render (solo prima volta)
+          if (isFirstOpenForThisContatto) {
+            state.pendingContattoScrollId = filter;
+          }
         } else {
           filteredGruppi = [];
           filterLabel = `Contatto non trovato (id: ${filter})`;
@@ -6926,13 +6988,16 @@ function renderNumeri(filter) {
     const contattoId = state.pendingContattoScrollId;
     state.pendingContattoScrollId = null;
     requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => {
-      // Cerca la riga del contatto: ogni riga ha onclick con filter:'<id>'
-      // Il modo più affidabile è cercare un elemento .numero-row con onclick che contiene l'id.
-      const rows = document.querySelectorAll('.numero-row');
-      let target = null;
-      for (const r of rows) {
-        const oc = r.getAttribute('onclick') || '';
-        if (oc.includes(`filter:'${contattoId}'`)) { target = r; break; }
+      // Cerca la riga del contatto via data-contatto-id (selector più affidabile dei
+      // pattern stringa sull'onclick, che cambiano nel tempo).
+      let target = document.querySelector(`.numero-row[data-contatto-id="${CSS.escape(contattoId)}"]`);
+      // Fallback per retrocompatibilità: vecchi onclick con filter:'<id>'
+      if (!target) {
+        const rows = document.querySelectorAll('.numero-row');
+        for (const r of rows) {
+          const oc = r.getAttribute('onclick') || '';
+          if (oc.includes(`'${contattoId}'`)) { target = r; break; }
+        }
       }
       if (!target) return;
       // Misura altezza topbar reale (PWA standalone con notch può cambiare)
@@ -6948,7 +7013,13 @@ function renderNumeri(filter) {
         bannerH = Math.round(banner.getBoundingClientRect().height);
       }
       const rect = target.getBoundingClientRect();
-      const targetTop = window.scrollY + rect.top - tbH - bannerH - 12;
+      // Centra verticalmente la riga nello spazio visibile (sotto topbar+banner).
+      // viewport disponibile = window.innerHeight - tbH - bannerH
+      // posizione target = topbar+banner + (viewport_disponibile - rect.height) / 2
+      const viewportH = window.innerHeight;
+      const visibleH = viewportH - tbH - bannerH;
+      const offsetFromTop = tbH + bannerH + Math.max(0, (visibleH - rect.height) / 2);
+      const targetTop = window.scrollY + rect.top - offsetFromTop;
       try {
         window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
       } catch {
@@ -7258,8 +7329,8 @@ function sortContattiForDisplay(contatti) {
     if (/stud(io|i) medic|medici di reparto|specializz|\bdr\.|\bprof\.|dott\.|\bdottor/i.test(label)) return 1;
     // 2 — caposala e coordinatori
     if (/caposala|coordinat/i.test(label)) return 2;
-    // 3 — guardiola (sempre per ultima tra reparto "classico")
-    if (tags.includes('guardiola') || /guardiola|bancone/i.test(label)) return 3;
+    // 3 — guardiola/bancone (rilevato solo da label, tag rimosso)
+    if (/guardiola|bancone/i.test(label)) return 3;
     // 4 — altro (sale operatorie, piastre, box, ecc.)
     // 5 — numeri marcati "utili": dopo il gruppo reparto, prima degli ambulatori
     if (c.kind === 'utile') return 5;
@@ -7295,7 +7366,7 @@ function groupContattiBySede(contatti, sezioni) {
     { tipo: 'emodinamica',      re: /emodinamica|cardiologia intervent/i },
     { tipo: 'elettrofisiologia', re: /elettrofisiolog/i },
     { tipo: 'riabilitazione',   re: /riabilit/i },
-    // terapia_intensiva include UCIC, UTIC, TIPO, TIN, rianimazione, ecc.
+    { tipo: 'diagnostica', re: /tc\b|tac\b|\brm\b|\bmri\b|\brx\b|mammograf|ecograf|angiograf|endoscop|piastra endosc|densitometr|neurofisiolog|\beeg\b|\bemg\b|diagnostica|esami strument/i },
     { tipo: 'terapia_intensiva', re: /terapia intensiva|rianimaz|\bucic\b|\butic\b|unit[àa] coronarica|\btipo\b|\btin\b/i },
     { tipo: 'semi_intensiva',   re: /semi.?intensiva|sub.?intensiva/i },
     { tipo: 'day_hospital',     re: /day hospital|\bdh\b/i },
@@ -7304,9 +7375,7 @@ function groupContattiBySede(contatti, sezioni) {
     { tipo: 'studi_medici',     re: /stud(io|i) medic/i },
     { tipo: 'ambulatori',       re: /ambulator|\bamb\./i },
     { tipo: 'laboratorio',      re: /laborator/i },
-    { tipo: 'segreteria_direzione', re: /segreteria|direzione|segr\./i },
-    { tipo: 'portineria',       re: /portineria/i },
-    { tipo: 'libera_professione', re: /libera profession/i },
+    { tipo: 'segreteria_direzione', re: /segreteria|direzione|segr\.|portineria/i },
   ];
   // Crea bucket per ogni sezione. Se ha sottosezioni, pre-inizializzo i sub-bucket.
   const buckets = sedi.map((s, idx) => {
@@ -7380,17 +7449,15 @@ function groupContattiBySede(contatti, sezioni) {
     // Sale operatorie / interventistica
     emodinamica: 5, elettrofisiologia: 6,
     sala_operatoria: 7,
-    // Diagnostica per immagini e affini (priorità medio-alta)
-    diagnostica: 8, tc: 8, rm: 8, rx: 8, angiografia: 8, ecografia: 8,
-    endoscopia: 8, neurofisiologia: 8, eeg: 8, emg: 8,
-    degenze: 10, day_hospital: 11, riabilitazione: 12,
+    // Diagnostica per immagini e strumentale (TC, RM, RX, EEG, endoscopia, ecografia, ecc.)
+    diagnostica: 8,
+    degenze: 10, reparto: 10, day_hospital: 11, riabilitazione: 12,
     // Ambulatori (priorità media-alta) - prima di studi medici per orientamento clinico
     ambulatori: 13,
     studi_medici: 14,
     laboratorio: 25,
     // Amministrativo / servizi (priorità bassa)
-    segreteria: 40, segreteria_direzione: 40,
-    libera_professione: 41, portineria: 42,
+    segreteria_direzione: 40,
     altro: 50,
   };
   // Sort: priorità manuale (s.priority del YAML) prima, fallback a tipoPriority del tipo
@@ -7419,16 +7486,15 @@ function groupContattiBySede(contatti, sezioni) {
 // Header per bucket sede operativa (rubrica raggruppata)
 function renderSedeBucketHeader(s, customLabel, gruppo) {
   const tipoLabels = {
-    degenze: 'Degenze', sala_operatoria: 'Sala operatoria', diagnostica: 'Esami',
-    tc: 'TC', rm: 'RM', rx: 'RX', angiografia: 'Angiografia', ecografia: 'Ecografia',
-    endoscopia: 'Endoscopia', neurofisiologia: 'Neurofisiologia', eeg: 'EEG', emg: 'EMG',
-    ambulatori: 'Ambulatori', day_hospital: 'Day Hospital', segreteria: 'Segreteria',
+    degenze: 'Degenze', reparto: 'Reparto', sala_operatoria: 'Sala operatoria',
+    diagnostica: 'Diagnostica',
+    ambulatori: 'Ambulatori', day_hospital: 'Day Hospital',
     segreteria_direzione: 'Segreteria e Direzione',
-    portineria: 'Portineria', ucic: 'UCIC', utic: 'UTIC', emodinamica: 'Emodinamica',
-    elettrofisiologia: 'Elettrofisiologia', riabilitazione: 'Riabilitazione',
-    laboratorio: 'Laboratorio', terapia_intensiva: 'Terapia Intensiva',
-    semi_intensiva: 'Semi Intensiva', studi_medici: 'Studi Medici',
-    ricoveri: 'Ricoveri', libera_professione: 'Libera Professione',
+    emodinamica: 'Emodinamica', elettrofisiologia: 'Elettrofisiologia',
+    riabilitazione: 'Riabilitazione',
+    laboratorio: 'Laboratorio',
+    terapia_intensiva: 'Terapia Intensiva', semi_intensiva: 'Semi Intensiva',
+    studi_medici: 'Studi Medici',
     altro: 'Altro'
   };
   // Se è un bucket dinamico (nessuna sede ma customLabel presente): mostra solo la sezione
@@ -7547,80 +7613,83 @@ async function moveSezione(gid, sezNome, direction) {
 
 function renderNumeroRow(c, gruppoId, classify, opts) {
   const hideLuogo = opts && opts.hideLuogo;
-  const tags = c.tag || [];
   const cls = classify || (c._classify || classifyContatto(c));
   const rowClass = cls.kind === 'guardia' ? 'numero-row numero-row-guardia'
     : cls.kind === 'reparto' ? 'numero-row numero-row-reparto'
     : cls.kind === 'utile' ? 'numero-row numero-row-utile'
     : 'numero-row';
-  const guardiaBadge = tags.includes('guardia') ? `<span class="badge badge-guardia">● Guardia</span>` : '';
-  const guardiolaBadge = tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Guardiola</span>` : '';
-  const repartoBadge = cls.kind === 'reparto' && !tags.includes('guardiola') ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent);">● Reparto</span>` : '';
-  const utileBadge = cls.kind === 'utile' ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">● Utili</span>` : '';
-  const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
-  const note = c.note ? `<div class="numero-note">${escapeHtml(c.note)}</div>` : '';
-  // c.sezione NON viene renderizzato: il nome della sezione è già nell'header del bucket parent
-  const luogoStr = getLuogoContatto(c);
-  const luogo = (luogoStr && !hideLuogo) ? `<div style="font-size:10px;color:var(--ink-muted);margin-top:1px;opacity:.75;">📍 ${escapeHtml(luogoStr)}</div>` : '';
-  const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
-  // Numbers: internal extensions, then mobile, then breve
-  const numBtns = [];
-  (c.numeri || []).forEach(n => {
-    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(n))}')" title="Copia interno">${escapeHtml(String(n))}</button>`);
-  });
-  if (c.cellulare_personale) {
-    const cells = Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale];
-    cells.forEach(cell => {
-      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare personale" style="background:var(--accent-soft);">pers. ${escapeHtml(String(cell))}</button>`);
-    });
+  // Costruisco la lista di numeri: il primo va a destra come "principale",
+  // gli altri vanno nella riga inferiore come pillole extra.
+  // Ordine: numeri[] interni, breve, cellulare_aziendale, cellulare_personale.
+  const allNums = [];
+  (c.numeri || []).forEach(n => allNums.push({ value: String(n), label: String(n), kind: 'int' }));
+  if (c.breve) {
+    const brevi = Array.isArray(c.breve) ? c.breve : [c.breve];
+    brevi.forEach(b => allNums.push({ value: String(b), label: String(b), kind: 'breve' }));
   }
   if (c.cellulare_aziendale) {
     const cells = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale];
-    cells.forEach(cell => {
-      numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(cell))}')" title="Cellulare aziendale">${escapeHtml(String(cell))}</button>`);
-    });
+    cells.forEach(cell => allNums.push({ value: String(cell), label: String(cell), kind: 'cell_az' }));
   }
-  if (c.breve) {
-    numBtns.push(`<button class="numero-btn" onclick="copyNumber('${escapeHtml(String(c.breve))}')" title="Numero breve" style="background:var(--rule-soft);">${escapeHtml(String(c.breve))}</button>`);
+  if (c.cellulare_personale) {
+    const cells = Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale];
+    cells.forEach(cell => allNums.push({ value: String(cell), label: 'pers. ' + String(cell), kind: 'cell_pe' }));
   }
-  const editControls = c.id ? `<span class="edit-only" style="display:inline-flex;gap:4px;margin-left:6px;">
-    <button class="btn-icon-mini" onclick="editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
-    <button class="btn-icon-mini" onclick="deleteContatto('${escapeJs(c.id)}')" title="Elimina">🗑</button>
+  const primary = allNums[0];
+  const extras = allNums.slice(1);
+  const primaryHtml = primary
+    ? `<button class="numero-num-primary" onclick="event.stopPropagation();copyNumber('${escapeJs(primary.value)}')" title="Copia ${escapeHtml(primary.value)}">${escapeHtml(primary.label)}</button>`
+    : `<span class="numero-num-primary" style="opacity:.5;color:var(--ink-muted);">—</span>`;
+  const extrasHtml = extras.map(n =>
+    `<button class="numero-num-extra" onclick="event.stopPropagation();copyNumber('${escapeJs(n.value)}')" title="Copia ${escapeHtml(n.value)}">${escapeHtml(n.label)}</button>`
+  ).join('');
+  // Meta: sede sotto (mono small)
+  const luogoStr = getLuogoContatto(c);
+  const luogoText = (luogoStr && !hideLuogo) ? escapeHtml(luogoStr) : '';
+  const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
+  const note = c.note ? `<div class="numero-note" style="font-size:11px;color:var(--ink-muted);margin-top:3px;font-style:italic;">${escapeHtml(c.note)}</div>` : '';
+  const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
+  const editControls = c.id ? ` <span class="edit-only" style="display:inline-flex;gap:4px;margin-left:4px;">
+    <button class="btn-icon-mini" onclick="event.stopPropagation();editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
+    <button class="btn-icon-mini" onclick="event.stopPropagation();deleteContatto('${escapeJs(c.id)}')" title="Elimina">🗑</button>
   </span>` : '';
-  // Kind selector: chip inline per cambiare classificazione senza aprire editor
-  // In edit mode le modifiche sono pending (salva con "Salva modifiche")
+  // Kind selector (solo edit mode)
   const pendingKind = state.pendingTagEdits && state.pendingTagEdits.has(c.id)
-    ? state.pendingTagEdits.get(c.id)
-    : undefined;
+    ? state.pendingTagEdits.get(c.id) : undefined;
   const hasPending = pendingKind !== undefined;
   const effectiveKind = hasPending ? pendingKind : c.kind;
   const currentKind = effectiveKind || cls.kind;
-  const isAuto = !effectiveKind;
   const kindSelector = c.id ? `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
     <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
-    <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">● Guardia</button>
-    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">● Reparto</button>
-    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">● Utili</button>
-    ${effectiveKind ? `<button class="kind-chip-reset" onclick="setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
+    <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">● Guardia</button>
+    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">● Reparto</button>
+    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">● Utili</button>
+    ${effectiveKind ? `<button class="kind-chip-reset" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
     ${hasPending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
   </div>` : '';
-  // Click sull'intera riga: comportamento contesto-sensibile (vedi handleContattoRowClick).
-  // - Fuori UOC: naviga alla UOC con scroll al contatto
-  // - Già dentro UOC: mostra mini-menu con "Condividi link"
-  // Il click su button/link/kind interni non triggera il click row.
+  // Click row handler
   const rowClickHandler = c.id
     ? `onclick="handleContattoRowClick('${escapeJs(c.id)}', event)" style="cursor:pointer;"`
     : '';
+  const dataContattoAttr = c.id ? `data-contatto-id="${escapeHtml(c.id)}"` : '';
+  // Riga inferiore: solo se c'è qualcosa da mostrare (sede, extras, note, email, kindSelector)
+  const hasBottom = luogoText || extrasHtml;
+  const bottomHtml = hasBottom
+    ? `<div class="numero-row-bottom">
+        ${luogoText ? `<span class="numero-luogo">${luogoText}${orari}</span>` : '<span class="numero-luogo"></span>'}
+        ${extrasHtml ? `<span class="numero-extras">${extrasHtml}</span>` : ''}
+      </div>`
+    : (orari ? `<div class="numero-row-bottom"><span class="numero-luogo">${orari.replace(/^ · /, '')}</span></div>` : '');
   return `
-    <div class="${rowClass}" ${rowClickHandler}>
-      <div>
-        <div class="numero-label">${guardiaBadge}${guardiolaBadge}${repartoBadge}${utileBadge}${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${orari}${editControls}</div>
-        ${luogo}
-        ${email}
-        ${note}
-        ${kindSelector}
+    <div class="${rowClass}" ${dataContattoAttr} ${rowClickHandler}>
+      <div class="numero-row-top">
+        <div class="numero-label">${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${editControls}</div>
+        ${primaryHtml}
       </div>
-      <div class="numero-nums">${numBtns.join('') || '<span style="font-size:12px;color:var(--ink-muted);">—</span>'}</div>
+      ${bottomHtml}
+      ${email}
+      ${note}
+      ${kindSelector}
     </div>`;
 }
 
@@ -11445,6 +11514,13 @@ function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
+  // Blocca scroll del body sottostante per evitare scroll-chaining sull'overlay.
+  // Salvo la posizione di scroll prima di bloccare per ripristinarla alla chiusura
+  // (position:fixed sul body resetta scrollY a 0 in alcuni browser).
+  if (!document.body.classList.contains('search-overlay-open')) {
+    document.body.dataset.scrollY = String(window.scrollY || 0);
+    document.body.classList.add('search-overlay-open');
+  }
   renderSearchResults(query, 'search-overlay-content');
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
   if (!overlay._searchClickBound) {
@@ -11461,6 +11537,12 @@ function closeSearchOverlay() {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.add('hidden');
+  if (document.body.classList.contains('search-overlay-open')) {
+    document.body.classList.remove('search-overlay-open');
+    const savedY = parseInt(document.body.dataset.scrollY || '0', 10);
+    delete document.body.dataset.scrollY;
+    if (savedY) window.scrollTo(0, savedY);
+  }
 }
 
 function renderSearchResults(query, targetId) {
@@ -11689,7 +11771,7 @@ function renderSearchResults(query, targetId) {
         const tagsArr = (c.tag || []).map(t => t.toLowerCase());
         if (/stud(io|i) medic|medici di reparto|specializz|\bdr\.|\bprof\.|dott\.|\bdottor/i.test(label)) repSub = 1;
         else if (/caposala|coordinat/i.test(label)) repSub = 2;
-        else if (tagsArr.includes('guardiola') || /guardiola|bancone/i.test(label)) repSub = 3;
+        else if (/guardiola|bancone/i.test(label)) repSub = 3;
         else if (c.kind === 'utile') repSub = 5;
       }
       let relevance = 0;
@@ -11790,7 +11872,6 @@ function renderSearchResults(query, targetId) {
     const isGuardia = c._isGuardia;
     const isReparto = c._group === 2 && !isGuardia && c.kind !== 'utile';
     const isUtile = c.kind === 'utile';
-    const isGuardiola = tagsLower.includes('guardiola');
     const luogoStr = getLuogoContatto(c);
     const luogoHtml = (luogoStr && !opts.hideLuogo) ? `<div class="sr-contact-luogo">📍 ${escapeHtml(luogoStr)}</div>` : '';
     const sezioneHtml = (c.sezione && !opts.hideSedeMeta) ? `<span class="sr-contact-sezione">· ${escapeHtml(c.sezione)}</span>` : '';
@@ -11824,11 +11905,10 @@ function renderSearchResults(query, targetId) {
       </div>`;
     }
     if (isReparto) {
-      const repartoMeta = isGuardiola ? 'guardiola' : 'reparto';
       return `<div class="sr-contact sr-contact-reparto" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
           <div class="sr-contact-label">${labelHtml}</div>
-          <div class="sr-contact-meta">${escapeHtml(repartoMeta)}</div>
+          <div class="sr-contact-meta">reparto</div>
           ${luogoHtml}
           ${tagChips}
         </div>
