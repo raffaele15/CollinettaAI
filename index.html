@@ -12343,6 +12343,18 @@ function renderSearchResults(query, targetId) {
     let contattiHtml = '';
     if (u.fullGroup && typeof groupContattiBySede === 'function') {
       const buckets = groupContattiBySede(topContatti, u.fullGroup.sezioni);
+      // DEBUG TEMPORANEO: log struttura buckets per Cardiologia
+      if (u.gruppoId === 'cardiologia') {
+        console.log('[DEBUG] Cardiologia buckets:', buckets.map(b => ({
+          sedeNome: b.sede?.nome,
+          tipo: b.tipo,
+          sedeKey: b.sedeKey,
+          contattiCount: b.contatti.length,
+          contattiSezioni: b.contatti.map(c => `${c.sezione}|kind=${c.kind}`)
+        })));
+        console.log('[DEBUG] topContatti Emodinamica:',
+          topContatti.filter(c => c.sezione === 'Emodinamica').map(c => `${c.etichetta}|kind=${c.kind}`));
+      }
       contattiHtml = buckets.map(b => {
         const sedeLoc = b.sede
           ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
