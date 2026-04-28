@@ -854,10 +854,10 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 #search-overlay{position:fixed;top:65px;left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 #search-overlay.hidden{display:none}
 /* Quando l'overlay ricerca è aperto, blocca scroll del body sottostante.
-   `overscroll-behavior:none` su html+body impedisce lo scroll-chaining
-   (su Chrome Android è il modo corretto, senza touch-action che blocca anche l'overlay). */
-html.search-overlay-open,
-body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavior:none}
+   `position:fixed` sul body impedisce sia lo scroll che lo scroll-chaining su tutti
+   i browser. L'overlay ha overflow-y:auto suo proprio quindi resta scrollabile.
+   `width:100%` evita che il body si restringa e provochi reflow. */
+body.search-overlay-open{position:fixed;width:100%;left:0;right:0;overflow:hidden}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:900px){
   #search-overlay{left:0;top:110px}
@@ -11546,28 +11546,16 @@ function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
-  // Blocca scroll body sottostante. Approccio semplice senza position:fixed
-  // (che causa jump e impedisce scroll dell'overlay su alcuni browser).
-  document.documentElement.classList.add('search-overlay-open');
-  document.body.classList.add('search-overlay-open');
-  // Scroll a 1px (non 0) per evitare il "rubber band" che blocca lo scroll-up
-  // su Chrome Android quando l'overlay è già in cima.
-  overlay.scrollTop = 1;
-  // Previeni il rubber-band: se siamo a top o bottom, blocca il touchmove che
-  // andrebbe oltre. Su Chrome Android `overscroll-behavior:contain` da solo
-  // a volte non basta, soprattutto se la pagina viene aperta in stato già scrollato.
-  if (!overlay._touchHandlerBound) {
-    overlay._touchHandlerBound = true;
-    let startY = 0;
-    overlay.addEventListener('touchstart', (e) => {
-      startY = e.touches[0].pageY;
-      // Se siamo esattamente a 0, sposta a 1 per evitare blocco rubber-band
-      if (overlay.scrollTop === 0) overlay.scrollTop = 1;
-      // Se siamo esattamente a fine, sposta indietro di 1
-      const max = overlay.scrollHeight - overlay.clientHeight;
-      if (overlay.scrollTop >= max) overlay.scrollTop = max - 1;
-    }, { passive: true });
+  // Blocca scroll body con position:fixed (mantenendo posizione visiva via top:-Y).
+  // Approccio standard cross-browser per overlay full-screen.
+  if (!document.body.classList.contains('search-overlay-open')) {
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.dataset.scrollY = String(scrollY);
+    document.body.style.top = `-${scrollY}px`;
+    document.body.classList.add('search-overlay-open');
   }
+  // Reset scroll dell'overlay (top)
+  overlay.scrollTop = 0;
   renderSearchResults(query, 'search-overlay-content');
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
   if (!overlay._searchClickBound) {
@@ -11584,8 +11572,13 @@ function closeSearchOverlay() {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.add('hidden');
-  document.documentElement.classList.remove('search-overlay-open');
-  document.body.classList.remove('search-overlay-open');
+  if (document.body.classList.contains('search-overlay-open')) {
+    const savedY = parseInt(document.body.dataset.scrollY || '0', 10);
+    document.body.classList.remove('search-overlay-open');
+    document.body.style.top = '';
+    delete document.body.dataset.scrollY;
+    if (savedY) window.scrollTo(0, savedY);
+  }
 }
 
 function renderSearchResults(query, targetId) {
@@ -11976,31 +11969,57 @@ function renderSearchResults(query, targetId) {
     // Se il gruppo matcha il nome (es. "cardiologia"), ma ci sono altri token
     // (es. "reparto"), mostro solo i contatti che matchano anche quei token.
     // Questo evita che lo slice(0,12) riempia un solo bucket (es. Emodinamica).
+    // Helper: contatto ha tag esplicito (guardia/reparto/utili)?
+    const hasExplicitTag = (c) => c && (c.kind === 'guardia' || c.kind === 'reparto' || c.kind === 'utile');
+    // Helper: ordine "priority" interno alla sezione (group 1=guardia, 2=reparto, 4=altri, 5=utili).
+    // Per i contatti senza tag, usa ordine YAML (_origIdx implicito = posizione in u.contatti).
     let topContatti;
     if (groupFullyMatched) {
-      // Token che NON sono già nel nome del gruppo
+      // Token che NON sono già nel nome del gruppo (es. "cardiologia reparto" → token extra "reparto")
       const gName = (u.gruppo || '').toLowerCase();
       const extraTokens = queryTerms.filter(t => !tokenMatches(t, gName));
       if (extraTokens.length > 0) {
-        // Filtra TUTTI i contatti del gruppo (non solo quelli che Fuse ha già trovato)
-        // che matchano tutti i token extra nei loro campi.
-        // NB: qui c è il contatto RAW dal yaml, quindi usa c.etichetta (non c.titolo)
-        // e c.tag è un array che va joined.
+        // Filtra contatti che matchano i token extra in qualunque campo
         const filtered = u.contatti.filter(c => {
           const tagsStr = Array.isArray(c.tag) ? c.tag.join(' ') : (c.tag || '');
           const aliasStr = Array.isArray(c.alias) ? c.alias.join(' ') : (c.alias || '');
           const ctxt = [c.etichetta, c.sezione, c.sottosezione, c.edificio, c.piano, c.luogo, tagsStr, aliasStr].filter(Boolean).join(' ').toLowerCase();
           return extraTokens.every(t => tokenMatches(t, ctxt));
         });
-        topContatti = filtered.length > 0 ? filtered.slice(0, 30) : u.contatti.slice(0, 12);
+        topContatti = filtered.length > 0 ? filtered.slice(0, 30) : u.contatti.filter(hasExplicitTag);
       } else {
-        // Quando il gruppo matcha pienamente (es. solo "cardiologia"), mostra TUTTI
-        // i contatti raggruppati per sezione. Slice(0,12) tagliava fuori sezioni
-        // intere (es. UCIC ai contatti #50-55 di Cardiologia → bucket vuoto).
-        topContatti = u.contatti;
+        // Match solo per nome UOC (es. "cardiologia"): mostro SOLO i contatti con tag
+        // esplicito (guardia/reparto/utili) di tutte le sezioni.
+        // Se la UOC non ha contatti taggati, mostro almeno i primi 12 per orientamento.
+        const tagged = u.contatti.filter(hasExplicitTag);
+        topContatti = tagged.length > 0 ? tagged : u.contatti.slice(0, 12);
       }
     } else {
-      topContatti = u.contatti.filter(c => c._matched).slice(0, 6);
+      // Non-full-match: cerco se la query matcha il NOME di una sezione/sottosezione.
+      const matchedSectionNames = new Set();
+      const sezioni = (u.fullGroup && u.fullGroup.sezioni) || [];
+      sezioni.forEach(s => {
+        if (!s || !s.nome) return;
+        const sName = s.nome.toLowerCase();
+        if (queryTerms.every(t => sName.includes(t) || tokenMatches(t, sName))) matchedSectionNames.add(s.nome);
+        (s.sottosezioni || []).forEach(ss => {
+          if (!ss || !ss.nome) return;
+          const ssName = ss.nome.toLowerCase();
+          if (queryTerms.every(t => ssName.includes(t) || tokenMatches(t, ssName))) matchedSectionNames.add(ss.nome);
+        });
+      });
+      if (matchedSectionNames.size > 0) {
+        // Match per nome sezione (es. "stroke" → sezione "Stroke Unit"):
+        // mostro contatti con tag della sezione + altri 5 in ordine YAML/priority.
+        const sectionContatti = u.contatti.filter(c => matchedSectionNames.has(c.sezione) || matchedSectionNames.has(c.sottosezione));
+        const sectionTagged = sectionContatti.filter(hasExplicitTag);
+        const sectionUntagged = sectionContatti.filter(c => !hasExplicitTag(c));
+        // Unisci: tutti i taggati + 5 non-taggati nell'ordine in cui appaiono in YAML
+        topContatti = [...sectionTagged, ...sectionUntagged.slice(0, 5)];
+      } else {
+        // Match solo per contatti individuali: mostra i contatti matched (max 6)
+        topContatti = u.contatti.filter(c => c._matched).slice(0, 6);
+      }
     }
     const restCount = u.totalContatti - topContatti.length;
     const showOspBadge = anyExtendedOn || u.ospedale !== 'aopd';
