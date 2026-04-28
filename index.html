@@ -2122,12 +2122,10 @@ function shortenUocName(group) {
 
 // Mappa tipi sezione → etichette leggibili. Condivisa tra renderSedeBucketHeader e i layout collassati.
 const SEZIONE_TIPO_LABELS = {
-  degenze:'Degenze', reparto:'Reparto', sala_operatoria:'Sala operatoria',
+  reparto:'Reparto', sala_operatoria:'Sala operatoria',
   diagnostica:'Diagnostica',
   ambulatori:'Ambulatori', day_hospital:'Day Hospital',
   segreteria_direzione:'Segreteria e Direzione',
-  emodinamica:'Emodinamica', elettrofisiologia:'Elettrofisiologia',
-  riabilitazione:'Riabilitazione',
   laboratorio:'Laboratorio',
   terapia_intensiva:'Terapia Intensiva', semi_intensiva:'Semi Intensiva',
   studi_medici:'Studi Medici',
@@ -3270,17 +3268,14 @@ function rebuildSearchIndex() {
     });
     // Sinonimi per tipi di sede, così cercare "ucic" matcha anche "unità coronarica"
     const sedeTipoAliases = {
-      emodinamica: 'emodinamica cardiologia interventistica',
-      elettrofisiologia: 'elettrofisiologia',
-      riabilitazione: 'riabilitazione',
       terapia_intensiva: 'terapia intensiva rianimazione ucic utic unità coronarica unità terapia intensiva cardiologica tipo tin terapia intensiva post-operatoria terapia intensiva neonatale',
       semi_intensiva: 'semi intensiva subintensiva',
       diagnostica: 'diagnostica esami strumentali tc tac rm risonanza magnetica rx radiografia mammografia ecografia angiografia endoscopia neurofisiologia eeg emg densitometria piastra endoscopica',
       day_hospital: 'day hospital dh',
-      sala_operatoria: 'sala operatoria so',
-      degenze: 'degenze reparto',
+      sala_operatoria: 'sala operatoria so emodinamica cardiologia interventistica elettrofisiologia',
+      reparto: 'reparto degenze degenza',
       studi_medici: 'studi medici studio medico',
-      ambulatori: 'ambulatori ambulatorio amb',
+      ambulatori: 'ambulatori ambulatorio amb riabilitazione',
       laboratorio: 'laboratorio',
       segreteria_direzione: 'segreteria direzione segr portineria'
     };
@@ -7408,19 +7403,20 @@ function groupContattiBySede(contatti, sezioni) {
     // Nessuna sezione: unico bucket "Tutti"
     return [{ sede: null, sedeKey: '_all', label: null, contatti }];
   }
-  // Mapping tipo sede → regex su sezione contatto
+  // Mapping tipo sede → regex su sezione contatto.
+  // Quando un contatto ha sezione che NON matcha esattamente nessuna sede della UOC,
+  // si tenta il match per tipo via questa regex (fallback).
   const sedeMatchers = [
-    { tipo: 'emodinamica',      re: /emodinamica|cardiologia intervent/i },
-    { tipo: 'elettrofisiologia', re: /elettrofisiolog/i },
-    { tipo: 'riabilitazione',   re: /riabilit/i },
     { tipo: 'diagnostica', re: /tc\b|tac\b|\brm\b|\bmri\b|\brx\b|mammograf|ecograf|angiograf|endoscop|piastra endosc|densitometr|neurofisiolog|\beeg\b|\bemg\b|diagnostica|esami strument/i },
     { tipo: 'terapia_intensiva', re: /terapia intensiva|rianimaz|\bucic\b|\butic\b|unit[àa] coronarica|\btipo\b|\btin\b/i },
     { tipo: 'semi_intensiva',   re: /semi.?intensiva|sub.?intensiva/i },
     { tipo: 'day_hospital',     re: /day hospital|\bdh\b/i },
-    { tipo: 'sala_operatoria',  re: /sala operator|sale operator|\bso\b/i },
-    { tipo: 'degenze',          re: /degenz|reparto|front office|bancone|area infermier/i },
+    // Sala operatoria assorbe ex-emodinamica e ex-elettrofisiologia
+    { tipo: 'sala_operatoria',  re: /sala operator|sale operator|\bso\b|emodinamica|cardiologia intervent|elettrofisiolog/i },
+    // Reparto assorbe ex-degenze e ex-riabilitazione (per riabilitazione il match va dopo ambulatori)
+    { tipo: 'reparto',          re: /degenz|reparto|front office|bancone|area infermier/i },
     { tipo: 'studi_medici',     re: /stud(io|i) medic/i },
-    { tipo: 'ambulatori',       re: /ambulator|\bamb\./i },
+    { tipo: 'ambulatori',       re: /ambulator|\bamb\.|riabilit/i },
     { tipo: 'laboratorio',      re: /laborator/i },
     { tipo: 'segreteria_direzione', re: /segreteria|direzione|segr\.|portineria/i },
   ];
@@ -7493,13 +7489,13 @@ function groupContattiBySede(contatti, sezioni) {
   const tipoPriority = {
     // Terapia intensiva (tipo unificato per tutte le TI: rianimazione, UCIC, UTIC, TIPO, TIN, ecc.)
     terapia_intensiva: 1, semi_intensiva: 2,
-    // Sale operatorie / interventistica
-    emodinamica: 5, elettrofisiologia: 6,
+    // Sale operatorie / interventistica (assorbe ex-emodinamica, ex-elettrofisiologia)
     sala_operatoria: 7,
     // Diagnostica per immagini e strumentale (TC, RM, RX, EEG, endoscopia, ecografia, ecc.)
     diagnostica: 8,
-    degenze: 10, reparto: 10, day_hospital: 11, riabilitazione: 12,
-    // Ambulatori (priorità media-alta) - prima di studi medici per orientamento clinico
+    // Reparto unificato (assorbe ex-degenze)
+    reparto: 10, day_hospital: 11,
+    // Ambulatori (assorbe ex-riabilitazione) - prima di studi medici per orientamento clinico
     ambulatori: 13,
     studi_medici: 14,
     laboratorio: 25,
@@ -7533,12 +7529,10 @@ function groupContattiBySede(contatti, sezioni) {
 // Header per bucket sede operativa (rubrica raggruppata)
 function renderSedeBucketHeader(s, customLabel, gruppo) {
   const tipoLabels = {
-    degenze: 'Degenze', reparto: 'Reparto', sala_operatoria: 'Sala operatoria',
+    reparto: 'Reparto', sala_operatoria: 'Sala operatoria',
     diagnostica: 'Diagnostica',
     ambulatori: 'Ambulatori', day_hospital: 'Day Hospital',
     segreteria_direzione: 'Segreteria e Direzione',
-    emodinamica: 'Emodinamica', elettrofisiologia: 'Elettrofisiologia',
-    riabilitazione: 'Riabilitazione',
     laboratorio: 'Laboratorio',
     terapia_intensiva: 'Terapia Intensiva', semi_intensiva: 'Semi Intensiva',
     studi_medici: 'Studi Medici',
@@ -12343,24 +12337,19 @@ function renderSearchResults(query, targetId) {
     let contattiHtml = '';
     if (u.fullGroup && typeof groupContattiBySede === 'function') {
       const buckets = groupContattiBySede(topContatti, u.fullGroup.sezioni);
-      // DEBUG TEMPORANEO: log struttura buckets per Cardiologia
-      if (u.gruppoId === 'cardiologia') {
-        console.log('[DEBUG] Cardiologia buckets:', buckets.map(b => ({
-          sedeNome: b.sede?.nome,
-          tipo: b.tipo,
-          sedeKey: b.sedeKey,
-          contattiCount: b.contatti.length,
-          contattiSezioni: b.contatti.map(c => `${c.sezione}|kind=${c.kind}`)
-        })));
-        console.log('[DEBUG] topContatti Emodinamica:',
-          topContatti.filter(c => c.sezione === 'Emodinamica').map(c => `${c.etichetta}|kind=${c.kind}`));
-      }
       contattiHtml = buckets.map(b => {
         const sedeLoc = b.sede
           ? [b.sede.edificio, b.sede.piano].filter(Boolean).join(' ')
           : '';
         const sedeLocLower = sedeLoc.toLowerCase().trim();
-        const contattiItems = b.contatti.map(c => {
+        // Appiattisci contatti diretti + quelli delle sottosezioni (subBuckets).
+        // Necessario perché bucket come "Emodinamica" hanno sottosezioni (Sala, Studi Medici,
+        // Segreteria) e i contatti finiscono nei subBuckets, non in b.contatti diretto.
+        const allBucketContatti = [
+          ...b.contatti,
+          ...((b.subBuckets || []).flatMap(sb => sb.contatti || []))
+        ];
+        const contattiItems = allBucketContatti.map(c => {
           const cLuogo = getLuogoContatto(c).toLowerCase().trim();
           const hide = sedeLocLower && cLuogo && (cLuogo === sedeLocLower || cLuogo.includes(sedeLocLower) || sedeLocLower.includes(cLuogo));
           return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
