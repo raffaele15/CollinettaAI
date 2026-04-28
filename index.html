@@ -762,9 +762,9 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .cal-events-head{font-family:var(--serif);font-size:15px;font-weight:500;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--rule-soft);display:flex;align-items:center;gap:8px}
 .cal-events-add{margin-left:auto;font-size:12px;padding:4px 10px;background:var(--accent);color:var(--bg-paper);border:none;border-radius:2px;cursor:pointer;font-family:var(--sans)}
 .cal-events-add:hover{opacity:.9}
-.cal-event{padding:10px 12px;border-left:3px solid var(--rule);background:var(--bg-sink);border-radius:0 2px 2px 0;margin-bottom:6px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start}
-.cal-event-time{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink);background:var(--bg-paper);padding:4px 8px;border-radius:3px;border:1px solid var(--rule-soft);white-space:nowrap;align-self:start}
-.cal-event-time.no-time{font-size:11px;font-weight:400;color:var(--ink-muted);font-style:italic}
+.cal-event{padding:10px 12px;border-left:3px solid var(--rule);background:var(--bg-sink);border-radius:0 2px 2px 0;margin-bottom:6px;display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:start}
+.cal-event-time-side{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--bg-paper);padding:3px 7px;border-radius:3px;border:1px solid var(--rule-soft);white-space:nowrap;align-self:start}
+.cal-event-recur-icon{display:inline-block;margin-left:6px;font-size:11px;color:var(--ink-faint);vertical-align:middle;cursor:help}
 .cal-event-body{min-width:0;display:flex;flex-direction:column;gap:2px}
 .cal-event-titolo{font-weight:500;font-size:14px;color:var(--ink);line-height:1.3}
 .cal-event-cat{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted)}
@@ -772,7 +772,6 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .cal-event-actions{display:flex;gap:4px;flex-shrink:0;align-self:start}
 .cal-event-actions button{background:none;border:1px solid var(--rule);border-radius:2px;padding:4px 8px;font-size:13px;color:var(--ink-muted);cursor:pointer;line-height:1}
 .cal-event-actions button:hover{background:var(--bg-paper);color:var(--ink);border-color:var(--ink-muted)}
-.cal-event-recur-badge{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;color:var(--ink-faint);background:var(--bg-paper);padding:1px 5px;border-radius:8px;border:1px solid var(--rule-soft);text-transform:uppercase;letter-spacing:.04em}
 .cal-event.seminari{border-left-color:#6ba4f5}
 .cal-event.lezioni{border-left-color:#4a9b8e}
 .cal-event.compleanni{border-left-color:#f5a35f}
@@ -3932,9 +3931,12 @@ function navigate(route, params = {}) {
   state.editingContext = null;
   // Se l'overlay di ricerca è aperto e stiamo navigando altrove (non per chiuderlo), chiudilo
   // MA lascia il testo nell'input: l'utente lo cancella solo manualmente (input vuoto o ✕).
+  // Importante: usare closeSearchOverlay() che rimuove anche `body.search-overlay-open`
+  // (position:fixed) altrimenti lo scroll della pagina sotto resta bloccato.
   const searchOverlay = document.getElementById('search-overlay');
   if (searchOverlay && !searchOverlay.classList.contains('hidden') && route !== 'search') {
-    searchOverlay.classList.add('hidden');
+    if (typeof closeSearchOverlay === 'function') closeSearchOverlay();
+    else searchOverlay.classList.add('hidden');
   }
   state.currentView = route;
   window.removeEventListener('beforeunload', beforeUnloadHandler);
@@ -8024,19 +8026,26 @@ function renderCalendario(params) {
           : selectedEvents.map(e => {
               const cat = e.categoria || 'altro';
               const catLabel = CAL_CATEGORIES[cat]?.label || cat;
-              const timeHtml = e.ora
-                ? `<div class="cal-event-time">${escapeHtml(e.ora)}</div>`
-                : `<div class="cal-event-time no-time">tutto il giorno</div>`;
-              const recurBadge = e.ricorrenza ? `<span class="cal-event-recur-badge" title="Evento ricorrente">↻ ricorrente</span>` : '';
+              // Orario inline: solo se presente. Mostra inizio[-fine] in formato compatto.
+              const timeStr = e.ora
+                ? (e.ora_fine ? `${e.ora}–${e.ora_fine}` : e.ora)
+                : '';
+              const timeHtml = timeStr
+                ? `<div class="cal-event-time-side">${escapeHtml(timeStr)}</div>`
+                : '';
+              // Simbolo ricorrenza piccolo accanto al titolo (no testo)
+              const recurIcon = e.ricorrenza
+                ? `<span class="cal-event-recur-icon" title="Evento ricorrente">↻</span>`
+                : '';
               const annoLabel = (cat === 'lezioni' && e.anno)
                 ? ` · ${escapeHtml(e.anno)}° anno` : '';
               return `<div class="cal-event ${cat}">
-                ${timeHtml}
                 <div class="cal-event-body">
-                  <div class="cal-event-titolo">${escapeHtml(e.titolo || '(senza titolo)')}</div>
-                  <div class="cal-event-cat">${escapeHtml(catLabel)}${annoLabel} ${recurBadge}</div>
+                  <div class="cal-event-titolo">${escapeHtml(e.titolo || '(senza titolo)')}${recurIcon}</div>
+                  <div class="cal-event-cat">${escapeHtml(catLabel)}${annoLabel}</div>
                   ${e.descrizione ? `<div class="cal-event-desc">${escapeHtml(e.descrizione)}</div>` : ''}
                 </div>
+                ${timeHtml}
                 <div class="cal-event-actions">
                   <button onclick="openCalEventModal('${cal.selectedDate}','${escapeJs(e.id)}')" title="Modifica">✎</button>
                   <button onclick="deleteCalEvent('${escapeJs(e.id)}')" title="Elimina">🗑</button>
@@ -8160,10 +8169,16 @@ function openCalEventModal(dateStr, eventId) {
           <span>Data</span>
           <input type="date" id="cal-ev-data" value="${escapeHtml(e.data)}" style="font-family:var(--sans);">
         </label>
-        <label class="field">
-          <span>Ora (opzionale)</span>
-          <input type="time" id="cal-ev-ora" value="${escapeHtml(e.ora || '')}" style="font-family:var(--sans);">
-        </label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label class="field">
+            <span>Inizio (opzionale)</span>
+            <input type="time" id="cal-ev-ora" value="${escapeHtml(e.ora || '')}" style="font-family:var(--sans);">
+          </label>
+          <label class="field">
+            <span>Fine (opzionale)</span>
+            <input type="time" id="cal-ev-ora-fine" value="${escapeHtml(e.ora_fine || '')}" style="font-family:var(--sans);">
+          </label>
+        </div>
         <label class="field">
           <span>Categoria</span>
           <select id="cal-ev-cat" style="font-family:var(--sans);" onchange="document.getElementById('cal-ev-anno-wrap').style.display = this.value === 'lezioni' ? 'flex' : 'none';">${catsHtml}</select>
@@ -8215,6 +8230,7 @@ function openCalEventModal(dateStr, eventId) {
       { label: 'Salva', onClick: async (btn) => {
         const data = $('cal-ev-data').value;
         const ora = $('cal-ev-ora').value;
+        const ora_fine = $('cal-ev-ora-fine').value;
         const categoria = $('cal-ev-cat').value;
         const anno = categoria === 'lezioni' ? ($('cal-ev-anno')?.value || '') : '';
         const titolo = ($('cal-ev-titolo').value || '').trim();
@@ -8226,6 +8242,7 @@ function openCalEventModal(dateStr, eventId) {
         btn.disabled = true; btn.textContent = 'Salvo...';
         try {
           const baseEvt = { ...(existingEvent || {}), data, ora, categoria, titolo, descrizione };
+          if (ora_fine) baseEvt.ora_fine = ora_fine; else delete baseEvt.ora_fine;
           if (anno) baseEvt.anno = anno; else delete baseEvt.anno;
           if (freq === 'none' || count <= 1) {
             await saveCalEvent(baseEvt, !!existingEvent);
@@ -8234,6 +8251,7 @@ function openCalEventModal(dateStr, eventId) {
             const dates = generateRecurrenceDates(data, freq, interval, count);
             await saveCalEventsBulk(dates.map(d => {
               const ev = { data: d, ora, categoria, titolo, descrizione };
+              if (ora_fine) ev.ora_fine = ora_fine;
               if (anno) ev.anno = anno;
               return ev;
             }));
