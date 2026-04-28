@@ -741,33 +741,40 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .cal-day.today .cal-day-num,.cal-day.selected .cal-day-num{color:inherit}
 .cal-dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:auto}
 .cal-dot{width:6px;height:6px;border-radius:50%}
-.cal-dot.didattica{background:#6ba4f5}
+.cal-dot.seminari{background:#6ba4f5}
+.cal-dot.lezioni{background:#4a9b8e}
 .cal-dot.compleanni{background:#f5a35f}
 .cal-dot.congressi{background:#b388ff}
 .cal-dot.guardie{background:#f07070}
 .cal-dot.amb_divisionale{background:#ffa94d}
 .cal-dot.altro{background:#8fc857}
 .cal-day.selected .cal-dot,.cal-day.today .cal-dot{box-shadow:0 0 0 1px var(--bg-paper)}
-.cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:11px;color:var(--ink-muted)}
-.cal-legend-item{display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:2px 6px;border-radius:2px;transition:background .1s}
+.cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:11px;color:var(--ink-muted);align-items:center;position:relative}
+.cal-legend-item{display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:2px 6px;border-radius:2px;transition:background .1s;position:relative}
 .cal-legend-item:hover{background:var(--bg-sink)}
 .cal-legend-item.inactive{opacity:.35}
 .cal-legend-dot{width:8px;height:8px;border-radius:50%}
+.cal-legend-caret{font-size:9px;color:var(--ink-faint);margin-left:2px}
+.cal-legend-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;padding:8px 10px;z-index:20;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:4px}
+.cal-legend-dropdown label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);cursor:pointer;padding:2px 0}
+.cal-legend-dropdown label input{margin:0;cursor:pointer}
 .cal-events{background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;padding:14px 16px}
 .cal-events-head{font-family:var(--serif);font-size:15px;font-weight:500;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--rule-soft);display:flex;align-items:center;gap:8px}
 .cal-events-add{margin-left:auto;font-size:12px;padding:4px 10px;background:var(--accent);color:var(--bg-paper);border:none;border-radius:2px;cursor:pointer;font-family:var(--sans)}
 .cal-events-add:hover{opacity:.9}
-.cal-event{padding:8px 10px;border-left:3px solid var(--rule);background:var(--bg-sink);border-radius:0 2px 2px 0;margin-bottom:6px;position:relative}
-.cal-event-head{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
-.cal-event-titolo{font-weight:500;font-size:13px;color:var(--ink);flex:1}
-.cal-event-ora{font-family:var(--mono);font-size:11px;color:var(--ink-muted)}
+.cal-event{padding:10px 12px;border-left:3px solid var(--rule);background:var(--bg-sink);border-radius:0 2px 2px 0;margin-bottom:6px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start}
+.cal-event-time{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink);background:var(--bg-paper);padding:4px 8px;border-radius:3px;border:1px solid var(--rule-soft);white-space:nowrap;align-self:start}
+.cal-event-time.no-time{font-size:11px;font-weight:400;color:var(--ink-muted);font-style:italic}
+.cal-event-body{min-width:0;display:flex;flex-direction:column;gap:2px}
+.cal-event-titolo{font-weight:500;font-size:14px;color:var(--ink);line-height:1.3}
 .cal-event-cat{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted)}
 .cal-event-desc{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.45;white-space:pre-wrap}
-.cal-event-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
-.cal-event:hover .cal-event-actions{opacity:1}
-.cal-event-actions button{background:none;border:1px solid var(--rule);border-radius:2px;padding:2px 6px;font-size:11px;color:var(--ink-muted);cursor:pointer}
-.cal-event-actions button:hover{background:var(--bg-paper);color:var(--ink)}
-.cal-event.didattica{border-left-color:#6ba4f5}
+.cal-event-actions{display:flex;gap:4px;flex-shrink:0;align-self:start}
+.cal-event-actions button{background:none;border:1px solid var(--rule);border-radius:2px;padding:4px 8px;font-size:13px;color:var(--ink-muted);cursor:pointer;line-height:1}
+.cal-event-actions button:hover{background:var(--bg-paper);color:var(--ink);border-color:var(--ink-muted)}
+.cal-event-recur-badge{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;color:var(--ink-faint);background:var(--bg-paper);padding:1px 5px;border-radius:8px;border:1px solid var(--rule-soft);text-transform:uppercase;letter-spacing:.04em}
+.cal-event.seminari{border-left-color:#6ba4f5}
+.cal-event.lezioni{border-left-color:#4a9b8e}
 .cal-event.compleanni{border-left-color:#f5a35f}
 .cal-event.congressi{border-left-color:#b388ff}
 .cal-event.guardie{border-left-color:#f07070}
@@ -1853,7 +1860,7 @@ const userPrefs = {
     try {
       const file = await gh.getFile(path);
       if (!file) {
-        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, _sha: null };
+        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, _sha: null };
         return;
       }
       const parsed = jsyaml.load(file.content) || {};
@@ -1872,6 +1879,7 @@ const userPrefs = {
         home_numeri: Array.isArray(parsed.home_numeri) ? parsed.home_numeri : [],
         pin_order: (parsed.pin_order && typeof parsed.pin_order === 'object') ? parsed.pin_order : {},
         device_prefs: devicePrefs,
+        calendar_filters: (parsed.calendar_filters && typeof parsed.calendar_filters === 'object') ? parsed.calendar_filters : {},
         _sha: file.sha
       };
       // Migrazione: i contatti pinnati nel vecchio sistema `pins` (type='contatto')
@@ -1896,7 +1904,7 @@ const userPrefs = {
       if (myPrefs.font_size) applyFontSize(myPrefs.font_size);
     } catch (e) {
       console.warn('[userPrefs] load failed:', e);
-      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, _sha: null };
+      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, _sha: null };
     }
   },
 
@@ -1919,6 +1927,7 @@ const userPrefs = {
       home_numeri: state.userPrefs.home_numeri || [],
       pin_order: state.userPrefs.pin_order || {},
       device_prefs: state.userPrefs.device_prefs || {},
+      calendar_filters: state.userPrefs.calendar_filters || {},
       ultima_modifica: nowIso(),
       modificato_da: state.session.username
     };
@@ -3085,8 +3094,11 @@ async function buildIndex() {
   if (calendarFile) {
     try {
       const parsed = jsyaml.load(calendarFile.content) || {};
+      const eventi = Array.isArray(parsed.eventi) ? parsed.eventi : [];
+      // Migrazione in-memory: vecchia categoria 'didattica' → 'seminari'
+      eventi.forEach(e => { if (e && e.categoria === 'didattica') e.categoria = 'seminari'; });
       index.calendar = {
-        eventi: Array.isArray(parsed.eventi) ? parsed.eventi : [],
+        eventi,
         _sha: calendarFile.sha,
         _path: calendarFile.path
       };
@@ -7804,13 +7816,21 @@ function renderModulo(slug) {
 
 /* ============================ VIEW — CALENDARIO ============================ */
 const CAL_CATEGORIES = {
-  didattica:       { label: 'Didattica',          color: '#6ba4f5' },
-  compleanni:      { label: 'Compleanni',         color: '#f5a35f' },
-  congressi:       { label: 'Congressi',          color: '#b388ff' },
   guardie:         { label: 'Guardie',            color: '#f07070' },
   amb_divisionale: { label: 'Amb. divisionale',   color: '#ffa94d' },
+  lezioni:         { label: 'Lezioni',            color: '#4a9b8e' },
+  seminari:        { label: 'Seminari',           color: '#6ba4f5' },
+  congressi:       { label: 'Congressi',          color: '#b388ff' },
+  compleanni:      { label: 'Compleanni',         color: '#f5a35f' },
   altro:           { label: 'Altro',              color: '#8fc857' }
 };
+// Sotto-filtri per categoria "lezioni": anno del corso (1°/2°/3°/4°)
+const CAL_LEZIONE_ANNI = [
+  { id: '1', label: '1° anno' },
+  { id: '2', label: '2° anno' },
+  { id: '3', label: '3° anno' },
+  { id: '4', label: '4° anno' }
+];
 const CAL_DOW = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 const CAL_MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
@@ -7859,23 +7879,37 @@ function renderCalendario(params) {
       year: today.getFullYear(),
       month: today.getMonth(),
       selectedDate: calFormatDate(today),
-      activeCategories: null // null = tutte attive; Set = solo quelle nel set
+      lezioniDropdownOpen: false
     };
   }
   const cal = state.calendarState;
   if (params && params.y) cal.year = +params.y;
   if (params && params.m !== undefined) cal.month = +params.m;
+  // Carica filtri persistiti
+  const prefs = (state.userPrefs && state.userPrefs.calendar_filters) || {};
+  const hiddenCategories = new Set(Array.isArray(prefs.hidden_categories) ? prefs.hidden_categories : []);
+  // Filtro lezioni per anno: array di anni attivi. Se array vuoto/assente → tutti gli anni attivi
+  const lezioniAnniAttivi = Array.isArray(prefs.lezioni_anni) && prefs.lezioni_anni.length > 0
+    ? new Set(prefs.lezioni_anni.map(String))
+    : null;
   const eventi = (state.index.calendar && state.index.calendar.eventi) || [];
   const festivi = calFestiviItaliani(cal.year);
   const todayStr = calFormatDate(new Date());
 
-  // Eventi per giorno (mappa YYYY-MM-DD → array eventi), già filtrati per categoria attiva
-  const activeFilterCats = cal.activeCategories; // null = tutte
-  const isActive = (cat) => !activeFilterCats || activeFilterCats.has(cat);
+  // Filtro: nascondi categorie disattivate; per categoria 'lezioni' applica filtro anno
+  const isActive = (e) => {
+    const cat = e.categoria || 'altro';
+    if (hiddenCategories.has(cat)) return false;
+    if (cat === 'lezioni' && lezioniAnniAttivi) {
+      const anno = String(e.anno || '');
+      if (!anno || !lezioniAnniAttivi.has(anno)) return false;
+    }
+    return true;
+  };
   const byDate = new Map();
   eventi.forEach(e => {
     if (!e.data) return;
-    if (!isActive(e.categoria || 'altro')) return;
+    if (!isActive(e)) return;
     if (!byDate.has(e.data)) byDate.set(e.data, []);
     byDate.get(e.data).push(e);
   });
@@ -7918,7 +7952,31 @@ function renderCalendario(params) {
   const monthLabel = `${CAL_MONTHS[cal.month]} ${cal.year}`;
 
   const legendHtml = Object.entries(CAL_CATEGORIES).map(([k, v]) => {
-    const active = isActive(k);
+    const active = !hiddenCategories.has(k);
+    if (k === 'lezioni') {
+      // Sotto-filtro per anno: mostra dropdown con checkbox 1°/2°/3°/4°
+      const allAnniActive = !lezioniAnniAttivi || lezioniAnniAttivi.size === CAL_LEZIONE_ANNI.length;
+      const dropdownHtml = cal.lezioniDropdownOpen ? `
+        <div class="cal-legend-dropdown" onclick="event.stopPropagation();">
+          <label>
+            <input type="checkbox" ${allAnniActive ? 'checked' : ''} onchange="toggleLezioniAnnoAll(this.checked)">
+            <span style="font-weight:500;">Tutti gli anni</span>
+          </label>
+          <div style="height:1px;background:var(--rule-soft);margin:2px 0;"></div>
+          ${CAL_LEZIONE_ANNI.map(a => {
+            const checked = !lezioniAnniAttivi || lezioniAnniAttivi.has(a.id);
+            return `<label>
+              <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleLezioniAnno('${a.id}', this.checked)">
+              ${escapeHtml(a.label)}
+            </label>`;
+          }).join('')}
+        </div>` : '';
+      return `<span class="cal-legend-item ${active ? '' : 'inactive'}" onclick="event.stopPropagation();toggleLezioniDropdown(event)">
+        <span class="cal-legend-dot" style="background:${v.color}"></span>${v.label}
+        <span class="cal-legend-caret">▾</span>
+        ${dropdownHtml}
+      </span>`;
+    }
     return `<span class="cal-legend-item ${active ? '' : 'inactive'}" onclick="toggleCalCategory('${k}')">
       <span class="cal-legend-dot" style="background:${v.color}"></span>${v.label}
     </span>`;
@@ -7972,16 +8030,22 @@ function renderCalendario(params) {
           : selectedEvents.map(e => {
               const cat = e.categoria || 'altro';
               const catLabel = CAL_CATEGORIES[cat]?.label || cat;
+              const timeHtml = e.ora
+                ? `<div class="cal-event-time">${escapeHtml(e.ora)}</div>`
+                : `<div class="cal-event-time no-time">tutto il giorno</div>`;
+              const recurBadge = e.ricorrenza ? `<span class="cal-event-recur-badge" title="Evento ricorrente">↻ ricorrente</span>` : '';
+              const annoLabel = (cat === 'lezioni' && e.anno)
+                ? ` · ${escapeHtml(e.anno)}° anno` : '';
               return `<div class="cal-event ${cat}">
-                <div class="cal-event-head">
-                  <span class="cal-event-titolo">${escapeHtml(e.titolo || '(senza titolo)')}</span>
-                  ${e.ora ? `<span class="cal-event-ora">${escapeHtml(e.ora)}</span>` : ''}
+                ${timeHtml}
+                <div class="cal-event-body">
+                  <div class="cal-event-titolo">${escapeHtml(e.titolo || '(senza titolo)')}</div>
+                  <div class="cal-event-cat">${escapeHtml(catLabel)}${annoLabel} ${recurBadge}</div>
+                  ${e.descrizione ? `<div class="cal-event-desc">${escapeHtml(e.descrizione)}</div>` : ''}
                 </div>
-                <div class="cal-event-cat">${escapeHtml(catLabel)}</div>
-                ${e.descrizione ? `<div class="cal-event-desc">${escapeHtml(e.descrizione)}</div>` : ''}
                 <div class="cal-event-actions">
-                  <button onclick="openCalEventModal('${cal.selectedDate}','${escapeJs(e.id)}')">✎</button>
-                  <button onclick="deleteCalEvent('${escapeJs(e.id)}')">🗑</button>
+                  <button onclick="openCalEventModal('${cal.selectedDate}','${escapeJs(e.id)}')" title="Modifica">✎</button>
+                  <button onclick="deleteCalEvent('${escapeJs(e.id)}')" title="Elimina">🗑</button>
                 </div>
               </div>`;
             }).join('')
@@ -8019,20 +8083,67 @@ function calSelectDay(dateStr) {
   c.month = +parts[1] - 1;
   renderCalendario();
 }
+function _ensureCalFilters() {
+  if (!state.userPrefs) return null;
+  if (!state.userPrefs.calendar_filters) state.userPrefs.calendar_filters = {};
+  return state.userPrefs.calendar_filters;
+}
 function toggleCalCategory(cat) {
-  const c = state.calendarState;
-  // Se null, cattura tutte in un Set tranne cat; altrimenti toggle dentro il Set
-  if (c.activeCategories === null) {
-    c.activeCategories = new Set(Object.keys(CAL_CATEGORIES));
-    c.activeCategories.delete(cat);
-  } else {
-    if (c.activeCategories.has(cat)) c.activeCategories.delete(cat);
-    else c.activeCategories.add(cat);
-    // Se tutte attive, risetto a null
-    if (c.activeCategories.size === Object.keys(CAL_CATEGORIES).length) c.activeCategories = null;
-  }
+  const f = _ensureCalFilters();
+  if (!f) return;
+  if (!Array.isArray(f.hidden_categories)) f.hidden_categories = [];
+  const idx = f.hidden_categories.indexOf(cat);
+  if (idx >= 0) f.hidden_categories.splice(idx, 1);
+  else f.hidden_categories.push(cat);
+  if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
   renderCalendario();
 }
+function toggleLezioniDropdown(evt) {
+  if (evt) evt.stopPropagation();
+  const c = state.calendarState;
+  c.lezioniDropdownOpen = !c.lezioniDropdownOpen;
+  renderCalendario();
+}
+function toggleLezioniAnno(annoId, checked) {
+  const f = _ensureCalFilters();
+  if (!f) return;
+  // Se il filtro è null/vuoto, considero tutti attivi → uncheck di uno significa tenere tutti gli altri
+  let current = Array.isArray(f.lezioni_anni) && f.lezioni_anni.length > 0
+    ? f.lezioni_anni.map(String)
+    : CAL_LEZIONE_ANNI.map(a => a.id);
+  if (checked) {
+    if (!current.includes(annoId)) current.push(annoId);
+  } else {
+    current = current.filter(x => x !== annoId);
+  }
+  // Se tutti attivi → svuoto (default = tutti)
+  if (current.length === CAL_LEZIONE_ANNI.length) f.lezioni_anni = [];
+  else f.lezioni_anni = current;
+  if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
+  renderCalendario();
+}
+function toggleLezioniAnnoAll(checked) {
+  const f = _ensureCalFilters();
+  if (!f) return;
+  // checked=true → tutti gli anni (array vuoto = default tutti)
+  // checked=false → nessun anno (array vuoto sarebbe = tutti, quindi metto un placeholder impossibile)
+  if (checked) {
+    f.lezioni_anni = [];
+  } else {
+    f.lezioni_anni = ['__none__']; // valore che nessun anno reale ha → nasconde tutto
+  }
+  if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
+  renderCalendario();
+}
+// Chiudi dropdown se l'utente clicca fuori
+document.addEventListener('click', (e) => {
+  if (!state.calendarState || !state.calendarState.lezioniDropdownOpen) return;
+  if (state.currentView !== 'calendario') return;
+  // Se il click è sulla legenda lezioni o dentro il dropdown, lascia stare
+  if (e.target.closest('.cal-legend-dropdown') || e.target.closest('.cal-legend-item')) return;
+  state.calendarState.lezioniDropdownOpen = false;
+  renderCalendario();
+});
 
 // ==== Modal aggiunta/modifica evento ====
 function openCalEventModal(dateStr, eventId) {
@@ -8061,7 +8172,13 @@ function openCalEventModal(dateStr, eventId) {
         </label>
         <label class="field">
           <span>Categoria</span>
-          <select id="cal-ev-cat" style="font-family:var(--sans);">${catsHtml}</select>
+          <select id="cal-ev-cat" style="font-family:var(--sans);" onchange="document.getElementById('cal-ev-anno-wrap').style.display = this.value === 'lezioni' ? 'flex' : 'none';">${catsHtml}</select>
+        </label>
+        <label class="field" id="cal-ev-anno-wrap" style="display:${e.categoria === 'lezioni' ? 'flex' : 'none'};">
+          <span>Anno corso</span>
+          <select id="cal-ev-anno" style="font-family:var(--sans);">
+            ${CAL_LEZIONE_ANNI.map(a => `<option value="${a.id}" ${String(e.anno || '') === a.id ? 'selected' : ''}>${escapeHtml(a.label)}</option>`).join('')}
+          </select>
         </label>
         <label class="field">
           <span>Titolo</span>
@@ -8105,6 +8222,7 @@ function openCalEventModal(dateStr, eventId) {
         const data = $('cal-ev-data').value;
         const ora = $('cal-ev-ora').value;
         const categoria = $('cal-ev-cat').value;
+        const anno = categoria === 'lezioni' ? ($('cal-ev-anno')?.value || '') : '';
         const titolo = ($('cal-ev-titolo').value || '').trim();
         const descrizione = ($('cal-ev-desc').value || '').trim();
         if (!data || !titolo) { toast('Data e titolo obbligatori', 'error'); return; }
@@ -8113,12 +8231,18 @@ function openCalEventModal(dateStr, eventId) {
         const count = freq !== 'none' ? Math.max(1, parseInt($('cal-ev-count')?.value || '1', 10)) : 1;
         btn.disabled = true; btn.textContent = 'Salvo...';
         try {
+          const baseEvt = { ...(existingEvent || {}), data, ora, categoria, titolo, descrizione };
+          if (anno) baseEvt.anno = anno; else delete baseEvt.anno;
           if (freq === 'none' || count <= 1) {
-            await saveCalEvent({ ...(existingEvent || {}), data, ora, categoria, titolo, descrizione }, !!existingEvent);
+            await saveCalEvent(baseEvt, !!existingEvent);
           } else {
             // Genera tutte le occorrenze come eventi separati
             const dates = generateRecurrenceDates(data, freq, interval, count);
-            await saveCalEventsBulk(dates.map(d => ({ data: d, ora, categoria, titolo, descrizione })));
+            await saveCalEventsBulk(dates.map(d => {
+              const ev = { data: d, ora, categoria, titolo, descrizione };
+              if (anno) ev.anno = anno;
+              return ev;
+            }));
           }
           closeModal();
         } catch (err) {
@@ -8188,27 +8312,90 @@ async function deleteCalEvent(eventId) {
   const cal = state.index.calendar || { eventi: [], _sha: null };
   const evt = (cal.eventi || []).find(e => e.id === eventId);
   if (!evt) return;
-  let eventi;
   if (evt.ricorrenza) {
-    // Evento ricorrente: chiedo se eliminare solo questo o tutta la serie
-    const choice = confirm('Questo evento fa parte di una serie ricorrente.\n\n• OK: elimina TUTTA la serie\n• Annulla: elimina SOLO questo evento');
-    if (choice) {
-      eventi = (cal.eventi || []).filter(e => e.ricorrenza !== evt.ricorrenza);
-    } else {
-      eventi = (cal.eventi || []).filter(e => e.id !== eventId);
-    }
-  } else {
-    if (!confirm('Eliminare questo evento?')) return;
-    eventi = (cal.eventi || []).filter(e => e.id !== eventId);
+    // Evento ricorrente: mostra modale con 3 scelte
+    showModal({
+      title: 'Eliminare evento ricorrente',
+      subtitle: `${escapeHtml(evt.titolo)} — ${escapeHtml(evt.data)}`,
+      body: `<p style="margin:0;color:var(--ink-soft);font-size:14px;line-height:1.5;">
+        Questo evento fa parte di una serie ricorrente. Cosa vuoi eliminare?
+      </p>`,
+      actions: [
+        { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+        { label: 'Solo questo', onClick: async (btn) => {
+            btn.disabled = true; btn.textContent = 'Elimino...';
+            try {
+              const eventi = (cal.eventi || []).filter(e => e.id !== eventId);
+              await persistCalendar(eventi);
+              toast('Evento eliminato', 'success');
+              closeModal();
+              renderCalendario();
+            } catch (err) {
+              console.error('[calendar] delete failed:', err);
+              toast('Errore: ' + err.message, 'error');
+              btn.disabled = false; btn.textContent = 'Solo questo';
+            }
+          }},
+        { label: 'Questo e i successivi', onClick: async (btn) => {
+            btn.disabled = true; btn.textContent = 'Elimino...';
+            try {
+              // Mantengo solo: eventi non ricorrenti, eventi di altre serie,
+              // eventi della stessa serie con data ANTERIORE a quella corrente
+              const eventi = (cal.eventi || []).filter(e => {
+                if (e.ricorrenza !== evt.ricorrenza) return true;
+                return (e.data || '') < (evt.data || '');
+              });
+              await persistCalendar(eventi);
+              toast('Eventi eliminati', 'success');
+              closeModal();
+              renderCalendario();
+            } catch (err) {
+              console.error('[calendar] delete failed:', err);
+              toast('Errore: ' + err.message, 'error');
+              btn.disabled = false; btn.textContent = 'Questo e i successivi';
+            }
+          }},
+        { label: 'Tutta la serie', variant: 'danger', onClick: async (btn) => {
+            btn.disabled = true; btn.textContent = 'Elimino...';
+            try {
+              const eventi = (cal.eventi || []).filter(e => e.ricorrenza !== evt.ricorrenza);
+              await persistCalendar(eventi);
+              toast('Serie eliminata', 'success');
+              closeModal();
+              renderCalendario();
+            } catch (err) {
+              console.error('[calendar] delete failed:', err);
+              toast('Errore: ' + err.message, 'error');
+              btn.disabled = false; btn.textContent = 'Tutta la serie';
+            }
+          }}
+      ]
+    });
+    return;
   }
-  try {
-    await persistCalendar(eventi);
-    toast('Eliminato', 'success');
-    renderCalendario();
-  } catch (err) {
-    console.error('[calendar] delete failed:', err);
-    toast('Errore eliminazione: ' + err.message, 'error');
-  }
+  // Evento singolo: conferma semplice
+  showModal({
+    title: 'Eliminare evento',
+    subtitle: `${escapeHtml(evt.titolo)} — ${escapeHtml(evt.data)}`,
+    body: `<p style="margin:0;color:var(--ink-soft);font-size:14px;">Confermi l'eliminazione?</p>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+      { label: 'Elimina', variant: 'danger', onClick: async (btn) => {
+          btn.disabled = true; btn.textContent = 'Elimino...';
+          try {
+            const eventi = (cal.eventi || []).filter(e => e.id !== eventId);
+            await persistCalendar(eventi);
+            toast('Eliminato', 'success');
+            closeModal();
+            renderCalendario();
+          } catch (err) {
+            console.error('[calendar] delete failed:', err);
+            toast('Errore: ' + err.message, 'error');
+            btn.disabled = false; btn.textContent = 'Elimina';
+          }
+        }}
+    ]
+  });
 }
 
 async function persistCalendar(eventi) {
@@ -9807,7 +9994,7 @@ function renderNavTree() {
     // tranne quando il parent ha un nome significativo (drill profondo).
     const parentLabel = drill.breadcrumb.length > 1
       ? drill.breadcrumb[drill.breadcrumb.length - 2].label
-      : 'Indietro';
+      : 'Principale';
     const currentNode = drill.node;
     const children = currentNode.children ? currentNode.children() : [];
     const rootTarget = currentNode.navTarget;
