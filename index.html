@@ -93,8 +93,8 @@ html[data-font-size="sm"] main.content{zoom:0.88}
 html[data-font-size="md"] main.content{zoom:1}
 html[data-font-size="lg"] main.content{zoom:1.12}
 html[data-font-size="xl"] main.content{zoom:1.25}
-body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior-y:contain}
-html{overscroll-behavior-y:contain}
+body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior-y:none}
+html{overscroll-behavior-y:none}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
 .hidden{display:none!important}
 a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
@@ -555,10 +555,14 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 main.content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:700px){
   main.content{padding:14px 16px 60px}
-  /* Edit mode su mobile: padding-top ridotto per compensare il banner sticky che
-     occupa già altezza sotto la topbar. Senza questo, il titolo della pagina
-     scende di ~50px sotto il banner. */
-  body.edit-mode main.content{padding-top:8px}
+  /* Edit mode su mobile: padding-top ridotto al minimo. Banner sticky già occupa
+     spazio sotto la topbar, quindi serve appena un gap minimo prima del titolo. */
+  body.edit-mode main.content{padding-top:4px}
+  body.edit-mode .page-head{margin-bottom:8px;padding-bottom:8px}
+  body.edit-mode .page-title{font-size:clamp(22px,5.5vw,30px);margin:4px 0 0}
+  body.edit-mode .page-actions{margin-top:8px}
+  body.edit-mode .page-actions .btn{font-size:13px;padding:6px 12px}
+  body.edit-mode .page-meta{margin-top:6px}
   body .home-hero{margin-bottom:20px}
   body .home-title{font-size:clamp(26px,7vw,36px);margin-bottom:6px;line-height:1.05}
   body .home-lead{font-size:14px;line-height:1.4}
@@ -641,15 +645,6 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .page-meta{margin-top:16px;font-size:13px;color:var(--ink-muted);display:flex;gap:20px;flex-wrap:wrap}
 .page-meta-item{display:flex;align-items:center;gap:6px}
 .page-actions{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap}
-/* Su mobile in edit mode, comprime lo spazio tra il titolo della pagina e il
-   contenuto sottostante: page-head margin-bottom ridotto, page-actions con margin
-   più piccolo. Senza questa compressione, banner + titolo + page-actions occupano
-   "quasi mezza pagina" su schermi piccoli. */
-@media (max-width:700px){
-  body.edit-mode .page-head{margin-bottom:10px;padding-bottom:10px}
-  body.edit-mode .page-actions{margin-top:10px}
-  body.edit-mode .page-actions .btn{font-size:13px;padding:6px 12px}
-}
 
 .tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;background:var(--bg-sink);color:var(--ink-soft);border-radius:2px;margin-right:6px}
 .tag.tag-urgenza{background:var(--danger-soft);color:var(--danger)}
