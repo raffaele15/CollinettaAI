@@ -854,10 +854,10 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 #search-overlay{position:fixed;top:65px;left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 #search-overlay.hidden{display:none}
 /* Quando l'overlay ricerca è aperto, blocca scroll del body sottostante.
-   Critico su mobile: senza questo, lo scroll-chaining fa scorrere la pagina sotto
-   e raggiunto il top può attivare la ricerca globale o mostrare la pagina sottostante
-   sotto la topbar mentre l'utente sta scrollando l'overlay. */
-body.search-overlay-open{overflow:hidden;position:fixed;width:100%;left:0;right:0}
+   `overscroll-behavior:none` su html+body impedisce lo scroll-chaining
+   (su Chrome Android è il modo corretto, senza touch-action che blocca anche l'overlay). */
+html.search-overlay-open,
+body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavior:none}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:900px){
   #search-overlay{left:0;top:110px}
@@ -1870,6 +1870,15 @@ const userPrefs = {
         device_prefs: devicePrefs,
         _sha: file.sha
       };
+      // Migrazione: i contatti pinnati nel vecchio sistema `pins` (type='contatto')
+      // vanno spostati a home_numeri (sistema dedicato con drag&drop in home).
+      const oldContactPins = state.userPrefs.pins.filter(p => p && p.type === 'contatto');
+      if (oldContactPins.length) {
+        const existing = new Set(state.userPrefs.home_numeri);
+        oldContactPins.forEach(p => { if (p.id && !existing.has(p.id)) state.userPrefs.home_numeri.push(p.id); });
+        state.userPrefs.pins = state.userPrefs.pins.filter(p => !p || p.type !== 'contatto');
+        userPrefs.scheduleSave();
+      }
       // Applica subito tema e font dalla categoria di dispositivo corrente
       const myPrefs = state.userPrefs.device_prefs[cat] || {};
       if (myPrefs.tema) applyTheme(myPrefs.tema);
@@ -2012,6 +2021,23 @@ const userPrefs = {
 
 // Convenience global for HTML onclick handlers
 function togglePin(type, ...args) {
+  // I contatti usano il sistema home_numeri dedicato (lista ordinabile in home),
+  // non il sistema pins generico. La stella ☆ sui contatti aggiunge/rimuove
+  // dalla sezione "Contatti fissati" della home.
+  if (type === 'contatto') {
+    const cid = args[0];
+    userPrefs.toggleHomeNumero(cid);
+    if (state.currentView === 'home') renderHome();
+    else {
+      const isPinned = userPrefs.hasHomeNumero(cid);
+      document.querySelectorAll(`[data-pin-key="contatto:${cid}"]`).forEach(btn => {
+        btn.classList.toggle('pinned', isPinned);
+        btn.innerHTML = isPinned ? '★' : '☆';
+        btn.setAttribute('title', isPinned ? 'Rimuovi dalla home' : 'Aggiungi alla home');
+      });
+    }
+    return;
+  }
   let pin;
   switch (type) {
     case 'procedura':
@@ -2020,7 +2046,6 @@ function togglePin(type, ...args) {
     case 'tabella':
       pin = { type, slug: args[0] }; break;
     case 'capitolo':
-    case 'contatto':
     case 'gruppo':
       pin = { type, id: args[0] }; break;
     case 'sottocategoria':
@@ -2120,11 +2145,17 @@ function pinKey(pin) {
 }
 
 function renderPinButton(type, ...args) {
+  // I contatti usano il sistema home_numeri dedicato (vedi togglePin)
+  if (type === 'contatto') {
+    const cid = args[0];
+    const pinned = userPrefs.hasHomeNumero(cid);
+    return `<button class="pin-star ${pinned ? 'pinned' : ''}" data-pin-key="contatto:${escapeHtml(cid)}" onclick="event.stopPropagation();togglePin('contatto','${escapeJs(cid)}')" title="${pinned ? 'Rimuovi dalla home' : 'Aggiungi alla home'}" aria-label="Fissa in home">${pinned ? '★' : '☆'}</button>`;
+  }
   let pin;
   switch (type) {
     case 'procedura': case 'clinica': case 'modulo': case 'tabella':
       pin = { type, slug: args[0] }; break;
-    case 'capitolo': case 'contatto': case 'gruppo':
+    case 'capitolo': case 'gruppo':
       pin = { type, id: args[0] }; break;
     case 'sottocategoria':
       pin = { type, cat: args[0], sub: args[1] }; break;
@@ -3962,14 +3993,13 @@ function renderHome() {
   const pinsByType = {
     schede: [],      // procedura, clinica, modulo, tabella
     cartelle: [],    // categoria, sottocategoria, clinica-sub, capitolo
-    contatti: [],
     gruppi: []
   };
   pins.forEach(p => {
     if (['procedura','clinica','modulo','tabella'].includes(p.type)) pinsByType.schede.push(p);
     else if (['categoria','sottocategoria','clinica-sub','capitolo'].includes(p.type)) pinsByType.cartelle.push(p);
-    else if (p.type === 'contatto') pinsByType.contatti.push(p);
     else if (p.type === 'gruppo') pinsByType.gruppi.push(p);
+    // I contatti (type='contatto') non vanno più nei pins generici: usano home_numeri
   });
 
   // Detect emergenze count
@@ -4014,13 +4044,6 @@ function renderHome() {
       <div class="home-section home-pins-group">
         <div class="home-section-title"><span>Cartelle fissate</span></div>
         ${pinsByType.cartelle.map(p => renderPinnedCartella(p)).filter(Boolean).join('')}
-      </div>
-    ` : ''}
-
-    ${pinsByType.contatti.length > 0 ? `
-      <div class="home-section home-pins-group">
-        <div class="home-section-title"><span>Contatti fissati</span></div>
-        ${pinsByType.contatti.map(p => renderPinnedContatto(p.id)).filter(Boolean).join('')}
       </div>
     ` : ''}
 
@@ -7073,13 +7096,13 @@ function renderHomeNumeriSection() {
   }).join('');
 
   const empty = !items.length && !editMode
-    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun numero in home. Clicca <em>Modifica</em> per aggiungerli.</div>`
+    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Clicca <em>Modifica</em> per aggiungerli.</div>`
     : '';
 
   setTimeout(() => initHomeNumeriSortable(), 0);
 
   return `<div class="home-section home-pins-group">
-    <div class="home-section-title"><span>Numeri</span></div>
+    <div class="home-section-title"><span>Contatti fissati</span></div>
     ${searchBox}
     <div id="home-numeri-list">${itemsHtml}</div>
     ${empty}
@@ -11514,12 +11537,27 @@ function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
-  // Blocca scroll del body sottostante per evitare scroll-chaining sull'overlay.
-  // Salvo la posizione di scroll prima di bloccare per ripristinarla alla chiusura
-  // (position:fixed sul body resetta scrollY a 0 in alcuni browser).
-  if (!document.body.classList.contains('search-overlay-open')) {
-    document.body.dataset.scrollY = String(window.scrollY || 0);
-    document.body.classList.add('search-overlay-open');
+  // Blocca scroll body sottostante. Approccio semplice senza position:fixed
+  // (che causa jump e impedisce scroll dell'overlay su alcuni browser).
+  document.documentElement.classList.add('search-overlay-open');
+  document.body.classList.add('search-overlay-open');
+  // Scroll a 1px (non 0) per evitare il "rubber band" che blocca lo scroll-up
+  // su Chrome Android quando l'overlay è già in cima.
+  overlay.scrollTop = 1;
+  // Previeni il rubber-band: se siamo a top o bottom, blocca il touchmove che
+  // andrebbe oltre. Su Chrome Android `overscroll-behavior:contain` da solo
+  // a volte non basta, soprattutto se la pagina viene aperta in stato già scrollato.
+  if (!overlay._touchHandlerBound) {
+    overlay._touchHandlerBound = true;
+    let startY = 0;
+    overlay.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].pageY;
+      // Se siamo esattamente a 0, sposta a 1 per evitare blocco rubber-band
+      if (overlay.scrollTop === 0) overlay.scrollTop = 1;
+      // Se siamo esattamente a fine, sposta indietro di 1
+      const max = overlay.scrollHeight - overlay.clientHeight;
+      if (overlay.scrollTop >= max) overlay.scrollTop = max - 1;
+    }, { passive: true });
   }
   renderSearchResults(query, 'search-overlay-content');
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
@@ -11537,12 +11575,8 @@ function closeSearchOverlay() {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.add('hidden');
-  if (document.body.classList.contains('search-overlay-open')) {
-    document.body.classList.remove('search-overlay-open');
-    const savedY = parseInt(document.body.dataset.scrollY || '0', 10);
-    delete document.body.dataset.scrollY;
-    if (savedY) window.scrollTo(0, savedY);
-  }
+  document.documentElement.classList.remove('search-overlay-open');
+  document.body.classList.remove('search-overlay-open');
 }
 
 function renderSearchResults(query, targetId) {
@@ -11951,7 +11985,10 @@ function renderSearchResults(query, targetId) {
         });
         topContatti = filtered.length > 0 ? filtered.slice(0, 30) : u.contatti.slice(0, 12);
       } else {
-        topContatti = u.contatti.slice(0, 12);
+        // Quando il gruppo matcha pienamente (es. solo "cardiologia"), mostra TUTTI
+        // i contatti raggruppati per sezione. Slice(0,12) tagliava fuori sezioni
+        // intere (es. UCIC ai contatti #50-55 di Cardiologia → bucket vuoto).
+        topContatti = u.contatti;
       }
     } else {
       topContatti = u.contatti.filter(c => c._matched).slice(0, 6);
