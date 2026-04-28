@@ -8040,6 +8040,10 @@ function openCalEventModal(dateStr, eventId) {
   const catsHtml = Object.entries(CAL_CATEGORIES).map(([k, v]) =>
     `<option value="${k}" ${e.categoria === k ? 'selected' : ''}>${v.label}</option>`
   ).join('');
+  // Ricorrenza esistente (solo per eventi non ancora salvati: gli eventi esistenti
+  // vengono modificati come singolo evento, perché la ricorrenza ha già generato
+  // tutte le occorrenze come eventi separati al momento della creazione).
+  const showRecurrence = !existingEvent;
   showModal({
     title: existingEvent ? 'Modifica evento' : 'Aggiungi evento',
     body: `
@@ -8064,6 +8068,31 @@ function openCalEventModal(dateStr, eventId) {
           <span>Descrizione (opzionale)</span>
           <textarea id="cal-ev-desc" rows="3" placeholder="Aula, relatore, note…">${escapeHtml(e.descrizione || '')}</textarea>
         </label>
+        ${showRecurrence ? `
+        <fieldset style="border:1px solid var(--rule);border-radius:3px;padding:10px 12px;display:grid;gap:10px;">
+          <legend style="padding:0 6px;font-size:12px;color:var(--ink-muted);font-family:var(--mono);">RIPETIZIONE</legend>
+          <label class="field">
+            <span>Frequenza</span>
+            <select id="cal-ev-freq" style="font-family:var(--sans);" onchange="document.getElementById('cal-ev-recur-fields').style.display = this.value === 'none' ? 'none' : 'grid';">
+              <option value="none" selected>Nessuna (evento singolo)</option>
+              <option value="daily">Giornaliera</option>
+              <option value="weekly">Settimanale</option>
+              <option value="monthly">Mensile</option>
+              <option value="yearly">Annuale</option>
+            </select>
+          </label>
+          <div id="cal-ev-recur-fields" style="display:none;gap:10px;grid-template-columns:1fr 1fr;">
+            <label class="field">
+              <span>Ogni</span>
+              <input type="number" id="cal-ev-interval" value="1" min="1" max="365" style="font-family:var(--sans);">
+            </label>
+            <label class="field">
+              <span>Ripetizioni totali</span>
+              <input type="number" id="cal-ev-count" value="10" min="1" max="365" style="font-family:var(--sans);">
+            </label>
+          </div>
+        </fieldset>
+        ` : ''}
       </div>
     `,
     actions: [
@@ -8076,17 +8105,63 @@ function openCalEventModal(dateStr, eventId) {
         const titolo = ($('cal-ev-titolo').value || '').trim();
         const descrizione = ($('cal-ev-desc').value || '').trim();
         if (!data || !titolo) { toast('Data e titolo obbligatori', 'error'); return; }
+        const freq = showRecurrence ? ($('cal-ev-freq')?.value || 'none') : 'none';
+        const interval = freq !== 'none' ? Math.max(1, parseInt($('cal-ev-interval')?.value || '1', 10)) : 1;
+        const count = freq !== 'none' ? Math.max(1, parseInt($('cal-ev-count')?.value || '1', 10)) : 1;
         btn.disabled = true; btn.textContent = 'Salvo...';
         try {
-          await saveCalEvent({ ...(existingEvent || {}), data, ora, categoria, titolo, descrizione }, !!existingEvent);
+          if (freq === 'none' || count <= 1) {
+            await saveCalEvent({ ...(existingEvent || {}), data, ora, categoria, titolo, descrizione }, !!existingEvent);
+          } else {
+            // Genera tutte le occorrenze come eventi separati
+            const dates = generateRecurrenceDates(data, freq, interval, count);
+            await saveCalEventsBulk(dates.map(d => ({ data: d, ora, categoria, titolo, descrizione })));
+          }
           closeModal();
         } catch (err) {
-          toast('Errore salvataggio: ' + err.message, 'error');
+          console.error('[calendar] save failed:', err);
+          toast('Errore salvataggio: ' + (err.message || err), 'error');
           btn.disabled = false; btn.textContent = 'Salva';
         }
       }}
     ]
   });
+}
+
+// Genera array di date YYYY-MM-DD a partire da una data, una frequenza, intervallo, e numero di ripetizioni
+function generateRecurrenceDates(startDateStr, freq, interval, count) {
+  const dates = [];
+  const [y, m, d] = startDateStr.split('-').map(Number);
+  let current = new Date(y, m - 1, d);
+  for (let i = 0; i < count; i++) {
+    dates.push(calFormatDate(current));
+    const next = new Date(current);
+    if (freq === 'daily') next.setDate(next.getDate() + interval);
+    else if (freq === 'weekly') next.setDate(next.getDate() + interval * 7);
+    else if (freq === 'monthly') next.setMonth(next.getMonth() + interval);
+    else if (freq === 'yearly') next.setFullYear(next.getFullYear() + interval);
+    current = next;
+  }
+  return dates;
+}
+
+// Salva un batch di eventi (per ricorrenze) in un'unica chiamata putFile
+async function saveCalEventsBulk(events) {
+  const cal = state.index.calendar || { eventi: [], _sha: null, _path: 'content/calendar.yml' };
+  const eventi = [...(cal.eventi || [])];
+  const recurrenceId = 'rec_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  events.forEach(evt => {
+    eventi.push({
+      ...evt,
+      id: 'evt_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      autore: state.session?.username || 'anonimo',
+      creato: new Date().toISOString(),
+      ricorrenza: recurrenceId
+    });
+  });
+  await persistCalendar(eventi);
+  toast(`${events.length} eventi creati`, 'success');
+  renderCalendario();
 }
 
 async function saveCalEvent(evt, isUpdate) {
@@ -8107,14 +8182,28 @@ async function saveCalEvent(evt, isUpdate) {
 }
 
 async function deleteCalEvent(eventId) {
-  if (!confirm('Eliminare questo evento?')) return;
   const cal = state.index.calendar || { eventi: [], _sha: null };
-  const eventi = (cal.eventi || []).filter(e => e.id !== eventId);
+  const evt = (cal.eventi || []).find(e => e.id === eventId);
+  if (!evt) return;
+  let eventi;
+  if (evt.ricorrenza) {
+    // Evento ricorrente: chiedo se eliminare solo questo o tutta la serie
+    const choice = confirm('Questo evento fa parte di una serie ricorrente.\n\n• OK: elimina TUTTA la serie\n• Annulla: elimina SOLO questo evento');
+    if (choice) {
+      eventi = (cal.eventi || []).filter(e => e.ricorrenza !== evt.ricorrenza);
+    } else {
+      eventi = (cal.eventi || []).filter(e => e.id !== eventId);
+    }
+  } else {
+    if (!confirm('Eliminare questo evento?')) return;
+    eventi = (cal.eventi || []).filter(e => e.id !== eventId);
+  }
   try {
     await persistCalendar(eventi);
-    toast('Evento eliminato', 'success');
+    toast('Eliminato', 'success');
     renderCalendario();
   } catch (err) {
+    console.error('[calendar] delete failed:', err);
     toast('Errore eliminazione: ' + err.message, 'error');
   }
 }
@@ -8123,9 +8212,32 @@ async function persistCalendar(eventi) {
   const cal = state.index.calendar || { eventi: [], _sha: null, _path: 'content/calendar.yml' };
   const yamlHeader = '# Calendario condiviso della clinica\n# Categorie: ' + Object.keys(CAL_CATEGORIES).join(', ') + '\n# Formato data: YYYY-MM-DD (ora opzionale: HH:MM)\n\n';
   const content = yamlHeader + jsyaml.dump({ eventi }, { indent: 2, lineWidth: 120 });
-  const commitMsg = `calendar: ${eventi.length} eventi`;
-  const res = await gh.putFile(cal._path || 'content/calendar.yml', content, cal._sha, commitMsg);
-  state.index.calendar = { eventi, _sha: res.content.sha, _path: cal._path || 'content/calendar.yml' };
+  const username = state.session?.username || 'anonimo';
+  const commitMsg = `calendar: ${eventi.length} eventi (by ${username})`;
+  try {
+    const res = await gh.putFile(cal._path || 'content/calendar.yml', content, cal._sha, commitMsg);
+    state.index.calendar = { eventi, _sha: res.content.sha, _path: cal._path || 'content/calendar.yml' };
+  } catch (err) {
+    if (err.code === 'CONFLICT') {
+      // Ricarica il file aggiornato dal server e ritenta
+      try {
+        const fresh = await gh.getFile(cal._path || 'content/calendar.yml');
+        const parsed = jsyaml.load(fresh.content) || {};
+        const freshEventi = Array.isArray(parsed.eventi) ? parsed.eventi : [];
+        // Merge: aggiungi i nuovi eventi (per id) sopra quelli esistenti
+        const existingIds = new Set(freshEventi.map(e => e.id));
+        const merged = [...freshEventi, ...eventi.filter(e => e.id && !existingIds.has(e.id))];
+        const mergedContent = yamlHeader + jsyaml.dump({ eventi: merged }, { indent: 2, lineWidth: 120 });
+        const res2 = await gh.putFile(cal._path || 'content/calendar.yml', mergedContent, fresh.sha, commitMsg + ' (retry)');
+        state.index.calendar = { eventi: merged, _sha: res2.content.sha, _path: cal._path || 'content/calendar.yml' };
+      } catch (err2) {
+        console.error('[calendar] retry after conflict failed:', err2);
+        throw new Error('Conflitto non risolvibile: ' + (err2.message || err2));
+      }
+    } else {
+      throw err;
+    }
+  }
 }
 
 // ==== Parser testo guardie ====
@@ -11969,8 +12081,11 @@ function renderSearchResults(query, targetId) {
     // Se il gruppo matcha il nome (es. "cardiologia"), ma ci sono altri token
     // (es. "reparto"), mostro solo i contatti che matchano anche quei token.
     // Questo evita che lo slice(0,12) riempia un solo bucket (es. Emodinamica).
-    // Helper: contatto ha tag esplicito (guardia/reparto/utili)?
-    const hasExplicitTag = (c) => c && (c.kind === 'guardia' || c.kind === 'reparto' || c.kind === 'utile');
+    // Helper: contatto ha tag salvato (kind: guardia/reparto/utile)?
+    const hasExplicitTag = (c) => {
+      const k = c && c.kind;
+      return k === 'guardia' || k === 'reparto' || k === 'utile';
+    };
     // Helper: ordine "priority" interno alla sezione (group 1=guardia, 2=reparto, 4=altri, 5=utili).
     // Per i contatti senza tag, usa ordine YAML (_origIdx implicito = posizione in u.contatti).
     let topContatti;
@@ -11989,8 +12104,7 @@ function renderSearchResults(query, targetId) {
         topContatti = filtered.length > 0 ? filtered.slice(0, 30) : u.contatti.filter(hasExplicitTag);
       } else {
         // Match solo per nome UOC (es. "cardiologia"): mostro SOLO i contatti con tag
-        // esplicito (guardia/reparto/utili) di tutte le sezioni.
-        // Se la UOC non ha contatti taggati, mostro almeno i primi 12 per orientamento.
+        // (manuale o auto-detect) di tutte le sezioni.
         const tagged = u.contatti.filter(hasExplicitTag);
         topContatti = tagged.length > 0 ? tagged : u.contatti.slice(0, 12);
       }
