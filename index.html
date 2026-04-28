@@ -1872,13 +1872,20 @@ const userPrefs = {
       };
       // Migrazione: i contatti pinnati nel vecchio sistema `pins` (type='contatto')
       // vanno spostati a home_numeri (sistema dedicato con drag&drop in home).
-      const oldContactPins = state.userPrefs.pins.filter(p => p && p.type === 'contatto');
-      if (oldContactPins.length) {
-        const existing = new Set(state.userPrefs.home_numeri);
-        oldContactPins.forEach(p => { if (p.id && !existing.has(p.id)) state.userPrefs.home_numeri.push(p.id); });
-        state.userPrefs.pins = state.userPrefs.pins.filter(p => !p || p.type !== 'contatto');
-        userPrefs.scheduleSave();
-      }
+      // Solo migrazione in-memory: il salvataggio remoto avverrà alla prossima modifica.
+      try {
+        const pins = Array.isArray(state.userPrefs.pins) ? state.userPrefs.pins : [];
+        const homeN = Array.isArray(state.userPrefs.home_numeri) ? state.userPrefs.home_numeri : [];
+        const oldContactPins = pins.filter(p => p && p.type === 'contatto');
+        if (oldContactPins.length) {
+          const existing = new Set(homeN);
+          for (const p of oldContactPins) {
+            if (p && p.id && !existing.has(p.id)) homeN.push(p.id);
+          }
+          state.userPrefs.home_numeri = homeN;
+          state.userPrefs.pins = pins.filter(p => !p || p.type !== 'contatto');
+        }
+      } catch (e) { console.warn('[userPrefs] migration skipped:', e); }
       // Applica subito tema e font dalla categoria di dispositivo corrente
       const myPrefs = state.userPrefs.device_prefs[cat] || {};
       if (myPrefs.tema) applyTheme(myPrefs.tema);
@@ -2125,7 +2132,9 @@ function bucketSezioneLabel(b) {
 
 function isPinned(type, id) {
   if (!userPrefs) return false;
-  const pin = (type === 'gruppo' || type === 'contatto' || type === 'capitolo')
+  // I contatti usano il sistema home_numeri dedicato
+  if (type === 'contatto') return userPrefs.hasHomeNumero(id);
+  const pin = (type === 'gruppo' || type === 'capitolo')
     ? { type, id }
     : { type, slug: id };
   return userPrefs.has(pin);
@@ -7062,7 +7071,7 @@ function renderHomeNumeriSection() {
   // Risolvi contatti da cid
   const items = [];
   cids.forEach(cid => {
-    for (const g of (state.index.numeri || [])) {
+    for (const g of getVisibleNumeriGroups()) {
       const c = (g.contatti || []).find(x => x.id === cid);
       if (c) { items.push({ c, g }); break; }
     }
