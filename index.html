@@ -1649,7 +1649,11 @@ function updateNavHistoryButtons() {
 // segments: [{label, route, params?}]
 function buildBreadcrumb(segments) {
   if (!segments || segments.length === 0) return '';
-  const parts = segments.map((s) => {
+  // Rimuovo il segmento "Home" iniziale: il logo in topbar già torna a home,
+  // quindi il breadcrumb "Home › X" è ridondante. Mostro solo i segmenti intermedi.
+  const filtered = segments.filter((s, i) => !(i === 0 && s.label === 'Home' && s.route === 'home'));
+  if (filtered.length === 0) return '';
+  const parts = filtered.map((s) => {
     const params = s.params ? JSON.stringify(s.params).replace(/"/g, '&quot;') : '{}';
     return `<span class="bc-segment" onclick="navigate('${escapeJs(s.route)}', ${params})">${escapeHtml(s.label)}</span>`;
   });
@@ -4215,7 +4219,7 @@ function renderManuale() {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Manuale</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Manuale</div>
       <h1 class="page-title">How to Survive <em>Neuro</em></h1>
       <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">Manuale completo del reparto. Ogni capitolo aggrega le procedure che vi appartengono, in ordine di lettura.</div>
     </div>
@@ -4295,7 +4299,6 @@ function renderProcedureList() {
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
       <h1 class="page-title">Procedure</h1>
-      <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${procs.length} schede, organizzate in ${cats.length} categorie.</div>
       <div class="page-actions">
         <button class="btn edit-only" onclick="nuovaProcedura()">+ Nuova procedura</button>
       </div>
@@ -6673,7 +6676,7 @@ function renderNumeri(filter) {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Rubrica</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Rubrica</div>
       <h1 class="page-title">Rubrica</h1>
       <div class="numeri-filters" style="margin-top:20px;">
         <button class="filter-chip ${filter === 'pinned' ? 'active' : ''}" onclick="navigate('numeri', {filter:'pinned'})" title="Solo numeri e UOC preferiti">★</button>
@@ -7923,7 +7926,7 @@ function renderCalendario(params) {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Calendario</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Calendario</div>
       <h1 class="page-title">Calendario</h1>
     </div>
 
@@ -8088,7 +8091,7 @@ function openCalEventModal(dateStr, eventId) {
             </label>
             <label class="field">
               <span>Ripetizioni totali</span>
-              <input type="number" id="cal-ev-count" value="10" min="1" max="365" style="font-family:var(--sans);">
+              <input type="number" id="cal-ev-count" value="1" min="1" max="365" style="font-family:var(--sans);">
             </label>
           </div>
         </fieldset>
@@ -8890,7 +8893,7 @@ function renderGestioneUtentiView() {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Amministrazione</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Amministrazione</div>
       <h1 class="page-title">Gestione <em>utenti</em></h1>
       <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
         ${countAll} utenti registrati. I nuovi utenti ereditano il <code>token_data</code> dalla tua sessione; se promossi ad admin ereditano anche <code>token_auth</code>.
@@ -9799,10 +9802,12 @@ function renderNavTree() {
   const drill = getCurrentDrillNode();
 
   if (drill && drill.node) {
-    // Drill-down mode: mostra back + children del nodo corrente
+    // Drill-down mode: mostra back + children del nodo corrente.
+    // Mostra sempre "Indietro" come label (più chiaro del nome del parent),
+    // tranne quando il parent ha un nome significativo (drill profondo).
     const parentLabel = drill.breadcrumb.length > 1
       ? drill.breadcrumb[drill.breadcrumb.length - 2].label
-      : 'Home';
+      : 'Indietro';
     const currentNode = drill.node;
     const children = currentNode.children ? currentNode.children() : [];
     const rootTarget = currentNode.navTarget;
@@ -11631,7 +11636,7 @@ function renderTagPage(tagName) {
 
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])} · Tag</div>
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Tag</div>
       <h1 class="page-title">#${escapeHtml(tagName)}</h1>
       <div style="margin-top:8px;font-size:13px;color:var(--ink-muted);">${total} sched${total === 1 ? 'a' : 'e'} con questo tag</div>
     </div>
@@ -12333,7 +12338,7 @@ function showModal({ title, subtitle, body, actions }) {
     const idx = parseInt(btn.dataset.actionIdx, 10);
     btn.addEventListener('click', () => {
       const action = actions[idx];
-      if (action && action.onClick) action.onClick();
+      if (action && action.onClick) action.onClick(btn);
     });
   });
   const backdrop = $('current-modal-backdrop');
