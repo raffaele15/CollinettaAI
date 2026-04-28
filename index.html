@@ -274,7 +274,7 @@ header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-column
 [data-theme="dark"] .login-logo-dark{display:block!important}
 /* Titolo CollinettaAI: scaling automatico tra 13px (schermi minuscoli) e 22px (desktop).
    Il valore preferito 4.5vw fa scalare in modo proporzionale alla larghezza viewport. */
-.brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(13px,4.5vw,22px);letter-spacing:-.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(13px,4.5vw,22px);letter-spacing:-.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:.15em}
 .brand-divider{width:1px;height:16px;background:var(--rule-strong)}
 .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
 .search-wrap{position:relative;flex:1;min-width:0}
@@ -431,22 +431,24 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 .nav-drill-header .nav-tree-count{display:inline-flex;font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:2px}
 .nav-drill-overview{border-bottom:1px dashed var(--rule-soft);margin-bottom:6px;padding-bottom:8px;font-style:italic;color:var(--ink-soft)}
 
-/* Root-level sidebar rows (nuova UX drill-down) — separatore tra categorie */
-.nav-tree-root-row{padding:14px 14px;font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink);border-radius:2px;justify-content:space-between}
+/* Root-level sidebar rows (nuova UX drill-down) */
+.nav-tree-root-row{padding:14px 14px;font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink);border-radius:2px;justify-content:space-between;position:relative}
 .nav-tree-root-row:hover{background:var(--rule-soft)}
 .nav-tree-root-row .nav-tree-label{font-weight:500;font-family:var(--serif)}
 .nav-tree-root-row .nav-tree-count{display:none}
-/* Linea sottile tra le categorie root (non raggiunge i bordi del side panel) */
-.nav-tree-node:has(> .nav-tree-root-row) + .nav-tree-node:has(> .nav-tree-root-row){
-  position:relative;
-}
-.nav-tree-node:has(> .nav-tree-root-row) + .nav-tree-node:has(> .nav-tree-root-row)::before{
+/* Linea sottile tra le categorie root: bordo inferiore con margin laterale.
+   Si "comporta bene" con l'hover (è dentro l'elemento, non una pseudo separata). */
+.nav-tree-node:has(> .nav-tree-root-row):not(:last-child) > .nav-tree-root-row::after{
   content:'';
-  display:block;
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:-1px;
   height:1px;
   background:var(--rule-soft);
-  margin:0 14px 4px;
+  pointer-events:none;
 }
+.nav-tree-node:has(> .nav-tree-root-row){padding-bottom:1px}
 .nav-tree-chevron{font-size:18px;color:var(--ink-faint);flex-shrink:0;margin-left:4px;transition:color .12s}
 .nav-tree-root-row:hover .nav-tree-chevron{color:var(--ink)}
 .nav-tree-drill-row{padding:8px 12px;font-family:var(--serif);font-size:15px;color:var(--ink);justify-content:space-between}
@@ -845,13 +847,31 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 /* MODALS */
 .modal-backdrop{position:fixed;inset:0;background:rgba(26,26,26,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .15s ease-out}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-modal);animation:slideUp .2s ease-out}
+.modal{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-modal);animation:slideUp .2s ease-out;display:flex;flex-direction:column}
 @keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modal-head{padding:24px 24px 0}
+.modal-head{padding:24px 24px 0;flex-shrink:0}
 .modal-title{font-family:var(--serif);font-weight:500;font-size:22px;line-height:1.2;margin-bottom:8px;letter-spacing:-.01em}
 .modal-sub{font-size:14px;color:var(--ink-muted);line-height:1.55}
-.modal-body{padding:20px 24px}
-.modal-actions{padding:16px 24px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.modal-body{padding:20px 24px;flex:1;min-height:0;overflow-y:auto}
+.modal-actions{padding:16px 24px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--rule-soft)}
+/* Su mobile: occupa più schermo, padding ridotto, body può scrollare se contenuto > viewport.
+   max-height usa svh (small viewport) per non confondersi con la barra dinamica del browser. */
+@media (max-width:600px){
+  .modal-backdrop{padding:8px;align-items:flex-end}
+  .modal{max-height:calc(100svh - 16px);max-width:100%;border-radius:8px 8px 2px 2px;animation:slideUpMobile .2s ease-out}
+  .modal-head{padding:16px 16px 0}
+  .modal-title{font-size:18px}
+  .modal-body{padding:14px 16px}
+  .modal-actions{padding:12px 16px;gap:8px}
+  /* I content dentro la body non devono forzare larghezze min che escano dallo schermo */
+  .modal-body > div[style*="min-width"]{min-width:0!important;width:100%!important}
+  /* Fieldset (es. blocco Ripetizione) compatti */
+  .modal-body fieldset{padding:8px 10px!important}
+  .modal-body fieldset > legend{font-size:10px}
+  /* Bottoni azione full-width su mobile */
+  .modal-actions .btn{flex:1;min-width:0;font-size:13px;padding:10px 12px}
+}
+@keyframes slideUpMobile{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 /* TOASTS */
 #toast-stack{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:10px;pointer-events:none}
@@ -930,20 +950,6 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior:
 .sr-sede-bucket-header.sr-sede-bucket-static{cursor:default}
 .sr-sede-bucket-header.sr-sede-bucket-static:hover{background:var(--bg-sink)}
 .sr-sede-bucket-header.sr-sede-bucket-static::after{display:none}
-/* Layout collassato (ricerca per contatto/sezione specifica): rimuovo il rettangolo
-   esterno per compattare la lista. Header inline tipo breadcrumb + contatti sotto.
-   Stesso stile font della UOC overview (.sede-bucket-tipo: mono 10px upper). */
-.sr-sede-bucket.sr-sede-bucket-flat{border:none;background:transparent;border-radius:0;margin:14px 0 0;overflow:visible}
-.sr-sede-bucket.sr-sede-bucket-flat:first-child{margin-top:0}
-.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-header{padding:0 0 4px;background:transparent;border:none;border-bottom:1px solid var(--rule-soft);font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
-.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-header:hover{background:transparent}
-.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-header .sede-bucket-tipo{font-size:10px;color:inherit;font-weight:inherit}
-.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-contatti{padding:6px 0 0}
-/* Anche ctx-uoc/ctx-sezione dentro layout flat eredita lo stile mono compact */
-.sr-sede-bucket.sr-sede-bucket-flat .ctx-uoc,
-.sr-sede-bucket.sr-sede-bucket-flat .ctx-sezione{font-family:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;font-weight:inherit;color:inherit}
-.sr-sede-bucket.sr-sede-bucket-flat .ctx-uoc{font-weight:700;color:var(--ink)}
-.sr-sede-bucket.sr-sede-bucket-flat .ctx-sezione{color:var(--ink-soft)}
 /* sr-uoc collassato: container minimale, niente bordi extra (i bucket hanno già il loro stile) */
 .sr-uoc-collapsed{padding:0;background:transparent;cursor:default}
 .sr-uoc-collapsed:hover{background:transparent}
@@ -2509,14 +2515,14 @@ function showContattoActionMenu(contattoId, evt) {
 /* Condivide un contatto via Web Share API (mobile) o copia negli appunti (desktop fallback).
    Costruisce il testo come "Etichetta\nint. <numero>\npers. <cell>...". */
 async function shareContattoById(contattoId) {
-  // Trova il contatto in tutte le fonti dati
-  let contatto = null;
+  // Trova il contatto in tutte le fonti dati, salvando anche il gruppo (UOC)
+  let contatto = null, gruppo = null;
   for (const sourceId of ['aopd','osa','iov']) {
     const data = (typeof getNumeriDataForSource === 'function') ? getNumeriDataForSource(sourceId) : null;
     if (!data) continue;
     for (const g of (data.gruppi || [])) {
       const c = (g.contatti || []).find(x => x.id === contattoId);
-      if (c) { contatto = c; break; }
+      if (c) { contatto = c; gruppo = g; break; }
     }
     if (contatto) break;
   }
@@ -2524,9 +2530,15 @@ async function shareContattoById(contattoId) {
     if (typeof toast === 'function') toast('Contatto non trovato', 'error');
     return;
   }
-  const etichetta = contatto.etichetta || 'Contatto';
-  // Costruisci testo: etichetta + tutti i numeri disponibili, uno per riga
+  // Costruisci testo: 1) UOC abbreviata, 2) sezione, 3) etichetta, 4) numeri.
   const lines = [];
+  if (gruppo) {
+    const uocShort = (typeof shortenUocName === 'function') ? shortenUocName(gruppo) : (gruppo.nome || '');
+    if (uocShort) lines.push(uocShort);
+  }
+  if (contatto.sezione) lines.push(contatto.sezione);
+  if (contatto.etichetta) lines.push(contatto.etichetta);
+  // Numeri (uno per riga)
   (contatto.numeri || []).forEach(n => lines.push(`int. ${n}`));
   if (contatto.breve) {
     const brevi = Array.isArray(contatto.breve) ? contatto.breve : [contatto.breve];
@@ -2540,7 +2552,7 @@ async function shareContattoById(contattoId) {
     const cells = Array.isArray(contatto.cellulare_personale) ? contatto.cellulare_personale : [contatto.cellulare_personale];
     cells.forEach(c => lines.push(`pers. ${c}`));
   }
-  const text = lines.length ? `${etichetta}\n${lines.join('\n')}` : etichetta;
+  const text = lines.join('\n');
   // Web Share API se disponibile (mobile), altrimenti clipboard
   if (navigator.share) {
     try {
@@ -7734,8 +7746,7 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const kindSelector = c.id ? `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
     <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
     <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">● Guardia</button>
-    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">● Reparto</button>
-    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">● Utili</button>
+    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Sala / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">● Reparto / Sala</button>    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">● Utili</button>
     ${effectiveKind ? `<button class="kind-chip-reset" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
     ${hasPending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
   </div>` : '';
@@ -11905,9 +11916,52 @@ function openSearchOverlay(query) {
   // l'effetto "barra duplicata" (la sticky perde il punto di riferimento).
   document.documentElement.classList.add('search-overlay-open');
   document.body.classList.add('search-overlay-open');
-  // Reset scroll dell'overlay all'apertura
-  overlay.scrollTop = 0;
   renderSearchResults(query, 'search-overlay-content');
+  // Tap fuori dalla barra di ricerca → chiudi tastiera mobile (blur input).
+  // Listener globale sul documento: se l'utente tocca qualunque area che NON
+  // sia il search input stesso (o il bottone clear), togli il focus.
+  // Bound una sola volta.
+  if (!overlay._blurOnTouchBound) {
+    overlay._blurOnTouchBound = true;
+    document.addEventListener('touchstart', (e) => {
+      const input = document.getElementById('global-search');
+      if (!input || document.activeElement !== input) return;
+      // Non fare blur se il tocco è sull'input o sui suoi controlli adiacenti
+      const wrap = input.closest('.search-wrap');
+      if (wrap && wrap.contains(e.target)) return;
+      input.blur();
+    }, { passive: true });
+  }
+  // Trick scroll: parto da scrollTop=1 (non 0) per evitare che Chrome Android
+  // blocchi il gesture verso l'alto da fermo (rubber band a scrollTop=0 non
+  // permette al touch di "iniziare" lo scroll-up).
+  requestAnimationFrame(() => {
+    if (overlay.scrollTop === 0) overlay.scrollTop = 1;
+  });
+  // Su Android Chrome, anche a scrollTop=1 lo scroll lento non sale perché
+  // appena il dito si muove di poco scrollTop torna a 0 e il browser trasforma
+  // il gesture rimanente in overscroll bloccato. Soluzione: intercetta touchmove,
+  // se siamo a scrollTop<=1 e il dito si muove verso il basso (scroll-up),
+  // lascia il browser fare il default ma riporta scrollTop a 1 a ogni move.
+  // Questo mantiene il gesture "vivo" senza bloccarlo.
+  if (!overlay._touchScrollFix) {
+    overlay._touchScrollFix = true;
+    let lastTouchY = 0;
+    overlay.addEventListener('touchstart', (e) => {
+      lastTouchY = e.touches[0].clientY;
+      if (overlay.scrollTop === 0) overlay.scrollTop = 1;
+    }, { passive: true });
+    overlay.addEventListener('touchmove', (e) => {
+      const y = e.touches[0].clientY;
+      const dy = y - lastTouchY;
+      lastTouchY = y;
+      // Se siamo al top e il dito si muove giù (scroll-up gesture),
+      // mantieni scrollTop>=1 così il browser non passa in overscroll.
+      if (dy > 0 && overlay.scrollTop <= 1) {
+        overlay.scrollTop = 1;
+      }
+    }, { passive: true });
+  }
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
   if (!overlay._searchClickBound) {
     overlay._searchClickBound = true;
@@ -12231,7 +12285,7 @@ function renderSearchResults(query, targetId) {
     return `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;" onclick="event.stopPropagation();">
       <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
       ${mk('guardia', '● Guardia', '#fef0ef', 'var(--danger)')}
-      ${mk('reparto', '● Reparto', 'var(--accent-soft)', 'var(--accent)')}
+      ${mk('reparto', '● Reparto / Sala', 'var(--accent-soft)', 'var(--accent)')}
       ${mk('utile',   '● Utili',   '#e8f5e9', '#2e7d32')}
       ${k ? `<button class="kind-chip-reset" onclick="event.stopPropagation(); setContactKind('${escapeJs(c.id)}',null)" title="Auto">✕ auto</button>` : ''}
       ${pending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
@@ -12268,7 +12322,6 @@ function renderSearchResults(query, targetId) {
       return `<div class="sr-contact sr-contact-guardia" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
           <div class="sr-contact-label">${labelHtml}</div>
-          <div class="sr-contact-meta">${c.tag && c.tag.length ? escapeHtml(c.tag.join(' · ')) : 'guardia'}</div>
           ${luogoHtml}
           ${tagChips}
         </div>
@@ -12279,7 +12332,6 @@ function renderSearchResults(query, targetId) {
       return `<div class="sr-contact sr-contact-utile" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
           <div class="sr-contact-label">${labelHtml}</div>
-          <div class="sr-contact-meta">utili</div>
           ${luogoHtml}
           ${tagChips}
         </div>
@@ -12290,7 +12342,6 @@ function renderSearchResults(query, targetId) {
       return `<div class="sr-contact sr-contact-reparto" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
         <div class="sr-contact-left">
           <div class="sr-contact-label">${labelHtml}</div>
-          <div class="sr-contact-meta">reparto</div>
           ${luogoHtml}
           ${tagChips}
         </div>
@@ -12403,11 +12454,10 @@ function renderSearchResults(query, targetId) {
           return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
         }).join('');
         if (isCollapsed) {
-          // Layout collassato (ricerca per contatto/sezione): box-less, header inline come breadcrumb.
-          // Stesso stile font dell'UOC overview (mono 10px upper).
+          // Layout collassato: rettangolo con header "UOC · Sezione" + contatti dentro
           const uocShort = shortenUocName(u.fullGroup);
           const sezioneLabel = bucketSezioneLabel(b);
-          return `<div class="sr-sede-bucket sr-sede-bucket-flat">
+          return `<div class="sr-sede-bucket">
             <div class="sr-sede-bucket-header sr-sede-bucket-static">
               <span class="sede-bucket-tipo">
                 <span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gruppoId)}'})" title="Apri ${escapeHtml(u.gruppo)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
@@ -12882,10 +12932,14 @@ function initEventListeners() {
       searchInput.focus();
     });
   }
-  // Se l'utente torna sull'input con testo già presente, riapri l'overlay con quei risultati
+  // Se l'utente torna sull'input con testo già presente, riapri l'overlay con quei risultati.
+  // MA solo se l'overlay è effettivamente chiuso: altrimenti, quando l'utente cambia tab e torna,
+  // il focus event riapre l'overlay azzerando lo scroll. Non vogliamo questo.
   searchInput.addEventListener('focus', () => {
     const q = searchInput.value;
-    if (q.length >= 2) openSearchOverlay(q);
+    const overlay = document.getElementById('search-overlay');
+    const overlayOpen = overlay && !overlay.classList.contains('hidden');
+    if (q.length >= 2 && !overlayOpen) openSearchOverlay(q);
   });
 
   // Keyboard shortcut: Cmd/Ctrl + K focuses search
