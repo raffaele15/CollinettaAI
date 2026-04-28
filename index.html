@@ -402,9 +402,9 @@ body.edit-mode .app-body{outline:2px solid var(--accent);outline-offset:-1px}
 body.edit-mode .edit-only{display:revert !important}
 body.edit-mode .edit-only.btn{display:inline-flex !important}
 
-/* Nav tree (sidebar nuova) */
+/* Nav tree (sidebar nuova) — usa il font serif coerente con le page-title */
 .nav-tree-node{user-select:none}
-.nav-tree-row{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;font-size:14px;border-radius:2px;color:var(--ink-soft);position:relative;transition:background .1s}
+.nav-tree-row{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;font-family:var(--serif);font-size:15px;border-radius:2px;color:var(--ink-soft);position:relative;transition:background .1s}
 .nav-tree-row:hover{background:var(--rule-soft);color:var(--ink)}
 .nav-tree-row.active{background:var(--accent-soft);color:var(--accent);font-weight:500}
 .nav-tree-row.expanded{font-weight:500;color:var(--ink)}
@@ -420,7 +420,7 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 .nav-tree-count{display:none}
 .nav-tree-children{padding-left:14px;border-left:1px dashed var(--rule-soft);margin-left:10px;display:none}
 .nav-tree-node.open > .nav-tree-children{display:block}
-.nav-tree-children .nav-tree-row{font-size:13px;padding:4px 10px}
+.nav-tree-children .nav-tree-row{font-size:14px;padding:4px 10px}
 
 /* Sidebar drill-down mode */
 .nav-drill-back{display:flex;align-items:center;gap:6px;padding:10px 12px;margin-bottom:6px;font-size:13px;color:var(--accent);cursor:pointer;border-radius:2px;background:var(--rule-soft);border:1px solid var(--rule);font-family:var(--mono);letter-spacing:.02em;transition:background .12s}
@@ -431,14 +431,25 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 .nav-drill-header .nav-tree-count{display:inline-flex;font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:2px}
 .nav-drill-overview{border-bottom:1px dashed var(--rule-soft);margin-bottom:6px;padding-bottom:8px;font-style:italic;color:var(--ink-soft)}
 
-/* Root-level sidebar rows (nuova UX drill-down) */
-.nav-tree-root-row{padding:12px 14px;font-size:15px;font-weight:500;color:var(--ink);border-radius:2px;justify-content:space-between}
+/* Root-level sidebar rows (nuova UX drill-down) — separatore tra categorie */
+.nav-tree-root-row{padding:14px 14px;font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink);border-radius:2px;justify-content:space-between}
 .nav-tree-root-row:hover{background:var(--rule-soft)}
-.nav-tree-root-row .nav-tree-label{font-weight:500}
+.nav-tree-root-row .nav-tree-label{font-weight:500;font-family:var(--serif)}
 .nav-tree-root-row .nav-tree-count{display:none}
+/* Linea sottile tra le categorie root (non raggiunge i bordi del side panel) */
+.nav-tree-node:has(> .nav-tree-root-row) + .nav-tree-node:has(> .nav-tree-root-row){
+  position:relative;
+}
+.nav-tree-node:has(> .nav-tree-root-row) + .nav-tree-node:has(> .nav-tree-root-row)::before{
+  content:'';
+  display:block;
+  height:1px;
+  background:var(--rule-soft);
+  margin:0 14px 4px;
+}
 .nav-tree-chevron{font-size:18px;color:var(--ink-faint);flex-shrink:0;margin-left:4px;transition:color .12s}
 .nav-tree-root-row:hover .nav-tree-chevron{color:var(--ink)}
-.nav-tree-drill-row{padding:8px 12px;font-size:14px;color:var(--ink);justify-content:space-between}
+.nav-tree-drill-row{padding:8px 12px;font-family:var(--serif);font-size:15px;color:var(--ink);justify-content:space-between}
 .nav-tree-drill-row:hover{background:var(--rule-soft)}
 .nav-tree-drill-row .nav-tree-count{display:inline-flex;font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--rule-soft);padding:1px 5px;border-radius:2px}
 .nav-tree-drill-row:hover .nav-tree-chevron{color:var(--ink)}
@@ -919,6 +930,20 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior:
 .sr-sede-bucket-header.sr-sede-bucket-static{cursor:default}
 .sr-sede-bucket-header.sr-sede-bucket-static:hover{background:var(--bg-sink)}
 .sr-sede-bucket-header.sr-sede-bucket-static::after{display:none}
+/* Layout collassato (ricerca per contatto/sezione specifica): rimuovo il rettangolo
+   esterno per compattare la lista. Header inline tipo breadcrumb + contatti sotto.
+   Stesso stile font della UOC overview (.sede-bucket-tipo: mono 10px upper). */
+.sr-sede-bucket.sr-sede-bucket-flat{border:none;background:transparent;border-radius:0;margin:14px 0 0;overflow:visible}
+.sr-sede-bucket.sr-sede-bucket-flat:first-child{margin-top:0}
+.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-header{padding:0 0 4px;background:transparent;border:none;border-bottom:1px solid var(--rule-soft);font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-header:hover{background:transparent}
+.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-header .sede-bucket-tipo{font-size:10px;color:inherit;font-weight:inherit}
+.sr-sede-bucket.sr-sede-bucket-flat .sr-sede-bucket-contatti{padding:6px 0 0}
+/* Anche ctx-uoc/ctx-sezione dentro layout flat eredita lo stile mono compact */
+.sr-sede-bucket.sr-sede-bucket-flat .ctx-uoc,
+.sr-sede-bucket.sr-sede-bucket-flat .ctx-sezione{font-family:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;font-weight:inherit;color:inherit}
+.sr-sede-bucket.sr-sede-bucket-flat .ctx-uoc{font-weight:700;color:var(--ink)}
+.sr-sede-bucket.sr-sede-bucket-flat .ctx-sezione{color:var(--ink-soft)}
 /* sr-uoc collassato: container minimale, niente bordi extra (i bucket hanno già il loro stile) */
 .sr-uoc-collapsed{padding:0;background:transparent;cursor:default}
 .sr-uoc-collapsed:hover{background:transparent}
@@ -12378,10 +12403,11 @@ function renderSearchResults(query, targetId) {
           return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
         }).join('');
         if (isCollapsed) {
-          // Layout collassato: header bucket = "UOC ridotta · Sezione" con UOC e Sezione cliccabili separatamente
+          // Layout collassato (ricerca per contatto/sezione): box-less, header inline come breadcrumb.
+          // Stesso stile font dell'UOC overview (mono 10px upper).
           const uocShort = shortenUocName(u.fullGroup);
           const sezioneLabel = bucketSezioneLabel(b);
-          return `<div class="sr-sede-bucket">
+          return `<div class="sr-sede-bucket sr-sede-bucket-flat">
             <div class="sr-sede-bucket-header sr-sede-bucket-static">
               <span class="sede-bucket-tipo">
                 <span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gruppoId)}'})" title="Apri ${escapeHtml(u.gruppo)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
