@@ -860,10 +860,14 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 #search-overlay{position:fixed;top:65px;left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 #search-overlay.hidden{display:none}
 /* Quando l'overlay ricerca è aperto, blocca scroll del body sottostante.
-   `position:fixed` sul body impedisce sia lo scroll che lo scroll-chaining su tutti
-   i browser. L'overlay ha overflow-y:auto suo proprio quindi resta scrollabile.
-   `width:100%` evita che il body si restringa e provochi reflow. */
-body.search-overlay-open{position:fixed;width:100%;left:0;right:0;overflow:hidden}
+   Uso `overflow:hidden` su html+body (NO position:fixed che rompe la topbar sticky
+   e crea l'effetto di "barra duplicata" su mobile). L'overlay ha il suo overflow:auto
+   ed è position:fixed, quindi scrolla indipendentemente. */
+html.search-overlay-open,
+body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavior:none}
+/* L'overlay deve poter ricevere touch normalmente (pan-y per scroll verticale).
+   `overscroll-behavior:contain` impedisce che lo scroll esca dall'overlay. */
+body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior:contain}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:900px){
   #search-overlay{left:0;top:110px}
@@ -8048,7 +8052,6 @@ function renderCalendario(params) {
                 ${timeHtml}
                 <div class="cal-event-actions">
                   <button onclick="openCalEventModal('${cal.selectedDate}','${escapeJs(e.id)}')" title="Modifica">✎</button>
-                  <button onclick="deleteCalEvent('${escapeJs(e.id)}')" title="Elimina">🗑</button>
                 </div>
               </div>`;
             }).join('')
@@ -8236,6 +8239,16 @@ function openCalEventModal(dateStr, eventId) {
         const titolo = ($('cal-ev-titolo').value || '').trim();
         const descrizione = ($('cal-ev-desc').value || '').trim();
         if (!data || !titolo) { toast('Data e titolo obbligatori', 'error'); return; }
+        // Validazione: l'ora di fine, se specificata, deve essere dopo l'ora di inizio.
+        // Confronto stringhe HH:MM funziona perché formato fisso 24h.
+        if (ora && ora_fine && ora_fine <= ora) {
+          toast("L'orario di fine deve essere successivo a quello di inizio", 'error');
+          return;
+        }
+        if (ora_fine && !ora) {
+          toast("Specifica anche l'orario di inizio", 'error');
+          return;
+        }
         const freq = showRecurrence ? ($('cal-ev-freq')?.value || 'none') : 'none';
         const interval = freq !== 'none' ? Math.max(1, parseInt($('cal-ev-interval')?.value || '1', 10)) : 1;
         const count = freq !== 'none' ? Math.max(1, parseInt($('cal-ev-count')?.value || '1', 10)) : 1;
@@ -11862,15 +11875,12 @@ function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
-  // Blocca scroll body con position:fixed (mantenendo posizione visiva via top:-Y).
-  // Approccio standard cross-browser per overlay full-screen.
-  if (!document.body.classList.contains('search-overlay-open')) {
-    const scrollY = window.scrollY || window.pageYOffset || 0;
-    document.body.dataset.scrollY = String(scrollY);
-    document.body.style.top = `-${scrollY}px`;
-    document.body.classList.add('search-overlay-open');
-  }
-  // Reset scroll dell'overlay (top)
+  // Blocca scroll del body sottostante con overflow:hidden su html + body.
+  // NON uso position:fixed perché rompe la topbar sticky e su mobile crea
+  // l'effetto "barra duplicata" (la sticky perde il punto di riferimento).
+  document.documentElement.classList.add('search-overlay-open');
+  document.body.classList.add('search-overlay-open');
+  // Reset scroll dell'overlay all'apertura
   overlay.scrollTop = 0;
   renderSearchResults(query, 'search-overlay-content');
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
@@ -11888,13 +11898,8 @@ function closeSearchOverlay() {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   overlay.classList.add('hidden');
-  if (document.body.classList.contains('search-overlay-open')) {
-    const savedY = parseInt(document.body.dataset.scrollY || '0', 10);
-    document.body.classList.remove('search-overlay-open');
-    document.body.style.top = '';
-    delete document.body.dataset.scrollY;
-    if (savedY) window.scrollTo(0, savedY);
-  }
+  document.documentElement.classList.remove('search-overlay-open');
+  document.body.classList.remove('search-overlay-open');
 }
 
 function renderSearchResults(query, targetId) {
