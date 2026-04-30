@@ -226,7 +226,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);
 .login-error.visible{display:block}
 
 /* APP SHELL */
-#app-view{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
+#app-view{display:grid;grid-template-rows:auto auto 1fr;min-height:100vh}
 header.topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;padding:14px 24px;background:rgba(251,248,242,.92);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--rule);box-sizing:border-box}
 @media (max-width:900px){
   header.topbar{
@@ -555,14 +555,6 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 main.content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:700px){
   main.content{padding:14px 16px 60px}
-  /* Edit mode su mobile: padding-top ridotto al minimo. Banner sticky già occupa
-     spazio sotto la topbar, quindi serve appena un gap minimo prima del titolo. */
-  body.edit-mode main.content{padding-top:4px}
-  body.edit-mode .page-head{margin-bottom:8px;padding-bottom:8px}
-  body.edit-mode .page-title{font-size:clamp(22px,5.5vw,30px);margin:4px 0 0}
-  body.edit-mode .page-actions{margin-top:8px}
-  body.edit-mode .page-actions .btn{font-size:13px;padding:6px 12px}
-  body.edit-mode .page-meta{margin-top:6px}
   body .home-hero{margin-bottom:20px}
   body .home-title{font-size:clamp(26px,7vw,36px);margin-bottom:6px;line-height:1.05}
   body .home-lead{font-size:14px;line-height:1.4}
@@ -864,6 +856,10 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .modal-sub{font-size:14px;color:var(--ink-muted);line-height:1.55}
 .modal-body{padding:20px 24px;flex:1;min-height:0;overflow-y:auto}
 .modal-actions{padding:16px 24px 24px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--rule-soft)}
+/* AI Import workflow step indicator */
+.ai-step{display:inline-block;padding:4px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-faint);background:var(--bg-sink);border:1px solid var(--rule-soft);border-radius:2px}
+.ai-step-active{color:var(--accent);background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.ai-step-done{color:var(--ink-soft);background:var(--bg-paper);border-color:var(--rule)}
 /* Su mobile: occupa più schermo, padding ridotto, body può scrollare se contenuto > viewport.
    max-height usa svh (small viewport) per non confondersi con la barra dinamica del browser. */
 @media (max-width:600px){
@@ -904,7 +900,9 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
    `overscroll-behavior-y:none` su html previene anche il pull-to-refresh
    del browser (che altrimenti si attiva quando si fa swipe verso il basso). */
 html.search-overlay-open,
-body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavior-y:none}
+body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavior-y:none;touch-action:none}
+/* L'overlay deve poter ricevere pan verticale per scroll, ma niente pull-to-refresh */
+body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-y:contain}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:900px){
   #search-overlay{left:0;top:110px}
@@ -956,6 +954,21 @@ body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavi
 .sr-sede-bucket-header.sr-sede-bucket-static{cursor:default}
 .sr-sede-bucket-header.sr-sede-bucket-static:hover{background:var(--bg-sink)}
 .sr-sede-bucket-header.sr-sede-bucket-static::after{display:none}
+/* Edificio UOC inline (header risultati ricerca per match nome UOC).
+   Su desktop sta sulla stessa riga del titolo UOC, su mobile va a capo. */
+.sr-uoc-edificio{display:inline;font-family:var(--mono);font-size:11px;color:var(--ink-muted);font-weight:400;margin-left:8px;letter-spacing:.02em}
+@media (max-width:600px){
+  .sr-uoc-edificio{display:block;margin-left:0;margin-top:2px;font-size:10.5px}
+}
+/* Edificio+piano nel rettangolo collassato "UOC · Sezione".
+   Inline desktop, a capo su mobile. */
+.sr-bucket-loc{font-family:var(--sans);font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-muted)}
+@media (min-width:601px){
+  .sr-bucket-loc{margin-left:6px}
+}
+@media (max-width:600px){
+  .sr-bucket-loc{display:block;margin-top:3px}
+}
 /* sr-uoc collassato: container minimale, niente bordi extra (i bucket hanno già il loro stile) */
 .sr-uoc-collapsed{padding:0;background:transparent;cursor:default;border:none}
 .sr-uoc-collapsed:hover{background:transparent;border:none}
@@ -6138,14 +6151,20 @@ function renderEditorUI(slug, frontmatter, body) {
     </div>
 
     <div class="editor-section">
-      <div class="editor-section-head" style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="editor-section-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
         <div class="editor-section-title">Contenuto</div>
-        <label class="editor-img-upload" id="img-upload-btn-proc">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          <span>Inserisci immagine</span>
-          <input type="file" accept="image/*" id="img-file-input-proc">
-          <span class="editor-img-upload-status" id="img-upload-status-proc"></span>
-        </label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button type="button" class="btn ghost sm" id="btn-ai-import-proc" title="Importa una procedura da testo grezzo con l'aiuto di un'AI esterna">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L9 9l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
+            <span style="margin-left:4px;">Importa con AI</span>
+          </button>
+          <label class="editor-img-upload" id="img-upload-btn-proc">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span>Inserisci immagine</span>
+            <input type="file" accept="image/*" id="img-file-input-proc">
+            <span class="editor-img-upload-status" id="img-upload-status-proc"></span>
+          </label>
+        </div>
       </div>
       <div id="editor-wrapper"></div>
     </div>`;
@@ -6214,6 +6233,269 @@ function renderEditorUI(slug, frontmatter, body) {
     navigate('procedura', { slug });
   };
   $('btn-save-edit').onclick = saveProcedura;
+  // AI Import workflow: bottone opzionale per popolare i blocchi a partire da
+  // testo grezzo, tramite un'AI esterna.
+  const btnAi = $('btn-ai-import-proc');
+  if (btnAi) btnAi.onclick = () => openAIImportModal('procedura');
+}
+
+/* ============================ AI IMPORT WORKFLOW ============================
+   Permette di popolare l'editor a blocchi a partire da testo grezzo,
+   tramite un'AI esterna (ChatGPT, Claude, Gemini, ecc.).
+   Workflow a 3 step:
+   1) L'utente incolla testo grezzo (es. linee guida copiate da PDF/web)
+   2) L'app mostra un prompt completo da copiare in un'AI esterna
+   3) L'utente incolla il JSON ottenuto, l'app valida e popola i blocchi.
+*/
+function openAIImportModal(tipo) {
+  // Costruisco il prompt al volo: descrizione dei tipi di blocco + schema JSON.
+  // Questa è la "knowledge base" che l'AI esterna riceve, identica a quella usata
+  // dall'editor a blocchi nell'app.
+  const PROMPT_TEMPLATE = `Sei un assistente che converte testo medico/clinico in un JSON strutturato per un'app di documentazione clinica.
+
+L'output deve essere ESCLUSIVAMENTE un array JSON di oggetti "blocco". Nessun testo prima o dopo, nessun markdown code fence (no triple backticks), solo JSON puro che inizi con [ e finisca con ].
+
+OGNI blocco ha: { "tipo": "<uno dei tipi>", "titolo": "<opzionale>", ...campi specifici }.
+
+TIPI DI BLOCCO DISPONIBILI:
+
+1. text — paragrafo di testo. Supporta **grassetto**, *corsivo*, codice inline (con singole virgolette gravi).
+   Campi: { tipo:"text", titolo?:string, testo:string }
+
+2. list — elenco puntato.
+   Campi: { tipo:"list", titolo?:string, items:string[] }
+
+3. checklist — lista di voci da spuntare (controlli, requisiti, step da completare).
+   Campi: { tipo:"checklist", titolo?:string, items:string[] }
+
+4. callout — riquadro di avviso/attenzione/info/successo.
+   Campi: { tipo:"callout", titolo?:string, variante:"warning"|"info"|"danger"|"success", testo:string }
+
+5. table — tabella con headers e righe.
+   Campi: { tipo:"table", titolo?:string, headers:string[], rows:string[][] }
+
+6. image — riferimento a un'immagine (NON inserire questo blocco a meno che non sia esplicitamente menzionato nel testo originale con un percorso o nome file).
+   Campi: { tipo:"image", src:string, alt?:string, caption?:string, descrizione?:string }
+
+7. system_code — codici da inserire in sistemi gestionali (es. Galileo, Ormaweb).
+   Campi: { tipo:"system_code", titolo?:string, sistema:"Galileo"|"Ormaweb"|"Altro", percorso?:string, codici:[{codice:string, descrizione:string}], note?:string }
+
+8. link — link esterno (paper, linee guida, sito).
+   Campi: { tipo:"link", titolo?:string, url:string, label?:string, fonte?:string, data_accesso?:string }
+
+9. clinical_note — template di nota clinica (testo che il medico copierà nella cartella).
+   Campi: { tipo:"clinical_note", titolo?:string, testo:string }
+
+10. form_ref — riferimento a un modulo dell'app (NON usare a meno che non sia esplicitamente menzionato).
+    Campi: { tipo:"form_ref", label:string, modulo:string }
+
+11. internal_ref — riferimento a un'altra procedura/scheda dell'app (NON usare a meno che non sia esplicitamente menzionato).
+    Campi: { tipo:"internal_ref", label:string, target_tipo:"procedura"|"clinica"|"modulo"|"tabella", target:string }
+
+LINEE GUIDA:
+- Mantieni la lingua del testo originale (italiano se il testo è in italiano).
+- Spezza il contenuto in blocchi logici: ogni sezione importante è un blocco a sé.
+- Per controlli pre-procedura, criteri, checklist usa "checklist".
+- Per avvisi/attenzioni usa "callout" con variante:"warning" o "danger".
+- Per informazioni di contesto/contesto utile usa "callout" con variante:"info".
+- Per elenchi semplici (indicazioni, controindicazioni, materiali) usa "list".
+- Le tabelle vanno preservate come "table".
+- I codici di sistemi gestionali (es. "SR MEDICINA → ESAME LIQUOR") vanno in "system_code".
+- I template di refertazione/nota di diario vanno in "clinical_note".
+- NON inventare contenuti che non sono nel testo originale.
+- NON usare image/form_ref/internal_ref a meno che non siano esplicitamente menzionati nel testo.
+- Se il testo originale contiene URL, usa il blocco "link".
+
+ESEMPIO DI OUTPUT VALIDO:
+[
+  {"tipo":"callout","variante":"warning","titolo":"Prima di procedere","testo":"Verificare allergie e terapie in corso."},
+  {"tipo":"checklist","titolo":"Controlli pre-procedura","items":["INR < 1.5","Piastrine > 50.000","Consenso firmato"]},
+  {"tipo":"text","testo":"La procedura va eseguita in posizione laterale o seduta."},
+  {"tipo":"list","titolo":"Materiale necessario","items":["Ago atraumatico 22G","Provette per liquor x4","Antisettico"]}
+]
+
+TESTO DA CONVERTIRE:
+---
+__INSERT_TESTO__
+---
+
+Restituisci SOLO l'array JSON, niente altro.`;
+
+  let step = 1;
+  let rawText = '';
+  let aiJson = '';
+
+  function renderStep() {
+    if (step === 1) {
+      return `
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <span class="ai-step ai-step-active">1. Testo</span>
+          <span class="ai-step">2. Prompt AI</span>
+          <span class="ai-step">3. JSON</span>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--ink-soft);line-height:1.5;">
+          Incolla qui il testo grezzo della procedura (es. copiato da un PDF, da una linea guida, da un altro documento). 
+          Al passo successivo riceverai un prompt da incollare in un'AI esterna (ChatGPT, Claude, Gemini), che lo convertirà in JSON strutturato.
+        </p>
+        <div class="field">
+          <label>Testo grezzo</label>
+          <textarea id="ai-import-raw" rows="12" placeholder="Incolla qui il testo della procedura..." style="font-family:var(--mono);font-size:13px;line-height:1.5;">${escapeHtml(rawText)}</textarea>
+        </div>`;
+    }
+    if (step === 2) {
+      const fullPrompt = PROMPT_TEMPLATE.replace('__INSERT_TESTO__', rawText);
+      return `
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <span class="ai-step ai-step-done">1. Testo ✓</span>
+          <span class="ai-step ai-step-active">2. Prompt AI</span>
+          <span class="ai-step">3. JSON</span>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--ink-soft);line-height:1.5;">
+          <strong>1.</strong> Copia il prompt qui sotto. <strong>2.</strong> Incollalo in <strong>ChatGPT</strong>, <strong>Claude</strong> o <strong>Gemini</strong>. <strong>3.</strong> Copia la risposta JSON che riceverai e incollala al passo successivo.
+        </p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px;">
+          <button type="button" class="btn ghost sm" id="ai-copy-prompt">📋 Copia prompt</button>
+        </div>
+        <textarea id="ai-import-prompt" rows="12" readonly style="font-family:var(--mono);font-size:11px;line-height:1.4;background:var(--bg-sink);">${escapeHtml(fullPrompt)}</textarea>`;
+    }
+    if (step === 3) {
+      return `
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <span class="ai-step ai-step-done">1. Testo ✓</span>
+          <span class="ai-step ai-step-done">2. Prompt AI ✓</span>
+          <span class="ai-step ai-step-active">3. JSON</span>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--ink-soft);line-height:1.5;">
+          Incolla qui il <strong>JSON</strong> ricevuto dall'AI. Deve essere un array che inizia con <code>[</code> e finisce con <code>]</code>.
+        </p>
+        <div class="field">
+          <label>JSON dall'AI</label>
+          <textarea id="ai-import-json" rows="12" placeholder='[{"tipo":"text","testo":"..."}, ...]' style="font-family:var(--mono);font-size:12px;line-height:1.4;">${escapeHtml(aiJson)}</textarea>
+        </div>
+        <div id="ai-import-error" style="display:none;color:var(--danger);font-size:12px;margin-top:8px;padding:8px 10px;background:var(--danger-soft);border-radius:2px;"></div>`;
+    }
+  }
+
+  function actionsForStep() {
+    if (step === 1) {
+      return [
+        { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+        { label: 'Avanti →', onClick: () => {
+            const v = ($('ai-import-raw').value || '').trim();
+            if (!v) { toast('Incolla del testo prima di continuare', 'error'); return; }
+            rawText = v;
+            step = 2;
+            rerenderModal();
+          }
+        }
+      ];
+    }
+    if (step === 2) {
+      return [
+        { label: '← Indietro', variant: 'ghost', onClick: () => { step = 1; rerenderModal(); } },
+        { label: 'Avanti →', onClick: () => { step = 3; rerenderModal(); } }
+      ];
+    }
+    if (step === 3) {
+      return [
+        { label: '← Indietro', variant: 'ghost', onClick: () => { step = 2; rerenderModal(); } },
+        { label: 'Importa nei blocchi', onClick: () => {
+            const txt = ($('ai-import-json').value || '').trim();
+            if (!txt) { showAiError('Incolla il JSON ricevuto dall\'AI'); return; }
+            aiJson = txt;
+            // Ripulisci eventuali code fence (alcune AI li aggiungono nonostante il prompt)
+            let cleaned = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+            let parsed;
+            try { parsed = JSON.parse(cleaned); }
+            catch (e) { showAiError('JSON non valido: ' + e.message); return; }
+            if (!Array.isArray(parsed)) { showAiError('Il JSON deve essere un array di blocchi'); return; }
+            // Validazione minima: ogni blocco deve avere "tipo" tra quelli supportati
+            const VALID_TIPI = ['text','list','checklist','callout','table','image','system_code','link','form_ref','internal_ref','clinical_note'];
+            const errors = [];
+            const validBlocks = [];
+            parsed.forEach((b, i) => {
+              if (!b || typeof b !== 'object' || !b.tipo) {
+                errors.push(`Blocco #${i+1}: manca il campo "tipo"`);
+                return;
+              }
+              if (!VALID_TIPI.includes(b.tipo)) {
+                errors.push(`Blocco #${i+1}: tipo "${b.tipo}" non valido`);
+                return;
+              }
+              validBlocks.push(b);
+            });
+            if (validBlocks.length === 0) {
+              showAiError('Nessun blocco valido nel JSON.\n' + errors.join('\n'));
+              return;
+            }
+            // Importa nei blocchi: append o replace?
+            const existing = (typeof blockEditor !== 'undefined' && blockEditor.getBlocks) ? blockEditor.getBlocks() : [];
+            const hasExisting = existing.some(b => b && (b.testo || b.items?.length || b.headers?.length || b.codici?.length));
+            const doImport = (mode) => {
+              const wrapper = $('editor-wrapper');
+              if (!wrapper) { toast('Editor non trovato', 'error'); return; }
+              const newBlocks = mode === 'append' ? [...existing, ...validBlocks] : validBlocks;
+              blockEditor.render(wrapper, newBlocks);
+              if (state.editingContext) state.editingContext.isDirty = true;
+              const errMsg = errors.length ? ` (${errors.length} blocchi scartati)` : '';
+              toast(`${validBlocks.length} blocchi importati${errMsg}`, 'success');
+              closeModal();
+            };
+            if (hasExisting) {
+              // Chiedo conferma: append o replace
+              showModal({
+                title: 'Hai già blocchi nell\'editor',
+                body: '<p style="margin:0;font-size:14px;color:var(--ink-soft);line-height:1.5;">Vuoi <strong>aggiungere</strong> i nuovi blocchi a quelli esistenti, oppure <strong>sostituire</strong> tutto con i nuovi?</p>',
+                actions: [
+                  { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+                  { label: 'Aggiungi in coda', onClick: () => doImport('append') },
+                  { label: 'Sostituisci tutto', variant: 'danger', onClick: () => doImport('replace') }
+                ]
+              });
+            } else {
+              doImport('replace');
+            }
+          }
+        }
+      ];
+    }
+  }
+
+  function showAiError(msg) {
+    const el = $('ai-import-error');
+    if (el) { el.textContent = msg; el.style.display = 'block'; }
+    else toast(msg, 'error', 5000);
+  }
+
+  function rerenderModal() {
+    closeModal();
+    setTimeout(() => {
+      showModal({
+        title: 'Importa con AI',
+        subtitle: 'Converti testo grezzo in blocchi strutturati con un\'AI esterna',
+        body: renderStep(),
+        actions: actionsForStep()
+      });
+      // Bind copia prompt
+      if (step === 2) {
+        const cb = $('ai-copy-prompt');
+        if (cb) cb.onclick = async function() {
+          const ta = $('ai-import-prompt');
+          if (!ta) return;
+          try {
+            await navigator.clipboard.writeText(ta.value);
+            toast('Prompt copiato', 'success');
+          } catch (e) {
+            ta.select();
+            try { document.execCommand('copy'); toast('Prompt copiato', 'success'); }
+            catch { toast('Impossibile copiare. Seleziona e copia manualmente.', 'error'); }
+          }
+        };
+      }
+    }, 50);
+  }
+
+  rerenderModal();
 }
 
 async function saveProcedura() {
@@ -8871,6 +9153,9 @@ function nuovaProcedura(preset = {}) {
           id: slug, titolo,
           categoria,
           tag: [],
+          // Inizializza contenuti come array vuoto: così il block editor (nuovo)
+          // viene usato di default per le nuove procedure invece del fallback Toast UI.
+          contenuti: [],
           ultima_modifica: nowIso(),
           modificato_da: state.session.username,
           cronologia_recente: [{ data: nowIso(), utente: state.session.username, nota: 'creazione' }]
@@ -9988,9 +10273,26 @@ function toggleEditMode(force) {
   updateEditBanner();
   renderNavTree();
   if (state.currentView) {
+    // Preserva: 1) stato open dei <details>, 2) scroll position.
+    // Il rerender di navigate() ricrea il DOM e i details perdono lo stato open.
+    // Se non ripristiniamo, le cartelle si collassano e la pagina si accorcia,
+    // facendo "saltare" il viewport in basso.
+    const openDetails = new Set();
+    document.querySelectorAll('main.content details[open]').forEach(d => {
+      const key = d.dataset.cat || d.querySelector('.categoria-title')?.textContent?.trim();
+      if (key) openDetails.add(key);
+    });
     const savedScroll = window.scrollY;
     navigate(state.currentView, state.currentParams || {});
-    requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+    // Ripristina open state + scroll dopo il rerender
+    requestAnimationFrame(() => {
+      document.querySelectorAll('main.content details').forEach(d => {
+        const key = d.dataset.cat || d.querySelector('.categoria-title')?.textContent?.trim();
+        if (key && openDetails.has(key)) d.open = true;
+      });
+      // Scroll dopo aver ripristinato i details aperti, così l'altezza è quella attesa
+      requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+    });
   }
 }
 
@@ -11925,16 +12227,26 @@ function openSearchOverlay(query) {
   document.body.classList.add('search-overlay-open');
   renderSearchResults(query, 'search-overlay-content');
   // Tap fuori dalla barra di ricerca → chiudi tastiera mobile (blur input).
-  // Listener globale sul documento: se l'utente tocca qualunque area che NON
-  // sia il search input stesso (o il bottone clear), togli il focus.
+  // IMPORTANTE: distinguiamo tap (movimento minimo) da swipe (scroll). Solo il tap
+  // chiude la tastiera; lo swipe deve poter scrollare liberamente l'overlay.
   if (!overlay._blurOnTouchBound) {
     overlay._blurOnTouchBound = true;
+    let touchStartY = 0, touchStartX = 0, touchStartTarget = null;
     document.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      touchStartTarget = e.target;
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
       const input = document.getElementById('global-search');
       if (!input || document.activeElement !== input) return;
       const wrap = input.closest('.search-wrap');
-      if (wrap && wrap.contains(e.target)) return;
-      input.blur();
+      if (wrap && wrap.contains(touchStartTarget)) return;
+      // Solo se è un tap (movimento < 10px), non uno swipe
+      const t = e.changedTouches[0];
+      const dy = Math.abs(t.clientY - touchStartY);
+      const dx = Math.abs(t.clientX - touchStartX);
+      if (dx < 10 && dy < 10) input.blur();
     }, { passive: true });
   }
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
@@ -12436,13 +12748,19 @@ function renderSearchResults(query, targetId) {
           return renderContatto(c, { hideLuogo: hide, hideSedeMeta: !!b.sede });
         }).join('');
         if (isCollapsed) {
-          // Layout collassato: rettangolo con header "UOC · Sezione" + contatti dentro
+          // Layout collassato: rettangolo con header "UOC · Sezione · Edificio Piano" + contatti dentro.
+          // L'edificio della sezione viene ereditato dalla UOC se la sezione non lo specifica
+          // (coerente con groupContattiBySede). Piano sempre solo della sezione.
           const uocShort = shortenUocName(u.fullGroup);
           const sezioneLabel = bucketSezioneLabel(b);
+          const ubStruttura = (u.fullGroup && u.fullGroup.ubicazione && u.fullGroup.ubicazione.struttura) || '';
+          const sezEdif = (b.sede && b.sede.edificio) || ubStruttura || '';
+          const sezPiano = (b.sede && b.sede.piano) || '';
+          const bucketLoc = [sezEdif, sezPiano].filter(Boolean).join(' · ');
           return `<div class="sr-sede-bucket">
             <div class="sr-sede-bucket-header sr-sede-bucket-static">
               <span class="sede-bucket-tipo">
-                <span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gruppoId)}'})" title="Apri ${escapeHtml(u.gruppo)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
+                <span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gruppoId)}'})" title="Apri ${escapeHtml(u.gruppo)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(u.gruppoId)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(u.gruppo)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>${bucketLoc ? `<span class="sr-bucket-loc">${escapeHtml(bucketLoc)}</span>` : ''}
               </span>
             </div>
             <div class="sr-sede-bucket-contatti">${contattiItems}</div>
@@ -12476,11 +12794,12 @@ function renderSearchResults(query, targetId) {
         </div>
       </div>`;
     }
+    const edificioUoc = (u.fullGroup && u.fullGroup.ubicazione && u.fullGroup.ubicazione.struttura) || '';
     return `<div class="sr-uoc" onclick="event.target.closest('.sr-contact, .sr-sede-bucket-header, .sr-sede-bucket-contatti') ? null : navigate('numeri', {filter:'${escapeJs(u.gruppoId)}'})">
       <div class="sr-uoc-head">
         ${ospBadge}
       </div>
-      <div class="sr-uoc-title">${escapeHtml(shortenUocName(u.fullGroup) || u.gruppo)}</div>
+      <div class="sr-uoc-title">${escapeHtml(shortenUocName(u.fullGroup) || u.gruppo)}${edificioUoc ? `<span class="sr-uoc-edificio">${escapeHtml(edificioUoc)}</span>` : ''}</div>
       ${sedeHtml}
       <div class="sr-uoc-contatti">
         ${contattiHtml}
