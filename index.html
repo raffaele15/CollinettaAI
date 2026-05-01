@@ -12248,8 +12248,7 @@ function openSearchOverlay(query) {
       if (!t) return;
       const dy = Math.abs(t.clientY - touchStartY);
       if (dy < 20) return; // soglia: solo swipe veri, non micro-movimenti
-      // Solo se il gesto è iniziato dentro l'overlay (non sull'input stesso)
-      if (!overlay.contains(touchStartTarget)) return;
+      // Non blurrare se lo swipe parte dall'input/wrap (l'utente potrebbe stare selezionando testo)
       const wrap = input.closest('.search-wrap');
       if (wrap && wrap.contains(touchStartTarget)) return;
       input.blur();
