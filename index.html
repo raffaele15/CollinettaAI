@@ -7651,7 +7651,9 @@ function renderUbicazioneBadge(ub) {
   if (ub.indirizzo) parts.push(escapeHtml(ub.indirizzo));
   if (ub.ospedale_sede) parts.push(escapeHtml(ub.ospedale_sede));
   if (!parts.length) return '';
-  return ` <span style="font-family:var(--mono);font-size:11px;font-weight:400;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:3px;margin-left:8px;">${parts.join(' · ')}</span>`;
+  // Pin 📍 prima del testo per identificare visivamente il luogo. Uso emoji
+  // testuale (non SVG) per coerenza con l'iconografia native-like richiesta.
+  return ` <span style="font-family:var(--mono);font-size:11px;font-weight:400;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:3px;margin-left:8px;">📍 ${parts.join(' · ')}</span>`;
 }
 
 function classifyContatto(c) {
