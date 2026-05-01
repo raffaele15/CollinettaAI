@@ -68,6 +68,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
 :root {
@@ -641,7 +642,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;background:var(--bg-sink);color:var(--ink-soft);border-radius:2px;margin-right:6px}
 .tag.tag-urgenza{background:var(--danger-soft);color:var(--danger)}
 .tag.tag-procedura{background:var(--accent-soft);color:var(--accent)}
-.tag.tag-tabella{background:var(--warning-soft);color:var(--warning)}
+.tag.tag-modulo{background:var(--info-soft);color:var(--info)}
 
 .procedura-body{font-size:16px;line-height:1.7;color:var(--ink-soft)}
 .procedura-body h2{font-family:var(--serif);font-weight:500;font-size:24px;line-height:1.2;letter-spacing:-.01em;color:var(--ink);margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--rule-soft)}
@@ -694,6 +695,93 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .filter-chip.active{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
 .numeri-group{margin-bottom:32px;scroll-margin-top:calc(var(--topbar-height) + 12px)}
 .numeri-group-title{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:12px;color:var(--ink);letter-spacing:-.01em}
+
+/* ============================ MODULI COMPILABILI ============================ */
+.mod-layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+@media (max-width:900px){
+  .mod-layout{grid-template-columns:1fr}
+}
+.mod-form{position:sticky;top:calc(var(--topbar-height) + 12px);background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px;align-self:start;max-height:calc(100vh - var(--topbar-height) - 32px);overflow-y:auto}
+@media (max-width:900px){
+  .mod-form{position:static;max-height:none}
+}
+.mod-form-head h3{font-family:var(--serif);font-weight:500}
+.mod-form-fields{display:grid;gap:14px}
+.mod-field-group{display:block}
+.mod-field-label{display:block;font-size:12px;font-weight:500;color:var(--ink-soft);margin-bottom:4px;letter-spacing:.02em;text-transform:uppercase}
+.mod-input{width:100%;padding:8px 10px;font-family:var(--sans);font-size:14px;color:var(--ink);background:var(--bg-base);border:1px solid var(--rule);border-radius:2px;box-sizing:border-box;transition:border-color .15s}
+.mod-input:focus{outline:none;border-color:var(--accent)}
+.mod-input:disabled{background:var(--bg-sink);color:var(--ink-muted);cursor:not-allowed}
+.mod-input[type=text],.mod-input textarea{font-family:var(--sans)}
+.mod-field-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mod-segmented{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;width:fit-content}
+.mod-seg{flex:1;padding:6px 12px;background:var(--bg-paper);color:var(--ink-muted);font-family:var(--sans);font-size:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s;border-right:1px solid var(--rule)}
+.mod-seg:last-child{border-right:none}
+.mod-seg.active{background:var(--ink);color:var(--bg-paper)}
+.mod-seg:hover:not(.active){background:var(--bg-sink);color:var(--ink)}
+.mod-preview{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px}
+.mod-page-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--rule-soft)}
+.mod-page-indicator{font-family:var(--mono);font-size:12px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
+.mod-page-stage{position:relative;display:inline-block;width:100%;background:#fff;border:1px solid var(--rule-soft);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.mod-page-img{display:block;max-width:100%;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:1px 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1.1;border-radius:1px}
+.mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
+.mod-box.empty::before{content:'⌷';font-size:9px;color:rgba(0,0,0,.4)}
+.mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
+.mod-form-actions .btn{padding:6px 12px;font-size:13px}
+
+/* Toolbar editor box */
+.mod-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px}
+.mod-toolbar .btn{padding:6px 12px;font-size:13px}
+.mod-toolbar .btn.primary,
+.mod-form-actions .btn.primary{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
+.mod-toolbar .btn.primary:hover,
+.mod-form-actions .btn.primary:hover{background:#000;border-color:#000}
+.mod-toolbar-hint{font-size:11px;color:var(--ink-muted);font-style:italic;margin-left:auto}
+@media (max-width:600px){
+  .mod-toolbar-hint{display:none}
+}
+
+/* Modalità modifica: layer overlay riceve eventi (pointer-events:auto è settato da JS) */
+.mod-box.editable{cursor:move;user-select:none}
+.mod-box.editable:hover{outline:1px solid rgba(20,80,180,.5);outline-offset:1px}
+.mod-box.editable.selected{outline:2px solid #185FA5;outline-offset:1px;background:rgba(180,200,255,.4);z-index:10}
+.mod-box.editable.selected.firma{background:rgba(180,180,255,.35)}
+
+/* Maniglie di resize agli angoli del box selezionato */
+.mod-handle{position:absolute;width:10px;height:10px;background:#185FA5;border:1px solid #fff;box-sizing:border-box;border-radius:1px;z-index:11}
+.mod-handle-tl{left:-5px;top:-5px;cursor:nw-resize}
+.mod-handle-tr{right:-5px;top:-5px;cursor:ne-resize}
+.mod-handle-bl{left:-5px;bottom:-5px;cursor:sw-resize}
+.mod-handle-br{right:-5px;bottom:-5px;cursor:se-resize}
+@media (max-width:600px){
+  .mod-handle{width:14px;height:14px}
+  .mod-handle-tl{left:-7px;top:-7px}
+  .mod-handle-tr{right:-7px;top:-7px}
+  .mod-handle-bl{left:-7px;bottom:-7px}
+  .mod-handle-br{right:-7px;bottom:-7px}
+}
+
+/* Pannello editor (sostituisce il form di compilazione) */
+.mod-edit-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--rule-soft)}
+.mod-edit-section-title{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);margin-bottom:8px;font-weight:500}
+.mod-box-list{display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;border:1px solid var(--rule-soft);border-radius:2px;background:var(--bg-base)}
+.mod-box-list-item{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--rule-soft);transition:background .1s}
+.mod-box-list-item:last-child{border-bottom:none}
+.mod-box-list-item:hover{background:var(--bg-sink)}
+.mod-box-list-item.selected{background:rgba(24,95,165,.1);color:var(--ink)}
+.mod-box-list-num{font-family:var(--mono);font-size:11px;color:var(--ink-muted);min-width:20px}
+.mod-box-list-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mod-box-list-page{font-family:var(--mono);font-size:10px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
+.mod-edit-details{margin-top:14px;padding-top:14px;border-top:1px solid var(--rule-soft);display:grid;gap:12px}
+.mod-edit-coords{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;background:var(--bg-sink);border-radius:2px;font-family:var(--mono);font-size:11px}
+.mod-edit-coords>div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.mod-edit-coords>div span{color:var(--ink-muted);text-transform:uppercase;font-size:10px}
+.mod-edit-coords>div strong{color:var(--ink);font-weight:500}
+
+/* Su mobile in editMode: layout più compatto */
+.mod-layout-edit .mod-form{max-height:none}
 /* ============================ NUMERO ROW (compact mobile-first) ============================
    Layout:
    - Bordo sinistro 3px colorato per il tag (guardia/reparto/utile)
@@ -1898,7 +1986,6 @@ function collectAllContattiSuggestions() {
 //   {type:'procedura', slug}
 //   {type:'clinica', slug}
 //   {type:'modulo', slug}
-//   {type:'tabella', slug}
 //   {type:'capitolo', id}
 //   {type:'sottocategoria', cat, sub}     // procedure subcategory
 //   {type:'clinica-sub', sub}             // clinica subcategory
@@ -2014,7 +2101,6 @@ const userPrefs = {
       case 'procedura':
       case 'clinica':
       case 'modulo':
-      case 'tabella':
         return a.slug === b.slug;
       case 'capitolo':
       case 'contatto':
@@ -2117,7 +2203,6 @@ function togglePin(type, ...args) {
     case 'procedura':
     case 'clinica':
     case 'modulo':
-    case 'tabella':
       pin = { type, slug: args[0] }; break;
     case 'capitolo':
     case 'gruppo':
@@ -2207,7 +2292,7 @@ function isPinned(type, id) {
 
 function pinKey(pin) {
   switch (pin.type) {
-    case 'procedura': case 'clinica': case 'modulo': case 'tabella':
+    case 'procedura': case 'clinica': case 'modulo':
       return `${pin.type}:${pin.slug}`;
     case 'capitolo': case 'contatto': case 'gruppo':
       return `${pin.type}:${pin.id}`;
@@ -2227,7 +2312,7 @@ function renderPinButton(type, ...args) {
   }
   let pin;
   switch (type) {
-    case 'procedura': case 'clinica': case 'modulo': case 'tabella':
+    case 'procedura': case 'clinica': case 'modulo':
       pin = { type, slug: args[0] }; break;
     case 'capitolo': case 'gruppo':
       pin = { type, id: args[0] }; break;
@@ -2764,13 +2849,19 @@ const gh = {
     if (etag) etagCache.set('tree:' + CONFIG.BRANCH, { etag, content: data, type: 'tree', lastChecked: nowIso() });
     return data;
   },
-  async putFile(path, content, sha, message) {
+  async putFile(path, content, sha, message, contentIsBase64 = false) {
     const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${this._repo()}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
-    const enc = new TextEncoder();
-    const bytes = enc.encode(content);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    const contentB64 = btoa(binary);
+    let contentB64;
+    if (contentIsBase64) {
+      // Caller ha già fatto base64 encoding (file binari come immagini)
+      contentB64 = content;
+    } else {
+      const enc = new TextEncoder();
+      const bytes = enc.encode(content);
+      let binary = '';
+      bytes.forEach(b => binary += String.fromCharCode(b));
+      contentB64 = btoa(binary);
+    }
     const body = { message, content: contentB64, branch: CONFIG.BRANCH };
     if (sha) body.sha = sha;
     const res = await fetch(url, {
@@ -2872,7 +2963,7 @@ function stringifyMarkdown(frontmatter, body) {
 const state = {
   session: null,
   tokensFile: null,
-  index: { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null },
+  index: { procedure: [], clinica: [], moduli: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null },
   currentView: 'home',
   editorInstance: null,
   editingContext: null,
@@ -2881,7 +2972,8 @@ const state = {
   userPrefsPath: null,
   pendingTagEdits: new Map(),  // Map<contactId, newKind|null> — modifiche pending ai tag kind (guardia/reparto/utile)
   pendingBlockHash: null,      // id blocco (es. "bl-rachicentesi-5") da scrollare dopo il prossimo render scheda
-  pendingContattoScrollId: null  // id contatto da scrollare dopo render UOC (apertura via filter=contattoId)
+  pendingContattoScrollId: null,  // id contatto da scrollare dopo render UOC (apertura via filter=contattoId)
+  moduliCache: {}              // { slug: { boxesData, pageUrls, formValues, currentPage } } per moduli compilabili
 };
 
 /* Dopo il render di una scheda, chiama questa per scrollare al blocco in attesa.
@@ -2996,7 +3088,7 @@ function clearSession() {
 async function buildIndex() {
   const startTime = Date.now();
   loadEtagCacheFromSession();
-  const index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: nowIso() };
+  const index = { procedure: [], clinica: [], moduli: [], cestino: [], numeri: null, capitoli: [], lastIndexed: nowIso() };
 
   // Single tree call to discover all files
   let tree;
@@ -3008,8 +3100,8 @@ async function buildIndex() {
   }
 
   // Filter file paths by section
-  const procPaths = [], clinicaPaths = [], moduliPaths = [], tabellePaths = [], cestinoPaths = [];
-  const specialFiles = { numeri: null, capitoli: null, numeriOsa: null, numeriIov: null, calendar: null };
+  const procPaths = [], clinicaPaths = [], cestinoPaths = [];
+  const specialFiles = { numeri: null, capitoli: null, numeriOsa: null, numeriIov: null, calendar: null, moduliIndex: null };
   (tree.tree || []).forEach(item => {
     if (item.type !== 'blob') return;
     const p = item.path;
@@ -3018,10 +3110,14 @@ async function buildIndex() {
     else if (p === 'content/numeri-iov.yml') specialFiles.numeriIov = p;
     else if (p === 'content/capitoli.yml') specialFiles.capitoli = p;
     else if (p === 'content/calendar.yml') specialFiles.calendar = p;
-    else if (p.startsWith('content/procedure/') && p.endsWith('.md')) procPaths.push(p);
-    else if (p.startsWith('content/clinica/') && p.endsWith('.md')) clinicaPaths.push(p);
-    else if (p.startsWith('content/moduli/') && p.endsWith('.md')) moduliPaths.push(p);
-    else if (p.startsWith('content/tabelle/') && p.endsWith('.md')) tabellePaths.push(p);
+    else if (p === 'content/moduli/index.yml') specialFiles.moduliIndex = p;
+    // Cartella per scheda: ogni procedura/clinica è una cartella con dentro scheda.md + img/.
+    // Il filtro `/scheda.md` è ancorato alla fine del path per non catturare altri .md eventuali.
+    else if (p.startsWith('content/procedure/') && p.endsWith('/scheda.md')) procPaths.push(p);
+    else if (p.startsWith('content/clinica/') && p.endsWith('/scheda.md')) clinicaPaths.push(p);
+    // I moduli compilabili NON sono più .md singoli: sono cartelle con boxes.yml + pagine PNG.
+    // L'indicizzazione globale legge solo content/moduli/index.yml; i dettagli (boxes.yml e PNG)
+    // vengono fetch lazy quando l'utente apre un modulo specifico.
     else if (p.startsWith('cestino/') && p.endsWith('.md')) cestinoPaths.push(p);
   });
   // Track which extended directories exist (for lazy-load toggles)
@@ -3045,28 +3141,33 @@ async function buildIndex() {
   }
 
   // Fetch everything in parallel
-  const [procFiles, clinicaFiles, moduliFiles, tabelleFiles, cestinoFiles, numeriFile, capitoliFile, calendarFile] = await Promise.all([
+  const [procFiles, clinicaFiles, cestinoFiles, numeriFile, capitoliFile, calendarFile, moduliIndexFile] = await Promise.all([
     fetchBatch(procPaths),
     fetchBatch(clinicaPaths),
-    fetchBatch(moduliPaths),
-    fetchBatch(tabellePaths),
     fetchBatch(cestinoPaths),
     specialFiles.numeri ? gh.getFile(specialFiles.numeri).catch(() => null) : Promise.resolve(null),
     specialFiles.capitoli ? gh.getFile(specialFiles.capitoli).catch(() => null) : Promise.resolve(null),
-    specialFiles.calendar ? gh.getFile(specialFiles.calendar).catch(() => null) : Promise.resolve(null)
+    specialFiles.calendar ? gh.getFile(specialFiles.calendar).catch(() => null) : Promise.resolve(null),
+    specialFiles.moduliIndex ? gh.getFile(specialFiles.moduliIndex).catch(() => null) : Promise.resolve(null)
   ]);
 
   // Process procedure files
+  // Path schema (cartella per scheda): content/procedure/<cat>/[<sub>/[<sotto>/]]<slug>/scheda.md
+  // Lo slug è il nome della CARTELLA (penultimo elemento), non il filename.
   procFiles.forEach((file, i) => {
     if (!file) return;
     const path = procPaths[i];
-    const slug = path.split('/').pop().replace(/\.md$/, '');
     const { frontmatter, body } = parseMarkdown(file.content);
     const relPath = path.replace(/^content\/procedure\//, '');
     const parts = relPath.split('/');
-    const autoCategoria = parts.length >= 2 ? parts[0] : (frontmatter.categoria || 'altre');
-    const autoSottocategoria = parts.length >= 3 ? parts[1] : null;
-    const autoSottoSotto = parts.length >= 4 ? parts[2] : null;
+    // parts: [cat, ...nested, slug, 'scheda.md']
+    // Tolgo 'scheda.md' (ultimo) → resta [cat, ...nested, slug]
+    const dirParts = parts.slice(0, -1);
+    const slug = dirParts[dirParts.length - 1];
+    const categoryParts = dirParts.slice(0, -1);  // tutto prima dello slug
+    const autoCategoria = categoryParts[0] || (frontmatter.categoria || 'altre');
+    const autoSottocategoria = categoryParts[1] || null;
+    const autoSottoSotto = categoryParts[2] || null;
     index.procedure.push({
       slug, path, sha: file.sha,
       categoria: frontmatter.categoria || autoCategoria,
@@ -3078,16 +3179,18 @@ async function buildIndex() {
   });
 
   // Process clinica files
+  // Path schema: content/clinica/[<sub>/[<sotto>/]]<slug>/scheda.md
   clinicaFiles.forEach((file, i) => {
     if (!file) return;
     const path = clinicaPaths[i];
-    const slug = path.split('/').pop().replace(/\.md$/, '');
     const { frontmatter, body } = parseMarkdown(file.content);
     const relPath = path.replace(/^content\/clinica\//, '');
     const parts = relPath.split('/');
-    // parts = [sottocategoria, ...(optional nested), filename.md]
-    const autoSottocategoria = parts.length >= 2 ? parts[0] : null;
-    const autoSottoSotto = parts.length >= 3 ? parts[1] : null;
+    const dirParts = parts.slice(0, -1);  // toglie 'scheda.md'
+    const slug = dirParts[dirParts.length - 1];
+    const categoryParts = dirParts.slice(0, -1);  // sotto-cartelle prima dello slug
+    const autoSottocategoria = categoryParts[0] || null;
+    const autoSottoSotto = categoryParts[1] || null;
     index.clinica.push({
       slug, path, sha: file.sha,
       categoria: 'clinica',
@@ -3099,23 +3202,28 @@ async function buildIndex() {
     });
   });
 
-  // Process moduli
-  moduliFiles.forEach((file, i) => {
-    if (!file) return;
-    const path = moduliPaths[i];
-    const slug = path.split('/').pop().replace(/\.md$/, '');
-    const { frontmatter, body } = parseMarkdown(file.content);
-    index.moduli.push({ slug, path, sha: file.sha, ...frontmatter, body });
-  });
-
-  // Process tabelle
-  tabelleFiles.forEach((file, i) => {
-    if (!file) return;
-    const path = tabellePaths[i];
-    const slug = path.split('/').pop().replace(/\.md$/, '');
-    const { frontmatter, body } = parseMarkdown(file.content);
-    index.tabelle.push({ slug, path, sha: file.sha, ...frontmatter, body });
-  });
+  // Process moduli compilabili — l'indice è un singolo content/moduli/index.yml
+  // che elenca slug, titolo, descrizione, pagine, autore, aggiornato.
+  // I dettagli (boxes.yml, PNG) si fetcheranno lazy quando l'utente apre un modulo.
+  if (moduliIndexFile) {
+    try {
+      const parsed = jsyaml.load(moduliIndexFile.content) || {};
+      const arr = parsed.moduli || [];
+      arr.forEach(m => {
+        if (!m || !m.slug) return;
+        index.moduli.push({
+          slug: m.slug,
+          path: `content/moduli/${m.slug}/`,
+          titolo: m.titolo || m.slug,
+          descrizione: m.descrizione || '',
+          pagine: m.pagine || 1,
+          autore: m.autore || '',
+          aggiornato: m.aggiornato || null,
+          ultima_modifica: m.aggiornato || null  // alias per timeAgo() usato altrove
+        });
+      });
+    } catch (e) { console.warn('YAML parse error moduli/index.yml', e); }
+  }
 
   // Process cestino
   cestinoFiles.forEach((file, i) => {
@@ -3184,7 +3292,7 @@ async function buildIndex() {
   updateRateLimitIndicator();
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`[buildIndex] ${elapsed}s — ${index.procedure.length}p ${index.clinica.length}c ${index.moduli.length}m ${index.tabelle.length}t · rate ${rateLimit.remaining}/${rateLimit.limit}`);
+  console.log(`[buildIndex] ${elapsed}s — ${index.procedure.length}p ${index.clinica.length}c ${index.moduli.length}m · rate ${rateLimit.remaining}/${rateLimit.limit}`);
   return index;
 }
 
@@ -3262,25 +3370,46 @@ async function toggleExtendedNumeri(source, on) {
 // Legacy fallback in case the tree API fails
 async function buildIndexFallback() {
   console.warn('Using legacy recursive index walk (slower)');
-  const index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: nowIso() };
+  const index = { procedure: [], clinica: [], moduli: [], cestino: [], numeri: null, capitoli: [], lastIndexed: nowIso() };
   async function walk(dir, target) {
     try {
       const items = await gh.listDir(dir);
       for (const it of items) {
         if (it.type === 'dir') await walk(it.path, target);
-        else if (it.type === 'file' && it.name.endsWith('.md')) {
+        else if (it.type === 'file' && it.name === 'scheda.md') {
+          // Schema cartella per scheda: slug = nome cartella padre, NON nome file
           const file = await gh.getFile(it.path);
           if (!file) continue;
           const { frontmatter, body } = parseMarkdown(file.content);
-          target.push({ slug: it.name.replace(/\.md$/, ''), path: it.path, sha: file.sha, ...frontmatter, body, body_preview: body.substring(0,300) });
+          const parts = it.path.split('/');
+          const slug = parts[parts.length - 2];  // penultimo = cartella scheda
+          target.push({ slug, path: it.path, sha: file.sha, ...frontmatter, body, body_preview: body.substring(0,300) });
         }
       }
     } catch (e) {}
   }
   await walk('content/procedure', index.procedure);
   await walk('content/clinica', index.clinica);
-  await walk('content/moduli', index.moduli);
-  await walk('content/tabelle', index.tabelle);
+  // I moduli compilabili NON sono più .md: leggo content/moduli/index.yml
+  try {
+    const f = await gh.getFile('content/moduli/index.yml').catch(() => null);
+    if (f) {
+      const parsed = jsyaml.load(f.content) || {};
+      (parsed.moduli || []).forEach(m => {
+        if (!m || !m.slug) return;
+        index.moduli.push({
+          slug: m.slug,
+          path: `content/moduli/${m.slug}/`,
+          titolo: m.titolo || m.slug,
+          descrizione: m.descrizione || '',
+          pagine: m.pagine || 1,
+          autore: m.autore || '',
+          aggiornato: m.aggiornato || null,
+          ultima_modifica: m.aggiornato || null
+        });
+      });
+    }
+  } catch (e) { console.warn('walk moduli/index.yml error', e); }
   state.index = index;
   rebuildSearchIndex();
   updateNavCounts();
@@ -3306,11 +3435,8 @@ function rebuildSearchIndex() {
   state.index.moduli.forEach(m => docs.push({
     type: 'modulo', slug: m.slug,
     titolo: m.titolo || m.slug,
-    tag: (m.tag || []).join(' ')
-  }));
-  state.index.tabelle.forEach(t => docs.push({
-    type: 'tabella', slug: t.slug,
-    titolo: t.titolo || t.slug
+    tag: (m.tag || []).join(' '),
+    body: m.descrizione || ''  // descrizione compilabile come body searchable
   }));
   getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd').forEach(g => {
     const groupAliases = (g.alias || []).join(' ');
@@ -3778,7 +3904,7 @@ function logout() {
     userPrefs.persist().catch(() => {}); // fire-and-forget
   }
   clearSession();
-  state.index = { procedure: [], clinica: [], moduli: [], tabelle: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null };
+  state.index = { procedure: [], clinica: [], moduli: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null };
   state.editingContext = null;
   state.userPrefs = null;
   state.userPrefsPath = null;
@@ -3831,9 +3957,6 @@ const urlRouter = (function() {
       case 'moduli':          return ['moduli'];
       case 'modulo':          return ['modulo', p.slug];
       case 'modulo-edit':     return ['modulo', p.slug, 'edit'];
-      case 'tabelle':         return ['tabelle'];
-      case 'tabella':         return ['tabella', p.slug];
-      case 'tabella-edit':    return ['tabella', p.slug, 'edit'];
       case 'calendario':      return ['calendario'];
       case 'cestino':         return ['cestino'];
       case 'cestino-utenti':  return ['cestino-utenti'];
@@ -3883,10 +4006,6 @@ const urlRouter = (function() {
       case 'modulo':
         if (third === 'edit') return { route: 'modulo-edit', params: { slug: second }, blockHash };
         return { route: 'modulo', params: { slug: second }, blockHash };
-      case 'tabelle': return { route: 'tabelle', params: {}, blockHash };
-      case 'tabella':
-        if (third === 'edit') return { route: 'tabella-edit', params: { slug: second }, blockHash };
-        return { route: 'tabella', params: { slug: second }, blockHash };
       case 'calendario': return { route: 'calendario', params: {}, blockHash };
       case 'cestino': return { route: 'cestino', params: {}, blockHash };
       case 'cestino-utenti': return { route: 'cestino-utenti', params: {}, blockHash };
@@ -4032,8 +4151,6 @@ function navigate(route, params = {}) {
     case 'numeri': renderNumeri(params.filter); break;
     case 'moduli': renderModuliList(); break;
     case 'modulo': renderModulo(params.slug); break;
-    case 'tabelle': renderTabelleList(); break;
-    case 'tabella': renderTabella(params.slug); break;
     case 'calendario': renderCalendario(params); break;
     case 'cestino': renderCestino(); break;
     case 'cestino-utenti': renderCestinoUtenti(); break;
@@ -4074,12 +4191,12 @@ function renderHome() {
 
   const pins = (state.userPrefs && state.userPrefs.pins) || [];
   const pinsByType = {
-    schede: [],      // procedura, clinica, modulo, tabella
+    schede: [],      // procedura, clinica, modulo
     cartelle: [],    // categoria, sottocategoria, clinica-sub, capitolo
     gruppi: []
   };
   pins.forEach(p => {
-    if (['procedura','clinica','modulo','tabella'].includes(p.type)) pinsByType.schede.push(p);
+    if (['procedura','clinica','modulo'].includes(p.type)) pinsByType.schede.push(p);
     else if (['categoria','sottocategoria','clinica-sub','capitolo'].includes(p.type)) pinsByType.cartelle.push(p);
     else if (p.type === 'gruppo') pinsByType.gruppi.push(p);
     // I contatti (type='contatto') non vanno più nei pins generici: usano home_numeri
@@ -4174,14 +4291,6 @@ function renderPinnedSchedaCard(pin) {
     return `<div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeJs(m.slug)}'})">
       <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}</div>
       <div class="procedure-card-meta"><span>Modulo</span></div>
-    </div>`;
-  }
-  if (pin.type === 'tabella') {
-    const t = state.index.tabelle.find(x => x.slug === pin.slug);
-    if (!t) return null;
-    return `<div class="procedure-card" onclick="navigate('tabella', {slug:'${escapeJs(t.slug)}'})">
-      <div class="procedure-card-title">${escapeHtml(t.titolo || t.slug)}</div>
-      <div class="procedure-card-meta"><span>Tabella</span></div>
     </div>`;
   }
   return null;
@@ -4576,12 +4685,21 @@ function renderBloccoTable(b) {
   return `<div class="bl bl-table">${title}<div class="bl-table-wrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div></div>`;
 }
 
+// Restituisce la directory della cartella scheda (senza '/scheda.md' finale).
+// Esempio: 'content/procedure/emergenze/rachicentesi/scheda.md' → 'content/procedure/emergenze/rachicentesi'
+function _schedaDir(scheda) {
+  if (!scheda || !scheda.path) return '';
+  return scheda.path.replace(/\/scheda\.md$/, '');
+}
+
 function renderBloccoImage(b, scheda) {
   if (!b.src) return '';
-  // Costruisco URL come per markdown images: se relativo, punta al DATA_REPO_NAME
+  // Costruisco URL come per markdown images: se relativo, punta alla cartella img/ della scheda.
   let url = b.src;
   if (!/^(https?:|data:|\/)/i.test(url)) {
-    const basePath = 'content/moduli/img/';
+    // Path relativo: <cartella-scheda>/img/<src>
+    const dir = _schedaDir(scheda);
+    const basePath = dir ? `${dir}/img/` : 'content/img/';
     url = `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${basePath}${url.replace(/^\.?\//, '')}`;
   }
   const caption = b.caption ? `<figcaption class="bl-image-caption">${escapeHtml(b.caption)}</figcaption>` : '';
@@ -4644,7 +4762,6 @@ function renderBloccoInternalRef(b) {
   if (!b.target) return '';
   const tipoToRoute = {
     procedura: 'procedura',
-    tabella: 'tabella',
     modulo: 'modulo',
     clinica: 'clinica-scheda',
     numero: 'numeri'
@@ -4866,10 +4983,6 @@ function renderSchedaRelated(scheda, isClinica) {
   (scheda.moduli_correlati || []).forEach(mid => {
     const m = state.index.moduli.find(x => x.slug === mid);
     if (m) related.push({ label: 'Modulo', title: m.titolo, click: `navigate('modulo', {slug:'${m.slug}'})` });
-  });
-  (scheda.tabelle_correlate || []).forEach(tid => {
-    const t = state.index.tabelle.find(x => x.slug === tid);
-    if (t) related.push({ label: 'Tabella', title: t.titolo, click: `navigate('tabella', {slug:'${t.slug}'})` });
   });
   (scheda.procedure_correlate || []).forEach(pid => {
     const p = state.index.procedure.find(x => x.slug === pid);
@@ -5331,7 +5444,8 @@ function nuovaSchedaClinica(preset = {}) {
           cronologia_recente: [{ data: nowIso(), utente: state.session.username, nota: 'creazione' }]
         };
         const content = stringifyMarkdown(nf, '');
-        const path = `content/clinica/${sottocat}/${slug}.md`;
+        // Schema cartella per scheda: content/clinica/<sub>/<slug>/scheda.md
+        const path = `content/clinica/${sottocat}/${slug}/scheda.md`;
         try {
           const res = await gh.putFile(path, content, null, `Nuova scheda clinica: ${slug} (by ${state.session.username})`);
           closeModal();
@@ -5586,7 +5700,7 @@ const blockEditor = (function() {
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
       defaults: { src: '' },
       fields: [
-        { key: 'src', label: 'Nome file immagine', type: 'text', placeholder: 'es. rachicentesi-repere.jpg', hint: 'Il file deve esistere in content/moduli/img/. Usa il pulsante sopra per caricare.' },
+        { key: 'src', label: 'Nome file immagine', type: 'text', placeholder: 'es. rachicentesi-repere.jpg', hint: 'Il file deve esistere nella cartella img/ accanto a scheda.md. Usa il pulsante sopra per caricare.' },
         { key: 'alt', label: 'Testo alternativo', type: 'text', placeholder: 'breve descrizione per accessibilità' },
         { key: 'caption', label: 'Didascalia (visibile)', type: 'text', placeholder: 'es. Punto di repere L3-L4' },
         { key: 'descrizione', label: 'Descrizione estesa (per AI, non visibile)', type: 'textarea', rows: 3, hint: 'Descrivi cosa mostra l\'immagine in dettaglio. Sarà usato da un\'AI futura per rispondere a domande.' }
@@ -5633,19 +5747,18 @@ const blockEditor = (function() {
     },
     internal_ref: {
       label: 'Link interno',
-      descrizione: 'Link ad altra scheda, modulo, tabella o contatto',
+      descrizione: 'Link ad altra scheda, modulo o contatto',
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l10-10M7 7h10v10"/></svg>',
       defaults: { target_tipo: 'procedura', target: '' },
       fields: [
         { key: 'target_tipo', label: 'Tipo di risorsa', type: 'select', options: [
           { value: 'procedura', label: 'Procedura' },
           { value: 'clinica', label: 'Scheda clinica' },
-          { value: 'tabella', label: 'Tabella' },
           { value: 'modulo', label: 'Modulo' },
           { value: 'numero', label: 'Contatto/numero' }
         ]},
         { key: 'target', label: 'Risorsa', type: 'select-dynamic', sourceKeyFrom: 'target_tipo' },
-        { key: 'label', label: 'Etichetta da mostrare', type: 'text', placeholder: 'es. Tabella sospensione anticoagulanti' }
+        { key: 'label', label: 'Etichetta da mostrare', type: 'text', placeholder: 'es. Procedura rachicentesi' }
       ]
     },
     clinical_note: {
@@ -5679,11 +5792,10 @@ const blockEditor = (function() {
     return out;
   }
 
-  // === Funzioni di source per select-dynamic (moduli, tabelle, ecc.) ===
+  // === Funzioni di source per select-dynamic (moduli, ecc.) ===
   function _sourcesFor(tipo) {
     if (tipo === 'procedura') return state.index.procedure.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
     if (tipo === 'clinica') return state.index.clinica.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
-    if (tipo === 'tabella') return state.index.tabelle.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
     if (tipo === 'modulo') return state.index.moduli.map(x => ({ id: x.slug, label: x.titolo || x.slug }));
     if (tipo === 'numero') {
       const out = [];
@@ -6018,7 +6130,6 @@ const blockEditor = (function() {
 
 function renderEditorUI(slug, frontmatter, body) {
   const moduliOpts = state.index.moduli.map(m => m.slug);
-  const tabelleOpts = state.index.tabelle.map(t => t.slug);
   const proceduraOpts = state.index.procedure.map(p => p.slug).filter(s => s !== slug);
 
   $('main-content').innerHTML = `
@@ -6127,16 +6238,6 @@ function renderEditorUI(slug, frontmatter, body) {
             })}
           </div>
           <div class="field" style="grid-column:1/-1;">
-            <label>Tabelle correlate</label>
-            ${renderChipsField({
-              id: 'meta-tabelle-chips',
-              values: frontmatter.tabelle_correlate || [],
-              suggestions: state.index.tabelle.map(t => ({ id: t.slug, label: t.titolo || t.slug })),
-              placeholder: 'cerca tabelle…',
-              allowNew: false
-            })}
-          </div>
-          <div class="field" style="grid-column:1/-1;">
             <label>Numeri correlati</label>
             ${renderChipsField({
               id: 'meta-numeri-chips',
@@ -6212,7 +6313,6 @@ function renderEditorUI(slug, frontmatter, body) {
   chipsInit('meta-termini-chips', collectAllTermini());
   chipsInit('meta-procedure-chips', state.index.procedure.filter(p => p.slug !== slug).map(p => ({ id: p.slug, label: p.titolo || p.slug })));
   chipsInit('meta-moduli-chips', state.index.moduli.map(m => ({ id: m.slug, label: m.titolo || m.slug })));
-  chipsInit('meta-tabelle-chips', state.index.tabelle.map(t => ({ id: t.slug, label: t.titolo || t.slug })));
   chipsInit('meta-numeri-chips', collectAllContattiSuggestions());
 
   $('meta-categoria').addEventListener('change', refreshSottocategorieChips);
@@ -6290,7 +6390,7 @@ TIPI DI BLOCCO DISPONIBILI:
     Campi: { tipo:"form_ref", label:string, modulo:string }
 
 11. internal_ref — riferimento a un'altra procedura/scheda dell'app (NON usare a meno che non sia esplicitamente menzionato).
-    Campi: { tipo:"internal_ref", label:string, target_tipo:"procedura"|"clinica"|"modulo"|"tabella", target:string }
+    Campi: { tipo:"internal_ref", label:string, target_tipo:"procedura"|"clinica"|"modulo", target:string }
 
 LINEE GUIDA:
 - Mantieni la lingua del testo originale (italiano se il testo è in italiano).
@@ -6528,7 +6628,6 @@ async function saveProcedura() {
     delete nf.tempo_esecuzione_min;
     nf.termini_equivalenti = chipsGet('meta-termini-chips');
     nf.moduli_correlati = chipsGet('meta-moduli-chips');
-    nf.tabelle_correlate = chipsGet('meta-tabelle-chips');
     nf.procedure_correlate = chipsGet('meta-procedure-chips');
     nf.numeri_correlati = chipsGet('meta-numeri-chips');
     nf.ultima_modifica = nowIso();
@@ -8076,15 +8175,19 @@ async function copyNumber(n) {
   }
 }
 
-/* ============================ VIEW — MODULI ============================ */
+/* ============================ VIEW — MODULI COMPILABILI ============================ */
+/* Nuova generazione: i moduli sono cartelle con boxes.yml + pagine PNG.
+   Tappa 1 implementa solo lista + dettaglio placeholder. Le tappe 2-5 aggiungeranno
+   form compilazione, viewer pagine, editor box, generazione PDF, persistenza GitHub. */
+
 function renderModuliList() {
-  const moduli = state.index.moduli;
+  const moduli = state.index.moduli || [];
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
-      <h1 class="page-title">Moduli</h1>
+      <h1 class="page-title">Moduli compilabili</h1>
       <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
-        Moduli cartacei e template. Upload immagini e editor dedicato in arrivo in v1.1.
+        Moduli cartacei istituzionali pre-compilabili con i dati del paziente e del medico.
       </div>
     </div>
     <div class="procedure-grid">
@@ -8093,53 +8196,1117 @@ function renderModuliList() {
           <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
             <span class="card-actions">${renderPinButton('modulo', m.slug)}</span>
           </div>
-          <div class="procedure-card-tags">${(m.tag || []).slice(0,3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
-          <div class="procedure-card-meta"><span>${escapeHtml(m.tipo || 'modulo')}</span></div>
+          ${m.descrizione ? `<div class="procedure-card-desc" style="font-size:13px;color:var(--ink-muted);margin-top:6px;line-height:1.4;">${escapeHtml(m.descrizione)}</div>` : ''}
+          <div class="procedure-card-meta" style="margin-top:8px;">
+            <span>${m.pagine || 1} ${(m.pagine || 1) === 1 ? 'pagina' : 'pagine'}</span>
+            ${m.autore ? `<span>· ${escapeHtml(m.autore)}</span>` : ''}
+          </div>
         </div>
-      `).join('') || '<p style="color:var(--ink-muted);">Nessun modulo.</p>'}
+      `).join('') || '<p style="color:var(--ink-muted);">Nessun modulo disponibile. Contatta l\'amministratore per aggiungerne.</p>'}
     </div>`;
 }
 
-function renderModulo(slug) {
-  const m = state.index.moduli.find(x => x.slug === slug);
-  if (!m) return renderError('Modulo non trovato', slug);
-  const bodyHtml = renderMarkdownWithImages(m.body || '', m.path);
-  const imgUrl = m.immagine ? `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/content/${m.immagine}` : null;
-  const relatedProcs = (m.procedure_correlate || []).map(pid => state.index.procedure.find(p => p.slug === pid)).filter(Boolean);
+/* ============================ MODULI COMPILABILI — STATO ============================ */
+// Per ciascun slug carico boxes.yml + URL pagine PNG. Cache in sessionStorage,
+// si svuota a chiusura tab. La cache evita di rifetchare il YAML ad ogni navigazione
+// della stessa sessione, ma garantisce dati freschi quando l'admin aggiorna su GitHub.
+state.moduliCache = state.moduliCache || {};       // { slug: { boxesData, pageUrls, formValues } }
 
+// Carica boxes.yml + pre-calcola gli URL delle pagine PNG. Idempotente.
+async function loadModuloDettaglio(slug) {
+  if (state.moduliCache[slug] && state.moduliCache[slug].boxesData) {
+    return state.moduliCache[slug];
+  }
+  // Prova prima sessionStorage (sopravvive a refresh ma non a chiusura tab)
+  try {
+    const cached = sessionStorage.getItem('modulo:' + slug);
+    if (cached) {
+      const obj = JSON.parse(cached);
+      state.moduliCache[slug] = obj;
+      return obj;
+    }
+  } catch {}
+
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  if (!m) throw new Error('Modulo non trovato in indice: ' + slug);
+
+  const boxesPath = `content/moduli/${slug}/boxes.yml`;
+  let boxesData = { campi_richiesti: [], box: [] };
+  let boxesSha = null;
+  try {
+    const f = await gh.getFile(boxesPath);
+    if (f) {
+      boxesData = jsyaml.load(f.content) || boxesData;
+      boxesSha = f.sha;  // necessario per il PUT con check conflitti
+    }
+  } catch (e) {
+    console.warn('[loadModuloDettaglio] boxes.yml mancante o non valido:', e);
+  }
+
+  const pageUrls = [];
+  for (let i = 1; i <= (m.pagine || 1); i++) {
+    pageUrls.push(`https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/content/moduli/${slug}/page-${i}.png`);
+  }
+
+  // Snapshot pristine dei box per dirty detection (deep clone)
+  const pristineBoxes = JSON.parse(JSON.stringify(boxesData.box || []));
+
+  const obj = { boxesData, boxesSha, pristineBoxes, pageUrls, formValues: {}, currentPage: 1 };
+  state.moduliCache[slug] = obj;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(obj)); } catch {}
+  return obj;
+}
+
+// Compara box correnti con snapshot pristine; ritorna true se ci sono differenze
+function _boxesAreDirty(slug) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.pristineBoxes) return false;
+  const cur = c.boxesData.box || [];
+  return JSON.stringify(cur) !== JSON.stringify(c.pristineBoxes);
+}
+
+// Costruisce il valore visibile del box a partire dai valoriCampi del form e dalla def del campo.
+// Esempio: campo "paziente" tipo paziente_completo → output "Cognome Nome (gg/mm/aaaa)".
+function _formatBoxValue(box, campiDefs, valoriCampi) {
+  if (!box.campo) return ''; // box senza campo = placeholder firma, non si compila
+  const def = campiDefs.find(c => c.id === box.campo);
+  if (!def) return '';
+  const v = valoriCampi[box.campo];
+  if (!v) return '';
+  // Se il campo è di tipo composito (paziente_completo), il valore è un oggetto
+  if (def.tipo === 'paziente_completo' && typeof v === 'object') {
+    const parts = [];
+    if (box.formato === 'cognome') return v.cognome || '';
+    if (box.formato === 'nome') return v.nome || '';
+    if (box.formato === 'data_nascita') return v.dataNascita || '';
+    // default: nome+cognome
+    if (v.cognome || v.nome) parts.push([v.cognome, v.nome].filter(Boolean).join(' '));
+    if (v.dataNascita && box.formato !== 'no_data') parts.push(`(${v.dataNascita})`);
+    return parts.join(' ');
+  }
+  if (def.tipo === 'medico_nome' && typeof v === 'object') {
+    return [v.cognome, v.nome].filter(Boolean).join(' ');
+  }
+  return String(v);
+}
+
+// Resolve default values (es. "oggi", "ora_corrente", or static string)
+function _resolveDefault(def) {
+  if (def.default == null) return '';
+  if (def.default === 'oggi') {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  }
+  if (def.default === 'ora_corrente') {
+    const d = new Date();
+    const date = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `${date} ${time}`;
+  }
+  return def.default;
+}
+
+/* ============================ VIEW — MODULI COMPILABILI ============================ */
+function renderModuliList() {
+  const moduli = state.index.moduli || [];
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Moduli', route:'moduli'}])}</div>
-      <h1 class="page-title">${escapeHtml(m.titolo || slug)} ${renderPinButton('modulo', slug)}</h1>
-      <div class="page-meta">
-        <div class="page-meta-item">Tipo: ${escapeHtml(m.tipo || '—')}</div>
-        <div class="page-meta-item">Aggiornato ${timeAgo(m.ultima_modifica)}</div>
-      </div>
-      <div class="page-actions">
-        <button class="btn ghost" onclick="shareLink(buildShareUrl('modulo', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(m.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questo modulo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
-        ${imgUrl ? `<a class="btn ghost" href="${imgUrl}" target="_blank" rel="noopener">Apri immagine</a>` : ''}
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
+      <h1 class="page-title">Moduli compilabili</h1>
+      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
+        Moduli cartacei istituzionali pre-compilabili con i dati del paziente e del medico.
       </div>
     </div>
-    <article class="procedura-body">${bodyHtml}</article>
-    ${imgUrl ? `
-      <div style="margin-top:32px;padding:24px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;text-align:center;">
-        <img src="${imgUrl}" alt="${escapeHtml(m.titolo || slug)}" style="max-width:100%;border:1px solid var(--rule-soft);" onerror="this.parentElement.innerHTML='<p style=color:var(--ink-muted);font-size:14px;>Immagine non ancora caricata: <code>content/${escapeHtml(m.immagine || '')}</code></p>'">
+    <div class="procedure-grid">
+      ${moduli.map(m => `
+        <div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeHtml(m.slug)}'})">
+          <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
+            <span class="card-actions">${renderPinButton('modulo', m.slug)}</span>
+          </div>
+          ${m.descrizione ? `<div class="procedure-card-desc" style="font-size:13px;color:var(--ink-muted);margin-top:6px;line-height:1.4;">${escapeHtml(m.descrizione)}</div>` : ''}
+          <div class="procedure-card-meta" style="margin-top:8px;">
+            <span>${m.pagine || 1} ${(m.pagine || 1) === 1 ? 'pagina' : 'pagine'}</span>
+            ${m.autore ? `<span>· ${escapeHtml(m.autore)}</span>` : ''}
+          </div>
+        </div>
+      `).join('') || '<p style="color:var(--ink-muted);">Nessun modulo disponibile. Contatta l\'amministratore per aggiungerne.</p>'}
+    </div>`;
+}
+
+async function renderModulo(slug) {
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  if (!m) return renderError('Modulo non trovato', slug);
+
+  // Header sempre visibile (subito), caricamento detail in background
+  const relatedProcs = (m.procedure_correlate || []).map(pid => state.index.procedure.find(p => p.slug === pid)).filter(Boolean);
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Moduli compilabili', route:'moduli'}])}</div>
+      <h1 class="page-title">${escapeHtml(m.titolo || slug)} ${renderPinButton('modulo', slug)}</h1>
+      ${m.descrizione ? `<div style="margin-top:8px;font-size:14px;color:var(--ink-muted);font-style:italic;">${escapeHtml(m.descrizione)}</div>` : ''}
+      <div class="page-meta" style="margin-top:12px;">
+        <div class="page-meta-item">${m.pagine || 1} ${(m.pagine || 1) === 1 ? 'pagina' : 'pagine'}</div>
+        ${m.autore ? `<div class="page-meta-item">${escapeHtml(m.autore)}</div>` : ''}
+        ${m.aggiornato ? `<div class="page-meta-item">Aggiornato ${timeAgo(m.aggiornato)}</div>` : ''}
       </div>
-    ` : `
-      <div style="margin-top:32px;padding:24px;background:var(--bg-sink);border:1px dashed var(--rule-strong);border-radius:2px;text-align:center;color:var(--ink-muted);">
-        <p style="font-family:var(--serif);font-style:italic;">Nessuna immagine allegata. L'upload sarà disponibile in v1.1.</p>
+      <div class="page-actions">
+        <button class="btn ghost" onclick="shareLink(buildShareUrl('modulo', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml((m.titolo || slug).replace(/'/g, '\\\''))}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Condividi
+        </button>
       </div>
-    `}
+    </div>
+    <div id="mod-detail-area" style="margin-top:24px;">
+      <p style="color:var(--ink-muted);font-style:italic;">Caricamento boxes.yml e pagine modulo…</p>
+    </div>
     ${relatedProcs.length ? `
-      <div class="related-grid">
+      <div class="related-grid" style="margin-top:32px;">
         ${relatedProcs.map(p => `
           <div class="related-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
             <div class="related-card-label">Procedura</div>
             <div class="related-card-title">${escapeHtml(p.titolo)}</div>
           </div>`).join('')}
       </div>` : ''}`;
+
+  // Caricamento dettaglio (lazy)
+  try {
+    const det = await loadModuloDettaglio(slug);
+    renderModuloCompilatore(slug, det);
+  } catch (e) {
+    const area = document.getElementById('mod-detail-area');
+    if (area) area.innerHTML = `<div class="callout callout-warning"><p>Errore caricamento modulo: ${escapeHtml(e.message)}</p></div>`;
+  }
   scrollToPendingBlock();
 }
+
+// Render del compilatore: form a sinistra (su mobile in alto), preview pagine a destra (sotto su mobile).
+function renderModuloCompilatore(slug, det) {
+  const area = document.getElementById('mod-detail-area');
+  if (!area) return;
+  const { boxesData, pageUrls } = det;
+  const campiDefs = boxesData.campi_richiesti || [];
+  const boxes = boxesData.box || [];
+  const editMode = !!det.editMode;
+
+  // Inizializza valori default solo al primo render
+  if (Object.keys(det.formValues).length === 0) {
+    campiDefs.forEach(c => {
+      if (c.tipo === 'paziente_completo') {
+        det.formValues[c.id] = { cognome: '', nome: '', dataNascita: '' };
+      } else if (c.tipo === 'medico_nome') {
+        // Pre-compila col medico loggato come default
+        det.formValues[c.id] = {
+          modalita: 'io',  // 'io' | 'altro'
+          cognome: (state.session && state.session.cognome) || '',
+          nome: (state.session && state.session.nome) || ''
+        };
+      } else {
+        det.formValues[c.id] = _resolveDefault(c);
+      }
+    });
+  }
+
+  const formHtml = campiDefs.map(c => _renderCampoInput(c, det.formValues[c.id], slug)).join('');
+  const noBoxesHint = boxes.length === 0 && !editMode ? `
+    <div class="callout callout-info" style="margin-bottom:12px;">
+      <p><strong>Nessun box configurato.</strong> Attiva la modalità modifica per disegnare i box sul modulo.</p>
+    </div>` : '';
+
+  const editorPanelHtml = editMode ? _renderModuloEditorPanel(slug, det) : '';
+  const isDirty = editMode && _boxesAreDirty(slug);
+
+  area.innerHTML = `
+    <div class="mod-toolbar">
+      <button class="btn ${editMode ? 'primary' : 'ghost'}" onclick="toggleModuloEditMode('${escapeJs(slug)}')">
+        ${editMode ? '✓ Esci modalità modifica' : '✎ Modifica box'}
+      </button>
+      ${editMode ? `
+        <button class="btn ghost" onclick="addModuloBox('${escapeJs(slug)}')">+ Aggiungi box</button>
+        ${isDirty ? `
+          <button class="btn primary" id="mod-btn-save" onclick="salvaModuloBoxes('${escapeJs(slug)}')" style="background:#185FA5;border-color:#185FA5;">Salva su GitHub</button>
+          <button class="btn ghost" onclick="scartaModuloBoxesModifiche('${escapeJs(slug)}')">Scarta</button>
+          <span class="mod-toolbar-hint" style="color:#A32D2D;font-style:normal;">Modifiche non salvate</span>
+        ` : `<span class="mod-toolbar-hint">Trascina i box per spostarli, usa gli angoli per ridimensionarli.</span>`}
+      ` : ''}
+    </div>
+    <div class="mod-layout ${editMode ? 'mod-layout-edit' : ''}">
+      <aside class="mod-form" id="mod-form-aside">
+        ${editMode ? editorPanelHtml : `
+          <div class="mod-form-head">
+            <h3 style="margin:0 0 6px 0;font-family:var(--serif);font-size:18px;">Dati di compilazione</h3>
+            <p style="margin:0;font-size:12px;color:var(--ink-muted);">I valori inseriti verranno sovrapposti automaticamente al modulo nei punti predefiniti.</p>
+          </div>
+          ${noBoxesHint}
+          <div class="mod-form-fields">
+            ${formHtml}
+          </div>
+          <div class="mod-form-actions" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn primary" onclick="downloadModuloPdf('${escapeJs(slug)}')">Scarica PDF</button>
+            <button class="btn ghost" onclick="downloadModuloPng('${escapeJs(slug)}')">Scarica PNG</button>
+            ${navigator.share ? `<button class="btn ghost" onclick="shareModulo('${escapeJs(slug)}')">Condividi</button>` : ''}
+            <button class="btn ghost" onclick="resetModuloFormValues('${escapeJs(slug)}')" style="margin-left:auto;">Resetta</button>
+          </div>
+        `}
+      </aside>
+      <section class="mod-preview" id="mod-preview-section">
+        ${_renderModuloPaginatedPreview(slug, det)}
+      </section>
+    </div>`;
+}
+
+// Toggle modalità modifica box. Riapre il compilatore col nuovo stato.
+function toggleModuloEditMode(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  // Se sto USCENDO dalla modalità modifica con modifiche non salvate, chiedi conferma
+  if (c.editMode && _boxesAreDirty(slug)) {
+    const ok = confirm('Ci sono modifiche non salvate ai box.\n\nUscendo dalla modalità modifica le modifiche restano in questa sessione ma non sul repo.\n\nVuoi uscire comunque? (Per salvare, usa "Salva su GitHub")');
+    if (!ok) return;
+  }
+  c.editMode = !c.editMode;
+  c.selectedBoxIdx = null;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+}
+
+// Pannello laterale in modalità modifica: lista campi + dettaglio box selezionato.
+function _renderModuloEditorPanel(slug, det) {
+  const campiDefs = det.boxesData.campi_richiesti || [];
+  const boxes = det.boxesData.box || [];
+  const selIdx = det.selectedBoxIdx;
+  const selBox = (selIdx != null) ? boxes[selIdx] : null;
+
+  let detailsHtml = '';
+  if (selBox) {
+    const isFirma = selBox.tipo === 'firma';
+    detailsHtml = `
+      <div class="mod-edit-details">
+        <div class="mod-edit-section-title">Box selezionato (#${selIdx + 1})</div>
+        <div class="mod-field-group">
+          <label class="mod-field-label">Tipo</label>
+          <div class="mod-segmented">
+            <button class="mod-seg ${!isFirma ? 'active' : ''}" onclick="setBoxTipo('${escapeJs(slug)}',${selIdx},'campo')">Campo dato</button>
+            <button class="mod-seg ${isFirma ? 'active' : ''}" onclick="setBoxTipo('${escapeJs(slug)}',${selIdx},'firma')">Firma</button>
+          </div>
+        </div>
+        ${!isFirma ? `
+          <div class="mod-field-group">
+            <label class="mod-field-label">Campo associato</label>
+            <select class="mod-input" onchange="setBoxAttr('${escapeJs(slug)}',${selIdx},'campo',this.value)">
+              <option value="">— scegli campo —</option>
+              ${campiDefs.map(c => `<option value="${escapeHtml(c.id)}" ${selBox.campo === c.id ? 'selected' : ''}>${escapeHtml(c.label)} (${escapeHtml(c.tipo)})</option>`).join('')}
+            </select>
+          </div>
+          ${(() => {
+            const def = campiDefs.find(c => c.id === selBox.campo);
+            if (def && def.tipo === 'paziente_completo') {
+              return `<div class="mod-field-group">
+                <label class="mod-field-label">Formato</label>
+                <select class="mod-input" onchange="setBoxAttr('${escapeJs(slug)}',${selIdx},'formato',this.value)">
+                  <option value="" ${!selBox.formato ? 'selected' : ''}>Cognome Nome (data)</option>
+                  <option value="cognome_nome" ${selBox.formato === 'cognome_nome' ? 'selected' : ''}>Cognome Nome</option>
+                  <option value="cognome" ${selBox.formato === 'cognome' ? 'selected' : ''}>Solo cognome</option>
+                  <option value="nome" ${selBox.formato === 'nome' ? 'selected' : ''}>Solo nome</option>
+                  <option value="data_nascita" ${selBox.formato === 'data_nascita' ? 'selected' : ''}>Solo data di nascita</option>
+                </select>
+              </div>`;
+            }
+            return '';
+          })()}
+        ` : `
+          <div class="mod-field-group">
+            <label class="mod-field-label">Etichetta firma</label>
+            <input type="text" class="mod-input" value="${escapeHtml(selBox.label || 'Firma')}"
+                   oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'label',this.value)">
+          </div>
+        `}
+        <div class="mod-field-group">
+          <label class="mod-field-label">Allineamento testo</label>
+          <div class="mod-segmented">
+            <button class="mod-seg ${(selBox.align || 'left') === 'left' ? 'active' : ''}" onclick="setBoxAttr('${escapeJs(slug)}',${selIdx},'align','left')">Sx</button>
+            <button class="mod-seg ${selBox.align === 'center' ? 'active' : ''}" onclick="setBoxAttr('${escapeJs(slug)}',${selIdx},'align','center')">Centro</button>
+            <button class="mod-seg ${selBox.align === 'right' ? 'active' : ''}" onclick="setBoxAttr('${escapeJs(slug)}',${selIdx},'align','right')">Dx</button>
+          </div>
+        </div>
+        <div class="mod-field-group">
+          <label class="mod-field-label">Dimensione font (px)</label>
+          <input type="number" class="mod-input" min="6" max="48" value="${selBox.font_size || 11}"
+                 oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',parseInt(this.value)||11)">
+        </div>
+        <div class="mod-edit-coords">
+          <div><span>x</span><strong>${(selBox.x || 0).toFixed(1)}%</strong></div>
+          <div><span>y</span><strong>${(selBox.y || 0).toFixed(1)}%</strong></div>
+          <div><span>w</span><strong>${(selBox.w || 0).toFixed(1)}%</strong></div>
+          <div><span>h</span><strong>${(selBox.h || 0).toFixed(1)}%</strong></div>
+        </div>
+        <div class="mod-form-actions" style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn ghost" onclick="duplicateModuloBox('${escapeJs(slug)}',${selIdx})">Duplica</button>
+          <button class="btn ghost" style="color:#A32D2D;" onclick="deleteModuloBox('${escapeJs(slug)}',${selIdx})">Elimina</button>
+        </div>
+      </div>`;
+  }
+
+  const boxListHtml = boxes.length ? boxes.map((b, i) => {
+    const def = campiDefs.find(c => c.id === b.campo);
+    const label = b.tipo === 'firma' ? `✎ ${b.label || 'Firma'}` : (def ? def.label : (b.campo || '— senza campo —'));
+    return `<div class="mod-box-list-item ${selIdx === i ? 'selected' : ''}" onclick="selectModuloBox('${escapeJs(slug)}',${i})">
+      <span class="mod-box-list-num">#${i + 1}</span>
+      <span class="mod-box-list-label">${escapeHtml(label)}</span>
+      <span class="mod-box-list-page">p${b.pagina || 1}</span>
+    </div>`;
+  }).join('') : '<p style="margin:0;color:var(--ink-muted);font-size:12px;font-style:italic;">Nessun box. Clicca "+ Aggiungi box" per iniziare.</p>';
+
+  return `
+    <div class="mod-form-head">
+      <h3 style="margin:0 0 6px 0;font-family:var(--serif);font-size:18px;">Editor box</h3>
+      <p style="margin:0;font-size:12px;color:var(--ink-muted);">Posiziona i box sul modulo. Le modifiche restano in questa sessione finché non vengono salvate sul repo (Tappa 5).</p>
+    </div>
+    <div class="mod-edit-section">
+      <div class="mod-edit-section-title">Tutti i box (${boxes.length})</div>
+      <div class="mod-box-list">${boxListHtml}</div>
+    </div>
+    ${detailsHtml}`;
+}
+
+// Sceglie un box (lo evidenzia + apre il pannello dettagli)
+function selectModuloBox(slug, idx) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  c.selectedBoxIdx = (c.selectedBoxIdx === idx) ? null : idx;
+  // Se il box è su un'altra pagina, salta a quella
+  const b = (c.boxesData.box || [])[idx];
+  if (b && (b.pagina || 1) !== c.currentPage) c.currentPage = b.pagina || 1;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+}
+
+// Aggiunge un nuovo box di default al centro della pagina corrente
+function addModuloBox(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  const newBox = {
+    pagina: c.currentPage || 1,
+    x: 30, y: 45, w: 40, h: 4,
+    campo: '',
+    align: 'left',
+    font_size: 11
+  };
+  if (!c.boxesData.box) c.boxesData.box = [];
+  c.boxesData.box.push(newBox);
+  c.selectedBoxIdx = c.boxesData.box.length - 1;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+}
+
+// Duplica un box (offset di 2% per non sovrapporlo)
+function duplicateModuloBox(slug, idx) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
+  const orig = c.boxesData.box[idx];
+  const copy = JSON.parse(JSON.stringify(orig));
+  copy.x = Math.min(95, (copy.x || 0) + 2);
+  copy.y = Math.min(95, (copy.y || 0) + 2);
+  c.boxesData.box.push(copy);
+  c.selectedBoxIdx = c.boxesData.box.length - 1;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+}
+
+// Elimina un box (con conferma)
+function deleteModuloBox(slug, idx) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.boxesData.box) return;
+  if (!confirm('Eliminare questo box?')) return;
+  c.boxesData.box.splice(idx, 1);
+  c.selectedBoxIdx = null;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+}
+
+// Setta un attributo (campo, align, font_size, label, formato) di un box
+function setBoxAttr(slug, idx, attr, value) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
+  c.boxesData.box[idx][attr] = value;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  // Re-render sia overlay (per attributi visivi) sia panel (per coords/etichette)
+  refreshModuloOverlays(slug);
+  renderModuloCompilatore(slug, c);
+}
+
+// Cambia il tipo di box: 'campo' = legato a un campo, 'firma' = solo placeholder
+function setBoxTipo(slug, idx, tipo) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
+  const b = c.boxesData.box[idx];
+  if (tipo === 'firma') {
+    b.tipo = 'firma';
+    b.label = b.label || 'Firma';
+    delete b.campo;
+    delete b.formato;
+  } else {
+    delete b.tipo;
+    delete b.label;
+  }
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+}
+
+// Renderizza un singolo campo del form. Aggiorna `state.moduliCache[slug].formValues[c.id]`
+// e ri-renderizza i box overlay sulla preview a ogni input change.
+function _renderCampoInput(c, value, slug) {
+  const id = `mod-fld-${c.id}`;
+  const required = c.required ? ' <span style="color:#A32D2D;">*</span>' : '';
+  if (c.tipo === 'paziente_completo') {
+    const v = value || {};
+    return `
+      <div class="mod-field-group">
+        <label class="mod-field-label">${escapeHtml(c.label)}${required}</label>
+        <div class="mod-field-grid-2">
+          <input type="text" placeholder="Cognome" class="mod-input" value="${escapeHtml(v.cognome || '')}"
+                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','cognome',this.value)">
+          <input type="text" placeholder="Nome" class="mod-input" value="${escapeHtml(v.nome || '')}"
+                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','nome',this.value)">
+        </div>
+        <input type="text" placeholder="Data di nascita (gg/mm/aaaa)" class="mod-input" style="margin-top:6px;"
+               value="${escapeHtml(v.dataNascita || '')}"
+               oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','dataNascita',this.value)">
+      </div>`;
+  }
+  if (c.tipo === 'medico_nome') {
+    const v = value || { modalita: 'io', cognome: '', nome: '' };
+    const isIo = v.modalita === 'io';
+    return `
+      <div class="mod-field-group">
+        <label class="mod-field-label">${escapeHtml(c.label)}${required}</label>
+        <div class="mod-segmented" role="radiogroup">
+          <button type="button" class="mod-seg ${isIo ? 'active' : ''}" onclick="setModuloMedicoMode('${escapeJs(slug)}','${escapeJs(c.id)}','io')">Io stesso</button>
+          <button type="button" class="mod-seg ${!isIo ? 'active' : ''}" onclick="setModuloMedicoMode('${escapeJs(slug)}','${escapeJs(c.id)}','altro')">Altro medico</button>
+        </div>
+        <div class="mod-field-grid-2" style="margin-top:6px;">
+          <input type="text" placeholder="Cognome" class="mod-input" value="${escapeHtml(v.cognome || '')}" ${isIo ? 'disabled' : ''}
+                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','cognome',this.value)">
+          <input type="text" placeholder="Nome" class="mod-input" value="${escapeHtml(v.nome || '')}" ${isIo ? 'disabled' : ''}
+                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','nome',this.value)">
+        </div>
+      </div>`;
+  }
+  if (c.tipo === 'data') {
+    return `
+      <div class="mod-field-group">
+        <label class="mod-field-label" for="${id}">${escapeHtml(c.label)}${required}</label>
+        <input type="text" id="${id}" class="mod-input" placeholder="gg/mm/aaaa" value="${escapeHtml(value || '')}"
+               oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}',null,this.value)">
+      </div>`;
+  }
+  if (c.tipo === 'testo_lungo') {
+    return `
+      <div class="mod-field-group">
+        <label class="mod-field-label" for="${id}">${escapeHtml(c.label)}${required}</label>
+        <textarea id="${id}" class="mod-input" rows="2"
+                  oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}',null,this.value)">${escapeHtml(value || '')}</textarea>
+      </div>`;
+  }
+  // default: testo
+  return `
+    <div class="mod-field-group">
+      <label class="mod-field-label" for="${id}">${escapeHtml(c.label)}${required}</label>
+      <input type="text" id="${id}" class="mod-input" value="${escapeHtml(value || '')}"
+             oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}',null,this.value)">
+    </div>`;
+}
+
+// Update field handler: aggiorna stato + re-render overlay (NON l'intero compilatore)
+function updateModuloField(slug, fieldId, subKey, val) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  if (subKey) {
+    if (typeof c.formValues[fieldId] !== 'object') c.formValues[fieldId] = {};
+    c.formValues[fieldId][subKey] = val;
+  } else {
+    c.formValues[fieldId] = val;
+  }
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  // Aggiorno solo gli overlay box, non l'intero form (evita perdita focus)
+  refreshModuloOverlays(slug);
+}
+
+function setModuloMedicoMode(slug, fieldId, modalita) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  const v = c.formValues[fieldId] || {};
+  v.modalita = modalita;
+  if (modalita === 'io') {
+    v.cognome = (state.session && state.session.cognome) || '';
+    v.nome = (state.session && state.session.nome) || '';
+  } else {
+    // 'altro': lascia che l'utente digiti
+    v.cognome = '';
+    v.nome = '';
+  }
+  c.formValues[fieldId] = v;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  // Re-render del compilatore per aggiornare i campi disabled/abilitati e i loro valori
+  renderModuloCompilatore(slug, c);
+}
+
+function resetModuloFormValues(slug) {
+  if (!confirm('Resettare tutti i campi compilati?')) return;
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  c.formValues = {};
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+}
+
+// Renderizza l'intera area preview (header pagine + pagina corrente con overlay).
+function _renderModuloPaginatedPreview(slug, det) {
+  const { pageUrls } = det;
+  const totalPages = pageUrls.length;
+  const cur = det.currentPage || 1;
+  const navHtml = totalPages > 1 ? `
+    <div class="mod-page-nav">
+      <button class="btn ghost" ${cur <= 1 ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur - 1})">◀ Precedente</button>
+      <span class="mod-page-indicator">Pagina ${cur} / ${totalPages}</span>
+      <button class="btn ghost" ${cur >= totalPages ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur + 1})">Successiva ▶</button>
+    </div>` : `<div class="mod-page-indicator" style="margin-bottom:8px;">Pagina unica</div>`;
+
+  return `
+    ${navHtml}
+    <div class="mod-page-stage" id="mod-page-stage-${escapeHtml(slug)}">
+      <img class="mod-page-img" src="${pageUrls[cur - 1]}" alt="Pagina ${cur}"
+           onload="onModuloPageImgLoad('${escapeJs(slug)}', this)"
+           onerror="this.parentElement.innerHTML='<div style=padding:32px;text-align:center;color:var(--ink-muted);font-style:italic;>Pagina ${cur} non trovata. Verifica che <code>content/moduli/${escapeJs(slug)}/page-${cur}.png</code> sia caricato nel repo.</div>'">
+      <div class="mod-overlay-layer" id="mod-overlay-${escapeHtml(slug)}"></div>
+    </div>`;
+}
+
+// Quando l'immagine carica, allineo l'overlay alle dimensioni renderizzate
+function onModuloPageImgLoad(slug, imgEl) {
+  refreshModuloOverlays(slug);
+}
+
+// Cambia pagina visualizzata: re-renderizzo l'area preview (overlay si rinnoverà al carico img)
+function changeModuloPage(slug, newPage) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  c.currentPage = Math.max(1, Math.min(newPage, c.pageUrls.length));
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  const sec = document.getElementById('mod-preview-section');
+  if (sec) sec.innerHTML = _renderModuloPaginatedPreview(slug, c);
+}
+
+// Ridisegna gli overlay del modulo (chiamato da updateModuloField + onModuloPageImgLoad).
+// I box hanno coordinate in PERCENTUALE; con --img-w/h CSS vars (impostate qui),
+// gli overlay si auto-allineano all'immagine renderizzata.
+function refreshModuloOverlays(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  const layer = document.getElementById('mod-overlay-' + slug);
+  const stage = document.getElementById('mod-page-stage-' + slug);
+  if (!layer || !stage) return;
+  const img = stage.querySelector('img.mod-page-img');
+  if (!img || !img.complete || !img.naturalWidth) return;
+
+  // Allinea il layer alle dimensioni RENDERIZZATE dell'immagine
+  layer.style.width = img.clientWidth + 'px';
+  layer.style.height = img.clientHeight + 'px';
+
+  const editMode = !!c.editMode;
+  const selIdx = c.selectedBoxIdx;
+  const campiDefs = c.boxesData.campi_richiesti || [];
+  const allBoxes = c.boxesData.box || [];
+  // Manteniamo l'indice ORIGINALE (non quello nel filter) così i click selezionano il box giusto
+  const visibleBoxIdx = allBoxes
+    .map((b, i) => ({ b, i }))
+    .filter(({ b }) => (b.pagina || 1) === c.currentPage);
+
+  // Quando in editMode l'overlay layer riceve eventi (per drag/resize/click)
+  layer.style.pointerEvents = editMode ? 'auto' : 'none';
+
+  layer.innerHTML = visibleBoxIdx.map(({ b, i }) => {
+    const value = _formatBoxValue(b, campiDefs, c.formValues);
+    const isFirma = b.tipo === 'firma';
+    const isEmpty = !value && !isFirma;
+    const display = isFirma ? '✎ Firma' : value;
+    const align = b.align || 'left';
+    const fontSize = b.font_size || 11;
+    const isSelected = editMode && i === selIdx;
+    const handles = isSelected ? `
+      <span class="mod-handle mod-handle-tl" data-handle="tl"></span>
+      <span class="mod-handle mod-handle-tr" data-handle="tr"></span>
+      <span class="mod-handle mod-handle-bl" data-handle="bl"></span>
+      <span class="mod-handle mod-handle-br" data-handle="br"></span>
+    ` : '';
+    return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''}"
+              data-box-idx="${i}"
+              style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%;
+                     text-align:${align};font-size:${fontSize}px;"
+              title="${escapeHtml(b.campo || b.label || '')}">${escapeHtml(display)}${handles}</div>`;
+  }).join('');
+
+  // Bind eventi drag/resize in editMode
+  if (editMode) _bindModuloOverlayInteractions(slug, layer, img);
+}
+
+// Bind degli eventi drag/resize/click sui box. Pointer events unificati per mouse+touch.
+function _bindModuloOverlayInteractions(slug, layer, img) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+
+  // Click su area vuota del layer → deseleziona
+  layer.onpointerdown = (e) => {
+    // Se il click NON è su un box, deseleziona
+    if (e.target === layer) {
+      c.selectedBoxIdx = null;
+      try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+      renderModuloCompilatore(slug, c);
+    }
+  };
+
+  layer.querySelectorAll('.mod-box').forEach(boxEl => {
+    const idx = parseInt(boxEl.dataset.boxIdx, 10);
+    boxEl.onpointerdown = (e) => {
+      e.stopPropagation();
+      // Click su una maniglia → resize, click sul corpo → drag (o select se non era selezionato)
+      const handle = e.target.closest('.mod-handle');
+      const isSelected = c.selectedBoxIdx === idx;
+      if (!isSelected && !handle) {
+        // Prima volta che lo clicco: solo seleziono, non draggo (evita drift accidentali)
+        c.selectedBoxIdx = idx;
+        try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+        renderModuloCompilatore(slug, c);
+        return;
+      }
+      _startBoxDragOrResize(slug, idx, e, handle ? handle.dataset.handle : null, layer, img);
+    };
+  });
+}
+
+// Avvia drag (handle=null) o resize (handle=tl/tr/bl/br). Usa Pointer Events per mouse+touch.
+function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  const box = c.boxesData.box[idx];
+  if (!box) return;
+
+  ev.preventDefault();
+  layer.setPointerCapture(ev.pointerId);
+
+  const layerRect = layer.getBoundingClientRect();
+  const W = layerRect.width;
+  const H = layerRect.height;
+
+  // Posizione iniziale del puntatore in percentuali del layer
+  const startPctX = ((ev.clientX - layerRect.left) / W) * 100;
+  const startPctY = ((ev.clientY - layerRect.top) / H) * 100;
+  const startBox = { x: box.x, y: box.y, w: box.w, h: box.h };
+
+  // Trova l'elemento DOM del box (per preview live senza re-render completo)
+  const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
+
+  const onMove = (e) => {
+    const curPctX = ((e.clientX - layerRect.left) / W) * 100;
+    const curPctY = ((e.clientY - layerRect.top) / H) * 100;
+    const dx = curPctX - startPctX;
+    const dy = curPctY - startPctY;
+
+    let nx = startBox.x, ny = startBox.y, nw = startBox.w, nh = startBox.h;
+    if (!handleType) {
+      // Drag
+      nx = Math.max(0, Math.min(100 - startBox.w, startBox.x + dx));
+      ny = Math.max(0, Math.min(100 - startBox.h, startBox.y + dy));
+    } else {
+      // Resize: trasforma dx/dy in delta delle coordinate appropriate
+      if (handleType === 'br') {
+        nw = Math.max(2, Math.min(100 - startBox.x, startBox.w + dx));
+        nh = Math.max(1, Math.min(100 - startBox.y, startBox.h + dy));
+      } else if (handleType === 'tr') {
+        nw = Math.max(2, Math.min(100 - startBox.x, startBox.w + dx));
+        const newY = Math.max(0, Math.min(startBox.y + startBox.h - 1, startBox.y + dy));
+        nh = startBox.h - (newY - startBox.y);
+        ny = newY;
+      } else if (handleType === 'bl') {
+        const newX = Math.max(0, Math.min(startBox.x + startBox.w - 2, startBox.x + dx));
+        nw = startBox.w - (newX - startBox.x);
+        nx = newX;
+        nh = Math.max(1, Math.min(100 - startBox.y, startBox.h + dy));
+      } else if (handleType === 'tl') {
+        const newX = Math.max(0, Math.min(startBox.x + startBox.w - 2, startBox.x + dx));
+        const newY = Math.max(0, Math.min(startBox.y + startBox.h - 1, startBox.y + dy));
+        nw = startBox.w - (newX - startBox.x);
+        nh = startBox.h - (newY - startBox.y);
+        nx = newX;
+        ny = newY;
+      }
+    }
+    // Applico live (no re-render React-style: tocco solo lo style del box)
+    box.x = nx; box.y = ny; box.w = nw; box.h = nh;
+    if (boxEl) {
+      boxEl.style.left = nx + '%';
+      boxEl.style.top = ny + '%';
+      boxEl.style.width = nw + '%';
+      boxEl.style.height = nh + '%';
+    }
+  };
+
+  const onEnd = (e) => {
+    layer.releasePointerCapture(ev.pointerId);
+    layer.removeEventListener('pointermove', onMove);
+    layer.removeEventListener('pointerup', onEnd);
+    layer.removeEventListener('pointercancel', onEnd);
+    try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+    // Re-render del panel per aggiornare le coords mostrate
+    renderModuloCompilatore(slug, c);
+  };
+
+  layer.addEventListener('pointermove', onMove);
+  layer.addEventListener('pointerup', onEnd);
+  layer.addEventListener('pointercancel', onEnd);
+}
+
+/* ============================ MODULI — GENERAZIONE OUTPUT ============================ */
+
+// Carica un'immagine come Image() (Promise). Necessario per draw su canvas.
+// crossOrigin=anonymous serve per evitare canvas tainted (raw.githubusercontent.com supporta CORS).
+function _loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(new Error('Caricamento immagine fallito: ' + src));
+    img.src = src;
+  });
+}
+
+// Renderizza una singola pagina del modulo su canvas (alle dimensioni naturali della PNG)
+// con i box compilati sovrapposti come testo nativo.
+async function _renderModuloPaginaSuCanvas(slug, pageIndex /* 1-based */) {
+  const c = state.moduliCache[slug];
+  if (!c) throw new Error('Modulo non in cache');
+  const url = c.pageUrls[pageIndex - 1];
+  if (!url) throw new Error('Pagina ' + pageIndex + ' non disponibile');
+  const img = await _loadImage(url);
+
+  // Canvas alle dimensioni naturali della PNG → output ad alta risoluzione (stampa)
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  // Disegno i box di questa pagina come testo nativo
+  const campiDefs = c.boxesData.campi_richiesti || [];
+  const boxes = (c.boxesData.box || []).filter(b => (b.pagina || 1) === pageIndex);
+
+  ctx.fillStyle = '#000';
+  ctx.textBaseline = 'top';
+
+  boxes.forEach(b => {
+    const value = _formatBoxValue(b, campiDefs, c.formValues);
+    if (!value) return; // box vuoto o firma → niente testo
+    if (b.tipo === 'firma') return; // firma non si stampa, è solo placeholder per firma manuale
+
+    // Le coordinate sono in % della pagina; converto in pixel sul canvas
+    const x = (b.x / 100) * canvas.width;
+    const y = (b.y / 100) * canvas.height;
+    const w = (b.w / 100) * canvas.width;
+    const h = (b.h / 100) * canvas.height;
+
+    // Calibratura font: dimensione box.font_size in px è riferita alla preview a schermo (~50% PNG width).
+    // Per il render canvas a piena risoluzione, scaliamo per mantenere proporzioni visive.
+    // Ipotizziamo che la preview sia a width = ~700px (laptop standard) e l'originale è ~2480px @300DPI A4
+    // → fattore di scala ≈ canvas.width / 700.
+    const previewWidth = 700;
+    const scale = canvas.width / previewWidth;
+    const fontSize = Math.round((b.font_size || 11) * scale);
+
+    ctx.font = `${fontSize}px Helvetica, Arial, sans-serif`;
+    ctx.textAlign = b.align === 'center' ? 'center' : (b.align === 'right' ? 'right' : 'left');
+
+    // Posizione X in base ad align
+    let drawX = x;
+    if (b.align === 'center') drawX = x + w / 2;
+    else if (b.align === 'right') drawX = x + w;
+
+    // Centratura verticale del testo nel box
+    const drawY = y + (h - fontSize) / 2;
+
+    // Clip al rettangolo del box per evitare overflow visivo
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.fillText(value, drawX, drawY);
+    ctx.restore();
+  });
+
+  return canvas;
+}
+
+// Genera array di canvas, uno per pagina del modulo
+async function _renderModuloTutteLePagine(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) throw new Error('Modulo non in cache');
+  const canvases = [];
+  for (let i = 1; i <= c.pageUrls.length; i++) {
+    const cv = await _renderModuloPaginaSuCanvas(slug, i);
+    canvases.push(cv);
+  }
+  return canvases;
+}
+
+// Helper: nome file per output (slug + cognome paziente se disponibile + data)
+function _moduloOutputFileName(slug, ext) {
+  const c = state.moduliCache[slug];
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  const titolo = m ? (m.titolo || slug) : slug;
+  const baseSlug = titolo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  // Trova un campo paziente_completo per estrarre il cognome
+  let pzSuffix = '';
+  if (c) {
+    const pzDef = (c.boxesData.campi_richiesti || []).find(d => d.tipo === 'paziente_completo');
+    if (pzDef) {
+      const v = c.formValues[pzDef.id];
+      if (v && v.cognome) {
+        pzSuffix = '_' + v.cognome.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      }
+    }
+  }
+  const d = new Date();
+  const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  return `${baseSlug}${pzSuffix}_${dateStr}.${ext}`;
+}
+
+// Verifica che i campi required siano compilati. Restituisce array di label dei campi mancanti.
+function _validateModuloRequired(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return [];
+  const missing = [];
+  (c.boxesData.campi_richiesti || []).forEach(def => {
+    if (!def.required) return;
+    const v = c.formValues[def.id];
+    if (def.tipo === 'paziente_completo') {
+      if (!v || !v.cognome || !v.nome) missing.push(def.label);
+    } else if (def.tipo === 'medico_nome') {
+      if (!v || !v.cognome) missing.push(def.label);
+    } else {
+      if (!v || !String(v).trim()) missing.push(def.label);
+    }
+  });
+  return missing;
+}
+
+// Genera PNG (singola pagina o multi-page strip) e scarica.
+// Per moduli multi-pagina facciamo download multipli (una PNG per pagina).
+async function downloadModuloPng(slug) {
+  const missing = _validateModuloRequired(slug);
+  if (missing.length && !confirm('Campi obbligatori non compilati:\n• ' + missing.join('\n• ') + '\n\nGenerare comunque il modulo?')) return;
+  try {
+    const canvases = await _renderModuloTutteLePagine(slug);
+    const baseName = _moduloOutputFileName(slug, 'png').replace(/\.png$/, '');
+    for (let i = 0; i < canvases.length; i++) {
+      const blob = await new Promise(resolve => canvases[i].toBlob(resolve, 'image/png'));
+      const fname = canvases.length > 1 ? `${baseName}_pag${i + 1}.png` : `${baseName}.png`;
+      _triggerDownload(blob, fname);
+    }
+    toast(`Modulo PNG ${canvases.length > 1 ? '(' + canvases.length + ' pagine) ' : ''}scaricato`, 'success');
+  } catch (e) {
+    console.error(e);
+    toast('Errore generazione PNG: ' + e.message, 'error');
+  }
+}
+
+// Genera PDF multipagina e scarica.
+async function downloadModuloPdf(slug) {
+  const missing = _validateModuloRequired(slug);
+  if (missing.length && !confirm('Campi obbligatori non compilati:\n• ' + missing.join('\n• ') + '\n\nGenerare comunque il modulo?')) return;
+  if (!window.jspdf || !window.jspdf.jsPDF) return toast('Libreria PDF non caricata', 'error');
+  try {
+    const canvases = await _renderModuloTutteLePagine(slug);
+    const blob = await _canvasesToPdfBlob(canvases);
+    _triggerDownload(blob, _moduloOutputFileName(slug, 'pdf'));
+    toast('Modulo PDF scaricato', 'success');
+  } catch (e) {
+    console.error(e);
+    toast('Errore generazione PDF: ' + e.message, 'error');
+  }
+}
+
+// Converte array di canvas in un singolo Blob PDF (A4 portrait, una pagina per canvas)
+async function _canvasesToPdfBlob(canvases) {
+  const { jsPDF } = window.jspdf;
+  // A4 in mm: 210x297. Scelgo unità mm così il layout è prevedibile.
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  for (let i = 0; i < canvases.length; i++) {
+    if (i > 0) pdf.addPage();
+    const canvas = canvases[i];
+    const aspect = canvas.height / canvas.width;
+    const pageW = 210;
+    const imgW = pageW;
+    const imgH = imgW * aspect;
+    // Se l'immagine eccede l'altezza A4, scaliamo per altezza
+    let finalW = imgW, finalH = imgH;
+    if (imgH > 297) {
+      finalH = 297;
+      finalW = finalH / aspect;
+    }
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92); // JPG per dimensioni file ragionevoli
+    const offsetX = (pageW - finalW) / 2;
+    const offsetY = (297 - finalH) / 2;
+    pdf.addImage(dataUrl, 'JPEG', offsetX, offsetY, finalW, finalH);
+  }
+  return pdf.output('blob');
+}
+
+// Trigger download di un Blob (cross-browser)
+function _triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
+// Web Share API: condivide il modulo come file (PDF preferito, PNG fallback) via WhatsApp/email/etc.
+async function shareModulo(slug) {
+  const missing = _validateModuloRequired(slug);
+  if (missing.length && !confirm('Campi obbligatori non compilati:\n• ' + missing.join('\n• ') + '\n\nCondividere comunque?')) return;
+  if (!navigator.share) {
+    return toast('Condivisione file non supportata su questo browser. Usa "Scarica PDF" o "Scarica PNG".', 'warning', 5000);
+  }
+  try {
+    const canvases = await _renderModuloTutteLePagine(slug);
+    let file;
+    const m = (state.index.moduli || []).find(x => x.slug === slug);
+    const title = m ? (m.titolo || slug) : slug;
+    // PDF se supportato + jsPDF disponibile, altrimenti PNG
+    if (window.jspdf && window.jspdf.jsPDF) {
+      const blob = await _canvasesToPdfBlob(canvases);
+      file = new File([blob], _moduloOutputFileName(slug, 'pdf'), { type: 'application/pdf' });
+    } else {
+      const blob = await new Promise(resolve => canvases[0].toBlob(resolve, 'image/png'));
+      file = new File([blob], _moduloOutputFileName(slug, 'png'), { type: 'image/png' });
+    }
+    // Test canShare con i file (alcuni browser non supportano file share anche se share è disponibile)
+    if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+      return toast('Condivisione file non supportata. Usa "Scarica PDF" o "Scarica PNG".', 'warning', 5000);
+    }
+    await navigator.share({ files: [file], title: title, text: title });
+  } catch (e) {
+    if (e.name !== 'AbortError') {  // utente ha cancellato il dialog
+      console.error(e);
+      toast('Errore condivisione: ' + e.message, 'error');
+    }
+  }
+}
+
+/* ============================ MODULI — PERSISTENZA GITHUB ============================ */
+
+// Salva il boxes.yml corrente sul repo dati. Aggiorna anche moduli/index.yml col nuovo
+// `aggiornato` (così altri client invalidano la cache e fetchano la nuova versione).
+async function salvaModuloBoxes(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return toast('Modulo non in cache', 'error');
+  if (!_boxesAreDirty(slug)) {
+    return toast('Nessuna modifica da salvare', 'info');
+  }
+  if (!state.session || !state.session.tokenAuth) {
+    return toast('Login richiesto per salvare modifiche', 'error');
+  }
+
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  if (!m) return toast('Modulo non in indice', 'error');
+
+  // Conferma esplicita (operazione "permanente" sul repo)
+  const nBoxes = (c.boxesData.box || []).length;
+  if (!confirm(`Salvare ${nBoxes} box su GitHub?\n\nQuesta modifica sarà visibile a tutti gli utenti.`)) return;
+
+  const btn = document.getElementById('mod-btn-save');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
+
+  try {
+    // 1) Scrivi boxes.yml
+    const boxesPath = `content/moduli/${slug}/boxes.yml`;
+    // Pulisci dati per scrittura: solo campi_richiesti + box (no metadati app)
+    const toWrite = {
+      campi_richiesti: c.boxesData.campi_richiesti || [],
+      box: c.boxesData.box || []
+    };
+    const yamlStr = `# Box e campi per "${m.titolo || slug}".\n# Coordinate in PERCENTUALE (0-100) sulla pagina, origine top-left.\n# Aggiornato da ${state.session.username || '?'} il ${new Date().toLocaleString('it-IT')}.\n\n` +
+      jsyaml.dump(toWrite, { lineWidth: 120, noRefs: true, sortKeys: false });
+
+    const commitMsg = `chore(moduli): aggiorna box ${slug} (${nBoxes} box, by ${state.session.username})`;
+    const res = await gh.putFile(boxesPath, yamlStr, c.boxesSha, commitMsg);
+    if (res && res.content && res.content.sha) {
+      c.boxesSha = res.content.sha;
+    }
+
+    // 2) Aggiorna moduli/index.yml col nuovo `aggiornato` (data odierna)
+    try {
+      const indexPath = 'content/moduli/index.yml';
+      const f = await gh.getFile(indexPath);
+      if (f) {
+        const idx = jsyaml.load(f.content) || { moduli: [] };
+        const today = new Date().toISOString().slice(0, 10);
+        let touched = false;
+        (idx.moduli || []).forEach(mm => {
+          if (mm.slug === slug) {
+            mm.aggiornato = today;
+            touched = true;
+          }
+        });
+        if (touched) {
+          const newContent = jsyaml.dump(idx, { lineWidth: 120, noRefs: true, sortKeys: false });
+          await gh.putFile(indexPath, newContent, f.sha, `chore(moduli): timestamp aggiornamento ${slug}`);
+          // Riallinea state.index.moduli in memoria
+          const localM = (state.index.moduli || []).find(x => x.slug === slug);
+          if (localM) {
+            localM.aggiornato = today;
+            localM.ultima_modifica = today;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[salvaModuloBoxes] aggiornamento index.yml fallito (non critico):', e);
+    }
+
+    // 3) Aggiorna snapshot pristine (= il salvato è ora il "nuovo pristine")
+    c.pristineBoxes = JSON.parse(JSON.stringify(c.boxesData.box || []));
+    try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+
+    toast('Modifiche salvate su GitHub', 'success');
+    renderModuloCompilatore(slug, c);
+  } catch (e) {
+    console.error(e);
+    if (e.message && e.message.includes('409')) {
+      toast('Conflitto: il file è stato modificato da un altro utente. Ricarica la pagina.', 'error', 6000);
+    } else {
+      toast('Errore salvataggio: ' + e.message, 'error');
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Salva su GitHub'; }
+  }
+}
+
+// Scarta le modifiche locali e ricarica i box dal pristine
+function scartaModuloBoxesModifiche(slug) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.pristineBoxes) return;
+  if (!_boxesAreDirty(slug)) return toast('Nessuna modifica da scartare', 'info');
+  if (!confirm('Scartare tutte le modifiche locali ai box?\n\nLe modifiche non salvate andranno perse.')) return;
+  c.boxesData.box = JSON.parse(JSON.stringify(c.pristineBoxes));
+  c.selectedBoxIdx = null;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  renderModuloCompilatore(slug, c);
+  toast('Modifiche scartate', 'info');
+}
+
 
 /* ============================ VIEW — CALENDARIO ============================ */
 const CAL_CATEGORIES = {
@@ -9005,54 +10172,6 @@ async function calImportSave() {
   }
 }
 
-/* ============================ VIEW — TABELLE ============================ */
-function renderTabelleList() {
-  const tt = state.index.tabelle;
-  $('main-content').innerHTML = `
-    <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
-      <h1 class="page-title">Tabelle di riferimento</h1>
-    </div>
-    <div class="procedure-grid">
-      ${tt.map(t => `
-        <div class="procedure-card" onclick="navigate('tabella', {slug:'${escapeHtml(t.slug)}'})">
-          <div class="procedure-card-title">${escapeHtml(t.titolo || t.slug)}
-            <span class="card-actions">${renderPinButton('tabella', t.slug)}</span>
-          </div>
-          <div class="procedure-card-meta"><span>Aggiornata ${timeAgo(t.ultima_modifica)}</span></div>
-        </div>
-      `).join('') || '<p style="color:var(--ink-muted);">Nessuna tabella.</p>'}
-    </div>`;
-}
-
-function renderTabella(slug) {
-  const t = state.index.tabelle.find(x => x.slug === slug);
-  if (!t) return renderError('Tabella non trovata', slug);
-  const bodyHtml = renderMarkdownWithImages(t.body || '', t.path);
-  const relatedProcs = (t.procedure_correlate || []).map(pid => state.index.procedure.find(p => p.slug === pid)).filter(Boolean);
-  $('main-content').innerHTML = `
-    <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Tabelle', route:'tabelle'}])}</div>
-      <h1 class="page-title">${escapeHtml(t.titolo || slug)} ${renderPinButton('tabella', slug)}</h1>
-      <div class="page-meta">
-        <div class="page-meta-item">Aggiornata ${timeAgo(t.ultima_modifica)} da <span style="font-family:var(--mono);color:var(--ink-soft);">${escapeHtml(t.modificato_da || '—')}</span></div>
-      </div>
-      <div class="page-actions">
-        <button class="btn ghost" onclick="shareLink(buildShareUrl('tabella', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(t.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questa tabella"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
-      </div>
-    </div>
-    <article class="procedura-body">${bodyHtml}</article>
-    ${relatedProcs.length ? `
-      <div class="related-grid">
-        ${relatedProcs.map(p => `
-          <div class="related-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
-            <div class="related-card-label">Procedura</div>
-            <div class="related-card-title">${escapeHtml(p.titolo)}</div>
-          </div>`).join('')}
-      </div>` : ''}`;
-  scrollToPendingBlock();
-}
-
 /* ============================ VIEW — CESTINO ============================ */
 function renderCestino() {
   const items = state.index.cestino || [];
@@ -9174,9 +10293,10 @@ function nuovaProcedura(preset = {}) {
 
         const body = '';
         const content = stringifyMarkdown(nf, body);
+        // Schema cartella per scheda: content/procedure/<cat>/[<sub>/]<slug>/scheda.md
         let path = `content/procedure/${categoria}/`;
         if (sottocat) path += `${sottocat}/`;
-        path += `${slug}.md`;
+        path += `${slug}/scheda.md`;
 
         try {
           const res = await gh.putFile(path, content, null, `Nuova procedura: ${slug} (by ${state.session.username})`);
@@ -9230,13 +10350,19 @@ async function softDelete(type, slug) {
   toast('Eliminazione in corso...', 'info', 2000);
   try {
     const typeDir = type === 'procedura' ? 'procedure' : type;
-    const srcPath = `content/${typeDir}/${slug}.md`;
+    // Schema cartella per scheda: entity.path è già 'content/<typeDir>/.../<slug>/scheda.md'.
+    const entity = state.index[type === 'procedura' ? 'procedure' : type].find(x => x.slug === slug);
+    if (!entity) throw new Error('Scheda non trovata in indice');
+    const srcPath = entity.path;
     const file = await gh.getFile(srcPath);
     if (!file) throw new Error('File non trovato');
 
     const { frontmatter, body } = parseMarkdown(file.content);
     frontmatter.eliminato_data = nowIso();
     frontmatter.eliminato_da = state.session.username;
+    // Memorizzo il path originale nel frontmatter del file di cestino, così il restore può
+    // ricostruire la cartella scheda corretta.
+    frontmatter._original_path = srcPath;
     const archivedContent = stringifyMarkdown(frontmatter, body);
 
     const ts = nowIso().replace(/[:.]/g, '-').replace(/\..*/, '');
@@ -9245,6 +10371,9 @@ async function softDelete(type, slug) {
 
     await gh.putFile(newPath, archivedContent, null, `Sposta nel cestino: ${slug} (by ${state.session.username})`);
     await gh.deleteFile(srcPath, file.sha, `Rimuovi ${slug} (spostato in cestino by ${state.session.username})`);
+    // Nota: la cartella img/ accanto resta sul repo (orfana). L'utente può cancellarla
+    // a mano se sa che non vuole ripristinare la scheda. In caso di restore, le immagini
+    // tornano automaticamente disponibili (sono nella cartella originale).
 
     toast('Spostato nel cestino', 'success');
     await buildIndex();
@@ -9259,7 +10388,18 @@ async function restoreFromCestino(path, filename) {
   if (!m) return toast('Formato filename non riconosciuto', 'error');
   const targetSlug = m[1];
   const typeDir = path.split('/')[1];
-  const targetPath = `content/${typeDir}/${targetSlug}.md`;
+
+  // Per ricostruire il path target, controllo se nel cestino è memorizzato _original_path
+  // (lo facciamo dal nuovo softDelete). Altrimenti uso path "default" content/<typeDir>/<slug>/scheda.md
+  // (no sottocategoria — l'utente potrà spostarlo dopo se serve).
+  let cestFile = null;
+  try { cestFile = await gh.getFile(path); } catch {}
+  let originalPath = null;
+  if (cestFile) {
+    const { frontmatter } = parseMarkdown(cestFile.content);
+    originalPath = frontmatter._original_path || null;
+  }
+  const targetPath = originalPath || `content/${typeDir}/${targetSlug}/scheda.md`;
 
   const existing = await gh.getFile(targetPath);
   if (existing) {
@@ -9269,35 +10409,40 @@ async function restoreFromCestino(path, filename) {
       body: `<p style="font-size:14px;color:var(--ink-soft);">Cosa vuoi fare?</p>`,
       actions: [
         { label: 'Annulla', variant: 'ghost', onClick: closeModal },
-        { label: 'Sostituisci', variant: 'danger', onClick: () => { closeModal(); doRestore(path, filename, targetSlug, typeDir, true); } },
+        { label: 'Sostituisci', variant: 'danger', onClick: () => { closeModal(); doRestore(path, filename, targetSlug, typeDir, true, targetPath); } },
         { label: 'Ripristina con nome diverso', onClick: () => {
           closeModal();
           const proposed = prompt('Nuovo slug per il file ripristinato:', `${targetSlug}-ripristinato`);
-          if (proposed && proposed.trim()) doRestore(path, filename, proposed.trim(), typeDir, false);
+          if (proposed && proposed.trim()) {
+            // Modifico path mantenendo la stessa directory parent ma cambiando l'ultimo segmento (slug)
+            const parentDir = targetPath.replace(/\/[^/]+\/scheda\.md$/, '');
+            const newTargetPath = `${parentDir}/${proposed.trim()}/scheda.md`;
+            doRestore(path, filename, proposed.trim(), typeDir, false, newTargetPath);
+          }
         }}
       ]
     });
   } else {
-    doRestore(path, filename, targetSlug, typeDir, false);
+    doRestore(path, filename, targetSlug, typeDir, false, targetPath);
   }
 }
 
-async function doRestore(cestinoPath, cestinoFilename, targetSlug, typeDir, replaceExisting) {
+async function doRestore(cestinoPath, cestinoFilename, targetSlug, typeDir, replaceExisting, targetPath) {
   try {
     const cestinoFile = await gh.getFile(cestinoPath);
     if (!cestinoFile) throw new Error('File nel cestino non trovato');
     const { frontmatter, body } = parseMarkdown(cestinoFile.content);
     delete frontmatter.eliminato_data;
     delete frontmatter.eliminato_da;
+    delete frontmatter._original_path;
     frontmatter.ultima_modifica = nowIso();
     frontmatter.modificato_da = state.session.username;
     const restoredContent = stringifyMarkdown(frontmatter, body);
-    const targetPath = `content/${typeDir}/${targetSlug}.md`;
 
     if (replaceExisting) {
       const existing = await gh.getFile(targetPath);
       const ts = nowIso().replace(/[:.]/g, '-').replace(/\..*/, '');
-      const archiveName = `${existing.path.split('/').pop().replace(/\.md$/,'')}__${ts}__${state.session.username}.md`;
+      const archiveName = `${targetSlug}__${ts}__${state.session.username}.md`;
       const archivePath = `cestino/${typeDir}/${archiveName}`;
       await gh.putFile(archivePath, existing.content, null, `Archivio pre-restore: ${targetSlug}`);
       await gh.putFile(targetPath, restoredContent, existing.sha, `Ripristina ${targetSlug} (replace) by ${state.session.username}`);
@@ -9308,7 +10453,8 @@ async function doRestore(cestinoPath, cestinoFilename, targetSlug, typeDir, repl
     await gh.deleteFile(cestinoPath, cestinoFile.sha, `Svuota cestino: ${cestinoFilename}`);
     toast('Ripristinato', 'success');
     await buildIndex();
-    navigate('procedura', { slug: targetSlug });
+    const route = typeDir === 'procedure' ? 'procedura' : 'clinica-scheda';
+    navigate(route, { slug: targetSlug });
   } catch (e) {
     toast('Errore ripristino: ' + e.message, 'error', 6000);
   }
@@ -9794,7 +10940,7 @@ function renderAttivita() {
   // Stato locale di questa vista (filtri e caricamento commits)
   if (!state._attivitaState) {
     state._attivitaState = {
-      filter: 'tutti',          // tutti | procedure | clinica | moduli | tabelle | numeri | utenti
+      filter: 'tutti',          // tutti | procedure | clinica | moduli | numeri | utenti
       loadingCommits: false,
       commits: null,            // array di eventi da commit GitHub
       error: null
@@ -9803,7 +10949,7 @@ function renderAttivita() {
   const s = state._attivitaState;
 
   // 1) EVENTI DA cronologia_recente NEI FILE
-  //    Tutti gli oggetti (procedura, clinica, modulo, tabella) con cronologia_recente
+  //    Tutti gli oggetti (procedura, clinica, modulo) con cronologia_recente
   //    producono un evento per ogni entry.
   const eventsFromFiles = [];
   const pushEntries = (items, tipo) => {
@@ -9826,7 +10972,6 @@ function renderAttivita() {
   pushEntries(state.index.procedure, 'procedura');
   pushEntries(state.index.clinica, 'clinica');
   pushEntries(state.index.moduli, 'modulo');
-  pushEntries(state.index.tabelle, 'tabella');
 
   // 2) EVENTI DA COMMIT GITHUB (opzionale, caricati on-demand)
   //    Cattura modifiche che non hanno cronologia nel file (numeri.yml, utenti, ecc.).
@@ -9857,7 +11002,6 @@ function renderAttivita() {
     { key: 'clinica', label: 'Cliniche' },
     { key: 'numeri', label: 'Numeri' },
     { key: 'modulo', label: 'Moduli' },
-    { key: 'tabella', label: 'Tabelle' },
     { key: 'utenti', label: 'Utenti' }
   ];
   const chipsHtml = chipDefs
@@ -9943,7 +11087,6 @@ function renderAttivitaEvent(e) {
   if (e.slug && e.tipo === 'procedura') clickHandler = `onclick="navigate('procedura',{slug:'${escapeJs(e.slug)}'})"`;
   else if (e.slug && e.tipo === 'clinica') clickHandler = `onclick="navigate('clinica-scheda',{slug:'${escapeJs(e.slug)}'})"`;
   else if (e.slug && e.tipo === 'modulo') clickHandler = `onclick="navigate('modulo',{slug:'${escapeJs(e.slug)}'})"`;
-  else if (e.slug && e.tipo === 'tabella') clickHandler = `onclick="navigate('tabella',{slug:'${escapeJs(e.slug)}'})"`;
   else if (e.tipo === 'numeri') clickHandler = `onclick="navigate('numeri')"`;
 
   return `<div class="at-event" ${clickHandler} ${clickHandler ? 'style="cursor:pointer;"' : ''}>
@@ -10021,10 +11164,10 @@ async function _fetchAttivitaCommits() {
     } else if (/^(acquire|release|chore\(locks\))/i.test(firstLine)) {
       continue; // filtro locks: troppo rumore
     }
-    // De-dup: per procedure/cliniche/moduli/tabelle la cronologia_recente nei file
+    // De-dup: per procedure/cliniche/moduli la cronologia_recente nei file
     // copre già le modifiche. I commit su quei file sarebbero un duplicato.
     // Tengo solo numeri, utenti, cestino, immagine, altro.
-    if (tipo === 'procedura' || tipo === 'clinica' || tipo === 'modulo' || tipo === 'tabella') {
+    if (tipo === 'procedura' || tipo === 'clinica' || tipo === 'modulo') {
       continue;
     }
     out.push({
@@ -10229,7 +11372,6 @@ function toggleEditMode(force) {
     if (state.currentView === 'procedura-edit') targetRoute = 'procedura';
     else if (state.currentView === 'clinica-edit') targetRoute = 'clinica-scheda';
     else if (state.currentView === 'modulo-edit') targetRoute = 'modulo';
-    else if (state.currentView === 'tabella-edit') targetRoute = 'tabella';
     // Aggiorno stato edit mode e UI
     navState.editMode = false;
     document.body.classList.toggle('edit-mode', false);
@@ -10304,7 +11446,6 @@ function getRootNavNodes() {
     { id: 'clinica', label: 'Clinica', count: (state.index.clinica || []).length, kind: 'top', slug: 'clinica', navTarget: { route: 'clinica', params: {} }, children: () => buildClinicaChildren() },
     { id: 'numeri', label: 'Rubrica', count: countNumeri(), kind: 'top', slug: 'numeri', navTarget: { route: 'numeri', params: {} } },
     { id: 'moduli', label: 'Moduli', count: state.index.moduli.length, kind: 'top', slug: 'moduli', navTarget: { route: 'moduli', params: {} }, children: () => buildModuliChildren() },
-    { id: 'tabelle', label: 'Tabelle', count: state.index.tabelle.length, kind: 'top', slug: 'tabelle', navTarget: { route: 'tabelle', params: {} }, children: () => buildTabelleChildren() },
     { id: 'calendario', label: 'Calendario', count: ((state.index.calendar && state.index.calendar.eventi) || []).length, kind: 'top', slug: 'calendario', navTarget: { route: 'calendario', params: {} } },
     { id: 'manuale', label: 'Manuale', count: (state.index.capitoli || []).length, kind: 'top', slug: 'manuale', navTarget: { route: 'manuale', params: {} }, children: () => buildManualeChildren() },
   ];
@@ -10603,19 +11744,6 @@ function buildModuliChildren() {
   }));
 }
 
-function buildTabelleChildren() {
-  return state.index.tabelle.map(t => ({
-    id: 'tabella:' + t.slug,
-    label: t.titolo || t.slug,
-    count: null,
-    action: 'navigate',
-    navTarget: { route: 'tabella', params: { slug: t.slug } },
-    kind: 'tabella',
-    slug: t.slug,
-    children: null
-  }));
-}
-
 function buildManualeChildren() {
   return (state.index.capitoli || []).map(c => {
     const pezzi = state.index.procedure.filter(p => p.capitolo === c.id);
@@ -10785,8 +11913,7 @@ function showNavContextMenu(triggerBtn, kind, slug) {
     if (slug === 'procedure') items = [{ label: '+ Nuova categoria di procedure', action: () => nuovaMacroCategoria() }];
     else if (slug === 'clinica') items = [{ label: '+ Nuova sottocategoria clinica', action: () => createClinicaSub() }];
     else if (slug === 'numeri') items = [{ label: '+ Nuovo gruppo di numeri', action: () => nuovoGruppoNumeri() }];
-    else if (slug === 'moduli') items = [{ label: '+ Nuovo modulo', action: () => nuovoModulo && nuovoModulo() }];
-    else if (slug === 'tabelle') items = [{ label: '+ Nuova tabella', action: () => nuovaTabella && nuovaTabella() }];
+    else if (slug === 'moduli') items = [{ label: '+ Nuovo modulo', action: () => toast('Creazione moduli da app non ancora supportata. Aggiungi cartella e voce in content/moduli/index.yml dal repo.', 'info', 4000) }];
     else if (slug === 'manuale') items = [{ label: '+ Nuovo capitolo', action: () => nuovoCapitolo() }];
   } else if (kind === 'procedure') {
     items = [
@@ -10805,14 +11932,8 @@ function showNavContextMenu(triggerBtn, kind, slug) {
   } else if (kind === 'modulo') {
     items = [
       { label: 'Apri', action: () => navigate('modulo', {slug}) },
-      { label: 'Rinomina', action: () => renameModuloTabella('modulo', slug) },
-      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('modulo', slug) },
-    ];
-  } else if (kind === 'tabella') {
-    items = [
-      { label: 'Apri', action: () => navigate('tabella', {slug}) },
-      { label: 'Rinomina', action: () => renameModuloTabella('tabella', slug) },
-      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('tabella', slug) },
+      { label: 'Rinomina', action: () => renameModulo(slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDeleteModulo(slug) },
     ];
   }
 
@@ -10876,14 +11997,8 @@ function showItemContextMenu(triggerBtn, kind, slug) {
   } else if (kind === 'modulo') {
     items = [
       { label: 'Apri', action: () => navigate('modulo', {slug}) },
-      { label: 'Rinomina', action: () => renameModuloTabella('modulo', slug) },
-      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('modulo', slug) },
-    ];
-  } else if (kind === 'tabella') {
-    items = [
-      { label: 'Apri', action: () => navigate('tabella', {slug}) },
-      { label: 'Rinomina', action: () => renameModuloTabella('tabella', slug) },
-      { label: 'Elimina', danger: true, action: () => confirmDeleteModuloTabella('tabella', slug) },
+      { label: 'Rinomina', action: () => renameModulo(slug) },
+      { label: 'Elimina', danger: true, action: () => confirmDeleteModulo(slug) },
     ];
   } else if (kind === 'contatto') {
     items = [
@@ -10971,6 +12086,17 @@ async function executeMultiCommitOperation(label, ops) {
         failures.push({ op, phase: 'delete', error: e.message });
         modal.update(done, total, `⚠ File duplicato (delete fallito): ${e.message}`);
       }
+      // Sposta accessori (img/, allegati) se richiesto. Best-effort: failure non blocca l'operazione,
+      // ma viene loggato in failures con phase='accessori' così l'admin sa che restano da pulire a mano.
+      if (op.accessoriOldDir && op.accessoriNewDir) {
+        modal.setStatus(`${op.schedaTitolo}: spostamento accessori (img/)…`);
+        try {
+          const n = await _moveSchedaAccessori(op.accessoriOldDir, op.accessoriNewDir, op.commitMsg);
+          if (n > 0) modal.update(done, total, `${op.schedaTitolo}: ${n} accessori spostati`);
+        } catch (e) {
+          failures.push({ op, phase: 'accessori', error: e.message });
+        }
+      }
     }
   } finally {
     // Keep modal for 1s to show final state, then close
@@ -11050,10 +12176,14 @@ async function renameSottocategoria(macro, oldSub) {
     const newFm = { ...p, sottocategoria: newSub };
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     const newContent = stringifyMarkdown(newFm, p.body || '');
+    // Accessori (img/ ecc.) seguono la stessa rinomina di cartella della scheda
+    const oldDir = _schedaDir(p);
+    const newDir = oldDir.replace(`/${oldSub}/`, `/${newSub}/`);
     return {
       schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
       putPath: newPath, putContent: newContent,
       deletePath: p.path, deleteSha: p.sha,
+      accessoriOldDir: oldDir, accessoriNewDir: newDir,
       commitMsg: `Rinomina ${oldSub} → ${newSub}: ${p.slug}`
     };
   });
@@ -11094,10 +12224,13 @@ async function moveSottocategoria(currentMacro, sub) {
     const newFm = { ...p, categoria: dest };
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     const newContent = stringifyMarkdown(newFm, p.body || '');
+    const oldDir = _schedaDir(p);
+    const newDir = oldDir.replace(`procedure/${currentMacro}/${sub}/`, `procedure/${dest}/${sub}/`);
     return {
       schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
       putPath: newPath, putContent: newContent,
       deletePath: p.path, deleteSha: p.sha,
+      accessoriOldDir: oldDir, accessoriNewDir: newDir,
       commitMsg: `Sposta ${p.slug}: ${currentMacro}/${sub} → ${dest}/${sub}`
     };
   });
@@ -11120,27 +12253,117 @@ async function deleteSottocategoria(macro, sub) {
   renderNavTree();
 }
 
+// Sposta una cartella scheda completa (scheda.md + tutto il contenuto) da oldDir a newDir.
+// GitHub API non supporta "rename" atomico: si fa get → put nuovo path → delete originale per ogni file.
+// Restituisce numero di file processati.
+async function _moveSchedaCartella(oldDir, newDir, commitMsgPrefix) {
+  // Lista contenuto cartella
+  let items;
+  try {
+    items = await gh.listDir(oldDir);
+  } catch (e) {
+    throw new Error(`Cartella non leggibile: ${oldDir}`);
+  }
+
+  let processed = 0;
+  for (const it of items) {
+    if (it.type === 'dir') {
+      // Ricorsione su sotto-cartelle (es. img/)
+      const subOld = `${oldDir}/${it.name}`;
+      const subNew = `${newDir}/${it.name}`;
+      processed += await _moveSchedaCartella(subOld, subNew, commitMsgPrefix);
+    } else if (it.type === 'file') {
+      const oldFilePath = `${oldDir}/${it.name}`;
+      const newFilePath = `${newDir}/${it.name}`;
+      const file = await gh.getFile(oldFilePath);
+      if (!file) continue;
+      // Per file binari (immagini), getFile può restituire content base64 — verifica.
+      // Per .md restituisce stringa decoded; per altri usa raw fetch + base64.
+      let content = file.content;
+      let isBase64 = false;
+      // Se è un'immagine o file binario, riprendiamo via raw API
+      if (!it.name.endsWith('.md') && !it.name.endsWith('.yml') && !it.name.endsWith('.txt')) {
+        const rawUrl = `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${oldFilePath}`;
+        const resp = await fetch(rawUrl);
+        const buf = await resp.arrayBuffer();
+        // Encode to base64 (browser-safe)
+        let bin = '';
+        const bytes = new Uint8Array(buf);
+        for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+        content = btoa(bin);
+        isBase64 = true;
+      }
+      await gh.putFile(newFilePath, content, null, `${commitMsgPrefix}: copia ${it.name}`, isBase64);
+      await gh.deleteFile(oldFilePath, file.sha, `${commitMsgPrefix}: elimina vecchio ${it.name}`);
+      processed++;
+    }
+  }
+  return processed;
+}
+
+// Sposta SOLO gli accessori di una cartella scheda (img/, altri file non-scheda.md).
+// Usato dalle funzioni admin in massa che riscrivono scheda.md separatamente col nuovo frontmatter.
+// Restituisce numero di file accessori processati. Se oldDir non contiene accessori, ritorna 0.
+async function _moveSchedaAccessori(oldDir, newDir, commitMsgPrefix) {
+  let items;
+  try {
+    items = await gh.listDir(oldDir);
+  } catch (e) {
+    return 0; // Cartella non esiste o vuota: nessun accessorio da spostare
+  }
+  let processed = 0;
+  for (const it of items) {
+    if (it.type === 'dir') {
+      // Ricorsione: sposta intera sotto-cartella (es. img/)
+      processed += await _moveSchedaCartella(`${oldDir}/${it.name}`, `${newDir}/${it.name}`, commitMsgPrefix);
+    } else if (it.type === 'file' && it.name !== 'scheda.md') {
+      // File non-scheda.md (es. README, allegati): sposta singolo file
+      const oldFilePath = `${oldDir}/${it.name}`;
+      const newFilePath = `${newDir}/${it.name}`;
+      const file = await gh.getFile(oldFilePath);
+      if (!file) continue;
+      let content = file.content;
+      let isBase64 = false;
+      if (!it.name.endsWith('.md') && !it.name.endsWith('.yml') && !it.name.endsWith('.txt')) {
+        const rawUrl = `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${oldFilePath}`;
+        const resp = await fetch(rawUrl);
+        const buf = await resp.arrayBuffer();
+        let bin = '';
+        const bytes = new Uint8Array(buf);
+        for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+        content = btoa(bin);
+        isBase64 = true;
+      }
+      await gh.putFile(newFilePath, content, null, `${commitMsgPrefix}: copia ${it.name}`, isBase64);
+      await gh.deleteFile(oldFilePath, file.sha, `${commitMsgPrefix}: elimina vecchio ${it.name}`);
+      processed++;
+    }
+  }
+  return processed;
+}
+
 async function renameProcedura(slug) {
   const proc = state.index.procedure.find(p => p.slug === slug);
   if (!proc) return;
-  const newSlug = prompt(`Nuovo slug per "${proc.titolo}":\n(solo minuscole, cifre, trattini, sarà il nome del file)`, proc.slug);
+  const newSlug = prompt(`Nuovo slug per "${proc.titolo}":\n(solo minuscole, cifre, trattini)`, proc.slug);
   if (!newSlug || newSlug === proc.slug) return;
   if (!/^[a-z0-9-]+$/.test(newSlug)) return toast('Slug non valido', 'error');
   if (state.index.procedure.find(p => p.slug === newSlug)) return toast('Slug già esistente', 'error');
 
-  const newFm = { ...proc, id: newSlug };
-  delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
-  const newContent = stringifyMarkdown(newFm, proc.body || '');
-  const newPath = proc.path.replace(/[^/]+\.md$/, `${newSlug}.md`);
+  // Schema cartella per scheda: rinomino la CARTELLA (slug = nome dir), non solo il file.
+  // Path: content/procedure/<cat>/.../<slug>/scheda.md → content/procedure/<cat>/.../<newSlug>/scheda.md
+  const oldDir = _schedaDir(proc);
+  const parentDir = oldDir.replace(/\/[^/]+$/, '');
+  const newDir = `${parentDir}/${newSlug}`;
 
-  if (!confirm(`Rinominare "${proc.slug}" → "${newSlug}"?\n2 commit (crea nuovo + elimina vecchio).`)) return;
+  if (!confirm(`Rinominare "${proc.slug}" → "${newSlug}"?\n\nVerrà spostata l'intera cartella (scheda.md + img/ se presente). L'operazione richiede più commit.`)) return;
   toast('Rinomina in corso...', 'info');
   try {
-    await gh.putFile(newPath, newContent, null, `Rinomina ${proc.slug} → ${newSlug}`);
-    await gh.deleteFile(proc.path, proc.sha, `Elimina vecchio ${proc.slug} (rinomina)`);
-    toast('Rinominata', 'success');
+    const processed = await _moveSchedaCartella(oldDir, newDir, `Rinomina ${proc.slug} → ${newSlug}`);
+    toast(`Rinominata (${processed} file processati)`, 'success');
     await buildIndex();
     renderNavTree();
+    if (state.currentView === 'procedura' && state.currentParams?.slug === slug) navigate('procedura', { slug: newSlug });
   } catch (e) { toast('Errore: ' + e.message, 'error'); }
 }
 
@@ -11176,68 +12399,59 @@ async function moveProcedura(slug) {
     return toast('Destinazione uguale alla posizione attuale', 'info');
   }
 
-  // Build new path
-  const newPath = `content/procedure/${destCat}/${destSub ? destSub + '/' : ''}${slug}.md`;
+  // Build new dir + scheda path (schema cartella per scheda)
+  const newDir = `content/procedure/${destCat}/${destSub ? destSub + '/' : ''}${slug}`;
+  const newPath = `${newDir}/scheda.md`;
   if (newPath === proc.path) return toast('Path invariato', 'info');
 
+  // Aggiorna anche frontmatter (categoria/sottocategoria) → richiede riscrivere scheda.md
   const newFm = { ...proc, categoria: destCat };
   if (destSub) newFm.sottocategoria = destSub; else delete newFm.sottocategoria;
   delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
   delete newFm.tempo_esecuzione_min;
-  const newContent = stringifyMarkdown(newFm, proc.body || '');
+  const newSchedaContent = stringifyMarkdown(newFm, proc.body || '');
 
-  if (!confirm(`Spostare "${proc.slug}"?\n\nDa: ${proc.path}\nA: ${newPath}\n\n2 commit (crea + elimina vecchio).`)) return;
+  if (!confirm(`Spostare "${proc.slug}"?\n\nDa: ${proc.path}\nA: ${newPath}\n\nVerrà spostata l'intera cartella (scheda.md + img/ se presente). Più commit.`)) return;
   toast('Spostamento in corso...', 'info');
   try {
-    await gh.putFile(newPath, newContent, null, `Sposta ${proc.slug} → ${destCat}/${destSub || ''}`);
-    await gh.deleteFile(proc.path, proc.sha, `Elimina vecchio ${proc.slug}`);
-    toast('Spostata', 'success');
+    const oldDir = _schedaDir(proc);
+    // 1. Sposta i file ACCESSORI (img/, ecc.) — non scheda.md (che riscrivo io con frontmatter aggiornato)
+    const items = await gh.listDir(oldDir);
+    let moved = 0;
+    for (const it of items) {
+      if (it.type === 'dir') {
+        moved += await _moveSchedaCartella(`${oldDir}/${it.name}`, `${newDir}/${it.name}`, `Sposta ${slug} → ${destCat}`);
+      }
+      // I file diversi da scheda.md (accessori non in subdir) li sposto pure
+      else if (it.type === 'file' && it.name !== 'scheda.md') {
+        const file = await gh.getFile(`${oldDir}/${it.name}`);
+        if (!file) continue;
+        await gh.putFile(`${newDir}/${it.name}`, file.content, null, `Sposta ${slug}: copia ${it.name}`);
+        await gh.deleteFile(`${oldDir}/${it.name}`, file.sha, `Sposta ${slug}: elimina vecchio ${it.name}`);
+        moved++;
+      }
+    }
+    // 2. Scrivi nuova scheda.md (con frontmatter aggiornato)
+    await gh.putFile(newPath, newSchedaContent, null, `Sposta ${proc.slug} → ${destCat}/${destSub || ''}`);
+    // 3. Cancella vecchia scheda.md
+    await gh.deleteFile(proc.path, proc.sha, `Elimina vecchio ${proc.slug} (spostamento completato)`);
+    toast(`Spostata (${moved + 1} file)`, 'success');
     await buildIndex();
     renderNavTree();
     if (state.currentView === 'procedura' && state.currentParams?.slug === slug) navigate('procedura', { slug });
   } catch (e) { toast('Errore: ' + e.message, 'error'); }
 }
 
-async function renameModuloTabella(kind, slug) {
-  const coll = kind === 'modulo' ? state.index.moduli : state.index.tabelle;
-  const item = coll.find(x => x.slug === slug);
-  if (!item) return toast(`${kind} non trovato`, 'error');
-  const newSlug = prompt(`Rinomina ${kind} "${item.titolo || slug}"\n\nNuovo slug (minuscole, cifre, trattini):`, slug);
-  if (!newSlug || newSlug === slug) return;
-  if (!/^[a-z0-9-]+$/.test(newSlug)) return toast('Slug non valido', 'error');
-  if (coll.find(x => x.slug === newSlug)) return toast('Slug già esistente', 'error');
-
-  const newFm = { ...item, id: newSlug };
-  delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
-  const newContent = stringifyMarkdown(newFm, item.body || '');
-  const newPath = item.path.replace(/[^/]+\.md$/, `${newSlug}.md`);
-
-  if (!confirm(`Rinominare "${slug}" → "${newSlug}"?\n2 commit.`)) return;
-  try {
-    await gh.putFile(newPath, newContent, null, `Rinomina ${kind} ${slug} → ${newSlug}`);
-    await gh.deleteFile(item.path, item.sha, `Elimina vecchio ${slug}`);
-    toast('Rinominato', 'success');
-    await buildIndex();
-    renderNavTree();
-    if (state.currentView === kind && state.currentParams?.slug === slug) navigate(kind, { slug: newSlug });
-  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+async function renameModulo(slug) {
+  // I moduli compilabili sono cartelle con boxes.yml + pagine PNG.
+  // Rinominare richiede operazioni multi-file su tutta la cartella + aggiornamento di moduli/index.yml.
+  // Disabilitato per ora: arriverà nelle tappe successive del refactor moduli.
+  return toast('Rinomina moduli compilabili non ancora supportata. Modifica content/moduli/index.yml manualmente.', 'warning', 4000);
 }
 
-async function confirmDeleteModuloTabella(kind, slug) {
-  const coll = kind === 'modulo' ? state.index.moduli : state.index.tabelle;
-  const item = coll.find(x => x.slug === slug);
-  if (!item) return;
-  if (!confirm(`Eliminare ${kind} "${item.titolo || slug}"?\nFinirà nel cestino (recuperabile).`)) return;
-  try {
-    const cestinoPath = `cestino/${kind}/${slug}__${Date.now()}__${state.session.username}.md`;
-    const content = `---\n${jsyaml.dump({ ...item, body: undefined, body_preview: undefined, path: undefined, sha: undefined, _original_path: item.path })}---\n\n${item.body || ''}`;
-    await gh.putFile(cestinoPath, content, null, `Sposta ${kind} ${slug} in cestino`);
-    await gh.deleteFile(item.path, item.sha, `Elimina ${kind} ${slug} (spostato in cestino)`);
-    toast('Spostato nel cestino', 'success');
-    await buildIndex();
-    renderNavTree();
-    if (state.currentView === kind && state.currentParams?.slug === slug) navigate(kind === 'modulo' ? 'moduli' : 'tabelle');
-  } catch (e) { toast('Errore: ' + e.message, 'error'); }
+async function confirmDeleteModulo(slug) {
+  // Vedi renameModulo: stesso vincolo sulle cartelle multi-file.
+  return toast('Eliminazione moduli compilabili non ancora supportata. Modifica content/moduli/index.yml manualmente.', 'warning', 4000);
 }
 
 // Helper: find which source file (aopd/osa/iov) contains a contact or group
@@ -11784,10 +12998,13 @@ async function renameMacroCategoria(macro) {
     const newFm = { ...p, categoria: newName };
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     const newContent = stringifyMarkdown(newFm, p.body || '');
+    const oldDir = _schedaDir(p);
+    const newDir = oldDir.replace(`/procedure/${macro}/`, `/procedure/${newName}/`);
     return {
       schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
       putPath: newPath, putContent: newContent,
       deletePath: p.path, deleteSha: p.sha,
+      accessoriOldDir: oldDir, accessoriNewDir: newDir,
       commitMsg: `Rinomina ${macro} → ${newName}: ${p.slug}`
     };
   });
@@ -11830,17 +13047,22 @@ async function moveMacroToClinica(macro) {
   if (!await checkRateLimitFor(neededCommits + 20)) return;
 
   const ops = affected.map(p => {
-    const newPath = `content/clinica/${targetSub}/${p.slug}.md`;
+    // Schema cartella per scheda: scheda.md va dentro <slug>/, e gli accessori (img/)
+    // accanto seguono la nuova cartella in clinica.
+    const newPath = `content/clinica/${targetSub}/${p.slug}/scheda.md`;
     const newFm = { ...p, categoria: 'clinica', sottocategoria: targetSub };
     // Preserve capitolo if present (scheda still referenced in manuale)
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     // Clean obsolete fields
     delete newFm.tempo_esecuzione_min;
     const newContent = stringifyMarkdown(newFm, p.body || '');
+    const oldDir = _schedaDir(p);
+    const newDir = `content/clinica/${targetSub}/${p.slug}`;
     return {
       schedaSlug: p.slug, schedaTitolo: p.titolo || p.slug,
       putPath: newPath, putContent: newContent,
       deletePath: p.path, deleteSha: p.sha,
+      accessoriOldDir: oldDir, accessoriNewDir: newDir,
       commitMsg: `Sposta ${p.slug}: procedure/${macro} → clinica/${targetSub}`
     };
   });
@@ -11896,17 +13118,16 @@ async function renameClinica(slug) {
   if (!/^[a-z0-9-]+$/.test(newSlug)) return toast('Slug non valido', 'error');
   if ((state.index.clinica || []).find(c => c.slug === newSlug)) return toast('Slug già esistente', 'error');
 
-  const newFm = { ...scheda, id: newSlug };
-  delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
-  const newContent = stringifyMarkdown(newFm, scheda.body || '');
-  const newPath = scheda.path.replace(/[^/]+\.md$/, `${newSlug}.md`);
+  // Rinomino la CARTELLA (slug = nome dir): content/clinica/.../{slug}/scheda.md → /{newSlug}/scheda.md
+  const oldDir = _schedaDir(scheda);
+  const parentDir = oldDir.replace(/\/[^/]+$/, '');
+  const newDir = `${parentDir}/${newSlug}`;
 
-  if (!confirm(`Rinominare "${slug}" → "${newSlug}"?\n2 commit (crea + elimina vecchio).`)) return;
+  if (!confirm(`Rinominare "${slug}" → "${newSlug}"?\n\nVerrà spostata l'intera cartella (scheda.md + img/ se presente). Più commit.`)) return;
   toast('Rinomina in corso...', 'info');
   try {
-    await gh.putFile(newPath, newContent, null, `Rinomina scheda clinica ${slug} → ${newSlug}`);
-    await gh.deleteFile(scheda.path, scheda.sha, `Elimina vecchio ${slug}`);
-    toast('Rinominata', 'success');
+    const processed = await _moveSchedaCartella(oldDir, newDir, `Rinomina clinica ${slug} → ${newSlug}`);
+    toast(`Rinominata (${processed} file)`, 'success');
     await buildIndex();
     renderNavTree();
     if (state.currentView === 'clinica-scheda' && state.currentParams?.slug === slug) {
@@ -11940,10 +13161,13 @@ async function renameClinicaSub(sub) {
     const newFm = { ...c, sottocategoria: newSub };
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     const newContent = stringifyMarkdown(newFm, c.body || '');
+    const oldDir = _schedaDir(c);
+    const newDir = oldDir.replace(`/clinica/${sub}/`, `/clinica/${newSub}/`);
     return {
       schedaSlug: c.slug, schedaTitolo: c.titolo || c.slug,
       putPath: newPath, putContent: newContent,
       deletePath: c.path, deleteSha: c.sha,
+      accessoriOldDir: oldDir, accessoriNewDir: newDir,
       commitMsg: `Rinomina clinica/${sub} → clinica/${newSub}: ${c.slug}`
     };
   });
@@ -12809,11 +14033,9 @@ function renderSearchResults(query, targetId) {
     if (item.type === 'procedura') click = `navigate('procedura', {slug:'${escapeJs(item.slug)}'})`;
     else if (item.type === 'clinica') click = `navigate('clinica-scheda', {slug:'${escapeJs(item.slug)}'})`;
     else if (item.type === 'modulo') click = `navigate('modulo', {slug:'${escapeJs(item.slug)}'})`;
-    else if (item.type === 'tabella') click = `navigate('tabella', {slug:'${escapeJs(item.slug)}'})`;
     const typeLabel = item.type === 'procedura' ? 'Procedura'
       : item.type === 'clinica' ? 'Scheda clinica'
-      : item.type === 'modulo' ? 'Modulo'
-      : item.type === 'tabella' ? 'Tabella' : item.type;
+      : item.type === 'modulo' ? 'Modulo' : item.type;
     const snippet = (item.body || '').substring(0, 140) + ((item.body || '').length > 140 ? '…' : '');
     return `<div class="search-result-item" onclick="${click}">
       <div class="search-result-type">${typeLabel}</div>
@@ -12828,7 +14050,7 @@ function renderSearchResults(query, targetId) {
   // Conteggio per categoria (per filter chips)
   const countByType = {
     numeri: numeriRaw.length,
-    procedura: 0, clinica: 0, modulo: 0, tabella: 0
+    procedura: 0, clinica: 0, modulo: 0
   };
   rawResults.forEach(r => {
     if (r.item.type !== 'numero' && countByType[r.item.type] !== undefined) countByType[r.item.type]++;
@@ -12841,14 +14063,12 @@ function renderSearchResults(query, targetId) {
   const showProc = !isFiltering || activeFilters.has('procedura');
   const showClin = !isFiltering || activeFilters.has('clinica');
   const showMod = !isFiltering || activeFilters.has('modulo');
-  const showTab = !isFiltering || activeFilters.has('tabella');
 
   const chipTypes = [
     { key: 'numeri',    label: 'Rubrica',        count: countByType.numeri },
     { key: 'procedura', label: 'Procedure',      count: countByType.procedura },
     { key: 'clinica',   label: 'Schede cliniche', count: countByType.clinica },
-    { key: 'modulo',    label: 'Moduli',         count: countByType.modulo },
-    { key: 'tabella',   label: 'Tabelle',        count: countByType.tabella }
+    { key: 'modulo',    label: 'Moduli',         count: countByType.modulo }
   ].filter(c => c.count > 0);
 
   const chipsHtml = chipTypes.length > 1 || isFiltering
@@ -12878,7 +14098,7 @@ function renderSearchResults(query, targetId) {
     </div>
     ${showNumeri && uocResults.length > 0 ? `<div class="sr-section-title">Rubrica</div>
     <div class="sr-uoc-list">${uocResults.map(renderUoc).join('')}</div>` : ''}
-    ${(showProc || showClin || showMod || showTab) && filteredNonNumeri.length > 0 ? `<div class="sr-section-title">Documenti</div>
+    ${(showProc || showClin || showMod) && filteredNonNumeri.length > 0 ? `<div class="sr-section-title">Documenti</div>
     <div class="search-results">${filteredNonNumeri.map(renderOther).join('')}</div>` : ''}
     ${totalResults === 0 ? `<p style="color:var(--ink-muted);padding:24px 0;">Nessun risultato per "${escapeHtml(query)}".</p>` : ''}`;
 }
@@ -13165,6 +14385,15 @@ function initEventListeners() {
   window.addEventListener('resize', () => {
     if (!isMobileViewport() && $('sidebar').classList.contains('mobile-open')) {
       closeMobileMenu();
+    }
+    // Se siamo su un modulo aperto, rallinea gli overlay box (l'immagine ha cambiato dimensione renderizzata)
+    if (state.currentView === 'modulo' && state.currentParams && state.currentParams.slug) {
+      const slug = state.currentParams.slug;
+      if (state.moduliCache[slug]) {
+        // Debounce con rAF per evitare re-flow eccessivi durante il drag della finestra
+        cancelAnimationFrame(window._modOverlayRaf);
+        window._modOverlayRaf = requestAnimationFrame(() => refreshModuloOverlays(slug));
+      }
     }
   });
 
