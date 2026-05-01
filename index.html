@@ -12231,39 +12231,15 @@ function openSearchOverlay(query) {
   // chiude la tastiera; lo swipe deve poter scrollare liberamente l'overlay.
   if (!overlay._blurOnTouchBound) {
     overlay._blurOnTouchBound = true;
-    let touchStartY = 0, touchStartX = 0, touchStartTarget = null, blurredOnSwipe = false;
+    // Blur immediato su touchstart se il touch parte fuori dal search-wrap.
+    // Approccio semplice e prevedibile: appena tocchi fuori dall'input, la tastiera si chiude,
+    // a prescindere se è tap o swipe e dalla loro lunghezza/velocità.
     document.addEventListener('touchstart', (e) => {
-      touchStartY = e.touches[0].clientY;
-      touchStartX = e.touches[0].clientX;
-      touchStartTarget = e.target;
-      blurredOnSwipe = false;
-    }, { passive: true });
-    // Durante uno swipe (scroll) dentro l'overlay, chiudo la tastiera. Coerente con il
-    // comportamento nativo di iOS/Android dove scroll in un container fa blur dell'input.
-    document.addEventListener('touchmove', (e) => {
-      if (blurredOnSwipe) return;
       const input = document.getElementById('global-search');
       if (!input || document.activeElement !== input) return;
-      const t = e.touches[0];
-      if (!t) return;
-      const dy = Math.abs(t.clientY - touchStartY);
-      if (dy < 20) return; // soglia: solo swipe veri, non micro-movimenti
-      // Non blurrare se lo swipe parte dall'input/wrap (l'utente potrebbe stare selezionando testo)
       const wrap = input.closest('.search-wrap');
-      if (wrap && wrap.contains(touchStartTarget)) return;
+      if (wrap && wrap.contains(e.target)) return;
       input.blur();
-      blurredOnSwipe = true;
-    }, { passive: true });
-    document.addEventListener('touchend', (e) => {
-      const input = document.getElementById('global-search');
-      if (!input || document.activeElement !== input) return;
-      const wrap = input.closest('.search-wrap');
-      if (wrap && wrap.contains(touchStartTarget)) return;
-      // Solo se è un tap (movimento < 10px), non uno swipe
-      const t = e.changedTouches[0];
-      const dy = Math.abs(t.clientY - touchStartY);
-      const dx = Math.abs(t.clientX - touchStartX);
-      if (dx < 10 && dy < 10) input.blur();
     }, { passive: true });
   }
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
