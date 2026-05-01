@@ -12231,11 +12231,29 @@ function openSearchOverlay(query) {
   // chiude la tastiera; lo swipe deve poter scrollare liberamente l'overlay.
   if (!overlay._blurOnTouchBound) {
     overlay._blurOnTouchBound = true;
-    let touchStartY = 0, touchStartX = 0, touchStartTarget = null;
+    let touchStartY = 0, touchStartX = 0, touchStartTarget = null, blurredOnSwipe = false;
     document.addEventListener('touchstart', (e) => {
       touchStartY = e.touches[0].clientY;
       touchStartX = e.touches[0].clientX;
       touchStartTarget = e.target;
+      blurredOnSwipe = false;
+    }, { passive: true });
+    // Durante uno swipe (scroll) dentro l'overlay, chiudo la tastiera. Coerente con il
+    // comportamento nativo di iOS/Android dove scroll in un container fa blur dell'input.
+    document.addEventListener('touchmove', (e) => {
+      if (blurredOnSwipe) return;
+      const input = document.getElementById('global-search');
+      if (!input || document.activeElement !== input) return;
+      const t = e.touches[0];
+      if (!t) return;
+      const dy = Math.abs(t.clientY - touchStartY);
+      if (dy < 20) return; // soglia: solo swipe veri, non micro-movimenti
+      // Solo se il gesto è iniziato dentro l'overlay (non sull'input stesso)
+      if (!overlay.contains(touchStartTarget)) return;
+      const wrap = input.closest('.search-wrap');
+      if (wrap && wrap.contains(touchStartTarget)) return;
+      input.blur();
+      blurredOnSwipe = true;
     }, { passive: true });
     document.addEventListener('touchend', (e) => {
       const input = document.getElementById('global-search');
@@ -13017,21 +13035,33 @@ function initEventListeners() {
     if (!t) return;
     const edgeZone = window.innerWidth / 2;
     const sidebarOpen = $('sidebar').classList.contains('mobile-open');
-    // Se l'overlay ricerca è aperto, il pulldown gesture (che farebbe focus sull'input)
-    // andrebbe in conflitto con lo scroll dell'overlay: l'utente che prova a scrollare
-    // i risultati verso il top (dito verso il basso) attiverebbe involontariamente l'input.
-    // canPulldown viene quindi disabilitato in quel caso.
+    // Pulldown deve poter attivare il focus sull'input ANCHE quando l'overlay ricerca
+    // è aperto (utente al top dei risultati che vuole tornare a digitare). In quel caso
+    // il riferimento di scroll è overlay.scrollTop, non window.scrollY (il body è bloccato).
     const searchOverlayOpen = document.body.classList.contains('search-overlay-open');
+    const overlay = document.getElementById('search-overlay');
+    const overlayAtTop = searchOverlayOpen && overlay && overlay.scrollTop <= 0;
+    const pageAtTop = !searchOverlayOpen && (window.scrollY <= 0);
     // Memorizzo lo startY e tutti i mode potenzialmente validi; il mode effettivo viene deciso al primo movimento
     touchStart = {
       x: t.clientX, y: t.clientY,
       sidebarOpen,
       canOpen: !sidebarOpen && !searchOverlayOpen && t.clientX <= edgeZone,
       canClose: sidebarOpen,
-      canPulldown: !sidebarOpen && !searchOverlayOpen && (window.scrollY <= 0),
+      canPulldown: !sidebarOpen && (pageAtTop || overlayAtTop),
+      searchOverlayOpen,
       mode: null // deciso al primo touchmove in base alla direzione
     };
   }, { passive: true });
+
+  // Helper: true se siamo "al top" del contesto attivo (pagina o overlay ricerca aperto)
+  const isAtTopForPulldown = (ts) => {
+    if (ts && ts.searchOverlayOpen) {
+      const ov = document.getElementById('search-overlay');
+      return !!ov && ov.scrollTop <= 0;
+    }
+    return window.scrollY <= 0;
+  };
 
   // Listener NON-PASSIVO per bloccare il pull-to-refresh nativo quando l'utente
   // sta facendo pull-down sull'app. overscroll-behavior-y:contain dovrebbe bastare,
@@ -13046,7 +13076,7 @@ function initEventListeners() {
       const dy = t.clientY - touchStart.y;
       const absDx = Math.abs(t.clientX - touchStart.x);
       // Se sto già andando giù dalla posizione in cima e il gesto è verticale
-      if (dy > 0 && absDx < HORIZ_TOLERANCE && window.scrollY <= 0) {
+      if (dy > 0 && absDx < HORIZ_TOLERANCE && isAtTopForPulldown(touchStart)) {
         e.preventDefault();
       }
     }
@@ -13079,7 +13109,7 @@ function initEventListeners() {
       }
     }
     if (touchStart.mode === 'pulldown') {
-      if (window.scrollY > 0) { touchStart = null; return; }
+      if (!isAtTopForPulldown(touchStart)) { touchStart = null; return; }
       if (absDx > HORIZ_TOLERANCE) { touchStart = null; return; }
       if (dy > PULL_DOWN_THRESHOLD) {
         // Su iOS/Android il focus+keyboard funziona in modo affidabile SOLO se chiamato
