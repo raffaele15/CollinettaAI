@@ -13017,13 +13017,18 @@ function initEventListeners() {
     if (!t) return;
     const edgeZone = window.innerWidth / 2;
     const sidebarOpen = $('sidebar').classList.contains('mobile-open');
+    // Se l'overlay ricerca è aperto, il pulldown gesture (che farebbe focus sull'input)
+    // andrebbe in conflitto con lo scroll dell'overlay: l'utente che prova a scrollare
+    // i risultati verso il top (dito verso il basso) attiverebbe involontariamente l'input.
+    // canPulldown viene quindi disabilitato in quel caso.
+    const searchOverlayOpen = document.body.classList.contains('search-overlay-open');
     // Memorizzo lo startY e tutti i mode potenzialmente validi; il mode effettivo viene deciso al primo movimento
     touchStart = {
       x: t.clientX, y: t.clientY,
       sidebarOpen,
-      canOpen: !sidebarOpen && t.clientX <= edgeZone,
+      canOpen: !sidebarOpen && !searchOverlayOpen && t.clientX <= edgeZone,
       canClose: sidebarOpen,
-      canPulldown: !sidebarOpen && (window.scrollY <= 0),
+      canPulldown: !sidebarOpen && !searchOverlayOpen && (window.scrollY <= 0),
       mode: null // deciso al primo touchmove in base alla direzione
     };
   }, { passive: true });
