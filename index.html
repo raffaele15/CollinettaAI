@@ -2846,6 +2846,24 @@ const gh = {
     if (etag) etagCache.set(path, { etag, sha: data.sha, content, type: 'file', lastChecked: nowIso() });
     return { content, sha: data.sha, path: data.path };
   },
+  // Fetch file binari (immagini, PDF, ecc.) ritornando il base64 grezzo invece di testo decoded.
+  // Usato per repo privati dove raw.githubusercontent.com non funziona col token.
+  // Restituisce { base64, sha, path, mimeType } oppure null se 404.
+  async getFileBase64(path) {
+    const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${this._repo()}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}`;
+    const res = await fetch(url, { headers: this._headers(), cache: 'no-store' });
+    updateRateLimitFromHeaders(res);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`GET ${path}: ${res.status}`);
+    const data = await res.json();
+    if (data.type !== 'file') return null;
+    // Inferisco MIME type dall'estensione
+    const ext = (path.split('.').pop() || '').toLowerCase();
+    const mimeMap = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', pdf: 'application/pdf' };
+    const mimeType = mimeMap[ext] || 'application/octet-stream';
+    const base64 = (data.content || '').replace(/\n/g, '');
+    return { base64, sha: data.sha, path: data.path, mimeType };
+  },
   async listDir(path) {
     const url = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${this._repo()}/contents/${encodeURIComponent(path).replace(/%2F/g, '/')}?ref=${CONFIG.BRANCH}`;
     const cached = etagCache.get('dir:' + path);
@@ -8316,9 +8334,26 @@ async function loadModuloDettaglio(slug) {
   }
   if (nPagine === 0) nPagine = 1;  // fallback minimo
 
+  // Fetch delle PNG via Contents API (necessario per repo privati: raw.githubusercontent.com
+  // NON funziona con token via header). Convertiamo ogni PNG in data URL inline così l'<img>
+  // può visualizzarla senza ulteriore auth. Le data URL non vengono salvate in sessionStorage
+  // (potrebbero superare la quota), restano solo in memoria (state.moduliCache).
   const pageUrls = [];
   for (let i = 1; i <= nPagine; i++) {
-    pageUrls.push(`https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/content/moduli/${slug}/page-${i}.png`);
+    const path = `content/moduli/${slug}/page-${i}.png`;
+    try {
+      const f = await gh.getFileBase64(path);
+      if (f && f.base64) {
+        pageUrls.push(`data:${f.mimeType};base64,${f.base64}`);
+      } else {
+        // Pagina dichiarata in index.yml ma file mancante sul repo: push placeholder
+        // (l'IMG fallirà col onerror e mostrerà il messaggio "non trovata")
+        pageUrls.push(`https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${path}`);
+      }
+    } catch (e) {
+      console.warn(`[loadModuloDettaglio] errore fetch ${path}:`, e);
+      pageUrls.push(`https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${path}`);
+    }
   }
 
   // Snapshot pristine dei box per dirty detection (deep clone)
@@ -8326,7 +8361,8 @@ async function loadModuloDettaglio(slug) {
 
   const obj = { boxesData, boxesSha, pristineBoxes, pageUrls, formValues: {}, currentPage: 1 };
   state.moduliCache[slug] = obj;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(obj)); } catch {}
+  // NON salvo in sessionStorage: i dataURL delle PNG possono pesare molti MB
+  // e supererebbero la quota di sessionStorage (5-10 MB tipicamente).
   return obj;
 }
 
