@@ -739,6 +739,20 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 }
 .mod-page-indicator{font-family:var(--mono);font-size:12px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;flex:1 1 auto;text-align:center;min-width:0}
 .mod-page-stage{position:relative;display:block;width:100%;background:#fff;border:1px solid var(--rule-soft);box-shadow:0 1px 3px rgba(0,0,0,.04);max-width:100%}
+
+/* Container scrollabile attorno alla pagina (necessario quando zoom > 100%, l'immagine eccede
+   il container parent e va scrollata). Il transform scale è applicato a .mod-page-stage. */
+.mod-page-scroll{overflow:auto;max-width:100%;-webkit-overflow-scrolling:touch;background:var(--bg-sink);border:1px solid var(--rule-soft)}
+
+/* Toolbar zoom: bottoni +/-/reset compatti */
+.mod-zoom-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:8px;justify-content:flex-end}
+.mod-zoom-btn{padding:4px 10px;font-size:14px;min-width:32px;line-height:1}
+.mod-zoom-indicator{font-family:var(--mono);font-size:12px;color:var(--ink-muted);min-width:48px;text-align:center}
+@media (max-width:600px){
+  .mod-zoom-toolbar{justify-content:center}
+  .mod-zoom-btn{padding:6px 12px;font-size:16px;min-width:38px}
+  .mod-zoom-indicator{font-size:13px;min-width:54px}
+}
 .mod-page-img{display:block;max-width:100%;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:1px 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1.1;border-radius:1px}
@@ -796,10 +810,6 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .mod-box-list-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mod-box-list-page{font-family:var(--mono);font-size:10px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
 .mod-edit-details{margin-top:14px;padding-top:14px;border-top:1px solid var(--rule-soft);display:grid;gap:12px}
-.mod-edit-coords{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;background:var(--bg-sink);border-radius:2px;font-family:var(--mono);font-size:11px}
-.mod-edit-coords>div{display:flex;flex-direction:column;align-items:center;gap:2px}
-.mod-edit-coords>div span{color:var(--ink-muted);text-transform:uppercase;font-size:10px}
-.mod-edit-coords>div strong{color:var(--ink);font-weight:500}
 
 /* Su mobile in editMode: layout più compatto */
 .mod-layout-edit .mod-form{max-height:none}
@@ -8406,26 +8416,135 @@ function _boxesAreDirty(slug) {
 
 // Costruisce il valore visibile del box a partire dai valoriCampi del form e dalla def del campo.
 // Esempio: campo "paziente" tipo paziente_completo → output "Cognome Nome (gg/mm/aaaa)".
+// Restituisce l'elenco di formati disponibili per un dato tipo di campo,
+// usato dal dropdown "Formato" nel pannello editor box.
+function _formatoOptionsPerTipo(tipo) {
+  if (tipo === 'paziente_completo') {
+    return [
+      { value: '',                         label: 'Cognome Nome (data)' },
+      { value: 'cognome_nome',             label: 'Cognome Nome' },
+      { value: 'nome_cognome',             label: 'Nome Cognome' },
+      { value: 'cognome',                  label: 'Solo cognome' },
+      { value: 'nome',                     label: 'Solo nome' },
+      { value: 'data_nascita_completa',    label: 'Data nascita: gg/mm/aaaa' },
+      { value: 'giorno_nascita',           label: 'Data nascita: solo giorno (gg)' },
+      { value: 'mese_nascita',             label: 'Data nascita: solo mese (mm)' },
+      { value: 'anno_nascita',             label: 'Data nascita: solo anno (aaaa)' },
+      { value: 'gg_mm_nascita',            label: 'Data nascita: gg/mm' },
+      { value: 'mm_aaaa_nascita',          label: 'Data nascita: mm/aaaa' },
+      { value: 'mese_nascita_nome',        label: 'Data nascita: nome mese (es. marzo)' },
+      { value: 'mese_anno_nascita_nome',   label: 'Data nascita: nome mese + anno' }
+    ];
+  }
+  if (tipo === 'medico_nome') {
+    return [
+      { value: '',             label: 'Cognome Nome' },
+      { value: 'cognome_nome', label: 'Cognome Nome' },
+      { value: 'nome_cognome', label: 'Nome Cognome' },
+      { value: 'cognome',      label: 'Solo cognome' },
+      { value: 'nome',         label: 'Solo nome' }
+    ];
+  }
+  if (tipo === 'data') {
+    return [
+      { value: '',                 label: 'Data completa: gg/mm/aaaa' },
+      { value: 'completa',         label: 'Data completa: gg/mm/aaaa' },
+      { value: 'giorno',           label: 'Solo giorno (gg)' },
+      { value: 'mese',             label: 'Solo mese (mm)' },
+      { value: 'anno',             label: 'Solo anno (aaaa)' },
+      { value: 'gg_mm',            label: 'gg/mm' },
+      { value: 'mm_aaaa',          label: 'mm/aaaa' },
+      { value: 'mese_nome',        label: 'Nome mese (es. marzo)' },
+      { value: 'mese_anno_nome',   label: 'Nome mese + anno' }
+    ];
+  }
+  return [];
+}
+
+// Parsa una data in formato gg/mm/aaaa (o gg-mm-aaaa, gg.mm.aaaa) e restituisce { giorno, mese, anno }.
+// Se la stringa non è parsabile, ritorna null.
+function _parseDataString(s) {
+  if (!s) return null;
+  const m = String(s).trim().match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{2,4})$/);
+  if (!m) return null;
+  let [, gg, mm, aaaa] = m;
+  if (aaaa.length === 2) aaaa = (parseInt(aaaa, 10) > 30 ? '19' : '20') + aaaa;
+  return {
+    giorno: gg.padStart(2, '0'),
+    mese: mm.padStart(2, '0'),
+    anno: aaaa
+  };
+}
+
+// Estrai una "porzione" da una stringa data secondo il formato richiesto.
+// formato: 'completa' | 'giorno' | 'mese' | 'anno' | 'gg_mm' | 'mm_aaaa' | 'mese_nome' | 'mese_anno_nome'
+function _formatDataPortion(dataStr, formato) {
+  const parsed = _parseDataString(dataStr);
+  if (!parsed) return dataStr || '';  // fallback: se non parsabile, mostra la stringa originale
+  const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  switch (formato) {
+    case 'giorno': return parsed.giorno;
+    case 'mese': return parsed.mese;
+    case 'anno': return parsed.anno;
+    case 'gg_mm': return `${parsed.giorno}/${parsed.mese}`;
+    case 'mm_aaaa': return `${parsed.mese}/${parsed.anno}`;
+    case 'mese_nome': return MESI[parseInt(parsed.mese, 10) - 1] || parsed.mese;
+    case 'mese_anno_nome': return `${MESI[parseInt(parsed.mese, 10) - 1] || parsed.mese} ${parsed.anno}`;
+    case 'completa':
+    default: return `${parsed.giorno}/${parsed.mese}/${parsed.anno}`;
+  }
+}
+
 function _formatBoxValue(box, campiDefs, valoriCampi) {
   if (!box.campo) return ''; // box senza campo = placeholder firma, non si compila
   const def = campiDefs.find(c => c.id === box.campo);
   if (!def) return '';
   const v = valoriCampi[box.campo];
   if (!v) return '';
-  // Se il campo è di tipo composito (paziente_completo), il valore è un oggetto
+
+  // Campo composito paziente: nome + cognome + data nascita.
+  // Formati: cognome_nome (default), nome_cognome, cognome, nome, data_nascita_completa,
+  //          giorno_nascita, mese_nascita, anno_nascita, gg_mm_nascita, mm_aaaa_nascita,
+  //          mese_nascita_nome, mese_anno_nascita_nome
   if (def.tipo === 'paziente_completo' && typeof v === 'object') {
+    const f = box.formato || '';
+    if (f === 'cognome') return v.cognome || '';
+    if (f === 'nome') return v.nome || '';
+    if (f === 'nome_cognome') return [v.nome, v.cognome].filter(Boolean).join(' ');
+    if (f === 'cognome_nome') return [v.cognome, v.nome].filter(Boolean).join(' ');
+    // Sotto-formati della data di nascita
+    if (f === 'data_nascita' || f === 'data_nascita_completa') return _formatDataPortion(v.dataNascita, 'completa');
+    if (f === 'giorno_nascita') return _formatDataPortion(v.dataNascita, 'giorno');
+    if (f === 'mese_nascita') return _formatDataPortion(v.dataNascita, 'mese');
+    if (f === 'anno_nascita') return _formatDataPortion(v.dataNascita, 'anno');
+    if (f === 'gg_mm_nascita') return _formatDataPortion(v.dataNascita, 'gg_mm');
+    if (f === 'mm_aaaa_nascita') return _formatDataPortion(v.dataNascita, 'mm_aaaa');
+    if (f === 'mese_nascita_nome') return _formatDataPortion(v.dataNascita, 'mese_nome');
+    if (f === 'mese_anno_nascita_nome') return _formatDataPortion(v.dataNascita, 'mese_anno_nome');
+    // Default storico: cognome+nome+(data) — mantenuto per compat con boxes già configurati
     const parts = [];
-    if (box.formato === 'cognome') return v.cognome || '';
-    if (box.formato === 'nome') return v.nome || '';
-    if (box.formato === 'data_nascita') return v.dataNascita || '';
-    // default: nome+cognome
     if (v.cognome || v.nome) parts.push([v.cognome, v.nome].filter(Boolean).join(' '));
-    if (v.dataNascita && box.formato !== 'no_data') parts.push(`(${v.dataNascita})`);
+    if (v.dataNascita && f !== 'no_data') parts.push(`(${v.dataNascita})`);
     return parts.join(' ');
   }
+
+  // Campo composito medico: cognome + nome (entrambi obbligatori per scrittura legale)
+  // Formati: cognome_nome (default), nome_cognome, cognome, nome
   if (def.tipo === 'medico_nome' && typeof v === 'object') {
+    const f = box.formato || '';
+    if (f === 'cognome') return v.cognome || '';
+    if (f === 'nome') return v.nome || '';
+    if (f === 'nome_cognome') return [v.nome, v.cognome].filter(Boolean).join(' ');
+    // default: cognome_nome
     return [v.cognome, v.nome].filter(Boolean).join(' ');
   }
+
+  // Campo data semplice (es. data_consenso): la stringa è gg/mm/aaaa.
+  // Formato sub-portion: giorno, mese, anno, gg_mm, mm_aaaa, mese_nome, mese_anno_nome.
+  if (def.tipo === 'data' && box.formato) {
+    return _formatDataPortion(v, box.formato);
+  }
+
   return String(v);
 }
 
@@ -8641,19 +8760,15 @@ function _renderModuloEditorPanel(slug, det) {
           </div>
           ${(() => {
             const def = campiDefs.find(c => c.id === selBox.campo);
-            if (def && def.tipo === 'paziente_completo') {
-              return `<div class="mod-field-group">
-                <label class="mod-field-label">Formato</label>
-                <select class="mod-input" onchange="setBoxAttr('${escapeJs(slug)}',${selIdx},'formato',this.value)">
-                  <option value="" ${!selBox.formato ? 'selected' : ''}>Cognome Nome (data)</option>
-                  <option value="cognome_nome" ${selBox.formato === 'cognome_nome' ? 'selected' : ''}>Cognome Nome</option>
-                  <option value="cognome" ${selBox.formato === 'cognome' ? 'selected' : ''}>Solo cognome</option>
-                  <option value="nome" ${selBox.formato === 'nome' ? 'selected' : ''}>Solo nome</option>
-                  <option value="data_nascita" ${selBox.formato === 'data_nascita' ? 'selected' : ''}>Solo data di nascita</option>
-                </select>
-              </div>`;
-            }
-            return '';
+            if (!def) return '';
+            const opts = _formatoOptionsPerTipo(def.tipo);
+            if (!opts.length) return '';
+            return `<div class="mod-field-group">
+              <label class="mod-field-label">Formato</label>
+              <select class="mod-input" onchange="setBoxAttr('${escapeJs(slug)}',${selIdx},'formato',this.value)">
+                ${opts.map(o => `<option value="${escapeHtml(o.value)}" ${(selBox.formato || '') === o.value ? 'selected' : ''}>${escapeHtml(o.label)}</option>`).join('')}
+              </select>
+            </div>`;
           })()}
         ` : `
           <div class="mod-field-group">
@@ -8674,12 +8789,6 @@ function _renderModuloEditorPanel(slug, det) {
           <label class="mod-field-label">Dimensione font (px)</label>
           <input type="number" class="mod-input" min="6" max="48" value="${selBox.font_size || 11}"
                  oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',parseInt(this.value)||11)">
-        </div>
-        <div class="mod-edit-coords">
-          <div><span>x</span><strong>${(selBox.x || 0).toFixed(1)}%</strong></div>
-          <div><span>y</span><strong>${(selBox.y || 0).toFixed(1)}%</strong></div>
-          <div><span>w</span><strong>${(selBox.w || 0).toFixed(1)}%</strong></div>
-          <div><span>h</span><strong>${(selBox.h || 0).toFixed(1)}%</strong></div>
         </div>
         <div class="mod-form-actions" style="margin-top:12px;display:flex;gap:8px;">
           <button class="btn ghost" onclick="duplicateModuloBox('${escapeJs(slug)}',${selIdx})">Duplica</button>
@@ -8906,6 +9015,7 @@ function _renderModuloPaginatedPreview(slug, det) {
   const { pageUrls } = det;
   const totalPages = pageUrls.length;
   const cur = det.currentPage || 1;
+  const zoom = det.zoom || 1;
   const navHtml = totalPages > 1 ? `
     <div class="mod-page-nav">
       <button class="btn ghost mod-page-prev" ${cur <= 1 ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur - 1})" aria-label="Pagina precedente"><span class="mod-page-arrow">◀</span><span class="mod-page-text"> Precedente</span></button>
@@ -8913,14 +9023,39 @@ function _renderModuloPaginatedPreview(slug, det) {
       <button class="btn ghost mod-page-next" ${cur >= totalPages ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur + 1})" aria-label="Pagina successiva"><span class="mod-page-text">Successiva </span><span class="mod-page-arrow">▶</span></button>
     </div>` : `<div class="mod-page-indicator" style="margin-bottom:8px;">Pagina unica</div>`;
 
+  // Toolbar zoom (utile soprattutto in editMode per posizionare box piccoli)
+  const zoomToolbar = `
+    <div class="mod-zoom-toolbar">
+      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoom('${escapeJs(slug)}', ${Math.max(0.5, zoom - 0.25)})" aria-label="Riduci zoom">−</button>
+      <span class="mod-zoom-indicator">${Math.round(zoom * 100)}%</span>
+      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoom('${escapeJs(slug)}', ${Math.min(4, zoom + 0.25)})" aria-label="Aumenta zoom">+</button>
+      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoom('${escapeJs(slug)}', 1)" aria-label="Reset zoom" title="Reset 100%">⟲</button>
+    </div>`;
+
   return `
     ${navHtml}
-    <div class="mod-page-stage" id="mod-page-stage-${escapeHtml(slug)}">
-      <img class="mod-page-img" src="${pageUrls[cur - 1]}" alt="Pagina ${cur}"
-           onload="onModuloPageImgLoad('${escapeJs(slug)}', this)"
-           onerror="this.parentElement.innerHTML='<div style=padding:32px;text-align:center;color:var(--ink-muted);font-style:italic;>Pagina ${cur} non trovata. Verifica che <code>content/moduli/${escapeJs(slug)}/page-${cur}.png</code> sia caricato nel repo.</div>'">
-      <div class="mod-overlay-layer" id="mod-overlay-${escapeHtml(slug)}"></div>
+    ${zoomToolbar}
+    <div class="mod-page-scroll" id="mod-page-scroll-${escapeHtml(slug)}">
+      <div class="mod-page-stage" id="mod-page-stage-${escapeHtml(slug)}" style="transform:scale(${zoom});transform-origin:top left;">
+        <img class="mod-page-img" src="${pageUrls[cur - 1]}" alt="Pagina ${cur}"
+             onload="onModuloPageImgLoad('${escapeJs(slug)}', this)"
+             onerror="this.parentElement.innerHTML='<div style=padding:32px;text-align:center;color:var(--ink-muted);font-style:italic;>Pagina ${cur} non trovata. Verifica che <code>content/moduli/${escapeJs(slug)}/page-${cur}.png</code> sia caricato nel repo.</div>'">
+        <div class="mod-overlay-layer" id="mod-overlay-${escapeHtml(slug)}"></div>
+      </div>
     </div>`;
+}
+
+// Cambia il livello di zoom della preview pagina (1.0 = 100%, range 0.5-4.0)
+function setModuloZoom(slug, zoom) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  c.zoom = Math.max(0.5, Math.min(4, zoom));
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  // Re-render solo della preview, non dell'intero compilatore
+  const sec = document.getElementById('mod-preview-section');
+  if (sec) {
+    sec.innerHTML = _renderModuloPaginatedPreview(slug, c);
+  }
 }
 
 // Quando l'immagine carica, allineo l'overlay alle dimensioni renderizzate
@@ -9078,6 +9213,15 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   // Pointer capture sul layer: gli eventi continuano ad arrivare anche se il dito esce dall'area
   try { layer.setPointerCapture(ev.pointerId); } catch {}
 
+  // Blocco lo scroll della pagina globalmente durante il drag. Su mobile (specialmente iOS Safari)
+  // touch-action:none sul layer non basta: il browser decide nei primi millisecondi se la gesture
+  // è uno scroll o un'azione custom, e una volta deciso "scroll" non rilascia più gli eventi.
+  // Mettendo overflow:hidden sul body durante il drag, evitiamo del tutto la possibilità di scroll.
+  const prevBodyOverflow = document.body.style.overflow;
+  const prevBodyTouchAction = document.body.style.touchAction;
+  document.body.style.overflow = 'hidden';
+  document.body.style.touchAction = 'none';
+
   const layerRect = layer.getBoundingClientRect();
   const W = layerRect.width;
   const H = layerRect.height;
@@ -9146,6 +9290,9 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onEnd);
     document.removeEventListener('pointercancel', onEnd);
+    // Ripristino lo stato del body (sblocca lo scroll della pagina)
+    document.body.style.overflow = prevBodyOverflow;
+    document.body.style.touchAction = prevBodyTouchAction;
     try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
     // Re-render del panel per aggiornare le coords mostrate
     renderModuloCompilatore(slug, c);
@@ -14805,15 +14952,22 @@ function initEventListeners() {
     // ma il vero contesto di scroll è dentro .modal. Disabilito pulldown in questo caso, altrimenti
     // lo swipe-giù sul modal triggera l'overlay ricerca globale.
     const modalOpen = !!document.getElementById('current-modal-backdrop');
+    // Se siamo in editMode di un modulo (drag box su immagine), disabilito sia sidebar-edge
+    // che pulldown: i gesti dell'utente sono per il box, non per la navigazione globale.
+    const moduloEditMode = state.currentView === 'modulo' &&
+                           state.currentParams && state.currentParams.slug &&
+                           state.moduliCache && state.moduliCache[state.currentParams.slug] &&
+                           state.moduliCache[state.currentParams.slug].editMode;
     // Memorizzo lo startY e tutti i mode potenzialmente validi; il mode effettivo viene deciso al primo movimento
     touchStart = {
       x: t.clientX, y: t.clientY,
       sidebarOpen,
-      canOpen: !sidebarOpen && !searchOverlayOpen && !modalOpen && t.clientX <= edgeZone,
+      canOpen: !sidebarOpen && !searchOverlayOpen && !modalOpen && !moduloEditMode && t.clientX <= edgeZone,
       canClose: sidebarOpen,
-      canPulldown: !sidebarOpen && !modalOpen && (pageAtTop || overlayAtTop),
+      canPulldown: !sidebarOpen && !modalOpen && !moduloEditMode && (pageAtTop || overlayAtTop),
       searchOverlayOpen,
       modalOpen,
+      moduloEditMode,
       mode: null // deciso al primo touchmove in base alla direzione
     };
   }, { passive: true });
