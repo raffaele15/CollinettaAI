@@ -2575,7 +2575,7 @@ function handleContattoRowClick(contattoId, evt) {
   }
   if (!ownerGroup) {
     // Fallback: comportamento standard
-    navigate('numeri', { filter: contattoId });
+    _navigateOutOfRubricaSearch('numeri', { filter: contattoId });
     return;
   }
   // Sono già dentro questa UOC?
@@ -2585,8 +2585,27 @@ function handleContattoRowClick(contattoId, evt) {
     showContattoActionMenu(contattoId, evt);
     return;
   }
-  // Comportamento standard: naviga alla UOC con scroll/expand sezione
-  navigate('numeri', { filter: contattoId });
+  // Comportamento standard: naviga alla UOC con scroll/expand sezione.
+  // Reset rubricaSearch prima di navigare: vogliamo aprire la UOC overview pulita
+  // (non la vista UOC con la query di ricerca ancora attiva) e scrollare al contatto.
+  _navigateOutOfRubricaSearch('numeri', { filter: contattoId });
+}
+
+// Helper: naviga fuori dalla ricerca rubrica resettando state.rubricaSearch.
+// Da usare ogni volta che un click in lista-risultati-rubrica deve aprire una nuova vista
+// (UOC overview, contatto centrato, ecc.) invece di continuare a filtrare la rubrica.
+function _navigateOutOfRubricaSearch(route, params) {
+  // Cancella eventuale debounce pendente: senza questo, una callback differita potrebbe
+  // ri-settare state.rubricaSearch al valore digitato dopo che abbiamo navigato via.
+  if (rubricaSearchDebounce) {
+    clearTimeout(rubricaSearchDebounce);
+    rubricaSearchDebounce = null;
+  }
+  if (state.rubricaSearch) {
+    state.rubricaSearch = '';
+    _lastRenderedRubricaQuery = null;
+  }
+  navigate(route, params);
 }
 
 /* Mini menu di azioni che appare al click su un contatto già nella sua UOC.
@@ -7292,7 +7311,7 @@ function renderNumeri(filter, targetContainer) {
           <div class="numeri-group${isCollapsedSearch ? ' numeri-group-collapsed' : ''}">
             ${isCollapsedSearch ? '' : `<h2 class="numeri-group-title">
               ${rubricaQuery
-                ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri vista UOC completa">${escapeHtml(displayName)}</a>`
+                ? `<a href="#" onclick="event.preventDefault(); _navigateOutOfRubricaSearch('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri vista UOC completa">${escapeHtml(displayName)}</a>`
                 : (filter && filter !== g.id)
                   ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri tutta la UOC">${escapeHtml(displayName)}</a>`
                   : escapeHtml(displayName)
@@ -7415,7 +7434,7 @@ function renderNumeri(filter, targetContainer) {
                   // UOC e Sezione cliccabili separatamente: UOC → overview UOC, Sezione → UOC + sezione espansa
                   bucketHeaderHtml = `<div class="sede-bucket-toggle sede-bucket-static">
                     <span class="sede-bucket-tipo">
-                      <span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(g.id)}'})" title="Apri ${escapeHtml(g.nome)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(g.nome)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
+                      <span class="ctx-uoc" onclick="event.stopPropagation();_navigateOutOfRubricaSearch('numeri',{filter:'${escapeJs(g.id)}'})" title="Apri ${escapeHtml(g.nome)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(g.nome)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
                     </span>
                   </div>`;
                 } else if (matchedByName) {
