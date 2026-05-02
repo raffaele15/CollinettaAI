@@ -8258,15 +8258,33 @@ state.moduliCache = state.moduliCache || {};       // { slug: { boxesData, pageU
 // Carica boxes.yml + pre-calcola gli URL delle pagine PNG. Idempotente.
 async function loadModuloDettaglio(slug) {
   if (state.moduliCache[slug] && state.moduliCache[slug].boxesData) {
-    return state.moduliCache[slug];
+    // Verifico coerenza: se la cache ha pageUrls vuoti ma index.yml dice che ci sono pagine,
+    // invalido la cache e ricarico (cache stale da una creazione precedente con bug).
+    const cached = state.moduliCache[slug];
+    const m = (state.index.moduli || []).find(x => x.slug === slug);
+    const expectedPages = (m && m.pagine) || 1;
+    if (cached.pageUrls && cached.pageUrls.length >= expectedPages) {
+      return cached;
+    }
+    // Cache stale: rigenero
+    console.warn('[loadModuloDettaglio] cache stale per', slug, '— rigenero');
+    delete state.moduliCache[slug];
   }
   // Prova prima sessionStorage (sopravvive a refresh ma non a chiusura tab)
   try {
-    const cached = sessionStorage.getItem('modulo:' + slug);
-    if (cached) {
-      const obj = JSON.parse(cached);
-      state.moduliCache[slug] = obj;
-      return obj;
+    const raw = sessionStorage.getItem('modulo:' + slug);
+    if (raw) {
+      const obj = JSON.parse(raw);
+      // Stesso check coerenza per la cache da sessionStorage
+      const m = (state.index.moduli || []).find(x => x.slug === slug);
+      const expectedPages = (m && m.pagine) || 1;
+      if (obj.pageUrls && obj.pageUrls.length >= expectedPages) {
+        state.moduliCache[slug] = obj;
+        return obj;
+      }
+      // Stale: rimuovo da sessionStorage
+      console.warn('[loadModuloDettaglio] sessionStorage cache stale per', slug, '— rimuovo');
+      sessionStorage.removeItem('modulo:' + slug);
     }
   } catch {}
 
@@ -8286,8 +8304,20 @@ async function loadModuloDettaglio(slug) {
     console.warn('[loadModuloDettaglio] boxes.yml mancante o non valido:', e);
   }
 
+  // Genera URL pagine. Se m.pagine non è valido o è 0, faccio probe per discovery.
+  let nPagine = (m.pagine && m.pagine > 0) ? m.pagine : 0;
+  if (nPagine === 0) {
+    // Probe: provo a leggere page-1.png, page-2.png, ... finché non fallisce (max 20).
+    nPagine = await _probeModuloPagine(slug);
+    if (nPagine > 0) {
+      console.warn(`[loadModuloDettaglio] m.pagine non valido per ${slug}; probe ha trovato ${nPagine} pagine.`);
+      m.pagine = nPagine;  // aggiorno in memoria (l'index.yml su repo non viene riscritto qui)
+    }
+  }
+  if (nPagine === 0) nPagine = 1;  // fallback minimo
+
   const pageUrls = [];
-  for (let i = 1; i <= (m.pagine || 1); i++) {
+  for (let i = 1; i <= nPagine; i++) {
     pageUrls.push(`https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/content/moduli/${slug}/page-${i}.png`);
   }
 
@@ -8298,6 +8328,22 @@ async function loadModuloDettaglio(slug) {
   state.moduliCache[slug] = obj;
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(obj)); } catch {}
   return obj;
+}
+
+// Probe: scopri quante pagine ha un modulo controllando l'esistenza di page-N.png su GitHub API
+// (no fetch della PNG — usa solo HEAD via Contents API).
+async function _probeModuloPagine(slug) {
+  let n = 0;
+  for (let i = 1; i <= 20; i++) {
+    try {
+      const f = await gh.getFile(`content/moduli/${slug}/page-${i}.png`);
+      if (f) n = i;
+      else break;
+    } catch {
+      break;
+    }
+  }
+  return n;
 }
 
 // Compara box correnti con snapshot pristine; ritorna true se ci sono differenze
