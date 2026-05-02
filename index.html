@@ -13452,20 +13452,23 @@ function openSearchOverlay(query) {
   document.documentElement.classList.add('search-overlay-open');
   document.body.classList.add('search-overlay-open');
   renderSearchResults(query, 'search-overlay-content');
-  // Tap fuori dalla barra di ricerca → chiudi tastiera mobile (blur input).
-  // IMPORTANTE: distinguiamo tap (movimento minimo) da swipe (scroll). Solo il tap
-  // chiude la tastiera; lo swipe deve poter scrollare liberamente l'overlay.
-  if (!overlay._blurOnTouchBound) {
-    overlay._blurOnTouchBound = true;
-    // Blur immediato su touchstart se il touch parte fuori dal search-wrap.
-    // Approccio semplice e prevedibile: appena tocchi fuori dall'input, la tastiera si chiude,
-    // a prescindere se è tap o swipe e dalla loro lunghezza/velocità.
+  // Tap/swipe fuori dall'input attivo → chiudi tastiera mobile (blur input).
+  // Vale per qualsiasi input di ricerca dell'app (global-search, rubrica-search-input, ecc.):
+  // appena l'utente tocca fuori dal contenitore che ospita l'input focused, la tastiera si chiude.
+  // Questo è bound una sola volta a livello document (idempotente).
+  if (!document._blurInputOnTouchBound) {
+    document._blurInputOnTouchBound = true;
+    // Lista di selettori "container" che proteggono il proprio input dal blur su touch interno.
+    // Se il touch parte DENTRO uno di questi, l'input non perde focus.
+    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap'];
     document.addEventListener('touchstart', (e) => {
-      const input = document.getElementById('global-search');
-      if (!input || document.activeElement !== input) return;
-      const wrap = input.closest('.search-wrap');
+      const active = document.activeElement;
+      if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
+      // Se l'input focused è dentro uno dei container protetti E il touch parte dentro lo stesso
+      // container, lascio stare (l'utente sta interagendo con l'input/clear button).
+      const wrap = PROTECTED_SELECTORS.map(s => active.closest(s)).find(Boolean);
       if (wrap && wrap.contains(e.target)) return;
-      input.blur();
+      active.blur();
     }, { passive: true });
   }
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
@@ -14510,6 +14513,20 @@ function initEventListeners() {
 async function init() {
   initTheme();
   initEventListeners();
+
+  // Bind globale blur-on-touch per qualsiasi input mobile (rubrica, ricerca globale, ecc.).
+  // Idempotente: se openSearchOverlay lo bindasse di nuovo, il flag previene duplicati.
+  if (!document._blurInputOnTouchBound) {
+    document._blurInputOnTouchBound = true;
+    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap'];
+    document.addEventListener('touchstart', (e) => {
+      const active = document.activeElement;
+      if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
+      const wrap = PROTECTED_SELECTORS.map(s => active.closest(s)).find(Boolean);
+      if (wrap && wrap.contains(e.target)) return;
+      active.blur();
+    }, { passive: true });
+  }
 
   // Kbd indicator: Ctrl su Windows/Linux, ⌘ su Mac
   const kbdEl = document.getElementById('search-kbd-indicator');
