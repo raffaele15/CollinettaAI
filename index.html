@@ -69,6 +69,13 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  // Configurazione worker PDF.js (necessario per parsing PDF)
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+</script>
 
 <style>
 :root {
@@ -6771,18 +6778,49 @@ function _doRubricaSearch(value) {
     if (state.rubricaExpandedGroups) state.rubricaExpandedGroups.clear();
   }
   state.rubricaSearch = value;
-  // Ri-render preservando focus e cursore
-  const input = document.getElementById('rubrica-search-input');
-  const selStart = input ? input.selectionStart : null;
-  const selEnd = input ? input.selectionEnd : null;
+
+  // Re-render INCREMENTALE: aggiorno solo #rubrica-results invece di tutto main-content.
+  // Così l'input #rubrica-search-input non viene rimosso/ricreato → nessuna perdita di focus,
+  // nessun blink, e la digitazione resta fluida anche su mobile con migliaia di contatti.
   const params = state.currentParams || {};
-  renderNumeri(params.filter);
-  const newInput = document.getElementById('rubrica-search-input');
-  if (newInput) {
-    newInput.focus();
-    if (selStart !== null) {
-      try { newInput.setSelectionRange(selStart, selEnd); } catch (e) {}
+  const existingResults = document.getElementById('rubrica-results');
+  if (!existingResults) {
+    // Primo render o struttura cambiata: full render
+    renderNumeri(params.filter);
+    return;
+  }
+
+  // Renderizzo in un container offscreen, poi estraggo solo le parti che cambiano.
+  const tempContainer = document.createElement('div');
+  tempContainer.style.display = 'none';
+  document.body.appendChild(tempContainer);
+  try {
+    renderNumeri(params.filter, tempContainer);
+    const newResults = tempContainer.querySelector('#rubrica-results');
+    if (!newResults) return;
+    existingResults.replaceWith(newResults);
+    // Aggiorno anche counter "X UOC · Y contatti" e icona ✕ (fuori da #rubrica-results)
+    const newRubricaSearch = tempContainer.querySelector('.rubrica-search');
+    const oldRubricaSearch = $('main-content').querySelector('.rubrica-search');
+    if (newRubricaSearch && oldRubricaSearch) {
+      const newCounter = newRubricaSearch.querySelector('span[style*="white-space:nowrap"]');
+      const oldCounter = oldRubricaSearch.querySelector('span[style*="white-space:nowrap"]');
+      const newClearBtn = newRubricaSearch.querySelector('button[onclick="clearRubricaSearch()"]');
+      const oldClearBtn = oldRubricaSearch.querySelector('button[onclick="clearRubricaSearch()"]');
+      if (newCounter && oldCounter) oldCounter.replaceWith(newCounter);
+      else if (newCounter && !oldCounter) oldRubricaSearch.appendChild(newCounter);
+      else if (!newCounter && oldCounter) oldCounter.remove();
+      if (newClearBtn && oldClearBtn) oldClearBtn.replaceWith(newClearBtn);
+      else if (newClearBtn && !oldClearBtn) {
+        const wrap = oldRubricaSearch.querySelector('div[style*="position:relative"]');
+        if (wrap) wrap.appendChild(newClearBtn);
+      } else if (!newClearBtn && oldClearBtn) oldClearBtn.remove();
     }
+  } catch (e) {
+    console.warn('[rubricaSearch] re-render incrementale fallito, fallback full:', e);
+    renderNumeri(params.filter);
+  } finally {
+    tempContainer.remove();
   }
 }
 
@@ -6848,9 +6886,15 @@ function collapseGroup(groupId) {
   requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
 }
 
-function renderNumeri(filter) {
+function renderNumeri(filter, targetContainer) {
+  // targetContainer: opzionale. Container DOM su cui scrivere. Se omesso, scrive su $('main-content').
+  // Usato da _doRubricaSearch per re-render incrementale in un container offscreen.
+  const container = targetContainer || $('main-content');
   const data = state.index.numeri;
-  if (!data) return renderError('Rubrica non disponibile', 'Il file content/numeri.yml non è stato caricato.');
+  if (!data) {
+    if (targetContainer) return; // in re-render incrementale silenzia errori
+    return renderError('Rubrica non disponibile', 'Il file content/numeri.yml non è stato caricato.');
+  }
 
   const codiciGen = data.codici_generali || [];
   // Pull groups from AOPD + any extended sources toggled on
@@ -7112,7 +7156,7 @@ function renderNumeri(filter) {
 
   const totalContattiVisibili = filteredGruppi.reduce((s, g) => s + (g.contatti || []).length, 0);
 
-  $('main-content').innerHTML = `
+  container.innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Rubrica</div>
       <h1 class="page-title">Rubrica</h1>
@@ -7147,6 +7191,7 @@ function renderNumeri(filter) {
       </div>` ;
     })()}
 
+    <div id="rubrica-results">
     ${!filter && !rubricaQuery && codiciGen.length ? `
       <div class="codici-banner">
         ${codiciGen.map(c => `
@@ -7247,7 +7292,7 @@ function renderNumeri(filter) {
           <div class="numeri-group${isCollapsedSearch ? ' numeri-group-collapsed' : ''}">
             ${isCollapsedSearch ? '' : `<h2 class="numeri-group-title">
               ${rubricaQuery
-                ? `<a href="#" onclick="event.preventDefault(); showAllFromGroup('${escapeJs(g.id)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Mostra tutti i numeri di questa UOC">${escapeHtml(displayName)}</a>`
+                ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri vista UOC completa">${escapeHtml(displayName)}</a>`
                 : (filter && filter !== g.id)
                   ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri tutta la UOC">${escapeHtml(displayName)}</a>`
                   : escapeHtml(displayName)
@@ -7453,7 +7498,12 @@ function renderNumeri(filter) {
           </div>`;
         }).join('')}
       `;
-    }).join('')}`;
+    }).join('')}
+    </div>`;
+
+  // Skip post-processing (scroll, focus, side effects) se stiamo rendendo in container offscreen.
+  // In quel caso siamo dentro _doRubricaSearch che gestirà lui side effects sul DOM finale.
+  if (targetContainer) return;
 
   // Scroll al contatto se richiesto (apertura via filter=contattoId)
   // L'expansion della sezione corrispondente è già stata schedulata via state.expandedSedi
@@ -8180,32 +8230,6 @@ async function copyNumber(n) {
    Tappa 1 implementa solo lista + dettaglio placeholder. Le tappe 2-5 aggiungeranno
    form compilazione, viewer pagine, editor box, generazione PDF, persistenza GitHub. */
 
-function renderModuliList() {
-  const moduli = state.index.moduli || [];
-  $('main-content').innerHTML = `
-    <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
-      <h1 class="page-title">Moduli compilabili</h1>
-      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
-        Moduli cartacei istituzionali pre-compilabili con i dati del paziente e del medico.
-      </div>
-    </div>
-    <div class="procedure-grid">
-      ${moduli.map(m => `
-        <div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeHtml(m.slug)}'})">
-          <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
-            <span class="card-actions">${renderPinButton('modulo', m.slug)}</span>
-          </div>
-          ${m.descrizione ? `<div class="procedure-card-desc" style="font-size:13px;color:var(--ink-muted);margin-top:6px;line-height:1.4;">${escapeHtml(m.descrizione)}</div>` : ''}
-          <div class="procedure-card-meta" style="margin-top:8px;">
-            <span>${m.pagine || 1} ${(m.pagine || 1) === 1 ? 'pagina' : 'pagine'}</span>
-            ${m.autore ? `<span>· ${escapeHtml(m.autore)}</span>` : ''}
-          </div>
-        </div>
-      `).join('') || '<p style="color:var(--ink-muted);">Nessun modulo disponibile. Contatta l\'amministratore per aggiungerne.</p>'}
-    </div>`;
-}
-
 /* ============================ MODULI COMPILABILI — STATO ============================ */
 // Per ciascun slug carico boxes.yml + URL pagine PNG. Cache in sessionStorage,
 // si svuota a chiusura tab. La cache evita di rifetchare il YAML ad ogni navigazione
@@ -8316,6 +8340,9 @@ function renderModuliList() {
       <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
         Moduli cartacei istituzionali pre-compilabili con i dati del paziente e del medico.
       </div>
+      <div class="page-actions" style="margin-top:16px;">
+        <button class="btn primary" onclick="apriNuovoModuloDialog()" style="background:var(--ink);color:var(--bg-paper);border-color:var(--ink);">+ Nuovo modulo</button>
+      </div>
     </div>
     <div class="procedure-grid">
       ${moduli.map(m => `
@@ -8329,7 +8356,7 @@ function renderModuliList() {
             ${m.autore ? `<span>· ${escapeHtml(m.autore)}</span>` : ''}
           </div>
         </div>
-      `).join('') || '<p style="color:var(--ink-muted);">Nessun modulo disponibile. Contatta l\'amministratore per aggiungerne.</p>'}
+      `).join('') || '<p style="color:var(--ink-muted);font-style:italic;">Nessun modulo presente. Premi "+ Nuovo modulo" per crearne uno.</p>'}
     </div>`;
 }
 
@@ -9305,6 +9332,326 @@ function scartaModuloBoxesModifiche(slug) {
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
   renderModuloCompilatore(slug, c);
   toast('Modifiche scartate', 'info');
+}
+
+/* ============================ MODULI — CREAZIONE NUOVO MODULO ============================ */
+
+// Stato del wizard di creazione (popolato durante il dialog)
+let _nuovoModuloDraft = null;
+
+// Helper: deriva uno slug dal titolo (lowercase, no caratteri speciali, trattini)
+function _slugifyTitolo(s) {
+  return (s || '').toLowerCase()
+    .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/[ýÿ]/g, 'y')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 60);
+}
+
+// Apre il dialog wizard "Nuovo modulo"
+function apriNuovoModuloDialog() {
+  if (!state.session || !state.session.tokenAuth) {
+    return toast('Login richiesto per creare moduli', 'error');
+  }
+  // Reset draft
+  _nuovoModuloDraft = {
+    titolo: '',
+    descrizione: '',
+    autore: state.session.cognome && state.session.nome
+      ? `${state.session.nome} ${state.session.cognome}`
+      : (state.session.username || ''),
+    slug: '',
+    pages: []  // array di { dataUrl, blob, originalName }
+  };
+  _renderNuovoModuloDialog();
+}
+
+function _renderNuovoModuloDialog() {
+  const draft = _nuovoModuloDraft;
+  if (!draft) return;
+  const slugAuto = draft.slug || _slugifyTitolo(draft.titolo);
+  const slugConflict = (state.index.moduli || []).find(m => m.slug === slugAuto);
+  const canSubmit = draft.titolo.trim() && draft.pages.length > 0 && slugAuto && !slugConflict;
+
+  showModal({
+    title: 'Nuovo modulo compilabile',
+    subtitle: 'Carica un PDF o una serie di immagini delle pagine del modulo',
+    body: `
+      <div style="display:grid;gap:14px;font-family:var(--sans);">
+        <div class="field">
+          <label class="mod-field-label" for="nm-titolo">Titolo del modulo *</label>
+          <input type="text" id="nm-titolo" class="mod-input" placeholder="es. Consenso rachicentesi"
+                 value="${escapeHtml(draft.titolo)}"
+                 oninput="_updateNuovoModuloField('titolo', this.value)">
+        </div>
+        <div class="field">
+          <label class="mod-field-label" for="nm-slug">Slug (nome cartella su GitHub)</label>
+          <input type="text" id="nm-slug" class="mod-input" placeholder="auto-generato dal titolo"
+                 value="${escapeHtml(slugAuto)}"
+                 oninput="_updateNuovoModuloField('slug', this.value)">
+          ${slugConflict ? `<div style="font-size:12px;color:#A32D2D;margin-top:4px;">⚠ Slug già esistente, scegline uno diverso</div>` : ''}
+        </div>
+        <div class="field">
+          <label class="mod-field-label" for="nm-descr">Descrizione</label>
+          <textarea id="nm-descr" class="mod-input" rows="2" placeholder="Breve descrizione (opzionale)"
+                    oninput="_updateNuovoModuloField('descrizione', this.value)">${escapeHtml(draft.descrizione)}</textarea>
+        </div>
+        <div class="field">
+          <label class="mod-field-label" for="nm-autore">Autore</label>
+          <input type="text" id="nm-autore" class="mod-input" placeholder="Chi ha creato questo modulo"
+                 value="${escapeHtml(draft.autore)}"
+                 oninput="_updateNuovoModuloField('autore', this.value)">
+        </div>
+
+        <div class="field" style="border-top:1px solid var(--rule-soft);padding-top:14px;">
+          <label class="mod-field-label">Pagine del modulo *</label>
+          <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">
+            Carica un PDF (verrà splittato in pagine) o uno o più file immagine (PNG/JPG)
+          </div>
+          <input type="file" id="nm-file-input" accept=".pdf,image/*" multiple style="display:none;"
+                 onchange="_handleNuovoModuloFiles(this.files)">
+          <button type="button" class="btn ghost" onclick="document.getElementById('nm-file-input').click()" style="width:100%;padding:14px;border:2px dashed var(--rule);background:var(--bg-sink);">
+            ${draft.pages.length === 0 ? '📄 Scegli file (PDF o immagini)' : '+ Aggiungi altre pagine'}
+          </button>
+          ${draft.pages.length > 0 ? `
+            <div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;">
+              ${draft.pages.map((p, i) => `
+                <div style="position:relative;background:#fff;border:1px solid var(--rule);border-radius:2px;padding:4px;font-size:11px;text-align:center;">
+                  <img src="${p.dataUrl}" alt="Pagina ${i+1}" style="width:100%;height:80px;object-fit:contain;display:block;">
+                  <div style="margin-top:2px;color:var(--ink-muted);font-family:var(--mono);">p${i+1}</div>
+                  <button type="button" onclick="_removeNuovoModuloPage(${i})" title="Rimuovi pagina"
+                    style="position:absolute;top:2px;right:2px;background:rgba(180,0,0,.85);color:white;border:none;width:18px;height:18px;border-radius:50%;font-size:11px;cursor:pointer;line-height:1;padding:0;">×</button>
+                </div>
+              `).join('')}
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:var(--ink-muted);">
+              ${draft.pages.length} ${draft.pages.length === 1 ? 'pagina' : 'pagine'}
+            </div>
+          ` : ''}
+        </div>
+
+        <div id="nm-progress" style="display:none;padding:10px;background:var(--bg-sink);border-radius:2px;font-family:var(--mono);font-size:12px;color:var(--ink-soft);"></div>
+      </div>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: () => { _nuovoModuloDraft = null; closeModal(); } },
+      { label: canSubmit ? 'Crea modulo' : 'Crea modulo (compila i campi)', onClick: () => {
+          if (!canSubmit) return;
+          _confermaNuovoModulo();
+        } }
+    ]
+  });
+}
+
+function _updateNuovoModuloField(field, value) {
+  if (!_nuovoModuloDraft) return;
+  _nuovoModuloDraft[field] = value;
+  // Se l'utente non ha customizzato lo slug, lo riderivo dal titolo
+  if (field === 'titolo' && !_nuovoModuloDraft._slugManuale) {
+    _nuovoModuloDraft.slug = '';  // sarà auto-rigenerato al prossimo render
+  }
+  if (field === 'slug') {
+    _nuovoModuloDraft._slugManuale = !!value;
+  }
+  // Per i campi testo, NON ri-render del dialog: aggiornerei solo l'avviso slug duplicato
+  // ma perderei focus/cursore. Aggiorno solo il warning slug se necessario.
+  // Re-render completo solo quando le pagine cambiano (handled da _handleNuovoModuloFiles/_removeNuovoModuloPage).
+  _refreshSlugWarningInDialog();
+}
+
+// Aggiorna solo l'avviso "slug già esistente" nel dialog senza re-render completo
+function _refreshSlugWarningInDialog() {
+  const draft = _nuovoModuloDraft;
+  if (!draft) return;
+  const slugInput = document.getElementById('nm-slug');
+  if (!slugInput) return;
+  // Se lo slug è auto-generato dal titolo, aggiorno il valore visualizzato
+  if (!draft._slugManuale) {
+    const newSlug = _slugifyTitolo(draft.titolo);
+    if (slugInput.value !== newSlug) slugInput.value = newSlug;
+  }
+  const slugVal = slugInput.value || _slugifyTitolo(draft.titolo);
+  const conflict = (state.index.moduli || []).find(m => m.slug === slugVal);
+  // Cerco il warning esistente sotto lo slug input
+  let warning = slugInput.parentElement.querySelector('.nm-slug-warning');
+  if (conflict) {
+    if (!warning) {
+      warning = document.createElement('div');
+      warning.className = 'nm-slug-warning';
+      warning.style.cssText = 'font-size:12px;color:#A32D2D;margin-top:4px;';
+      slugInput.parentElement.appendChild(warning);
+    }
+    warning.textContent = '⚠ Slug già esistente, scegline uno diverso';
+  } else if (warning) {
+    warning.remove();
+  }
+}
+
+function _removeNuovoModuloPage(idx) {
+  if (!_nuovoModuloDraft) return;
+  _nuovoModuloDraft.pages.splice(idx, 1);
+  _renderNuovoModuloDialog();
+}
+
+// Gestisce i file selezionati: li converte in pages (dataUrl + blob).
+// PDF → split in pagine via PDF.js; immagini → 1 pagina ciascuna.
+async function _handleNuovoModuloFiles(fileList) {
+  if (!_nuovoModuloDraft) return;
+  const files = Array.from(fileList);
+  if (files.length === 0) return;
+
+  const progressEl = document.getElementById('nm-progress');
+  if (progressEl) {
+    progressEl.style.display = 'block';
+    progressEl.textContent = `Elaborazione ${files.length} file…`;
+  }
+
+  for (const file of files) {
+    try {
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        await _processPdfToPages(file, progressEl);
+      } else if (file.type.startsWith('image/')) {
+        await _processImageToPage(file, progressEl);
+      } else {
+        toast(`Tipo file non supportato: ${file.name}`, 'warning');
+      }
+    } catch (e) {
+      console.error('[nuovoModulo] errore processing file', file.name, e);
+      toast(`Errore con ${file.name}: ${e.message}`, 'error', 4000);
+    }
+  }
+  if (progressEl) progressEl.style.display = 'none';
+  _renderNuovoModuloDialog();
+}
+
+// Splitta un PDF in pagine PNG via PDF.js. Renderizza ogni pagina a 200 DPI.
+async function _processPdfToPages(file, progressEl) {
+  if (!window.pdfjsLib) throw new Error('PDF.js non caricato');
+  const arrayBuf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuf }).promise;
+  const SCALE = 2.0;  // ~150-200 DPI: buon compromesso qualità/dimensione
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    if (progressEl) progressEl.textContent = `Estrazione pagina ${pageNum} di ${pdf.numPages} da ${file.name}…`;
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: SCALE });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    // Sfondo bianco (PDF a volte trasparenti → eviterei artefatti compress)
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const dataUrl = canvas.toDataURL('image/png');
+    _nuovoModuloDraft.pages.push({ dataUrl, blob, originalName: `${file.name} p.${pageNum}` });
+  }
+}
+
+// Converte una immagine (PNG/JPG) in un page entry. Comprime se >2MB.
+async function _processImageToPage(file, progressEl) {
+  if (progressEl) progressEl.textContent = `Caricamento ${file.name}…`;
+  let blob = file;
+  // Se è grossa o non-PNG, comprimi/riconverti
+  if (file.size > 2 * 1024 * 1024 || !file.type.includes('png')) {
+    if (window.imageCompression) {
+      try {
+        blob = await window.imageCompression(file, { maxSizeMB: 2, maxWidthOrHeight: 2400, useWebWorker: true });
+      } catch (e) {
+        console.warn('[nuovoModulo] compressione fallita, uso originale:', e);
+      }
+    }
+  }
+  const dataUrl = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+  _nuovoModuloDraft.pages.push({ dataUrl, blob, originalName: file.name });
+}
+
+// Conferma e crea il modulo: upload PNG + boxes.yml + aggiorna index.yml
+async function _confermaNuovoModulo() {
+  const draft = _nuovoModuloDraft;
+  if (!draft) return;
+  const slug = draft.slug || _slugifyTitolo(draft.titolo);
+  if (!slug || !draft.titolo.trim() || draft.pages.length === 0) return;
+  if ((state.index.moduli || []).find(m => m.slug === slug)) {
+    return toast('Slug già esistente', 'error');
+  }
+
+  const progressEl = document.getElementById('nm-progress');
+  if (progressEl) progressEl.style.display = 'block';
+
+  try {
+    // 1. Carica le PNG sul repo
+    for (let i = 0; i < draft.pages.length; i++) {
+      if (progressEl) progressEl.textContent = `Upload pagina ${i+1}/${draft.pages.length}…`;
+      const page = draft.pages[i];
+      const path = `content/moduli/${slug}/page-${i+1}.png`;
+      // Converto blob in base64 (browser-safe)
+      const base64 = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result.split(',')[1]);
+        r.onerror = reject;
+        r.readAsDataURL(page.blob);
+      });
+      await gh.putFile(path, base64, null, `Nuovo modulo ${slug}: pagina ${i+1}`, true);
+    }
+
+    // 2. Crea boxes.yml con campi default e box vuoti
+    if (progressEl) progressEl.textContent = 'Creazione boxes.yml…';
+    const boxesData = {
+      campi_richiesti: [
+        { id: 'paziente', label: 'Paziente', tipo: 'paziente_completo', required: true },
+        { id: 'medico', label: 'Medico', tipo: 'medico_nome', required: true },
+        { id: 'data', label: 'Data', tipo: 'data', default: 'oggi' }
+      ],
+      box: []
+    };
+    const yamlStr = `# Box e campi per "${draft.titolo}".\n# Coordinate in PERCENTUALE (0-100) sulla pagina, origine top-left.\n# Creato da ${state.session.username || '?'} il ${new Date().toLocaleString('it-IT')}.\n# Per disegnare i box, apri il modulo nell'app e usa "Modifica box".\n\n` +
+      jsyaml.dump(boxesData, { lineWidth: 120, noRefs: true, sortKeys: false });
+    await gh.putFile(`content/moduli/${slug}/boxes.yml`, yamlStr, null, `Nuovo modulo ${slug}: boxes.yml`);
+
+    // 3. Aggiorna content/moduli/index.yml aggiungendo la nuova entry
+    if (progressEl) progressEl.textContent = 'Aggiornamento index.yml…';
+    const indexPath = 'content/moduli/index.yml';
+    const today = new Date().toISOString().slice(0, 10);
+    const newEntry = {
+      slug,
+      titolo: draft.titolo.trim(),
+      descrizione: draft.descrizione.trim() || undefined,
+      pagine: draft.pages.length,
+      autore: draft.autore.trim() || undefined,
+      aggiornato: today
+    };
+    // Rimuovi chiavi undefined (jsyaml le scriverebbe come null)
+    Object.keys(newEntry).forEach(k => newEntry[k] === undefined && delete newEntry[k]);
+
+    let indexFile = null;
+    try { indexFile = await gh.getFile(indexPath); } catch {}
+    let idx = { moduli: [] };
+    if (indexFile) {
+      idx = jsyaml.load(indexFile.content) || { moduli: [] };
+      if (!Array.isArray(idx.moduli)) idx.moduli = [];
+    }
+    idx.moduli.push(newEntry);
+    const newIndexContent = jsyaml.dump(idx, { lineWidth: 120, noRefs: true, sortKeys: false });
+    await gh.putFile(indexPath, newIndexContent, indexFile ? indexFile.sha : null, `Nuovo modulo: ${slug}`);
+
+    // 4. Aggiorna stato locale (così appare subito senza rebuildIndex)
+    state.index.moduli.push({ ...newEntry, path: indexPath });
+    rebuildSearchIndex();
+    renderNavTree();
+
+    _nuovoModuloDraft = null;
+    closeModal();
+    toast(`Modulo "${draft.titolo}" creato`, 'success');
+    navigate('modulo', { slug });
+  } catch (e) {
+    console.error('[nuovoModulo] errore:', e);
+    if (progressEl) progressEl.style.display = 'none';
+    toast('Errore creazione modulo: ' + e.message, 'error', 6000);
+  }
 }
 
 
@@ -11913,7 +12260,7 @@ function showNavContextMenu(triggerBtn, kind, slug) {
     if (slug === 'procedure') items = [{ label: '+ Nuova categoria di procedure', action: () => nuovaMacroCategoria() }];
     else if (slug === 'clinica') items = [{ label: '+ Nuova sottocategoria clinica', action: () => createClinicaSub() }];
     else if (slug === 'numeri') items = [{ label: '+ Nuovo gruppo di numeri', action: () => nuovoGruppoNumeri() }];
-    else if (slug === 'moduli') items = [{ label: '+ Nuovo modulo', action: () => toast('Creazione moduli da app non ancora supportata. Aggiungi cartella e voce in content/moduli/index.yml dal repo.', 'info', 4000) }];
+    else if (slug === 'moduli') items = [{ label: '+ Nuovo modulo', action: () => apriNuovoModuloDialog() }];
     else if (slug === 'manuale') items = [{ label: '+ Nuovo capitolo', action: () => nuovoCapitolo() }];
   } else if (kind === 'procedure') {
     items = [
