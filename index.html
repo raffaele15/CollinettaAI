@@ -706,11 +706,11 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 /* ============================ MODULI COMPILABILI ============================ */
 .mod-layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
 @media (max-width:900px){
-  .mod-layout{grid-template-columns:1fr}
+  .mod-layout{grid-template-columns:1fr;gap:12px}
 }
-.mod-form{position:sticky;top:calc(var(--topbar-height) + 12px);background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px;align-self:start;max-height:calc(100vh - var(--topbar-height) - 32px);overflow-y:auto}
+.mod-form{position:sticky;top:calc(var(--topbar-height) + 12px);background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px;align-self:start;max-height:calc(100vh - var(--topbar-height) - 32px);overflow-y:auto;box-sizing:border-box;min-width:0;max-width:100%}
 @media (max-width:900px){
-  .mod-form{position:static;max-height:none}
+  .mod-form{position:static;max-height:none;padding:12px}
 }
 .mod-form-head h3{font-family:var(--serif);font-weight:500}
 .mod-form-fields{display:grid;gap:14px}
@@ -721,15 +721,24 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .mod-input:disabled{background:var(--bg-sink);color:var(--ink-muted);cursor:not-allowed}
 .mod-input[type=text],.mod-input textarea{font-family:var(--sans)}
 .mod-field-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.mod-segmented{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;width:fit-content}
-.mod-seg{flex:1;padding:6px 12px;background:var(--bg-paper);color:var(--ink-muted);font-family:var(--sans);font-size:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s;border-right:1px solid var(--rule)}
+.mod-segmented{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;width:fit-content;max-width:100%;flex-wrap:wrap}
+.mod-seg{flex:1;padding:6px 12px;background:var(--bg-paper);color:var(--ink-muted);font-family:var(--sans);font-size:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s;border-right:1px solid var(--rule);white-space:nowrap}
 .mod-seg:last-child{border-right:none}
 .mod-seg.active{background:var(--ink);color:var(--bg-paper)}
 .mod-seg:hover:not(.active){background:var(--bg-sink);color:var(--ink)}
-.mod-preview{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px}
-.mod-page-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--rule-soft)}
-.mod-page-indicator{font-family:var(--mono);font-size:12px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
-.mod-page-stage{position:relative;display:inline-block;width:100%;background:#fff;border:1px solid var(--rule-soft);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.mod-preview{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px;box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden}
+@media (max-width:900px){
+  .mod-preview{padding:8px}
+}
+.mod-page-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--rule-soft);flex-wrap:wrap}
+.mod-page-nav .btn{padding:6px 10px;font-size:12px;flex:0 1 auto;min-width:0}
+@media (max-width:600px){
+  /* Su mobile mostro solo le frecce, niente testo "Precedente/Successiva" — risparmia spazio */
+  .mod-page-text{display:none}
+  .mod-page-arrow{font-size:14px}
+}
+.mod-page-indicator{font-family:var(--mono);font-size:12px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;flex:1 1 auto;text-align:center;min-width:0}
+.mod-page-stage{position:relative;display:block;width:100%;background:#fff;border:1px solid var(--rule-soft);box-shadow:0 1px 3px rgba(0,0,0,.04);max-width:100%}
 .mod-page-img{display:block;max-width:100%;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:1px 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1.1;border-radius:1px}
@@ -739,13 +748,17 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .mod-form-actions .btn{padding:6px 12px;font-size:13px}
 
 /* Toolbar editor box */
-.mod-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px}
-.mod-toolbar .btn{padding:6px 12px;font-size:13px}
+.mod-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;box-sizing:border-box;max-width:100%}
+.mod-toolbar .btn{padding:6px 12px;font-size:13px;flex:0 1 auto}
+@media (max-width:600px){
+  .mod-toolbar{padding:8px;gap:4px}
+  .mod-toolbar .btn{padding:6px 8px;font-size:12px}
+}
 .mod-toolbar .btn.primary,
 .mod-form-actions .btn.primary{background:var(--ink);color:var(--bg-paper);border-color:var(--ink)}
 .mod-toolbar .btn.primary:hover,
 .mod-form-actions .btn.primary:hover{background:#000;border-color:#000}
-.mod-toolbar-hint{font-size:11px;color:var(--ink-muted);font-style:italic;margin-left:auto}
+.mod-toolbar-hint{font-size:11px;color:var(--ink-muted);font-style:italic;margin-left:auto;flex:0 1 auto;min-width:0}
 @media (max-width:600px){
   .mod-toolbar-hint{display:none}
 }
@@ -8895,9 +8908,9 @@ function _renderModuloPaginatedPreview(slug, det) {
   const cur = det.currentPage || 1;
   const navHtml = totalPages > 1 ? `
     <div class="mod-page-nav">
-      <button class="btn ghost" ${cur <= 1 ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur - 1})">◀ Precedente</button>
+      <button class="btn ghost mod-page-prev" ${cur <= 1 ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur - 1})" aria-label="Pagina precedente"><span class="mod-page-arrow">◀</span><span class="mod-page-text"> Precedente</span></button>
       <span class="mod-page-indicator">Pagina ${cur} / ${totalPages}</span>
-      <button class="btn ghost" ${cur >= totalPages ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur + 1})">Successiva ▶</button>
+      <button class="btn ghost mod-page-next" ${cur >= totalPages ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur + 1})" aria-label="Pagina successiva"><span class="mod-page-text">Successiva </span><span class="mod-page-arrow">▶</span></button>
     </div>` : `<div class="mod-page-indicator" style="margin-bottom:8px;">Pagina unica</div>`;
 
   return `
@@ -9061,7 +9074,9 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   if (!box) return;
 
   ev.preventDefault();
-  layer.setPointerCapture(ev.pointerId);
+  ev.stopPropagation();
+  // Pointer capture sul layer: gli eventi continuano ad arrivare anche se il dito esce dall'area
+  try { layer.setPointerCapture(ev.pointerId); } catch {}
 
   const layerRect = layer.getBoundingClientRect();
   const W = layerRect.width;
@@ -9076,6 +9091,9 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
 
   const onMove = (e) => {
+    // preventDefault evita che il browser interpreti il movimento come scroll/zoom della pagina,
+    // anche su mobile dove touch-action:none a volte non basta (es. swipe-down nativo).
+    e.preventDefault();
     const curPctX = ((e.clientX - layerRect.left) / W) * 100;
     const curPctY = ((e.clientY - layerRect.top) / H) * 100;
     const dx = curPctX - startPctX;
@@ -9121,18 +9139,26 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   };
 
   const onEnd = (e) => {
-    layer.releasePointerCapture(ev.pointerId);
+    try { layer.releasePointerCapture(ev.pointerId); } catch {}
     layer.removeEventListener('pointermove', onMove);
     layer.removeEventListener('pointerup', onEnd);
     layer.removeEventListener('pointercancel', onEnd);
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onEnd);
+    document.removeEventListener('pointercancel', onEnd);
     try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
     // Re-render del panel per aggiornare le coords mostrate
     renderModuloCompilatore(slug, c);
   };
 
-  layer.addEventListener('pointermove', onMove);
+  // Bind sia su layer (per pointer capture) sia su document (per cattura anche se il dito
+  // esce dall'area visibile durante drag verticale verso il bordo dello schermo).
+  layer.addEventListener('pointermove', onMove, { passive: false });
   layer.addEventListener('pointerup', onEnd);
   layer.addEventListener('pointercancel', onEnd);
+  document.addEventListener('pointermove', onMove, { passive: false });
+  document.addEventListener('pointerup', onEnd);
+  document.addEventListener('pointercancel', onEnd);
 }
 
 /* ============================ MODULI — GENERAZIONE OUTPUT ============================ */
@@ -9548,9 +9574,10 @@ function _renderNuovoModuloDialog() {
         <div class="field" style="border-top:1px solid var(--rule-soft);padding-top:14px;">
           <label class="mod-field-label">Pagine del modulo *</label>
           <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">
-            Carica un PDF (verrà splittato in pagine) o uno o più file immagine (PNG/JPG)
+            Carica un PDF (verrà splittato in pagine) o uno o più file immagine (PNG/JPG).<br>
+            <strong>Per file Word</strong>: salvali prima in PDF (Word: File → Salva come → PDF), poi carica il PDF qui.
           </div>
-          <input type="file" id="nm-file-input" accept=".pdf,image/*" multiple style="display:none;"
+          <input type="file" id="nm-file-input" accept=".pdf,image/*,.doc,.docx" multiple style="display:none;"
                  onchange="_handleNuovoModuloFiles(this.files)">
           <button type="button" class="btn ghost" onclick="document.getElementById('nm-file-input').click()" style="width:100%;padding:14px 12px;border:2px dashed var(--rule);background:var(--bg-sink);font-size:14px;line-height:1.3;text-align:center;white-space:normal;">
             ${draft.pages.length === 0 ? '📄 Scegli file<br><span style="font-size:11px;color:var(--ink-muted);font-weight:normal;">PDF o immagini</span>' : '+ Aggiungi pagine'}
@@ -9655,12 +9682,21 @@ async function _handleNuovoModuloFiles(fileList) {
 
   for (const file of files) {
     try {
-      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      const lower = file.name.toLowerCase();
+      if (file.type === 'application/pdf' || lower.endsWith('.pdf')) {
         await _processPdfToPages(file, progressEl);
       } else if (file.type.startsWith('image/')) {
         await _processImageToPage(file, progressEl);
+      } else if (lower.endsWith('.doc') || lower.endsWith('.docx') ||
+                 file.type === 'application/msword' ||
+                 file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        // I file Word non possono essere visualizzati nel browser: serve un PDF o immagini.
+        // Un parser .docx → HTML (es. mammoth.js) richiederebbe poi un renderer HTML→canvas
+        // affidabile, cosa non triviale per documenti istituzionali con tabelle/intestazioni.
+        // Soluzione pragmatica: chiedo all'utente di convertire prima il Word in PDF.
+        toast(`File Word non supportato direttamente.\nApri "${file.name}" e usa "Salva come PDF" (o stampa → PDF), poi carica il PDF qui.`, 'warning', 8000);
       } else {
-        toast(`Tipo file non supportato: ${file.name}`, 'warning');
+        toast(`Tipo file non supportato: ${file.name}. Carica PDF, PNG o JPG.`, 'warning', 5000);
       }
     } catch (e) {
       console.error('[nuovoModulo] errore processing file', file.name, e);
