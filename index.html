@@ -751,23 +751,24 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 }
 
 /* Modalità modifica: layer overlay riceve eventi (pointer-events:auto è settato da JS) */
-.mod-box.editable{cursor:move;user-select:none}
+.mod-box.editable{cursor:move;user-select:none;touch-action:none;-webkit-user-select:none}
 .mod-box.editable:hover{outline:1px solid rgba(20,80,180,.5);outline-offset:1px}
 .mod-box.editable.selected{outline:2px solid #185FA5;outline-offset:1px;background:rgba(180,200,255,.4);z-index:10}
 .mod-box.editable.selected.firma{background:rgba(180,180,255,.35)}
 
 /* Maniglie di resize agli angoli del box selezionato */
-.mod-handle{position:absolute;width:10px;height:10px;background:#185FA5;border:1px solid #fff;box-sizing:border-box;border-radius:1px;z-index:11}
-.mod-handle-tl{left:-5px;top:-5px;cursor:nw-resize}
-.mod-handle-tr{right:-5px;top:-5px;cursor:ne-resize}
-.mod-handle-bl{left:-5px;bottom:-5px;cursor:sw-resize}
-.mod-handle-br{right:-5px;bottom:-5px;cursor:se-resize}
+.mod-handle{position:absolute;width:14px;height:14px;background:#185FA5;border:2px solid #fff;box-sizing:border-box;border-radius:2px;z-index:11;touch-action:none;-webkit-user-select:none;user-select:none}
+.mod-handle-tl{left:-7px;top:-7px;cursor:nw-resize}
+.mod-handle-tr{right:-7px;top:-7px;cursor:ne-resize}
+.mod-handle-bl{left:-7px;bottom:-7px;cursor:sw-resize}
+.mod-handle-br{right:-7px;bottom:-7px;cursor:se-resize}
 @media (max-width:600px){
-  .mod-handle{width:14px;height:14px}
-  .mod-handle-tl{left:-7px;top:-7px}
-  .mod-handle-tr{right:-7px;top:-7px}
-  .mod-handle-bl{left:-7px;bottom:-7px}
-  .mod-handle-br{right:-7px;bottom:-7px}
+  /* Su mobile maniglie più grandi (target tap 22px) per facilitare il resize */
+  .mod-handle{width:22px;height:22px;border-width:3px}
+  .mod-handle-tl{left:-11px;top:-11px}
+  .mod-handle-tr{right:-11px;top:-11px}
+  .mod-handle-bl{left:-11px;bottom:-11px}
+  .mod-handle-br{right:-11px;bottom:-11px}
 }
 
 /* Pannello editor (sostituisce il form di compilazione) */
@@ -8951,6 +8952,9 @@ function refreshModuloOverlays(slug) {
 
   // Quando in editMode l'overlay layer riceve eventi (per drag/resize/click)
   layer.style.pointerEvents = editMode ? 'auto' : 'none';
+  // touch-action:none solo in editMode (per drag dei box senza scroll della pagina);
+  // fuori da editMode l'overlay è inerte e lascia passare lo scroll normale.
+  layer.style.touchAction = editMode ? 'none' : '';
 
   layer.innerHTML = visibleBoxIdx.map(({ b, i }) => {
     const value = _formatBoxValue(b, campiDefs, c.formValues);
@@ -8982,15 +8986,38 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
   const c = state.moduliCache[slug];
   if (!c) return;
 
-  // Click su area vuota del layer → deseleziona
+  // In editMode il layer cattura tutti i pointer (drag/resize). touch-action:none
+  // evita che il browser interpreti il gesto come scroll/pan/zoom della pagina.
+  layer.style.touchAction = 'none';
+
+  // Click su area vuota del layer → deseleziona, MA solo se è un tap fermo (no swipe).
+  // Su mobile l'utente potrebbe voler scrollare la pagina e accidentalmente touchare il layer:
+  // non vogliamo che ogni piccolo movimento triggeri una deselezione + full re-render.
+  // Soluzione: tracciamo pointerdown/up/cancel; deselezione solo se delta < TAP_THRESHOLD.
+  let layerTapStart = null;
+  const TAP_THRESHOLD = 10;  // px di movimento massimo per qualificare come "tap" (non swipe)
   layer.onpointerdown = (e) => {
-    // Se il click NON è su un box, deseleziona
-    if (e.target === layer) {
+    if (e.target !== layer) return;  // se è su un box, lascio gestire al box
+    layerTapStart = { x: e.clientX, y: e.clientY };
+  };
+  layer.onpointerup = (e) => {
+    if (!layerTapStart) return;
+    const dx = e.clientX - layerTapStart.x;
+    const dy = e.clientY - layerTapStart.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    layerTapStart = null;
+    if (dist > TAP_THRESHOLD) return;  // era uno swipe, non deseleziono
+    if (e.target !== layer) return;
+    // Tap su area vuota: deseleziono il box senza full re-render (più fluido)
+    if (c.selectedBoxIdx != null) {
       c.selectedBoxIdx = null;
       try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-      renderModuloCompilatore(slug, c);
+      // Re-render leggero: solo overlay + lista box nel pannello
+      refreshModuloOverlays(slug);
+      _refreshModuloEditorPanelLight(slug);
     }
   };
+  layer.onpointercancel = () => { layerTapStart = null; };
 
   layer.querySelectorAll('.mod-box').forEach(boxEl => {
     const idx = parseInt(boxEl.dataset.boxIdx, 10);
@@ -9003,12 +9030,27 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
         // Prima volta che lo clicco: solo seleziono, non draggo (evita drift accidentali)
         c.selectedBoxIdx = idx;
         try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-        renderModuloCompilatore(slug, c);
+        // Re-render leggero (overlay+pannello) invece del full
+        refreshModuloOverlays(slug);
+        _refreshModuloEditorPanelLight(slug);
         return;
       }
       _startBoxDragOrResize(slug, idx, e, handle ? handle.dataset.handle : null, layer, img);
     };
   });
+}
+
+// Re-render LEGGERO del solo pannello editor (non l'intero compilatore).
+// Evita di rimontare l'aside al click su un box: aggiornato solo il dettaglio "selezionato".
+function _refreshModuloEditorPanelLight(slug) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.editMode) return;
+  const aside = document.getElementById('mod-form-aside');
+  if (!aside) return;
+  // Ri-renderizzo l'editor panel inline (no toolbar/preview, già in DOM)
+  aside.innerHTML = _renderModuloEditorPanel(slug, c);
+  // Aggiorno anche la toolbar (perché il dirty potrebbe essere cambiato — anche se qui non lo è
+  // strettamente, è coerente)
 }
 
 // Avvia drag (handle=null) o resize (handle=tl/tr/bl/br). Usa Pointer Events per mouse+touch.
