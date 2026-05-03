@@ -762,11 +762,6 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
-.mod-box.empty::before{content:'⌷';font-size:9px;color:rgba(0,0,0,.4)}
-/* Durante drag/resize del box selezionato, nascondi lo pseudo-element ::before del box vuoto:
-   il suo content '⌷' interagisce col layout flex e su alcuni browser mobili (Android Chrome)
-   genera "scivolamento" del bordo top-left durante il resize della maniglia bottom-right. */
-.mod-box.empty.selected::before{content:none}
 .mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
 .mod-form-actions .btn{padding:6px 12px;font-size:13px}
 
@@ -8845,11 +8840,18 @@ function selectModuloBox(slug, idx) {
   const c = state.moduliCache[slug];
   if (!c) return;
   c.selectedBoxIdx = (c.selectedBoxIdx === idx) ? null : idx;
-  // Se il box è su un'altra pagina, salta a quella
+  // Se il box è su un'altra pagina, salta a quella (richiede full re-render)
   const b = (c.boxesData.box || [])[idx];
-  if (b && (b.pagina || 1) !== c.currentPage) c.currentPage = b.pagina || 1;
+  const pageChanged = b && (b.pagina || 1) !== c.currentPage;
+  if (pageChanged) c.currentPage = b.pagina || 1;
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  renderModuloCompilatore(slug, c);
+  if (pageChanged) {
+    renderModuloCompilatore(slug, c);
+  } else {
+    // Refresh leggero: solo overlay (per ridipingere selected/handles) + panel (per dettagli)
+    refreshModuloOverlays(slug);
+    _refreshModuloEditorPanelLight(slug);
+  }
 }
 
 // Aggiunge un nuovo box di default al centro della pagina corrente
@@ -8867,7 +8869,8 @@ function addModuloBox(slug) {
   c.boxesData.box.push(newBox);
   c.selectedBoxIdx = c.boxesData.box.length - 1;
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  renderModuloCompilatore(slug, c);
+  refreshModuloOverlays(slug);
+  _refreshModuloEditorPanelLight(slug);
 }
 
 // Duplica un box (offset di 2% per non sovrapporlo)
@@ -8881,7 +8884,8 @@ function duplicateModuloBox(slug, idx) {
   c.boxesData.box.push(copy);
   c.selectedBoxIdx = c.boxesData.box.length - 1;
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  renderModuloCompilatore(slug, c);
+  refreshModuloOverlays(slug);
+  _refreshModuloEditorPanelLight(slug);
 }
 
 // Elimina un box (con conferma)
@@ -8892,7 +8896,8 @@ function deleteModuloBox(slug, idx) {
   c.boxesData.box.splice(idx, 1);
   c.selectedBoxIdx = null;
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  renderModuloCompilatore(slug, c);
+  refreshModuloOverlays(slug);
+  _refreshModuloEditorPanelLight(slug);
 }
 
 // Setta un attributo (campo, align, font_size, label, formato) di un box
@@ -8900,13 +8905,24 @@ function setBoxAttr(slug, idx, attr, value) {
   const c = state.moduliCache[slug];
   if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
   c.boxesData.box[idx][attr] = value;
+  // Quando cambia il campo: reset del formato (le opzioni dipendono dal tipo del nuovo campo,
+  // i valori vecchi non sono compatibili con il nuovo tipo).
+  if (attr === 'campo') {
+    delete c.boxesData.box[idx].formato;
+  }
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  // Re-render sia overlay (per attributi visivi) sia panel (per coords/etichette)
   refreshModuloOverlays(slug);
-  renderModuloCompilatore(slug, c);
+  // Re-render del panel SOLO quando cambia 'campo' (le opzioni del dropdown formato dipendono
+  // dal tipo del campo selezionato e devono essere ricostruite). Per align/font_size/formato
+  // niente re-render → niente scatti, niente focus perso.
+  if (attr === 'campo') {
+    _refreshModuloEditorPanelLight(slug);
+  }
 }
 
-// Cambia il tipo di box: 'campo' = legato a un campo, 'firma' = solo placeholder
+// Cambia il tipo di box: 'campo' = legato a un campo, 'firma' = solo placeholder.
+// Cambia la struttura dei controlli del pannello (mostra/nasconde dropdown campo/formato),
+// quindi qui SI fa re-render del panel.
 function setBoxTipo(slug, idx, tipo) {
   const c = state.moduliCache[slug];
   if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
@@ -8921,7 +8937,8 @@ function setBoxTipo(slug, idx, tipo) {
     delete b.label;
   }
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  renderModuloCompilatore(slug, c);
+  refreshModuloOverlays(slug);
+  _refreshModuloEditorPanelLight(slug);
 }
 
 // Renderizza un singolo campo del form. Aggiorna `state.moduliCache[slug].formValues[c.id]`
@@ -9387,8 +9404,10 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
     // Rimuovo classe drag (sblocca scroll pagina)
     document.body.classList.remove('is-dragging-modulo-box');
     try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-    // Re-render del panel per aggiornare le coords mostrate
-    renderModuloCompilatore(slug, c);
+    // NESSUN re-render full alla fine del drag: lo state è già aggiornato live durante onMove
+    // (box.x/y/w/h sono i nuovi valori) e gli style dell'elemento DOM sono coerenti. Un full
+    // re-render qui resetterebbe lo scroll di .mod-page-scroll a 0,0 — perdiamo la posizione
+    // di vista quando la pagina è zoomata.
   };
 
   // Bind sia su layer (per pointer capture) sia su document (per cattura anche se il dito
