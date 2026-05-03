@@ -764,12 +764,11 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 }
 .mod-page-img{display:block;max-width:100%;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-.mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
-/* Span dedicato al testo del box: serve per misurare le dimensioni del solo contenuto testuale
-   in _autoFitBoxFont (escludendo le maniglie). flex:1 + overflow:hidden in modo che il testo
-   occupi lo spazio disponibile e venga clipped se eccede. text-overflow:clip (no ellissi) per
-   coerenza visiva con la rappresentazione del modulo cartaceo. */
-.mod-box-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:clip;white-space:nowrap;display:block;width:100%;height:100%;display:flex;align-items:center}
+.mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
+/* Span dedicato al testo del box: l'overflow:hidden è qui, NON sul .mod-box, così la maniglia
+   esterna (top:-26px, right:-26px) non viene clippata dal box. Il testo che eccede viene
+   clipped dallo span. */
+.mod-box-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:clip;white-space:nowrap;display:flex;align-items:center;width:100%;height:100%}
 .mod-box[style*="text-align:center"] .mod-box-text{justify-content:center}
 .mod-box[style*="text-align:right"] .mod-box-text{justify-content:flex-end}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
@@ -813,10 +812,10 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
    Logica di resize "BR" (top-left ancorato, cambiano width e height) — più intuitivo per
    l'utente che il TR (che cambierebbe anche y). Icona visiva con frecce diagonali. */
 .mod-handle{position:absolute;background:#185FA5;color:#fff;border:2px solid #fff;box-sizing:border-box;border-radius:3px;z-index:11;touch-action:none;-webkit-user-select:none;user-select:none;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;font-weight:700;cursor:nwse-resize;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.mod-handle-resize{width:24px;height:24px;right:-12px;top:-12px}
+.mod-handle-resize{width:24px;height:24px;right:-26px;top:-26px}
 @media (max-width:600px){
   /* Su mobile maniglia più grande (target tap 32px) per facilitare il resize */
-  .mod-handle-resize{width:32px;height:32px;right:-16px;top:-16px;font-size:16px;border-width:3px}
+  .mod-handle-resize{width:32px;height:32px;right:-34px;top:-34px;font-size:16px;border-width:3px}
 }
 
 /* Pannello editor (sostituisce il form di compilazione) */
@@ -8509,7 +8508,7 @@ function _placeholderForBox(box, campiDefs) {
     if (f === 'mm_aaaa_nascita') return 'MM/AAAA';
     if (f === 'mese_nascita_nome') return 'mese';
     if (f === 'mese_anno_nascita_nome') return 'mese AAAA';
-    return 'Cognome Nome (data)';  // default
+    return 'Cognome Nome';  // default
   }
   if (def.tipo === 'medico_nome') {
     if (f === 'cognome') return 'Cognome';
@@ -8536,8 +8535,7 @@ function _placeholderForBox(box, campiDefs) {
 function _formatoOptionsPerTipo(tipo) {
   if (tipo === 'paziente_completo') {
     return [
-      { value: '',                         label: 'Cognome Nome (data)' },
-      { value: 'cognome_nome',             label: 'Cognome Nome' },
+      { value: '',                         label: 'Cognome Nome' },
       { value: 'nome_cognome',             label: 'Nome Cognome' },
       { value: 'cognome',                  label: 'Solo cognome' },
       { value: 'nome',                     label: 'Solo nome' },
@@ -8636,11 +8634,8 @@ function _formatBoxValue(box, campiDefs, valoriCampi) {
     if (f === 'mm_aaaa_nascita') return _formatDataPortion(v.dataNascita, 'mm_aaaa');
     if (f === 'mese_nascita_nome') return _formatDataPortion(v.dataNascita, 'mese_nome');
     if (f === 'mese_anno_nascita_nome') return _formatDataPortion(v.dataNascita, 'mese_anno_nome');
-    // Default storico: cognome+nome+(data) — mantenuto per compat con boxes già configurati
-    const parts = [];
-    if (v.cognome || v.nome) parts.push([v.cognome, v.nome].filter(Boolean).join(' '));
-    if (v.dataNascita && f !== 'no_data') parts.push(`(${v.dataNascita})`);
-    return parts.join(' ');
+    // Default (formato vuoto): "Cognome Nome" senza data — coerente con il dropdown editor
+    return [v.cognome, v.nome].filter(Boolean).join(' ');
   }
 
   // Campo composito medico: cognome + nome (entrambi obbligatori per scrittura legale)
@@ -9463,19 +9458,23 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
 }
 
 // Trova la maniglia di resize entro una soglia di tolleranza dal punto (clientX, clientY).
-// Restituisce 'tr' se l'utente è vicino all'angolo top-right del box, null altrimenti.
-// La maniglia è visivamente in top-right e usa logica resize TR (bottom-left ancorato):
-// trascinando in alto/destra, il box cresce in entrambe le dimensioni mantenendo l'angolo
-// opposto (bottom-left) fisso al suo posto.
+// Restituisce 'tr' se l'utente è vicino alla maniglia visibile, null altrimenti.
+// La maniglia è visivamente esterna all'angolo top-right del box (offset ~26-34px) e usa
+// logica resize TR (bottom-left ancorato): trascinando in alto/destra, il box cresce in
+// entrambe le dimensioni mantenendo l'angolo opposto fisso.
 function _findNearestHandle(boxEl, clientX, clientY) {
-  const rect = boxEl.getBoundingClientRect();
+  const handleEl = boxEl.querySelector('.mod-handle-resize');
+  if (!handleEl) return null;
+  const hRect = handleEl.getBoundingClientRect();
   const isCoarse = (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
-  const tolerance = isCoarse ? 32 : 18;
-  // La maniglia è all'angolo top-right del box (posizione visiva).
-  const dx = clientX - rect.right;
-  const dy = clientY - rect.top;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-  return dist < tolerance ? 'tr' : null;
+  // Tolleranza ESTESA all'esterno della maniglia: l'area cliccabile è ben più grande del
+  // pixel-rect visivo, per facilitare il tap su mobile dove il polpastrello copre 30-40px.
+  const padding = isCoarse ? 16 : 8;
+  if (clientX >= hRect.left - padding && clientX <= hRect.right + padding &&
+      clientY >= hRect.top - padding && clientY <= hRect.bottom + padding) {
+    return 'tr';
+  }
+  return null;
 }
 
 // Re-render LEGGERO del solo pannello editor (non l'intero compilatore).
