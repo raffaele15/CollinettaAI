@@ -765,6 +765,13 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-page-img{display:block;max-width:100%;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
+/* Span dedicato al testo del box: serve per misurare le dimensioni del solo contenuto testuale
+   in _autoFitBoxFont (escludendo le maniglie). flex:1 + overflow:hidden in modo che il testo
+   occupi lo spazio disponibile e venga clipped se eccede. text-overflow:clip (no ellissi) per
+   coerenza visiva con la rappresentazione del modulo cartaceo. */
+.mod-box-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:clip;white-space:nowrap;display:block;width:100%;height:100%;display:flex;align-items:center}
+.mod-box[style*="text-align:center"] .mod-box-text{justify-content:center}
+.mod-box[style*="text-align:right"] .mod-box-text{justify-content:flex-end}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
 /* Box con placeholder esemplificativo (in editMode quando non ha ancora valore reale).
    Stile: testo nero come il testo reale (massima leggibilità) ma background giallo chiaro
@@ -773,6 +780,12 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-box.placeholder{background:rgba(255,255,200,.4);border:1px dashed rgba(180,140,0,.5);color:#000}
 .mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
 .mod-form-actions .btn{padding:6px 12px;font-size:13px}
+
+/* Stepper +/- per la dimensione del font del box selezionato */
+.mod-fontsize-stepper{display:flex;align-items:stretch;gap:0;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+.mod-fontsize-stepper .mod-fs-btn{padding:6px 14px;font-size:18px;line-height:1;border:none;border-radius:0;flex:0 0 auto;background:var(--bg-paper);color:var(--ink);font-weight:500}
+.mod-fontsize-stepper .mod-fs-btn:hover{background:var(--bg-sink)}
+.mod-fontsize-stepper .mod-fs-input{flex:1;border:none;border-left:1px solid var(--rule);border-right:1px solid var(--rule);border-radius:0;text-align:center;font-family:var(--mono);background:var(--bg-base)}
 
 /* Toolbar editor box */
 .mod-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;box-sizing:border-box;max-width:100%}
@@ -796,31 +809,14 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-box.editable.selected{outline:2px solid #185FA5;outline-offset:1px;background:rgba(180,200,255,.4);z-index:10;will-change:transform,left,top,width,height}
 .mod-box.editable.selected.firma{background:rgba(180,180,255,.35)}
 
-/* Maniglie di resize agli angoli del box selezionato */
-.mod-handle{position:absolute;width:14px;height:14px;background:#185FA5;border:2px solid #fff;box-sizing:border-box;border-radius:2px;z-index:11;touch-action:none;-webkit-user-select:none;user-select:none}
-.mod-handle-tl{left:-7px;top:-7px;cursor:nw-resize}
-.mod-handle-tr{right:-7px;top:-7px;cursor:ne-resize}
-.mod-handle-bl{left:-7px;bottom:-7px;cursor:sw-resize}
-.mod-handle-br{right:-7px;bottom:-7px;cursor:se-resize}
-/* Maniglie lati: rettangolari, posizionate al centro di ogni bordo. Permettono resize "puro"
-   su una sola dimensione (orizzontale O verticale) senza confusione di assi. */
-.mod-handle-side{background:#185FA5}
-.mod-handle-n{top:-7px;left:50%;transform:translateX(-50%);width:18px;height:14px;cursor:n-resize}
-.mod-handle-s{bottom:-7px;left:50%;transform:translateX(-50%);width:18px;height:14px;cursor:s-resize}
-.mod-handle-e{right:-7px;top:50%;transform:translateY(-50%);width:14px;height:18px;cursor:e-resize}
-.mod-handle-w{left:-7px;top:50%;transform:translateY(-50%);width:14px;height:18px;cursor:w-resize}
+/* Maniglia di resize unica: posizionata fuori dall'angolo top-right del box.
+   Logica di resize "BR" (top-left ancorato, cambiano width e height) — più intuitivo per
+   l'utente che il TR (che cambierebbe anche y). Icona visiva con frecce diagonali. */
+.mod-handle{position:absolute;background:#185FA5;color:#fff;border:2px solid #fff;box-sizing:border-box;border-radius:3px;z-index:11;touch-action:none;-webkit-user-select:none;user-select:none;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;font-weight:700;cursor:nwse-resize;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.mod-handle-resize{width:24px;height:24px;right:-12px;top:-12px}
 @media (max-width:600px){
-  /* Su mobile maniglie più grandi (target tap 22px) per facilitare il resize */
-  .mod-handle{width:22px;height:22px;border-width:3px}
-  .mod-handle-tl{left:-11px;top:-11px}
-  .mod-handle-tr{right:-11px;top:-11px}
-  .mod-handle-bl{left:-11px;bottom:-11px}
-  .mod-handle-br{right:-11px;bottom:-11px}
-  /* Maniglie lati su mobile più grandi */
-  .mod-handle-n{top:-11px;width:28px;height:22px}
-  .mod-handle-s{bottom:-11px;width:28px;height:22px}
-  .mod-handle-e{right:-11px;width:22px;height:28px}
-  .mod-handle-w{left:-11px;width:22px;height:28px}
+  /* Su mobile maniglia più grande (target tap 32px) per facilitare il resize */
+  .mod-handle-resize{width:32px;height:32px;right:-16px;top:-16px;font-size:16px;border-width:3px}
 }
 
 /* Pannello editor (sostituisce il form di compilazione) */
@@ -8906,8 +8902,12 @@ function _renderModuloEditorPanel(slug, det) {
         </div>
         <div class="mod-field-group">
           <label class="mod-field-label">Dimensione font (px)</label>
-          <input type="number" class="mod-input" min="6" max="48" value="${selBox.font_size || 11}"
-                 oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',parseInt(this.value)||11)">
+          <div class="mod-fontsize-stepper">
+            <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},-1)" aria-label="Riduci dimensione font">−</button>
+            <input type="number" class="mod-input mod-fs-input" min="6" max="48" value="${selBox.font_size || 11}"
+                   oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',parseInt(this.value)||11)">
+            <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},+1)" aria-label="Aumenta dimensione font">+</button>
+          </div>
         </div>
         <div class="mod-form-actions" style="margin-top:12px;display:flex;gap:8px;">
           <button class="btn ghost" onclick="duplicateModuloBox('${escapeJs(slug)}',${selIdx})">Duplica</button>
@@ -9004,6 +9004,29 @@ function deleteModuloBox(slug, idx) {
 }
 
 // Setta un attributo (campo, align, font_size, label, formato) di un box
+// Incrementa/decrementa la dimensione del font del box selezionato (clamped 6-48 px).
+// Usato dai bottoni +/- nel pannello editor: aggiorna il valore dell'input visualizzato
+// e re-renderizza l'overlay con il nuovo font (auto-fit lo ridurrà ulteriormente se serve).
+function changeBoxFontSize(slug, idx, delta) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
+  const cur = c.boxesData.box[idx].font_size || 11;
+  const next = Math.max(6, Math.min(48, cur + delta));
+  if (next === cur) return;
+  c.boxesData.box[idx].font_size = next;
+  // Aggiorno l'input visualizzato senza re-render del pannello (no perdita focus)
+  const input = document.querySelector('.mod-fs-input');
+  if (input) input.value = next;
+  // Invalido cache baseFontSize del box DOM così auto-fit riparte dal nuovo valore
+  const layer = document.querySelector('.mod-overlay-layer');
+  if (layer) {
+    const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
+    if (boxEl) delete boxEl.dataset.baseFontSize;
+  }
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  refreshModuloOverlays(slug);
+}
+
 function setBoxAttr(slug, idx, attr, value) {
   const c = state.moduliCache[slug];
   if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
@@ -9308,20 +9331,13 @@ function refreshModuloOverlays(slug) {
     const fontSize = b.font_size || 11;
     const isSelected = editMode && i === selIdx;
     const handles = isSelected ? `
-      <span class="mod-handle mod-handle-tl" data-handle="tl"></span>
-      <span class="mod-handle mod-handle-tr" data-handle="tr"></span>
-      <span class="mod-handle mod-handle-bl" data-handle="bl"></span>
-      <span class="mod-handle mod-handle-br" data-handle="br"></span>
-      <span class="mod-handle mod-handle-side mod-handle-n" data-handle="n"></span>
-      <span class="mod-handle mod-handle-side mod-handle-s" data-handle="s"></span>
-      <span class="mod-handle mod-handle-side mod-handle-e" data-handle="e"></span>
-      <span class="mod-handle mod-handle-side mod-handle-w" data-handle="w"></span>
+      <span class="mod-handle mod-handle-resize" data-handle="tr" title="Trascina per ridimensionare">⤢</span>
     ` : '';
     return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${placeholder ? 'placeholder' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''}"
               data-box-idx="${i}"
               style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%;
                      text-align:${align};font-size:${fontSize}px;"
-              title="${escapeHtml(b.campo || b.label || '')}">${escapeHtml(display)}${handles}</div>`;
+              title="${escapeHtml(b.campo || b.label || '')}"><span class="mod-box-text">${escapeHtml(display)}</span>${handles}</div>`;
   }).join('');
 
   // Auto-fit del font: se il testo del box overflow rispetto alla sua larghezza/altezza,
@@ -9343,18 +9359,25 @@ function refreshModuloOverlays(slug) {
 
 // Auto-fit del font dentro un box: parte dalla font_size configurata e riduce finché il
 // testo non entra in altezza+larghezza (o si raggiunge il minimo 6px).
+// IMPORTANTE: misura il testo solo del <span class="mod-box-text">, NON dell'intero box,
+// perché il box contiene anche le maniglie (8 span absolutely positioned) che gonfierebbero
+// scrollWidth/scrollHeight come flex items, causando auto-fit errato sui box selezionati.
 function _autoFitBoxFont(boxEl) {
+  const textEl = boxEl.querySelector('.mod-box-text');
+  if (!textEl) return;
   // Reset al font_size originale (sennò rimpicciolisce ogni volta)
   const baseSize = parseFloat(boxEl.dataset.baseFontSize || boxEl.style.fontSize) || 11;
   if (!boxEl.dataset.baseFontSize) boxEl.dataset.baseFontSize = baseSize;
   let size = baseSize;
   boxEl.style.fontSize = size + 'px';
-  // Se non c'è overflow → niente da fare
-  // scrollWidth/scrollHeight = dimensioni reali del contenuto, clientWidth/Height = dimensioni del box
-  // Margine di sicurezza 1px per evitare loop infiniti su rounding
+  // Spazio disponibile = clientWidth/Height del box (al netto di padding/border).
+  // Confronto con scrollWidth/Height del SOLO span del testo.
   const MIN_SIZE = 6;
+  const availW = boxEl.clientWidth;
+  const availH = boxEl.clientHeight;
+  if (availW <= 0 || availH <= 0) return;
   let iter = 0;
-  while ((boxEl.scrollWidth > boxEl.clientWidth + 1 || boxEl.scrollHeight > boxEl.clientHeight + 1) && size > MIN_SIZE && iter < 30) {
+  while ((textEl.scrollWidth > availW + 1 || textEl.scrollHeight > availH + 1) && size > MIN_SIZE && iter < 30) {
     size -= 0.5;
     boxEl.style.fontSize = size + 'px';
     iter++;
@@ -9439,37 +9462,20 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
   });
 }
 
-// Trova la maniglia più vicina al punto (clientX, clientY) entro una soglia di tolleranza.
-// Restituisce il nome della maniglia ('tl'/'tr'/'bl'/'br'/'n'/'s'/'e'/'w') oppure null.
-// Tolleranza generosa su mobile (32px) — copre un'area equivalente al polpastrello, riduce il
-// rischio di drag accidentale quando l'utente intendeva fare resize.
-// Per le maniglie laterali (n/s/e/w) la "posizione" è il centro del rispettivo bordo del box.
+// Trova la maniglia di resize entro una soglia di tolleranza dal punto (clientX, clientY).
+// Restituisce 'tr' se l'utente è vicino all'angolo top-right del box, null altrimenti.
+// La maniglia è visivamente in top-right e usa logica resize TR (bottom-left ancorato):
+// trascinando in alto/destra, il box cresce in entrambe le dimensioni mantenendo l'angolo
+// opposto (bottom-left) fisso al suo posto.
 function _findNearestHandle(boxEl, clientX, clientY) {
   const rect = boxEl.getBoundingClientRect();
   const isCoarse = (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
-  const tolerance = isCoarse ? 32 : 14;
-  const cx = (rect.left + rect.right) / 2;
-  const cy = (rect.top + rect.bottom) / 2;
-  const points = [
-    // Angoli (resize diagonale) — priorità più alta perché più informativi
-    { name: 'tl', x: rect.left,  y: rect.top },
-    { name: 'tr', x: rect.right, y: rect.top },
-    { name: 'bl', x: rect.left,  y: rect.bottom },
-    { name: 'br', x: rect.right, y: rect.bottom },
-    // Lati (resize "puro" su una sola dimensione)
-    { name: 'n',  x: cx,         y: rect.top },
-    { name: 's',  x: cx,         y: rect.bottom },
-    { name: 'e',  x: rect.right, y: cy },
-    { name: 'w',  x: rect.left,  y: cy }
-  ];
-  let bestName = null, bestDist = Infinity;
-  for (const p of points) {
-    const dx = clientX - p.x;
-    const dy = clientY - p.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist < tolerance && dist < bestDist) { bestDist = dist; bestName = p.name; }
-  }
-  return bestName;
+  const tolerance = isCoarse ? 32 : 18;
+  // La maniglia è all'angolo top-right del box (posizione visiva).
+  const dx = clientX - rect.right;
+  const dy = clientY - rect.top;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  return dist < tolerance ? 'tr' : null;
 }
 
 // Re-render LEGGERO del solo pannello editor (non l'intero compilatore).
