@@ -741,7 +741,11 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .mod-page-stage{position:relative;display:block;background:#fff;border:1px solid var(--rule-soft);box-shadow:0 1px 3px rgba(0,0,0,.04)}
 
 /* Container scrollabile: con zoom > 100% lo stage eccede in larghezza e questo container scrolla. */
-.mod-page-scroll{overflow:auto;max-width:100%;-webkit-overflow-scrolling:touch;background:var(--bg-sink);border:1px solid var(--rule-soft);position:relative}
+.mod-page-scroll{overflow:auto;max-width:100%;max-height:70vh;-webkit-overflow-scrolling:touch;background:var(--bg-sink);border:1px solid var(--rule-soft);position:relative}
+@media (max-width:600px){
+  /* Su mobile riservo più spazio alla pagina ma lascio comunque visibili topbar e toolbar zoom */
+  .mod-page-scroll{max-height:60vh}
+}
 
 /* Durante drag/resize box: blocco scroll del body senza fare reflow viewport.
    `touch-action:none` sul body impedisce al browser di interpretare il gesto come scroll
@@ -762,6 +766,10 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
+/* Box con placeholder esemplificativo (in editMode quando non ha ancora valore reale).
+   Stile simile a empty ma con testo visibile (no font-style italic per non confondere il
+   layout flex). Identica struttura del box firma → niente scivolamento durante resize. */
+.mod-box.placeholder{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.35)}
 .mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
 .mod-form-actions .btn{padding:6px 12px;font-size:13px}
 
@@ -784,7 +792,7 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 /* Modalità modifica: layer overlay riceve eventi (pointer-events:auto è settato da JS) */
 .mod-box.editable{cursor:move;user-select:none;touch-action:none;-webkit-user-select:none}
 .mod-box.editable:hover{outline:1px solid rgba(20,80,180,.5);outline-offset:1px}
-.mod-box.editable.selected{outline:2px solid #185FA5;outline-offset:1px;background:rgba(180,200,255,.4);z-index:10}
+.mod-box.editable.selected{outline:2px solid #185FA5;outline-offset:1px;background:rgba(180,200,255,.4);z-index:10;will-change:transform,left,top,width,height}
 .mod-box.editable.selected.firma{background:rgba(180,180,255,.35)}
 
 /* Maniglie di resize agli angoli del box selezionato */
@@ -8378,32 +8386,82 @@ async function loadModuloDettaglio(slug) {
   // NON funziona con token via header). Convertiamo ogni PNG in data URL inline così l'<img>
   // può visualizzarla senza ulteriore auth. Le data URL non vengono salvate in sessionStorage
   // (potrebbero superare la quota), restano solo in memoria (state.moduliCache).
+  // pageUrls = originali (alta risoluzione, usati per generazione PDF/PNG output).
+  // pageUrlsLight = versioni ridimensionate (max 1200px lato lungo) per editor/viewer:
+  //   il rendering è molto più veloce, lo zoom/scroll fluido anche su mobile.
   const pageUrls = [];
+  const pageUrlsLight = [];
   for (let i = 1; i <= nPagine; i++) {
     const path = `content/moduli/${slug}/page-${i}.png`;
     try {
       const f = await gh.getFileBase64(path);
       if (f && f.base64) {
-        pageUrls.push(`data:${f.mimeType};base64,${f.base64}`);
+        const fullUrl = `data:${f.mimeType};base64,${f.base64}`;
+        pageUrls.push(fullUrl);
+        // Genero versione light in parallelo (canvas resize). Se fallisce, fallback all'originale.
+        try {
+          const lightUrl = await _resizeImageDataUrl(fullUrl, 1200);
+          pageUrlsLight.push(lightUrl);
+        } catch (e) {
+          console.warn(`[loadModuloDettaglio] resize light fallita per pagina ${i}, uso originale:`, e);
+          pageUrlsLight.push(fullUrl);
+        }
       } else {
         // Pagina dichiarata in index.yml ma file mancante sul repo: push placeholder
-        // (l'IMG fallirà col onerror e mostrerà il messaggio "non trovata")
-        pageUrls.push(`https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${path}`);
+        const fallback = `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${path}`;
+        pageUrls.push(fallback);
+        pageUrlsLight.push(fallback);
       }
     } catch (e) {
       console.warn(`[loadModuloDettaglio] errore fetch ${path}:`, e);
-      pageUrls.push(`https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${path}`);
+      const fallback = `https://raw.githubusercontent.com/${CONFIG.REPO_OWNER}/${CONFIG.DATA_REPO_NAME}/${CONFIG.BRANCH}/${path}`;
+      pageUrls.push(fallback);
+      pageUrlsLight.push(fallback);
     }
   }
 
   // Snapshot pristine dei box per dirty detection (deep clone)
   const pristineBoxes = JSON.parse(JSON.stringify(boxesData.box || []));
 
-  const obj = { boxesData, boxesSha, pristineBoxes, pageUrls, formValues: {}, currentPage: 1 };
+  const obj = { boxesData, boxesSha, pristineBoxes, pageUrls, pageUrlsLight, formValues: {}, currentPage: 1 };
   state.moduliCache[slug] = obj;
   // NON salvo in sessionStorage: i dataURL delle PNG possono pesare molti MB
   // e supererebbero la quota di sessionStorage (5-10 MB tipicamente).
   return obj;
+}
+
+// Helper: ridimensiona un data URL di un'immagine in modo che il lato più lungo non superi maxSide.
+// Restituisce un nuovo data URL JPEG quality 0.85 (più piccolo del PNG originale).
+// Se l'immagine è già più piccola di maxSide, ritorna l'originale invariato.
+function _resizeImageDataUrl(dataUrl, maxSide) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const { naturalWidth: w, naturalHeight: h } = img;
+      if (Math.max(w, h) <= maxSide) { resolve(dataUrl); return; }
+      const scale = maxSide / Math.max(w, h);
+      const nw = Math.round(w * scale);
+      const nh = Math.round(h * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = nw;
+      canvas.height = nh;
+      const ctx = canvas.getContext('2d');
+      // Sfondo bianco (le PNG originali possono avere trasparenza che diventa nera in JPEG)
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, nw, nh);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, nw, nh);
+      // JPEG quality 0.85 → file molto più leggero del PNG, qualità sufficiente per editor
+      try {
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
 }
 
 // Probe: scopri quante pagine ha un modulo controllando l'esistenza di page-N.png su GitHub API
@@ -8432,6 +8490,50 @@ function _boxesAreDirty(slug) {
 
 // Costruisce il valore visibile del box a partire dai valoriCampi del form e dalla def del campo.
 // Esempio: campo "paziente" tipo paziente_completo → output "Cognome Nome (gg/mm/aaaa)".
+// Genera un testo placeholder esemplificativo per un box senza valore. Usato in editMode
+// per dare al box un contenuto testuale stabile (evita lo pseudo-element ::before e altre
+// soluzioni che causavano scivolamento su Android Chrome). Il testo dipende dal tipo del
+// campo associato e dal formato selezionato.
+function _placeholderForBox(box, campiDefs) {
+  if (!box.campo) return '— campo —';
+  const def = campiDefs.find(c => c.id === box.campo);
+  if (!def) return '— campo —';
+  const f = box.formato || '';
+  if (def.tipo === 'paziente_completo') {
+    if (f === 'cognome') return 'Cognome';
+    if (f === 'nome') return 'Nome';
+    if (f === 'nome_cognome') return 'Nome Cognome';
+    if (f === 'cognome_nome') return 'Cognome Nome';
+    if (f === 'data_nascita_completa' || f === 'data_nascita') return 'GG/MM/AAAA';
+    if (f === 'giorno_nascita') return 'GG';
+    if (f === 'mese_nascita') return 'MM';
+    if (f === 'anno_nascita') return 'AAAA';
+    if (f === 'gg_mm_nascita') return 'GG/MM';
+    if (f === 'mm_aaaa_nascita') return 'MM/AAAA';
+    if (f === 'mese_nascita_nome') return 'mese';
+    if (f === 'mese_anno_nascita_nome') return 'mese AAAA';
+    return 'Cognome Nome (data)';  // default
+  }
+  if (def.tipo === 'medico_nome') {
+    if (f === 'cognome') return 'Cognome';
+    if (f === 'nome') return 'Nome';
+    if (f === 'nome_cognome') return 'Nome Cognome';
+    return 'Cognome Nome';  // default
+  }
+  if (def.tipo === 'data') {
+    if (f === 'giorno') return 'GG';
+    if (f === 'mese') return 'MM';
+    if (f === 'anno') return 'AAAA';
+    if (f === 'gg_mm') return 'GG/MM';
+    if (f === 'mm_aaaa') return 'MM/AAAA';
+    if (f === 'mese_nome') return 'mese';
+    if (f === 'mese_anno_nome') return 'mese AAAA';
+    return 'GG/MM/AAAA';  // default
+  }
+  // Fallback: usa il label del campo
+  return def.label || '— campo —';
+}
+
 // Restituisce l'elenco di formati disponibili per un dato tipo di campo,
 // usato dal dropdown "Formato" nel pannello editor box.
 function _formatoOptionsPerTipo(tipo) {
@@ -9050,7 +9152,11 @@ function resetModuloFormValues(slug) {
 
 // Renderizza l'intera area preview (header pagine + pagina corrente con overlay).
 function _renderModuloPaginatedPreview(slug, det) {
-  const { pageUrls } = det;
+  const { pageUrls, pageUrlsLight } = det;
+  // Per il viewer/editor usiamo pageUrlsLight (versione ridimensionata, JPEG q.85 max 1200px)
+  // se disponibile: rendering molto più veloce, scroll/zoom fluidi anche su mobile.
+  // pageUrls (originali alta risoluzione) restano disponibili per la generazione PDF/PNG output.
+  const displayUrls = pageUrlsLight && pageUrlsLight.length === pageUrls.length ? pageUrlsLight : pageUrls;
   const totalPages = pageUrls.length;
   const cur = det.currentPage || 1;
   const zoom = det.zoom || 1;
@@ -9075,7 +9181,7 @@ function _renderModuloPaginatedPreview(slug, det) {
     ${zoomToolbar}
     <div class="mod-page-scroll" id="mod-page-scroll-${escapeHtml(slug)}">
       <div class="mod-page-stage" id="mod-page-stage-${escapeHtml(slug)}" style="width:${zoom * 100}%;">
-        <img class="mod-page-img" src="${pageUrls[cur - 1]}" alt="Pagina ${cur}"
+        <img class="mod-page-img" src="${displayUrls[cur - 1]}" alt="Pagina ${cur}"
              onload="onModuloPageImgLoad('${escapeJs(slug)}', this)"
              onerror="this.parentElement.innerHTML='<div style=padding:32px;text-align:center;color:var(--ink-muted);font-style:italic;>Pagina ${cur} non trovata. Verifica che <code>content/moduli/${escapeJs(slug)}/page-${cur}.png</code> sia caricato nel repo.</div>'">
         <div class="mod-overlay-layer" id="mod-overlay-${escapeHtml(slug)}"></div>
@@ -9146,8 +9252,12 @@ function refreshModuloOverlays(slug) {
   layer.innerHTML = visibleBoxIdx.map(({ b, i }) => {
     const value = _formatBoxValue(b, campiDefs, c.formValues);
     const isFirma = b.tipo === 'firma';
-    const isEmpty = !value && !isFirma;
-    const display = isFirma ? '✎ Firma' : value;
+    // In editMode mostro un placeholder esemplificativo per i box senza valore reale
+    // (così il box ha sempre del testo dentro, comportamento identico al box firma — niente
+    // ::before pseudo-element né flusso flex variabile che causava scivolamento su Android).
+    const placeholder = (!value && !isFirma && editMode) ? _placeholderForBox(b, campiDefs) : '';
+    const isEmpty = !value && !isFirma && !placeholder;
+    const display = isFirma ? '✎ Firma' : (value || placeholder);
     const align = b.align || 'left';
     const fontSize = b.font_size || 11;
     const isSelected = editMode && i === selIdx;
@@ -9161,7 +9271,7 @@ function refreshModuloOverlays(slug) {
       <span class="mod-handle mod-handle-side mod-handle-e" data-handle="e"></span>
       <span class="mod-handle mod-handle-side mod-handle-w" data-handle="w"></span>
     ` : '';
-    return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''}"
+    return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${placeholder ? 'placeholder' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''}"
               data-box-idx="${i}"
               style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%;
                      text-align:${align};font-size:${fontSize}px;"
@@ -9326,10 +9436,16 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   // Trova l'elemento DOM del box (per preview live senza re-render completo)
   const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
 
-  const onMove = (e) => {
-    // preventDefault evita che il browser interpreti il movimento come scroll/zoom della pagina,
-    // anche su mobile dove touch-action:none a volte non basta (es. swipe-down nativo).
-    e.preventDefault();
+  // rAF throttle: pointermove può scatenare ~120 eventi/sec su mobile, ma il browser non
+  // dipinge più di ~60 fps. Bufferizziamo l'ultimo evento e lo applichiamo al prossimo
+  // animation frame → niente reflow inutili, drag fluido.
+  let pendingEvent = null;
+  let rafId = null;
+  const computeAndApply = () => {
+    rafId = null;
+    const e = pendingEvent;
+    if (!e) return;
+    pendingEvent = null;
     const curPctX = ((e.clientX - layerRect.left) / W) * 100;
     const curPctY = ((e.clientY - layerRect.top) / H) * 100;
     const dx = curPctX - startPctX;
@@ -9341,9 +9457,6 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
       nx = Math.max(0, Math.min(100 - startBox.w, startBox.x + dx));
       ny = Math.max(0, Math.min(100 - startBox.h, startBox.y + dy));
     } else {
-      // Resize: trasforma dx/dy in delta delle coordinate appropriate.
-      // Minimi ridotti: w >= 0.5%, h >= 0.3% — su A4 corrispondono a ~12px / ~10px,
-      // così si possono creare box molto stretti per inserire singole cifre (es. dd, mm separati).
       const MIN_W = 0.5, MIN_H = 0.3;
       if (handleType === 'br') {
         nw = Math.max(MIN_W, Math.min(100 - startBox.x, startBox.w + dx));
@@ -9366,79 +9479,76 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
         nx = newX;
         ny = newY;
       } else if (handleType === 'n') {
-        // Top: cambiano solo y e h (x, w invariati). Resize verticale "puro" verso l'alto.
         const newY = Math.max(0, Math.min(startBox.y + startBox.h - MIN_H, startBox.y + dy));
         nh = startBox.h - (newY - startBox.y);
         ny = newY;
       } else if (handleType === 's') {
-        // Bottom: cambia solo h (x, y, w invariati). Resize verticale "puro" verso il basso.
         nh = Math.max(MIN_H, Math.min(100 - startBox.y, startBox.h + dy));
       } else if (handleType === 'e') {
-        // Right: cambia solo w (x, y, h invariati). Resize orizzontale "puro" verso destra.
         nw = Math.max(MIN_W, Math.min(100 - startBox.x, startBox.w + dx));
       } else if (handleType === 'w') {
-        // Left: cambiano solo x e w (y, h invariati). Resize orizzontale "puro" verso sinistra.
         const newX = Math.max(0, Math.min(startBox.x + startBox.w - MIN_W, startBox.x + dx));
         nw = startBox.w - (newX - startBox.x);
         nx = newX;
       }
     }
-    // Applico live (no re-render React-style: tocco solo lo style del box)
     box.x = nx; box.y = ny; box.w = nw; box.h = nh;
     if (boxEl) {
-      boxEl.style.left = nx + '%';
-      boxEl.style.top = ny + '%';
-      boxEl.style.width = nw + '%';
-      boxEl.style.height = nh + '%';
+      if (!handleType) {
+        // Drag puro: uso transform translate per evitare reflow del layout (hardware-accelerated).
+        // Lo scrivo come delta percentuale rispetto alla posizione iniziale.
+        // Inoltre lascio left/top fissati al valore iniziale, così il transform sposta solo visivamente
+        // e al rilascio del drag (onEnd) sincronizziamo left/top con i nuovi valori.
+        const tx = nx - startBox.x;
+        const ty = ny - startBox.y;
+        boxEl.style.transform = `translate(${(tx / startBox.w) * 100}%, ${(ty / startBox.h) * 100}%)`;
+      } else {
+        // Resize: bisogna cambiare width/height (reflow inevitabile). Uso left/top diretti.
+        boxEl.style.transform = '';
+        boxEl.style.left = nx + '%';
+        boxEl.style.top = ny + '%';
+        boxEl.style.width = nw + '%';
+        boxEl.style.height = nh + '%';
+      }
     }
   };
 
+  const onMove = (e) => {
+    e.preventDefault();
+    pendingEvent = e;
+    if (rafId == null) rafId = requestAnimationFrame(computeAndApply);
+  };
+
   const onEnd = (e) => {
+    if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; }
     try { layer.releasePointerCapture(ev.pointerId); } catch {}
-    layer.removeEventListener('pointermove', onMove);
-    layer.removeEventListener('pointerup', onEnd);
-    layer.removeEventListener('pointercancel', onEnd);
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onEnd);
     document.removeEventListener('pointercancel', onEnd);
-    // Rimuovo classe drag (sblocca scroll pagina)
+    document.removeEventListener('touchmove', onTouchMove);
     document.body.classList.remove('is-dragging-modulo-box');
+    // Committo il transform di drag in left/top reali, così lo state finale è coerente
+    // con quello che l'utente vede e ulteriori operazioni partono dalla posizione giusta.
+    if (boxEl && !handleType) {
+      boxEl.style.transform = '';
+      boxEl.style.left = box.x + '%';
+      boxEl.style.top = box.y + '%';
+    }
     try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-    // NESSUN re-render full alla fine del drag: lo state è già aggiornato live durante onMove
-    // (box.x/y/w/h sono i nuovi valori) e gli style dell'elemento DOM sono coerenti. Un full
-    // re-render qui resetterebbe lo scroll di .mod-page-scroll a 0,0 — perdiamo la posizione
-    // di vista quando la pagina è zoomata.
+    // NESSUN re-render full alla fine del drag.
   };
 
-  // Bind sia su layer (per pointer capture) sia su document (per cattura anche se il dito
-  // esce dall'area visibile durante drag verticale verso il bordo dello schermo).
-  layer.addEventListener('pointermove', onMove, { passive: false });
-  layer.addEventListener('pointerup', onEnd);
-  layer.addEventListener('pointercancel', onEnd);
+  // Su Android, pointer events possono coesistere con touch events. Se il browser triggera
+  // anche touchmove (per scroll), il preventDefault qui blocca esplicitamente lo scroll.
+  const onTouchMove = (te) => { te.preventDefault(); };
+
+  // Un SOLO listener su document (passive:false per poter chiamare preventDefault).
+  // Non bind sul layer: con setPointerCapture sul layer, gli eventi pointer arrivano comunque
+  // tramite document, e doppi listener causano onMove chiamato 2 volte → scatti su mobile.
   document.addEventListener('pointermove', onMove, { passive: false });
   document.addEventListener('pointerup', onEnd);
   document.addEventListener('pointercancel', onEnd);
-  // Su Android, pointer events possono coesistere con touch events. Se il browser triggera
-  // anche touchmove (per scroll), il preventDefault qui blocca esplicitamente lo scroll.
-  // Senza questo, su alcuni dispositivi si vede il box draggare (pointermove) E la pagina
-  // scrollare (touchmove ignorato) → effetto "il box trasla mentre cambia size".
-  const onTouchMove = (te) => { te.preventDefault(); };
   document.addEventListener('touchmove', onTouchMove, { passive: false });
-  // Cleanup anche del touchmove in onEnd (modifico la chiusura)
-  const _origOnEnd = onEnd;
-  const onEndWrapped = (e) => {
-    document.removeEventListener('touchmove', onTouchMove);
-    _origOnEnd(e);
-  };
-  // Sostituisco i listener pointerup/cancel per usare la versione wrapped
-  layer.removeEventListener('pointerup', onEnd);
-  layer.removeEventListener('pointercancel', onEnd);
-  document.removeEventListener('pointerup', onEnd);
-  document.removeEventListener('pointercancel', onEnd);
-  layer.addEventListener('pointerup', onEndWrapped);
-  layer.addEventListener('pointercancel', onEndWrapped);
-  document.addEventListener('pointerup', onEndWrapped);
-  document.addEventListener('pointercancel', onEndWrapped);
 }
 
 /* ============================ MODULI — GENERAZIONE OUTPUT ============================ */
@@ -10113,6 +10223,13 @@ async function _confermaNuovoModulo() {
     //    può servire 404 per qualche secondo dopo il primo PUT). L'utente vede subito le PNG.
     //    Al prossimo refresh dell'app, loadModuloDettaglio rifetcherà gli URL CDN definitivi.
     const localPageUrls = draft.pages.map(p => p.dataUrl);
+    // Genero anche versioni light (max 1200px JPEG q.85) per editor/viewer più fluidi.
+    // Le originali restano in pageUrls per la generazione PDF/PNG output ad alta risoluzione.
+    const localPageUrlsLight = [];
+    for (const url of localPageUrls) {
+      try { localPageUrlsLight.push(await _resizeImageDataUrl(url, 1200)); }
+      catch { localPageUrlsLight.push(url); }
+    }
     const boxesDataObj = {
       campi_richiesti: [
         { id: 'paziente', label: 'Paziente', tipo: 'paziente_completo', required: true },
@@ -10126,7 +10243,8 @@ async function _confermaNuovoModulo() {
       boxesData: boxesDataObj,
       boxesSha: null,  // verrà popolato al prossimo getFile (al refresh)
       pristineBoxes: [],
-      pageUrls: localPageUrls,  // dataUrl locali invece di URL raw GitHub
+      pageUrls: localPageUrls,        // originali alta risoluzione
+      pageUrlsLight: localPageUrlsLight, // versioni ridimensionate per editor
       formValues: {},
       currentPage: 1
     };
