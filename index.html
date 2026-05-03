@@ -738,11 +738,14 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
   .mod-page-arrow{font-size:14px}
 }
 .mod-page-indicator{font-family:var(--mono);font-size:12px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;flex:1 1 auto;text-align:center;min-width:0}
-.mod-page-stage{position:relative;display:block;width:100%;background:#fff;border:1px solid var(--rule-soft);box-shadow:0 1px 3px rgba(0,0,0,.04);max-width:100%}
+.mod-page-stage{position:relative;display:block;background:#fff;border:1px solid var(--rule-soft);box-shadow:0 1px 3px rgba(0,0,0,.04)}
 
-/* Container scrollabile attorno alla pagina (necessario quando zoom > 100%, l'immagine eccede
-   il container parent e va scrollata). Il transform scale è applicato a .mod-page-stage. */
-.mod-page-scroll{overflow:auto;max-width:100%;-webkit-overflow-scrolling:touch;background:var(--bg-sink);border:1px solid var(--rule-soft)}
+/* Container scrollabile: con zoom > 100% lo stage eccede in larghezza e questo container scrolla. */
+.mod-page-scroll{overflow:auto;max-width:100%;-webkit-overflow-scrolling:touch;background:var(--bg-sink);border:1px solid var(--rule-soft);position:relative}
+
+/* Durante drag/resize box: blocco scroll/zoom della pagina senza toccare il layout (no reflow topbar) */
+html.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none}
+html.is-dragging-modulo-box body{user-select:none;-webkit-user-select:none}
 
 /* Toolbar zoom: bottoni +/-/reset compatti */
 .mod-zoom-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:8px;justify-content:flex-end}
@@ -9036,7 +9039,7 @@ function _renderModuloPaginatedPreview(slug, det) {
     ${navHtml}
     ${zoomToolbar}
     <div class="mod-page-scroll" id="mod-page-scroll-${escapeHtml(slug)}">
-      <div class="mod-page-stage" id="mod-page-stage-${escapeHtml(slug)}" style="transform:scale(${zoom});transform-origin:top left;">
+      <div class="mod-page-stage" id="mod-page-stage-${escapeHtml(slug)}" style="width:${zoom * 100}%;">
         <img class="mod-page-img" src="${pageUrls[cur - 1]}" alt="Pagina ${cur}"
              onload="onModuloPageImgLoad('${escapeJs(slug)}', this)"
              onerror="this.parentElement.innerHTML='<div style=padding:32px;text-align:center;color:var(--ink-muted);font-style:italic;>Pagina ${cur} non trovata. Verifica che <code>content/moduli/${escapeJs(slug)}/page-${cur}.png</code> sia caricato nel repo.</div>'">
@@ -9169,6 +9172,18 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
 
   layer.querySelectorAll('.mod-box').forEach(boxEl => {
     const idx = parseInt(boxEl.dataset.boxIdx, 10);
+    // Su mobile: touchstart con preventDefault è il SOLO modo affidabile per impedire al browser
+    // di decidere "questo è scroll" prima ancora che pointermove possa eseguire preventDefault.
+    // Bind con passive:false è obbligatorio per poter chiamare preventDefault.
+    boxEl.addEventListener('touchstart', (e) => {
+      // Solo se il box è già selezionato OR il touch è su una handle (preventDefault sul tap di
+      // selezione iniziale impedirebbe altri gesti utili; lo facciamo solo quando partiremo a draggare).
+      const isSelected = c.selectedBoxIdx === idx;
+      const handle = e.target.closest('.mod-handle');
+      if (isSelected || handle) {
+        e.preventDefault();
+      }
+    }, { passive: false });
     boxEl.onpointerdown = (e) => {
       e.stopPropagation();
       // Click su una maniglia → resize, click sul corpo → drag (o select se non era selezionato)
@@ -9213,14 +9228,12 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   // Pointer capture sul layer: gli eventi continuano ad arrivare anche se il dito esce dall'area
   try { layer.setPointerCapture(ev.pointerId); } catch {}
 
-  // Blocco lo scroll della pagina globalmente durante il drag. Su mobile (specialmente iOS Safari)
-  // touch-action:none sul layer non basta: il browser decide nei primi millisecondi se la gesture
-  // è uno scroll o un'azione custom, e una volta deciso "scroll" non rilascia più gli eventi.
-  // Mettendo overflow:hidden sul body durante il drag, evitiamo del tutto la possibilità di scroll.
-  const prevBodyOverflow = document.body.style.overflow;
-  const prevBodyTouchAction = document.body.style.touchAction;
-  document.body.style.overflow = 'hidden';
-  document.body.style.touchAction = 'none';
+  // Blocco lo scroll della pagina aggiungendo una classe sul <html>. Stile via CSS:
+  // `html.is-dragging-modulo-box { touch-action: none; }` — questo evita che il browser
+  // interpreti la gesture come scroll. Non tocco body.overflow per non far scomparire/riapparire
+  // la topbar mobile (su iOS Safari `overflow:hidden` triggera ricalcolo viewport che nasconde
+  // l'address bar e fa "saltare" la topbar fissa).
+  document.documentElement.classList.add('is-dragging-modulo-box');
 
   const layerRect = layer.getBoundingClientRect();
   const W = layerRect.width;
@@ -9249,23 +9262,26 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
       nx = Math.max(0, Math.min(100 - startBox.w, startBox.x + dx));
       ny = Math.max(0, Math.min(100 - startBox.h, startBox.y + dy));
     } else {
-      // Resize: trasforma dx/dy in delta delle coordinate appropriate
+      // Resize: trasforma dx/dy in delta delle coordinate appropriate.
+      // Minimi ridotti: w >= 0.5%, h >= 0.3% — su A4 corrispondono a ~12px / ~10px,
+      // così si possono creare box molto stretti per inserire singole cifre (es. dd, mm separati).
+      const MIN_W = 0.5, MIN_H = 0.3;
       if (handleType === 'br') {
-        nw = Math.max(2, Math.min(100 - startBox.x, startBox.w + dx));
-        nh = Math.max(1, Math.min(100 - startBox.y, startBox.h + dy));
+        nw = Math.max(MIN_W, Math.min(100 - startBox.x, startBox.w + dx));
+        nh = Math.max(MIN_H, Math.min(100 - startBox.y, startBox.h + dy));
       } else if (handleType === 'tr') {
-        nw = Math.max(2, Math.min(100 - startBox.x, startBox.w + dx));
-        const newY = Math.max(0, Math.min(startBox.y + startBox.h - 1, startBox.y + dy));
+        nw = Math.max(MIN_W, Math.min(100 - startBox.x, startBox.w + dx));
+        const newY = Math.max(0, Math.min(startBox.y + startBox.h - MIN_H, startBox.y + dy));
         nh = startBox.h - (newY - startBox.y);
         ny = newY;
       } else if (handleType === 'bl') {
-        const newX = Math.max(0, Math.min(startBox.x + startBox.w - 2, startBox.x + dx));
+        const newX = Math.max(0, Math.min(startBox.x + startBox.w - MIN_W, startBox.x + dx));
         nw = startBox.w - (newX - startBox.x);
         nx = newX;
-        nh = Math.max(1, Math.min(100 - startBox.y, startBox.h + dy));
+        nh = Math.max(MIN_H, Math.min(100 - startBox.y, startBox.h + dy));
       } else if (handleType === 'tl') {
-        const newX = Math.max(0, Math.min(startBox.x + startBox.w - 2, startBox.x + dx));
-        const newY = Math.max(0, Math.min(startBox.y + startBox.h - 1, startBox.y + dy));
+        const newX = Math.max(0, Math.min(startBox.x + startBox.w - MIN_W, startBox.x + dx));
+        const newY = Math.max(0, Math.min(startBox.y + startBox.h - MIN_H, startBox.y + dy));
         nw = startBox.w - (newX - startBox.x);
         nh = startBox.h - (newY - startBox.y);
         nx = newX;
@@ -9290,9 +9306,8 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onEnd);
     document.removeEventListener('pointercancel', onEnd);
-    // Ripristino lo stato del body (sblocca lo scroll della pagina)
-    document.body.style.overflow = prevBodyOverflow;
-    document.body.style.touchAction = prevBodyTouchAction;
+    // Rimuovo classe drag (sblocca scroll pagina)
+    document.documentElement.classList.remove('is-dragging-modulo-box');
     try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
     // Re-render del panel per aggiornare le coords mostrate
     renderModuloCompilatore(slug, c);
