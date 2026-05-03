@@ -763,6 +763,10 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
 .mod-box.empty::before{content:'⌷';font-size:9px;color:rgba(0,0,0,.4)}
+/* Durante drag/resize del box selezionato, nascondi lo pseudo-element ::before del box vuoto:
+   il suo content '⌷' interagisce col layout flex e su alcuni browser mobili (Android Chrome)
+   genera "scivolamento" del bordo top-left durante il resize della maniglia bottom-right. */
+.mod-box.empty.selected::before{content:none}
 .mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
 .mod-form-actions .btn{padding:6px 12px;font-size:13px}
 
@@ -794,6 +798,13 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-handle-tr{right:-7px;top:-7px;cursor:ne-resize}
 .mod-handle-bl{left:-7px;bottom:-7px;cursor:sw-resize}
 .mod-handle-br{right:-7px;bottom:-7px;cursor:se-resize}
+/* Maniglie lati: rettangolari, posizionate al centro di ogni bordo. Permettono resize "puro"
+   su una sola dimensione (orizzontale O verticale) senza confusione di assi. */
+.mod-handle-side{background:#185FA5}
+.mod-handle-n{top:-7px;left:50%;transform:translateX(-50%);width:18px;height:14px;cursor:n-resize}
+.mod-handle-s{bottom:-7px;left:50%;transform:translateX(-50%);width:18px;height:14px;cursor:s-resize}
+.mod-handle-e{right:-7px;top:50%;transform:translateY(-50%);width:14px;height:18px;cursor:e-resize}
+.mod-handle-w{left:-7px;top:50%;transform:translateY(-50%);width:14px;height:18px;cursor:w-resize}
 @media (max-width:600px){
   /* Su mobile maniglie più grandi (target tap 22px) per facilitare il resize */
   .mod-handle{width:22px;height:22px;border-width:3px}
@@ -801,6 +812,11 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
   .mod-handle-tr{right:-11px;top:-11px}
   .mod-handle-bl{left:-11px;bottom:-11px}
   .mod-handle-br{right:-11px;bottom:-11px}
+  /* Maniglie lati su mobile più grandi */
+  .mod-handle-n{top:-11px;width:28px;height:22px}
+  .mod-handle-s{bottom:-11px;width:28px;height:22px}
+  .mod-handle-e{right:-11px;width:22px;height:28px}
+  .mod-handle-w{left:-11px;width:22px;height:28px}
 }
 
 /* Pannello editor (sostituisce il form di compilazione) */
@@ -9123,6 +9139,10 @@ function refreshModuloOverlays(slug) {
       <span class="mod-handle mod-handle-tr" data-handle="tr"></span>
       <span class="mod-handle mod-handle-bl" data-handle="bl"></span>
       <span class="mod-handle mod-handle-br" data-handle="br"></span>
+      <span class="mod-handle mod-handle-side mod-handle-n" data-handle="n"></span>
+      <span class="mod-handle mod-handle-side mod-handle-s" data-handle="s"></span>
+      <span class="mod-handle mod-handle-side mod-handle-e" data-handle="e"></span>
+      <span class="mod-handle mod-handle-side mod-handle-w" data-handle="w"></span>
     ` : '';
     return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''}"
               data-box-idx="${i}"
@@ -9183,17 +9203,23 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
       // Solo se il box è già selezionato OR il touch è su una handle (preventDefault sul tap di
       // selezione iniziale impedirebbe altri gesti utili; lo facciamo solo quando partiremo a draggare).
       const isSelected = c.selectedBoxIdx === idx;
-      const handle = e.target.closest('.mod-handle');
-      if (isSelected || handle) {
+      const touch = e.touches[0];
+      const nearHandle = touch && _findNearestHandle(boxEl, touch.clientX, touch.clientY);
+      if (isSelected || nearHandle) {
         e.preventDefault();
       }
     }, { passive: false });
     boxEl.onpointerdown = (e) => {
       e.stopPropagation();
-      // Click su una maniglia → resize, click sul corpo → drag (o select se non era selezionato)
-      const handle = e.target.closest('.mod-handle');
       const isSelected = c.selectedBoxIdx === idx;
-      if (!isSelected && !handle) {
+      // Hit detection con tolleranza: se il pointer è entro un raggio dalle 4 maniglie del box
+      // selezionato, conta come resize anche se il target tecnico è il box (le maniglie sono
+      // piccole e su touch il polpastrello copre un'area maggiore del singolo punto).
+      let handleType = null;
+      if (isSelected) {
+        handleType = _findNearestHandle(boxEl, e.clientX, e.clientY);
+      }
+      if (!isSelected && !handleType) {
         // Prima volta che lo clicco: solo seleziono, non draggo (evita drift accidentali)
         c.selectedBoxIdx = idx;
         try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
@@ -9202,9 +9228,42 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
         _refreshModuloEditorPanelLight(slug);
         return;
       }
-      _startBoxDragOrResize(slug, idx, e, handle ? handle.dataset.handle : null, layer, img);
+      _startBoxDragOrResize(slug, idx, e, handleType, layer, img);
     };
   });
+}
+
+// Trova la maniglia più vicina al punto (clientX, clientY) entro una soglia di tolleranza.
+// Restituisce il nome della maniglia ('tl'/'tr'/'bl'/'br'/'n'/'s'/'e'/'w') oppure null.
+// Tolleranza generosa su mobile (32px) — copre un'area equivalente al polpastrello, riduce il
+// rischio di drag accidentale quando l'utente intendeva fare resize.
+// Per le maniglie laterali (n/s/e/w) la "posizione" è il centro del rispettivo bordo del box.
+function _findNearestHandle(boxEl, clientX, clientY) {
+  const rect = boxEl.getBoundingClientRect();
+  const isCoarse = (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+  const tolerance = isCoarse ? 32 : 14;
+  const cx = (rect.left + rect.right) / 2;
+  const cy = (rect.top + rect.bottom) / 2;
+  const points = [
+    // Angoli (resize diagonale) — priorità più alta perché più informativi
+    { name: 'tl', x: rect.left,  y: rect.top },
+    { name: 'tr', x: rect.right, y: rect.top },
+    { name: 'bl', x: rect.left,  y: rect.bottom },
+    { name: 'br', x: rect.right, y: rect.bottom },
+    // Lati (resize "puro" su una sola dimensione)
+    { name: 'n',  x: cx,         y: rect.top },
+    { name: 's',  x: cx,         y: rect.bottom },
+    { name: 'e',  x: rect.right, y: cy },
+    { name: 'w',  x: rect.left,  y: cy }
+  ];
+  let bestName = null, bestDist = Infinity;
+  for (const p of points) {
+    const dx = clientX - p.x;
+    const dy = clientY - p.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < tolerance && dist < bestDist) { bestDist = dist; bestName = p.name; }
+  }
+  return bestName;
 }
 
 // Re-render LEGGERO del solo pannello editor (non l'intero compilatore).
@@ -9289,6 +9348,22 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
         nh = startBox.h - (newY - startBox.y);
         nx = newX;
         ny = newY;
+      } else if (handleType === 'n') {
+        // Top: cambiano solo y e h (x, w invariati). Resize verticale "puro" verso l'alto.
+        const newY = Math.max(0, Math.min(startBox.y + startBox.h - MIN_H, startBox.y + dy));
+        nh = startBox.h - (newY - startBox.y);
+        ny = newY;
+      } else if (handleType === 's') {
+        // Bottom: cambia solo h (x, y, w invariati). Resize verticale "puro" verso il basso.
+        nh = Math.max(MIN_H, Math.min(100 - startBox.y, startBox.h + dy));
+      } else if (handleType === 'e') {
+        // Right: cambia solo w (x, y, h invariati). Resize orizzontale "puro" verso destra.
+        nw = Math.max(MIN_W, Math.min(100 - startBox.x, startBox.w + dx));
+      } else if (handleType === 'w') {
+        // Left: cambiano solo x e w (y, h invariati). Resize orizzontale "puro" verso sinistra.
+        const newX = Math.max(0, Math.min(startBox.x + startBox.w - MIN_W, startBox.x + dx));
+        nw = startBox.w - (newX - startBox.x);
+        nx = newX;
       }
     }
     // Applico live (no re-render React-style: tocco solo lo style del box)
@@ -9324,6 +9399,27 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   document.addEventListener('pointermove', onMove, { passive: false });
   document.addEventListener('pointerup', onEnd);
   document.addEventListener('pointercancel', onEnd);
+  // Su Android, pointer events possono coesistere con touch events. Se il browser triggera
+  // anche touchmove (per scroll), il preventDefault qui blocca esplicitamente lo scroll.
+  // Senza questo, su alcuni dispositivi si vede il box draggare (pointermove) E la pagina
+  // scrollare (touchmove ignorato) → effetto "il box trasla mentre cambia size".
+  const onTouchMove = (te) => { te.preventDefault(); };
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  // Cleanup anche del touchmove in onEnd (modifico la chiusura)
+  const _origOnEnd = onEnd;
+  const onEndWrapped = (e) => {
+    document.removeEventListener('touchmove', onTouchMove);
+    _origOnEnd(e);
+  };
+  // Sostituisco i listener pointerup/cancel per usare la versione wrapped
+  layer.removeEventListener('pointerup', onEnd);
+  layer.removeEventListener('pointercancel', onEnd);
+  document.removeEventListener('pointerup', onEnd);
+  document.removeEventListener('pointercancel', onEnd);
+  layer.addEventListener('pointerup', onEndWrapped);
+  layer.addEventListener('pointercancel', onEndWrapped);
+  document.addEventListener('pointerup', onEndWrapped);
+  document.addEventListener('pointercancel', onEndWrapped);
 }
 
 /* ============================ MODULI — GENERAZIONE OUTPUT ============================ */
