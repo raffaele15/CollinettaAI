@@ -767,9 +767,10 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
 /* Box con placeholder esemplificativo (in editMode quando non ha ancora valore reale).
-   Stile simile a empty ma con testo visibile (no font-style italic per non confondere il
-   layout flex). Identica struttura del box firma → niente scivolamento durante resize. */
-.mod-box.placeholder{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.35)}
+   Stile: testo nero come il testo reale (massima leggibilità) ma background giallo chiaro
+   come empty per distinguere visivamente "spazio riservato per dati". Identica struttura del
+   box firma → niente scivolamento durante resize. */
+.mod-box.placeholder{background:rgba(255,255,200,.4);border:1px dashed rgba(180,140,0,.5);color:#000}
 .mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
 .mod-form-actions .btn{padding:6px 12px;font-size:13px}
 
@@ -9012,6 +9013,15 @@ function setBoxAttr(slug, idx, attr, value) {
   if (attr === 'campo') {
     delete c.boxesData.box[idx].formato;
   }
+  // Quando cambia font_size: invalido il dataset cached del box DOM, così l'auto-fit
+  // riparte dal nuovo valore base alla prossima refresh.
+  if (attr === 'font_size') {
+    const layer = document.querySelector('.mod-overlay-layer');
+    if (layer) {
+      const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
+      if (boxEl) delete boxEl.dataset.baseFontSize;
+    }
+  }
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
   refreshModuloOverlays(slug);
   // Re-render del panel SOLO quando cambia 'campo' (le opzioni del dropdown formato dipendono
@@ -9190,15 +9200,51 @@ function _renderModuloPaginatedPreview(slug, det) {
 }
 
 // Cambia il livello di zoom della preview pagina (1.0 = 100%, range 0.5-4.0)
-function setModuloZoom(slug, zoom) {
+function setModuloZoom(slug, newZoom) {
   const c = state.moduliCache[slug];
   if (!c) return;
-  c.zoom = Math.max(0.5, Math.min(4, zoom));
+  const oldZoom = c.zoom || 1;
+  newZoom = Math.max(0.5, Math.min(4, newZoom));
+  if (newZoom === oldZoom) return;
+
+  // Salvo il centro visibile della pagina PRIMA del re-render, così posso ricentrarlo dopo.
+  // Il container scrollabile è .mod-page-scroll. Calcolo la posizione del punto centrale del
+  // viewport rispetto al contenuto totale (in coordinate "non zoomate").
+  const scrollEl = document.getElementById('mod-page-scroll-' + slug);
+  let centerXInContent = null, centerYInContent = null;
+  if (scrollEl) {
+    const visW = scrollEl.clientWidth;
+    const visH = scrollEl.clientHeight;
+    // Centro del viewport in coordinate del contenuto (post-zoom)
+    const cxPost = scrollEl.scrollLeft + visW / 2;
+    const cyPost = scrollEl.scrollTop + visH / 2;
+    // Converto in "frazione del contenuto" (indipendente dallo zoom): 0..1
+    const totalWPost = scrollEl.scrollWidth;
+    const totalHPost = scrollEl.scrollHeight;
+    if (totalWPost > 0) centerXInContent = cxPost / totalWPost;
+    if (totalHPost > 0) centerYInContent = cyPost / totalHPost;
+  }
+
+  c.zoom = newZoom;
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  // Re-render solo della preview, non dell'intero compilatore
   const sec = document.getElementById('mod-preview-section');
   if (sec) {
     sec.innerHTML = _renderModuloPaginatedPreview(slug, c);
+    // Dopo il re-render: ricentro lo scroll sul punto che era al centro prima.
+    // requestAnimationFrame perché serve aspettare che il browser abbia layout-ato il nuovo contenuto.
+    if (centerXInContent != null) {
+      requestAnimationFrame(() => {
+        const newScrollEl = document.getElementById('mod-page-scroll-' + slug);
+        if (!newScrollEl) return;
+        const visW = newScrollEl.clientWidth;
+        const visH = newScrollEl.clientHeight;
+        const totalW = newScrollEl.scrollWidth;
+        const totalH = newScrollEl.scrollHeight;
+        // Voglio: scrollLeft + visW/2 == centerXInContent * totalW
+        newScrollEl.scrollLeft = Math.max(0, centerXInContent * totalW - visW / 2);
+        newScrollEl.scrollTop = Math.max(0, centerYInContent * totalH - visH / 2);
+      });
+    }
   }
 }
 
@@ -9278,8 +9324,41 @@ function refreshModuloOverlays(slug) {
               title="${escapeHtml(b.campo || b.label || '')}">${escapeHtml(display)}${handles}</div>`;
   }).join('');
 
+  // Auto-fit del font: se il testo del box overflow rispetto alla sua larghezza/altezza,
+  // riduco il font dinamicamente fino a fittare (min 6px). Il box rappresenta lo SPAZIO MASSIMO
+  // disponibile sul modulo cartaceo, quindi il testo deve adattarsi a quello spazio.
+  // Salto box vuoti e firma (non hanno valore variabile da adattare).
+  // requestAnimationFrame: serve aspettare che il browser abbia layout-ato i box (clientWidth/Height
+  // sono 0 finché il layout non è completato dopo l'innerHTML setting).
+  requestAnimationFrame(() => {
+    layer.querySelectorAll('.mod-box').forEach(boxEl => {
+      if (boxEl.classList.contains('empty') || boxEl.classList.contains('firma')) return;
+      _autoFitBoxFont(boxEl);
+    });
+  });
+
   // Bind eventi drag/resize in editMode
   if (editMode) _bindModuloOverlayInteractions(slug, layer, img);
+}
+
+// Auto-fit del font dentro un box: parte dalla font_size configurata e riduce finché il
+// testo non entra in altezza+larghezza (o si raggiunge il minimo 6px).
+function _autoFitBoxFont(boxEl) {
+  // Reset al font_size originale (sennò rimpicciolisce ogni volta)
+  const baseSize = parseFloat(boxEl.dataset.baseFontSize || boxEl.style.fontSize) || 11;
+  if (!boxEl.dataset.baseFontSize) boxEl.dataset.baseFontSize = baseSize;
+  let size = baseSize;
+  boxEl.style.fontSize = size + 'px';
+  // Se non c'è overflow → niente da fare
+  // scrollWidth/scrollHeight = dimensioni reali del contenuto, clientWidth/Height = dimensioni del box
+  // Margine di sicurezza 1px per evitare loop infiniti su rounding
+  const MIN_SIZE = 6;
+  let iter = 0;
+  while ((boxEl.scrollWidth > boxEl.clientWidth + 1 || boxEl.scrollHeight > boxEl.clientHeight + 1) && size > MIN_SIZE && iter < 30) {
+    size -= 0.5;
+    boxEl.style.fontSize = size + 'px';
+    iter++;
+  }
 }
 
 // Bind degli eventi drag/resize/click sui box. Pointer events unificati per mouse+touch.
@@ -9509,6 +9588,11 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
         boxEl.style.top = ny + '%';
         boxEl.style.width = nw + '%';
         boxEl.style.height = nh + '%';
+        // Auto-fit del font in tempo reale: il box rappresenta lo spazio massimo disponibile,
+        // quindi se viene rimpicciolito il testo si adatta. Skip se è firma (no testo dinamico).
+        if (!boxEl.classList.contains('firma')) {
+          _autoFitBoxFont(boxEl);
+        }
       }
     }
   };
@@ -9605,9 +9689,19 @@ async function _renderModuloPaginaSuCanvas(slug, pageIndex /* 1-based */) {
     // → fattore di scala ≈ canvas.width / 700.
     const previewWidth = 700;
     const scale = canvas.width / previewWidth;
-    const fontSize = Math.round((b.font_size || 11) * scale);
+    let fontSize = Math.round((b.font_size || 11) * scale);
 
+    // Auto-fit: se il testo è più largo del box, riduco fontSize finché non entra (min 6*scale).
+    // Coerente con l'auto-fit della preview, così il PDF/PNG output rispetta lo spazio reale.
+    const MIN_SIZE_PX = Math.max(6 * scale, 4);
+    let iter = 0;
     ctx.font = `${fontSize}px Helvetica, Arial, sans-serif`;
+    while (ctx.measureText(value).width > w && fontSize > MIN_SIZE_PX && iter < 40) {
+      fontSize -= Math.max(1, Math.round(scale * 0.5));
+      ctx.font = `${fontSize}px Helvetica, Arial, sans-serif`;
+      iter++;
+    }
+
     ctx.textAlign = b.align === 'center' ? 'center' : (b.align === 'right' ? 'right' : 'left');
 
     // Posizione X in base ad align
