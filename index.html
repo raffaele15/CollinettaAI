@@ -8871,21 +8871,49 @@ async function apriModuloCompilatore(slug) {
 function stampaModuloViewer(slug) {
   const c = state.moduliCache[slug];
   if (!c || !c.pageUrls || !c.pageUrls.length) return toast('Pagine non caricate', 'error');
-  const cur = c.currentPage || 1;
-  const url = c.pageUrls[cur - 1];
-  // Apre nuova finestra con l'immagine ad alta risoluzione, lancia print.
+  // Apre nuova finestra con tutte le pagine ad alta risoluzione, lancia print.
   const w = window.open('', '_blank');
   if (!w) return toast('Popup bloccati: abilita i popup per stampare', 'warning', 4000);
   const m = (state.index.moduli || []).find(x => x.slug === slug);
   const titolo = m ? (m.titolo || slug) : slug;
-  w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(titolo)} - p.${cur}</title>
+  // CSS critico per print:
+  // - @page A4 con margin 0: il browser usa l'intera pagina A4.
+  // - .page = container 210×297mm con object-fit:contain → l'immagine entra senza overflow.
+  //   Se l'aspect ratio del PNG sorgente è diverso da A4, lo spazio extra resta bianco MA
+  //   resta DENTRO la stessa pagina fisica — niente pagina bianca extra.
+  // - break-after: page sui contenitori (tranne l'ultimo) per garantire una pagina fisica
+  //   per ogni pagina logica → il driver di stampa può abilitare fronte/retro.
+  // - break-inside: avoid per evitare che il contenuto si spezzi su due pagine.
+  w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(titolo)}</title>
     <style>
-      @page { size: A4; margin: 0; }
-      body { margin: 0; padding: 0; }
-      img { width: 100%; height: auto; display: block; page-break-after: always; }
-      img:last-child { page-break-after: auto; }
+      @page { size: A4 portrait; margin: 0; }
+      html, body { margin: 0; padding: 0; background: white; }
+      .page {
+        width: 210mm;
+        height: 297mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        page-break-after: always;
+        page-break-inside: avoid;
+        break-after: page;
+        break-inside: avoid;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      .page img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        display: block;
+      }
     </style></head><body>
-    ${c.pageUrls.map((u, i) => `<img src="${u}" alt="Pagina ${i+1}">`).join('')}
+    ${c.pageUrls.map((u, i) => `<div class="page"><img src="${u}" alt="Pagina ${i+1}"></div>`).join('')}
     <script>window.onload = () => setTimeout(() => window.print(), 300);<\/script>
     </body></html>`);
   w.document.close();
@@ -8937,7 +8965,17 @@ function renderModuloCompilatore(slug, det) {
     });
   }
 
-  const formHtml = campiDefs.map(c => _renderCampoInput(c, det.formValues[c.id], slug)).join('');
+  // Filtra i campi mostrati nel form: solo quelli effettivamente usati dai box di questo modulo.
+  // I campi_richiesti possono includere voci "boilerplate" (paziente, medico, data) ereditate da
+  // un template, ma se nessun box del modulo le referenzia non ha senso mostrarle nel form.
+  // In edit mode invece mostro tutti i campi (l'editor sta ancora costruendo i box).
+  const campiUsati = new Set();
+  boxes.forEach(b => { if (b.campo) campiUsati.add(b.campo); });
+  const campiDaMostrare = editMode
+    ? campiDefs
+    : campiDefs.filter(c => campiUsati.has(c.id));
+
+  const formHtml = campiDaMostrare.map(c => _renderCampoInput(c, det.formValues[c.id], slug)).join('');
   const noBoxesHint = boxes.length === 0 && !editMode ? `
     <div class="callout callout-info" style="margin-bottom:12px;">
       <p><strong>Nessun box configurato.</strong> Attiva la modalità modifica per disegnare i box sul modulo.</p>
