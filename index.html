@@ -8318,14 +8318,23 @@ async function copyNumber(n) {
 state.moduliCache = state.moduliCache || {};       // { slug: { boxesData, pageUrls, formValues } }
 
 // Carica boxes.yml + pre-calcola gli URL delle pagine PNG. Idempotente.
-async function loadModuloDettaglio(slug) {
-  if (state.moduliCache[slug] && state.moduliCache[slug].boxesData) {
+async function loadModuloDettaglio(slug, options) {
+  // options: { skipBoxes: true } per il primo render del viewer (apertura modulo).
+  //   Carico solo le pagine PNG → schermata di stampa/condivisione disponibile subito.
+  //   I box (boxes.yml) vengono caricati solo quando l'utente preme "Compila" o "Modifica box"
+  //   tramite loadModuloBoxes(slug). Risparmio ~1 GET API e mostro l'anteprima molto più velocemente.
+  const opts = options || {};
+  if (state.moduliCache[slug] && state.moduliCache[slug].pageUrls) {
     // Verifico coerenza: se la cache ha pageUrls vuoti ma index.yml dice che ci sono pagine,
     // invalido la cache e ricarico (cache stale da una creazione precedente con bug).
     const cached = state.moduliCache[slug];
     const m = (state.index.moduli || []).find(x => x.slug === slug);
     const expectedPages = (m && m.pagine) || 1;
     if (cached.pageUrls && cached.pageUrls.length >= expectedPages) {
+      // Se mi servono i box e non li ho ancora caricati, li carico ora.
+      if (!opts.skipBoxes && !cached.boxesData) {
+        await loadModuloBoxes(slug);
+      }
       return cached;
     }
     // Cache stale: rigenero
@@ -8342,6 +8351,9 @@ async function loadModuloDettaglio(slug) {
       const expectedPages = (m && m.pagine) || 1;
       if (obj.pageUrls && obj.pageUrls.length >= expectedPages) {
         state.moduliCache[slug] = obj;
+        if (!opts.skipBoxes && !obj.boxesData) {
+          await loadModuloBoxes(slug);
+        }
         return obj;
       }
       // Stale: rimuovo da sessionStorage
@@ -8353,17 +8365,13 @@ async function loadModuloDettaglio(slug) {
   const m = (state.index.moduli || []).find(x => x.slug === slug);
   if (!m) throw new Error('Modulo non trovato in indice: ' + slug);
 
-  const boxesPath = `content/moduli/${slug}/boxes.yml`;
-  let boxesData = { campi_richiesti: [], box: [] };
+  // Box: lazy-loaded. Inizializzo a null/empty, verranno caricati su richiesta da loadModuloBoxes().
+  let boxesData = null;
   let boxesSha = null;
-  try {
-    const f = await gh.getFile(boxesPath);
-    if (f) {
-      boxesData = jsyaml.load(f.content) || boxesData;
-      boxesSha = f.sha;  // necessario per il PUT con check conflitti
-    }
-  } catch (e) {
-    console.warn('[loadModuloDettaglio] boxes.yml mancante o non valido:', e);
+  if (!opts.skipBoxes) {
+    const fetched = await _fetchBoxesYml(slug);
+    boxesData = fetched.boxesData;
+    boxesSha = fetched.boxesSha;
   }
 
   // Genera URL pagine. Se m.pagine non è valido o è 0, faccio probe per discovery.
@@ -8416,14 +8424,48 @@ async function loadModuloDettaglio(slug) {
     }
   }
 
-  // Snapshot pristine dei box per dirty detection (deep clone)
-  const pristineBoxes = JSON.parse(JSON.stringify(boxesData.box || []));
+  // Snapshot pristine dei box per dirty detection (deep clone). Se boxesData è null
+  // (skipBoxes=true), pristine viene popolato in loadModuloBoxes() al momento del fetch.
+  const pristineBoxes = boxesData ? JSON.parse(JSON.stringify(boxesData.box || [])) : null;
 
   const obj = { boxesData, boxesSha, pristineBoxes, pageUrls, pageUrlsLight, formValues: {}, currentPage: 1 };
   state.moduliCache[slug] = obj;
   // NON salvo in sessionStorage: i dataURL delle PNG possono pesare molti MB
   // e supererebbero la quota di sessionStorage (5-10 MB tipicamente).
   return obj;
+}
+
+// Helper: fetcha boxes.yml per un modulo. Restituisce { boxesData, boxesSha }.
+// Estratto come funzione separata perché può essere chiamato sia in loadModuloDettaglio
+// (caricamento iniziale completo) sia in loadModuloBoxes (lazy load on demand).
+async function _fetchBoxesYml(slug) {
+  const boxesPath = `content/moduli/${slug}/boxes.yml`;
+  let boxesData = { campi_richiesti: [], box: [] };
+  let boxesSha = null;
+  try {
+    const f = await gh.getFile(boxesPath);
+    if (f) {
+      boxesData = jsyaml.load(f.content) || boxesData;
+      boxesSha = f.sha;  // necessario per il PUT con check conflitti
+    }
+  } catch (e) {
+    console.warn('[_fetchBoxesYml] boxes.yml mancante o non valido per', slug, ':', e);
+  }
+  return { boxesData, boxesSha };
+}
+
+// Carica i box (boxes.yml) per un modulo già aperto come viewer-only.
+// Aggiorna state.moduliCache[slug] coi nuovi boxesData/boxesSha/pristineBoxes.
+// Se i box sono già caricati, no-op.
+async function loadModuloBoxes(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) throw new Error('Modulo non in cache: ' + slug);
+  if (c.boxesData) return c;  // già caricati
+  const { boxesData, boxesSha } = await _fetchBoxesYml(slug);
+  c.boxesData = boxesData;
+  c.boxesSha = boxesSha;
+  c.pristineBoxes = JSON.parse(JSON.stringify(boxesData.box || []));
+  return c;
 }
 
 // Helper: ridimensiona un data URL di un'immagine in modo che il lato più lungo non superi maxSide.
@@ -8739,15 +8781,133 @@ async function renderModulo(slug) {
           </div>`).join('')}
       </div>` : ''}`;
 
-  // Caricamento dettaglio (lazy)
+  // Caricamento dettaglio (lazy): primo render = solo viewer (PNG pagine + bottone Compila).
+  // I box vengono caricati solo quando l'utente preme "Compila" → apertura modulo molto più rapida.
   try {
-    const det = await loadModuloDettaglio(slug);
-    renderModuloCompilatore(slug, det);
+    const det = await loadModuloDettaglio(slug, { skipBoxes: true });
+    renderModuloViewer(slug, det);
   } catch (e) {
     const area = document.getElementById('mod-detail-area');
     if (area) area.innerHTML = `<div class="callout callout-warning"><p>Errore caricamento modulo: ${escapeHtml(e.message)}</p></div>`;
   }
   scrollToPendingBlock();
+}
+
+// Render "viewer-only": mostra solo le pagine PNG con bottoni Stampa/Condividi/Compila.
+// I box non sono caricati: l'utente vede subito il modulo senza l'overhead della lettura
+// di boxes.yml + setup del form di compilazione.
+function renderModuloViewer(slug, det) {
+  const area = document.getElementById('mod-detail-area');
+  if (!area) return;
+  const { pageUrls, pageUrlsLight } = det;
+  const displayUrls = pageUrlsLight && pageUrlsLight.length === pageUrls.length ? pageUrlsLight : pageUrls;
+  const totalPages = pageUrls.length;
+  const cur = det.currentPage || 1;
+  const zoom = det.zoom || 1;
+  const navHtml = totalPages > 1 ? `
+    <div class="mod-page-nav">
+      <button class="btn ghost mod-page-prev" ${cur <= 1 ? 'disabled' : ''} onclick="changeModuloPageViewer('${escapeJs(slug)}', ${cur - 1})" aria-label="Pagina precedente"><span class="mod-page-arrow">◀</span><span class="mod-page-text"> Precedente</span></button>
+      <span class="mod-page-indicator">Pagina ${cur} / ${totalPages}</span>
+      <button class="btn ghost mod-page-next" ${cur >= totalPages ? 'disabled' : ''} onclick="changeModuloPageViewer('${escapeJs(slug)}', ${cur + 1})" aria-label="Pagina successiva"><span class="mod-page-text">Successiva </span><span class="mod-page-arrow">▶</span></button>
+    </div>` : `<div class="mod-page-indicator" style="margin-bottom:8px;">Pagina unica</div>`;
+  const zoomToolbar = `
+    <div class="mod-zoom-toolbar">
+      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoomViewer('${escapeJs(slug)}', ${Math.max(0.5, zoom - 0.25)})" aria-label="Riduci zoom">−</button>
+      <span class="mod-zoom-indicator">${Math.round(zoom * 100)}%</span>
+      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoomViewer('${escapeJs(slug)}', ${Math.min(4, zoom + 0.25)})" aria-label="Aumenta zoom">+</button>
+      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoomViewer('${escapeJs(slug)}', 1)" aria-label="Reset zoom" title="Reset 100%">⟲</button>
+    </div>`;
+
+  area.innerHTML = `
+    <div class="mod-toolbar" style="margin-bottom:16px;">
+      <button class="btn primary" onclick="apriModuloCompilatore('${escapeJs(slug)}')">📝 Compila modulo</button>
+      <button class="btn ghost" onclick="stampaModuloViewer('${escapeJs(slug)}')">🖨 Stampa</button>
+      <button class="btn ghost" onclick="condividiModuloViewer('${escapeJs(slug)}')">↗ Condividi</button>
+    </div>
+    <div class="mod-preview" id="mod-viewer-section">
+      ${navHtml}
+      ${zoomToolbar}
+      <div class="mod-page-scroll">
+        <div class="mod-page-stage" style="width:${zoom * 100}%;">
+          <img class="mod-page-img" src="${displayUrls[cur - 1]}" alt="Pagina ${cur}">
+        </div>
+      </div>
+    </div>`;
+}
+
+// Cambia pagina nel viewer-only
+function changeModuloPageViewer(slug, newPage) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  c.currentPage = Math.max(1, Math.min(newPage, c.pageUrls.length));
+  renderModuloViewer(slug, c);
+}
+
+// Zoom nel viewer-only
+function setModuloZoomViewer(slug, newZoom) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  c.zoom = Math.max(0.5, Math.min(4, newZoom));
+  renderModuloViewer(slug, c);
+}
+
+// Apre il compilatore: carica i box (se non già caricati) e renderizza il form completo.
+async function apriModuloCompilatore(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  const area = document.getElementById('mod-detail-area');
+  if (area && !c.boxesData) {
+    area.innerHTML = `<div class="loading"><span class="spinner"></span> Caricamento campi modulo…</div>`;
+  }
+  try {
+    if (!c.boxesData) await loadModuloBoxes(slug);
+    renderModuloCompilatore(slug, c);
+  } catch (e) {
+    if (area) area.innerHTML = `<div class="callout callout-warning"><p>Errore caricamento campi: ${escapeHtml(e.message)}</p></div>`;
+  }
+}
+
+// Apre la finestra di stampa con la pagina corrente del modulo
+function stampaModuloViewer(slug) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.pageUrls || !c.pageUrls.length) return toast('Pagine non caricate', 'error');
+  const cur = c.currentPage || 1;
+  const url = c.pageUrls[cur - 1];
+  // Apre nuova finestra con l'immagine ad alta risoluzione, lancia print.
+  const w = window.open('', '_blank');
+  if (!w) return toast('Popup bloccati: abilita i popup per stampare', 'warning', 4000);
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  const titolo = m ? (m.titolo || slug) : slug;
+  w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(titolo)} - p.${cur}</title>
+    <style>
+      @page { size: A4; margin: 0; }
+      body { margin: 0; padding: 0; }
+      img { width: 100%; height: auto; display: block; page-break-after: always; }
+      img:last-child { page-break-after: auto; }
+    </style></head><body>
+    ${c.pageUrls.map((u, i) => `<img src="${u}" alt="Pagina ${i+1}">`).join('')}
+    <script>window.onload = () => setTimeout(() => window.print(), 300);<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+// Condivide il modulo via Web Share API (se disponibile) o copia link
+async function condividiModuloViewer(slug) {
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  const titolo = m ? (m.titolo || slug) : slug;
+  const url = buildShareUrl('modulo', { slug });
+  if (typeof shareLink === 'function') {
+    shareLink(url, `CollinettaAI · ${titolo}`);
+  } else if (navigator.share) {
+    try { await navigator.share({ title: titolo, url }); } catch {}
+  } else {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('Link copiato negli appunti', 'success');
+    } catch {
+      toast('Impossibile condividere su questo dispositivo', 'warning');
+    }
+  }
 }
 
 // Render del compilatore: form a sinistra (su mobile in alto), preview pagine a destra (sotto su mobile).
@@ -8788,6 +8948,7 @@ function renderModuloCompilatore(slug, det) {
 
   area.innerHTML = `
     <div class="mod-toolbar">
+      <button class="btn ghost" onclick="renderModuloViewer('${escapeJs(slug)}', state.moduliCache['${escapeJs(slug)}'])" title="Torna alla vista pagine">◀ Indietro</button>
       <button class="btn ${editMode ? 'primary' : 'ghost'}" onclick="toggleModuloEditMode('${escapeJs(slug)}')">
         ${editMode ? '✓ Esci modalità modifica' : '✎ Modifica box'}
       </button>
@@ -9078,18 +9239,32 @@ function _renderCampoInput(c, value, slug) {
   const required = c.required ? ' <span style="color:#A32D2D;">*</span>' : '';
   if (c.tipo === 'paziente_completo') {
     const v = value || {};
+    const recenti = _getPazientiRecenti();
+    const showSelector = recenti.length > 0;
     return `
       <div class="mod-field-group">
         <label class="mod-field-label">${escapeHtml(c.label)}${required}</label>
+        ${showSelector ? `
+          <select class="mod-input" style="margin-bottom:6px;" onchange="selezionaPazienteRecente('${escapeJs(slug)}','${escapeJs(c.id)}',this.value);this.value='';">
+            <option value="">— Ultimi pazienti (${recenti.length}) —</option>
+            ${recenti.map((p, i) => `<option value="${i}">${escapeHtml(p.cognome)} ${escapeHtml(p.nome)}${p.dataNascita ? ' · ' + escapeHtml(p.dataNascita) : ''}</option>`).join('')}
+          </select>
+        ` : ''}
         <div class="mod-field-grid-2">
           <input type="text" placeholder="Cognome" class="mod-input" value="${escapeHtml(v.cognome || '')}"
-                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','cognome',this.value)">
+                 data-paziente-field="cognome" data-paziente-fid="${escapeHtml(c.id)}"
+                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','cognome',this.value)"
+                 onblur="_salvaPazienteSeCompleto('${escapeJs(slug)}','${escapeJs(c.id)}')">
           <input type="text" placeholder="Nome" class="mod-input" value="${escapeHtml(v.nome || '')}"
-                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','nome',this.value)">
+                 data-paziente-field="nome" data-paziente-fid="${escapeHtml(c.id)}"
+                 oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','nome',this.value)"
+                 onblur="_salvaPazienteSeCompleto('${escapeJs(slug)}','${escapeJs(c.id)}')">
         </div>
         <input type="text" placeholder="Data di nascita (gg/mm/aaaa)" class="mod-input" style="margin-top:6px;"
                value="${escapeHtml(v.dataNascita || '')}"
-               oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','dataNascita',this.value)">
+               data-paziente-field="dataNascita" data-paziente-fid="${escapeHtml(c.id)}"
+               oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','dataNascita',this.value)"
+               onblur="_salvaPazienteSeCompleto('${escapeJs(slug)}','${escapeJs(c.id)}')">
       </div>`;
   }
   if (c.tipo === 'medico_nome') {
@@ -9148,6 +9323,85 @@ function updateModuloField(slug, fieldId, subKey, val) {
   try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
   // Aggiorno solo gli overlay box, non l'intero form (evita perdita focus)
   refreshModuloOverlays(slug);
+}
+
+/* --------- Pazienti recenti (cache di sessione) ---------
+   Quando l'utente compila il form di un modulo con cognome+nome+dataNascita completi,
+   salviamo il paziente in sessionStorage. Al prossimo modulo nella stessa sessione, mostriamo
+   un dropdown coi pazienti recenti per selezione rapida.
+   Privacy: i dati restano SOLO sul dispositivo dell'utente nel tab corrente — alla chiusura
+   del tab/browser la lista viene svuotata automaticamente. Mai inviati al repo o a server.
+   Lista massima 20 pazienti, FIFO. */
+const PAZIENTI_RECENTI_KEY = 'collinetta:pazienti_recenti';
+const PAZIENTI_RECENTI_MAX = 20;
+
+function _getPazientiRecenti() {
+  try {
+    const raw = sessionStorage.getItem(PAZIENTI_RECENTI_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+
+function _setPazientiRecenti(arr) {
+  try {
+    sessionStorage.setItem(PAZIENTI_RECENTI_KEY, JSON.stringify(arr.slice(0, PAZIENTI_RECENTI_MAX)));
+  } catch (e) {
+    console.warn('[pazientiRecenti] sessionStorage write fallito:', e);
+  }
+}
+
+// Chiamata al blur dei campi paziente: se cognome+nome+dataNascita sono tutti compilati,
+// salva il paziente nei recenti (deduplicato per cognome+nome+dataNascita case-insensitive).
+function _salvaPazienteSeCompleto(slug, fieldId) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  const v = c.formValues[fieldId];
+  if (!v || typeof v !== 'object') return;
+  const cognome = (v.cognome || '').trim();
+  const nome = (v.nome || '').trim();
+  const dataNascita = (v.dataNascita || '').trim();
+  if (!cognome || !nome || !dataNascita) return;
+  // Validazione minima della data: deve avere almeno 3 numeri separati
+  const parsed = _parseDataString(dataNascita);
+  if (!parsed) return;
+  const recenti = _getPazientiRecenti();
+  const key = (cognome + '|' + nome + '|' + dataNascita).toLowerCase();
+  // Rimuovo eventuale duplicato e lo rimetto in cima (most-recent-first)
+  const filtered = recenti.filter(p =>
+    (p.cognome + '|' + p.nome + '|' + p.dataNascita).toLowerCase() !== key
+  );
+  filtered.unshift({ cognome, nome, dataNascita, salvato: new Date().toISOString() });
+  _setPazientiRecenti(filtered);
+}
+
+// Selezione di un paziente recente dal dropdown: popola i 3 campi del form e refresh overlay.
+function selezionaPazienteRecente(slug, fieldId, idx) {
+  const i = parseInt(idx, 10);
+  if (isNaN(i)) return;
+  const recenti = _getPazientiRecenti();
+  const p = recenti[i];
+  if (!p) return;
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  if (typeof c.formValues[fieldId] !== 'object') c.formValues[fieldId] = {};
+  c.formValues[fieldId].cognome = p.cognome;
+  c.formValues[fieldId].nome = p.nome;
+  c.formValues[fieldId].dataNascita = p.dataNascita;
+  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  // Aggiorno gli input visivamente (no full re-render: preservo focus altri campi)
+  const cognomeInput = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="cognome"]`);
+  const nomeInput = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="nome"]`);
+  const dataInput = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="dataNascita"]`);
+  if (cognomeInput) cognomeInput.value = p.cognome;
+  if (nomeInput) nomeInput.value = p.nome;
+  if (dataInput) dataInput.value = p.dataNascita;
+  refreshModuloOverlays(slug);
+  // Sposta il paziente in cima ai recenti (è quello appena usato)
+  const filtered = recenti.filter((_, j) => j !== i);
+  filtered.unshift(p);
+  _setPazientiRecenti(filtered);
 }
 
 function setModuloMedicoMode(slug, fieldId, modalita) {
