@@ -743,9 +743,11 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 /* Container scrollabile: con zoom > 100% lo stage eccede in larghezza e questo container scrolla. */
 .mod-page-scroll{overflow:auto;max-width:100%;-webkit-overflow-scrolling:touch;background:var(--bg-sink);border:1px solid var(--rule-soft);position:relative}
 
-/* Durante drag/resize box: blocco scroll/zoom della pagina senza toccare il layout (no reflow topbar) */
-html.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none}
-html.is-dragging-modulo-box body{user-select:none;-webkit-user-select:none}
+/* Durante drag/resize box: blocco scroll del body senza fare reflow viewport.
+   `touch-action:none` sul body impedisce al browser di interpretare il gesto come scroll
+   della pagina, MA NON cancella i pointer events (a differenza di `<html>`). Inoltre,
+   essendo su body non causa il reflow della topbar mobile. */
+body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
 
 /* Toolbar zoom: bottoni +/-/reset compatti */
 .mod-zoom-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:8px;justify-content:flex-end}
@@ -758,7 +760,7 @@ html.is-dragging-modulo-box body{user-select:none;-webkit-user-select:none}
 }
 .mod-page-img{display:block;max-width:100%;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-.mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:1px 4px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1.1;border-radius:1px}
+.mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
 .mod-box.empty::before{content:'⌷';font-size:9px;color:rgba(0,0,0,.4)}
 .mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
@@ -9103,9 +9105,10 @@ function refreshModuloOverlays(slug) {
 
   // Quando in editMode l'overlay layer riceve eventi (per drag/resize/click)
   layer.style.pointerEvents = editMode ? 'auto' : 'none';
-  // touch-action:none solo in editMode (per drag dei box senza scroll della pagina);
-  // fuori da editMode l'overlay è inerte e lascia passare lo scroll normale.
-  layer.style.touchAction = editMode ? 'none' : '';
+  // touch-action: in editMode permettiamo lo scroll/zoom del container parent (per navigare la
+  // pagina zoomata) toccando aree vuote del layer; il blocco dello scroll è applicato SOLO sui
+  // box (.mod-box ha touch-action:none in CSS), così tap su box → drag, tap fuori → scroll pagina.
+  layer.style.touchAction = editMode ? 'pan-x pan-y' : '';
 
   layer.innerHTML = visibleBoxIdx.map(({ b, i }) => {
     const value = _formatBoxValue(b, campiDefs, c.formValues);
@@ -9137,9 +9140,10 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
   const c = state.moduliCache[slug];
   if (!c) return;
 
-  // In editMode il layer cattura tutti i pointer (drag/resize). touch-action:none
-  // evita che il browser interpreti il gesto come scroll/pan/zoom della pagina.
-  layer.style.touchAction = 'none';
+  // In editMode il layer cattura tutti i pointer (drag/resize). touch-action consente solo scroll
+  // del container parent (utile quando la pagina è zoomata) ma NON il pinch-zoom del browser.
+  // Il blocco completo è applicato sui singoli box via CSS.
+  layer.style.touchAction = 'pan-x pan-y';
 
   // Click su area vuota del layer → deseleziona, MA solo se è un tap fermo (no swipe).
   // Su mobile l'utente potrebbe voler scrollare la pagina e accidentalmente touchare il layer:
@@ -9228,12 +9232,11 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
   // Pointer capture sul layer: gli eventi continuano ad arrivare anche se il dito esce dall'area
   try { layer.setPointerCapture(ev.pointerId); } catch {}
 
-  // Blocco lo scroll della pagina aggiungendo una classe sul <html>. Stile via CSS:
-  // `html.is-dragging-modulo-box { touch-action: none; }` — questo evita che il browser
-  // interpreti la gesture come scroll. Non tocco body.overflow per non far scomparire/riapparire
-  // la topbar mobile (su iOS Safari `overflow:hidden` triggera ricalcolo viewport che nasconde
-  // l'address bar e fa "saltare" la topbar fissa).
-  document.documentElement.classList.add('is-dragging-modulo-box');
+  // Blocco lo scroll della pagina aggiungendo una classe sul <body>. Stile via CSS:
+  // `body.is-dragging-modulo-box { touch-action: none; overscroll-behavior: none; }` —
+  // questo evita che il browser interpreti la gesture come scroll. Lo metto su body (non html)
+  // per non causare cancellazione dei pointer events (che il browser fa se html ha touch-action:none).
+  document.body.classList.add('is-dragging-modulo-box');
 
   const layerRect = layer.getBoundingClientRect();
   const W = layerRect.width;
@@ -9307,7 +9310,7 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
     document.removeEventListener('pointerup', onEnd);
     document.removeEventListener('pointercancel', onEnd);
     // Rimuovo classe drag (sblocca scroll pagina)
-    document.documentElement.classList.remove('is-dragging-modulo-box');
+    document.body.classList.remove('is-dragging-modulo-box');
     try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
     // Re-render del panel per aggiornare le coords mostrate
     renderModuloCompilatore(slug, c);
