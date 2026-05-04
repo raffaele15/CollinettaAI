@@ -956,8 +956,6 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .kind-chip{font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:11px;background:var(--bg-paper);color:var(--ink-soft);border:1px solid var(--rule);cursor:pointer;transition:all .12s;white-space:nowrap;line-height:1.4}
 .kind-chip:hover{border-color:var(--chip-color,var(--ink-soft));color:var(--chip-color,var(--ink))}
 .kind-chip.active{background:var(--chip-bg,var(--accent-soft));color:var(--chip-color,var(--accent));border-color:var(--chip-color,var(--accent));font-weight:500}
-.kind-chip-reset{font-family:var(--mono);font-size:10px;padding:3px 6px;border:none;background:transparent;color:var(--ink-muted);cursor:pointer;opacity:.6;transition:opacity .12s}
-.kind-chip-reset:hover{opacity:1;color:var(--danger)}
 .numero-label{font-size:14px;color:var(--ink-soft);line-height:1.4}
 .numero-label .badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;margin-right:6px;border-radius:2px;background:var(--warning-soft);color:var(--warning)}
 .numero-label .badge-guardia{background:#fef0ef;color:#c1272d;font-weight:600}
@@ -2618,7 +2616,7 @@ async function shareLink(url, title) {
      mostra un mini-menu con azione "Condividi" (per evitare scroll inutile).
    - Altrimenti, naviga alla UOC con scroll al contatto (comportamento standard). */
 function handleContattoRowClick(contattoId, evt) {
-  if (evt && (evt.target.closest('button,a,input,.kind-selector,.kind-chip,.kind-chip-reset'))) return;
+  if (evt && (evt.target.closest('button,a,input,.kind-selector,.kind-chip'))) return;
   // Determina lo stato corrente: siamo dentro la stessa UOC del contatto?
   const params = state.currentParams || {};
   const currentFilter = params.filter;
@@ -8064,39 +8062,52 @@ function renderUbicazioneBadge(ub) {
   return `<span style="display:block;font-family:var(--mono);font-size:11px;font-weight:400;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:3px;margin-top:4px;width:fit-content;">📍 ${parts.join(' · ')}</span>`;
 }
 
+// classifyContatto produce { group, kind }:
+// - group: 1-5, usato SOLO per ordinamento dei contatti dentro una UOC/sezione.
+// - kind: una di 4 etichette ('guardia', 'reparto', 'utile', 'altro'). Solo le prime 3
+//   producono pillole colorate nell'UI; 'altro' è il default per tutto il resto.
+//
+// Le 3 categorie esplicite ('guardia', 'reparto', 'utile') corrispondono alle 3 chip del
+// selettore in edit mode. L'auto-detect via regex copre solo 'guardia' e 'reparto'
+// (le 2 più meccanicamente identificabili dall'etichetta). 'utile' richiede sempre
+// scelta esplicita dall'utente.
+//
+// 'none' = scelta esplicita dell'utente di NON taggare → kind='altro', group=5 (in fondo).
+//          Distinto da kind=null/undefined del DB che invece triggera l'auto-detect.
 function classifyContatto(c) {
-  // Pending edits: se l'utente ha cambiato il tag in edit mode ma non ancora salvato,
-  // usa il valore pending per la classificazione
   const pendingKind = (c.id && state.pendingTagEdits && state.pendingTagEdits.has(c.id))
     ? state.pendingTagEdits.get(c.id)
     : undefined;
   const effectiveKind = pendingKind !== undefined ? pendingKind : c.kind;
-  if (effectiveKind) {
-    const kindToGroup = { guardia: 1, reparto: 2, utile: 2, ambulatorio: 3, direzione: 4, segreteria: 4 };
-    const g = kindToGroup[effectiveKind];
-    if (g) {
-      const kind = (effectiveKind === 'segreteria') ? 'segreteria' : effectiveKind;
-      return { group: g, kind };
-    }
+
+  // Scelta esplicita dell'utente "senza tag": niente pillola, in fondo, niente auto-detect
+  if (effectiveKind === 'none') {
+    return { group: 5, kind: 'altro' };
   }
-  const label = (c.etichetta || '').toLowerCase();
+  // Kind esplicito dal DB (o pending): solo 3 valori validi che producono pillola
+  if (effectiveKind === 'guardia') return { group: 1, kind: 'guardia' };
+  if (effectiveKind === 'reparto') return { group: 2, kind: 'reparto' };
+  if (effectiveKind === 'utile')   return { group: 2, kind: 'utile' };
+
+  // Auto-detect (solo per contatti senza kind nel DB): identifica solo guardia e reparto.
+  // Per gli altri casi (ambulatorio, segreteria, direzione) ritorno kind='altro' MA con
+  // group calcolato per mantenere l'ordinamento (es. ambulatorio dopo reparto).
+  // Niente pillola visibile, ma ordinamento preservato.
   const sezione = (c.sezione || '').toLowerCase();
   const tags = (c.tag || []).map(t => t.toLowerCase());
   const isGuardia = tags.includes('guardia') || /\b(guardia|mdg|medico di guardia|reperibile)\b/i.test(c.etichetta || '');
-  // Reparto / aree cliniche operative. Uso prefix match per degenz/infermier (no \b finale).
   const isReparto = /\b(reparto|guardiola|caposala|coordinat|sala medici|sala operatoria|medici di reparto|degenz|infermier|\bdeg\b|front office|u\.?c\.?i\.?c|u\.?t\.?i\.?c|unità coronarica|terapia intensiva|subintensiva|sub-intensiva|emodinamica|elettrofisiologia|bancone|area infermieri|stud(io|i) medici)/i.test(c.etichetta || '');
-  // Solo segreteria (non direttori/studi), che merita tag "Segr."
   const isSegreteria = /\b(segreteria|segr\.)\b/i.test(c.etichetta || '');
-  // Direzione pura (direttore, studi professori, scuola, didattica) — NON taggata di default
   const isDirezione = /\b(direttore|studio (medico|prof|dr|dott)|scuola|didattic|universitari[oa])\b/i.test(c.etichetta || '');
   const isAmb = /\b(ambulator|amb\.|polisonno|\beco\b|rmn|\btac\b|endoscop)\b/i.test(c.etichetta || '') || sezione === 'ambulatori';
+
   if (isGuardia) return { group: 1, kind: 'guardia' };
-  // Se l'etichetta o la sezione segnala "ambulatorio", vince su reparto (es. "Coordinatore Ambulatorio")
-  if (isAmb && isReparto) return { group: 3, kind: 'ambulatorio' };
+  // Ambulatorio vince su reparto (es. "Coordinatore Ambulatorio") ma niente pillola
+  if (isAmb && isReparto) return { group: 3, kind: 'altro' };
   if (isReparto) return { group: 2, kind: 'reparto' };
-  if (isAmb) return { group: 3, kind: 'ambulatorio' };
-  if (isSegreteria) return { group: 4, kind: 'segreteria' };
-  if (isDirezione) return { group: 5, kind: 'altro' };  // direzione senza tag, in fondo
+  if (isAmb) return { group: 3, kind: 'altro' };
+  if (isSegreteria) return { group: 4, kind: 'altro' };
+  if (isDirezione) return { group: 5, kind: 'altro' };
   return { group: 3, kind: 'altro' };
 }
 
@@ -8441,12 +8452,18 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     ? state.pendingTagEdits.get(c.id) : undefined;
   const hasPending = pendingKind !== undefined;
   const effectiveKind = hasPending ? pendingKind : c.kind;
-  const currentKind = effectiveKind || cls.kind;
+  // currentKind = quale chip mostrare attiva. Per 'none' (scelta esplicita "no tag")
+  // nessuna chip è attiva, ma mostro la label "(senza tag)" sotto.
+  const currentKind = (effectiveKind === 'none') ? null : (effectiveKind || cls.kind);
+  // Stato display: 'none' = utente ha esplicitamente rimosso, undefined = auto-detect attivo
+  const isExplicitNone = effectiveKind === 'none';
+  const isAutoDetect = effectiveKind === undefined || effectiveKind === null;
   const kindSelector = c.id ? `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;">
     <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
     <button class="kind-chip ${currentKind === 'guardia' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','guardia')" title="Guardia / MdG / Reperibile" style="--chip-color:var(--danger);--chip-bg:#fef0ef;">● Guardia</button>
-    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto / Sala / Degenze / Infermieri" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">● Reparto / Sala</button>    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">● Utili</button>
-    ${effectiveKind ? `<button class="kind-chip-reset" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}',null)" title="Torna a rilevamento automatico">✕ auto</button>` : `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>`}
+    <button class="kind-chip ${currentKind === 'reparto' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','reparto')" title="Reparto/Sala/Guardiola" style="--chip-color:var(--accent);--chip-bg:var(--accent-soft);">● Reparto/Sala</button>    <button class="kind-chip ${currentKind === 'utile' ? 'active' : ''}" onclick="event.stopPropagation();setContactKind('${escapeJs(c.id)}','utile')" title="Numero utile da evidenziare" style="--chip-color:#2e7d32;--chip-bg:#e8f5e9;">● Utili</button>
+    ${isAutoDetect ? `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>` : ''}
+    ${isExplicitNone ? `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">senza tag</span>` : ''}
     ${hasPending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
   </div>` : '';
   // Click row handler
@@ -14466,7 +14483,8 @@ async function deleteContatto(contattoId) {
   } catch (e) { toast('Errore: ' + e.message, 'error'); }
 }
 
-// Imposta o rimuove il tag (kind) di un contatto: guardia/reparto/ambulatorio/direzione, oppure null per autodetect
+// Imposta o rimuove il tag (kind) di un contatto: guardia/reparto/utile, 'none' per
+// "senza tag esplicito" (no auto-detect), o null per ripristinare l'auto-detect.
 async function setContactKind(contattoId, newKind) {
   // Se siamo in edit mode, mettiamo la modifica in pending (da salvare con "Salva modifiche")
   if (navState && navState.editMode) {
@@ -14478,7 +14496,7 @@ async function setContactKind(contattoId, newKind) {
 
 function stageTagEdit(contattoId, newKind) {
   if (!state.pendingTagEdits) state.pendingTagEdits = new Map();
-  // Trova valore originale
+  // Trova valore originale dal DB (null/undefined = mai taggato esplicitamente)
   let origKind = null;
   for (const sourceId of ['aopd','osa','iov']) {
     const data = getNumeriDataForSource(sourceId);
@@ -14487,20 +14505,27 @@ function stageTagEdit(contattoId, newKind) {
       const c = (g.contatti || []).find(x => x.id === contattoId);
       if (c) { origKind = c.kind || null; break; }
     }
-    if (origKind !== undefined) break;
+    if (origKind) break;
   }
-  // Toggle off se stesso valore
-  if (newKind === origKind) newKind = null;
-  // Se il nuovo valore è uguale al valore originale, rimuovi dal pending
-  if (newKind === origKind || (newKind === null && !origKind)) {
+  // Kind attualmente visualizzato (pending se esiste, altrimenti originale)
+  const currentKind = state.pendingTagEdits.has(contattoId)
+    ? state.pendingTagEdits.get(contattoId)
+    : origKind;
+  // Click sulla chip già attiva = "rimuovi tag". Imposto 'none' come valore sentinella
+  // esplicito (vs null/undefined che lascerebbe attivo l'auto-detect via classifyContatto).
+  // 'none' viene salvato nel YAML così la scelta dell'utente persiste anche dopo refresh.
+  let target = newKind;
+  if (newKind === currentKind) target = 'none';
+  // Confronto "originale": null e 'none' sono entrambi "senza tag", ma null = mai toccato
+  // (auto-detect attivo) mentre 'none' = scelta esplicita (auto-detect spento). Se l'utente
+  // vuole arrivare allo stato originale precedente:
+  // - origKind era 'reparto' e l'utente clicca per riportarlo a 'reparto' → rimuovi pending
+  // - origKind era null e l'utente arriva a 'none' tramite toggle → resta pendente perché
+  //   è una vera modifica (passare da auto a "esplicitamente no tag")
+  if (target === origKind) {
     state.pendingTagEdits.delete(contattoId);
   } else {
-    // Se il chip cliccato è già in pending con lo stesso valore → toggle off (torna a orig)
-    if (state.pendingTagEdits.get(contattoId) === newKind) {
-      state.pendingTagEdits.delete(contattoId);
-    } else {
-      state.pendingTagEdits.set(contattoId, newKind);
-    }
+    state.pendingTagEdits.set(contattoId, target);
   }
   updateEditBanner();
   // Re-render della view corrente per riflettere il pending
@@ -15533,15 +15558,25 @@ function renderSearchResults(query, targetId) {
   const renderInlineTagChips = (c) => {
     if (!c.id) return '';
     const pending = state.pendingTagEdits && state.pendingTagEdits.has(c.id);
-    const k = pending ? state.pendingTagEdits.get(c.id) : (c.kind || '');
+    const effective = pending ? state.pendingTagEdits.get(c.id) : (c.kind || null);
+    // 'none' = scelta esplicita "no tag" (no auto-detect): nessuna chip attiva, mostro label.
+    const k = effective === 'none' ? null : effective;
+    const isExplicitNone = effective === 'none';
+    const isAutoDetect = effective === null || effective === undefined;
+    const tooltips = {
+      guardia: 'Guardia / MdG / Reperibile',
+      reparto: 'Reparto/Sala/Guardiola',
+      utile: 'Numero utile da evidenziare'
+    };
     const mk = (value, label, bg, color) =>
-      `<button class="kind-chip ${k === value ? 'active' : ''}" onclick="event.stopPropagation(); setContactKind('${escapeJs(c.id)}','${value}')" title="${label}" style="--chip-color:${color};--chip-bg:${bg};">${label}</button>`;
+      `<button class="kind-chip ${k === value ? 'active' : ''}" onclick="event.stopPropagation(); setContactKind('${escapeJs(c.id)}','${value}')" title="${tooltips[value]}" style="--chip-color:${color};--chip-bg:${bg};">${label}</button>`;
     return `<div class="edit-only kind-selector" style="margin-top:4px;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;" onclick="event.stopPropagation();">
       <span style="font-size:10px;color:var(--ink-muted);font-family:var(--mono);letter-spacing:.04em;">TAG:</span>
       ${mk('guardia', '● Guardia', '#fef0ef', 'var(--danger)')}
-      ${mk('reparto', '● Reparto / Sala', 'var(--accent-soft)', 'var(--accent)')}
+      ${mk('reparto', '● Reparto/Sala', 'var(--accent-soft)', 'var(--accent)')}
       ${mk('utile',   '● Utili',   '#e8f5e9', '#2e7d32')}
-      ${k ? `<button class="kind-chip-reset" onclick="event.stopPropagation(); setContactKind('${escapeJs(c.id)}',null)" title="Auto">✕ auto</button>` : ''}
+      ${isAutoDetect ? `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">auto</span>` : ''}
+      ${isExplicitNone ? `<span style="font-size:10px;color:var(--ink-muted);font-style:italic;">senza tag</span>` : ''}
       ${pending ? `<span style="font-size:10px;color:var(--warning);font-style:italic;">(modificato)</span>` : ''}
     </div>`;
   };
