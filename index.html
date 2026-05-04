@@ -60,22 +60,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
-<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+<!-- Toast UI Editor rimosso (era usato solo come fallback per file legacy con body markdown
+     puro, mai presenti nel repo dati attuale). Il block editor copre tutti i casi. -->
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script>
-  // Configurazione worker PDF.js (necessario per parsing PDF)
-  if (window.pdfjsLib) {
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  }
-</script>
+<!-- Le seguenti librerie sono caricate lazy on-demand via _ensureLib():
+     - jsPDF (~360 KB): solo al click "Scarica PDF" su moduli compilati
+     - PDF.js (~370 KB): solo all'apertura del wizard "Nuovo modulo" da PDF
+     - browser-image-compression (~25 KB): solo all'upload immagini
+     Questo riduce di ~750 KB il bundle blocking del boot iniziale. -->
+
 
 <style>
 :root {
@@ -499,11 +496,6 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 .lightbox-close{position:absolute;top:20px;right:24px;background:rgba(20,18,14,.6);border:1px solid rgba(251,248,242,.3);color:rgba(251,248,242,.95);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;line-height:1;transition:background .12s}
 .lightbox-close:hover{background:rgba(20,18,14,.85);border-color:rgba(251,248,242,.6)}
 
-/* Image upload button in editor toolbar */
-.editor-img-upload{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;cursor:pointer;font-size:12px;color:var(--ink-soft);transition:background .12s,border-color .12s}
-.editor-img-upload:hover{background:var(--rule-soft);border-color:var(--rule-strong);color:var(--ink)}
-.editor-img-upload input[type=file]{display:none}
-.editor-img-upload-status{font-family:var(--mono);font-size:11px;color:var(--ink-muted);margin-left:8px}
 .user-name{font-family:var(--mono);font-size:12px;color:var(--ink-soft);letter-spacing:.02em}
 
 .app-body{display:grid;grid-template-columns:240px 1fr;min-height:0}
@@ -780,6 +772,15 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-box.firma{background:rgba(180,180,255,.15);border:1px dashed rgba(80,80,160,.4);color:rgba(60,60,120,.6);font-style:italic;justify-content:center}
 .mod-form-actions .btn{padding:6px 12px;font-size:13px}
 
+/* Dropdown menu per il bottone "Scarica" (PDF/PNG). Il wrap è position:relative così
+   il menu absolute si posiziona sotto il bottone. */
+.mod-dropdown-wrap{position:relative;display:inline-block}
+.mod-dropdown-menu{display:none;position:absolute;top:100%;left:0;margin-top:4px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;box-shadow:0 4px 12px rgba(0,0,0,.12);z-index:50;min-width:140px;overflow:hidden}
+.mod-dropdown-menu.open{display:block}
+.mod-dropdown-menu button{display:block;width:100%;padding:10px 14px;background:transparent;border:none;text-align:left;font-family:var(--sans);font-size:14px;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--rule-soft)}
+.mod-dropdown-menu button:last-child{border-bottom:none}
+.mod-dropdown-menu button:hover{background:var(--bg-sink)}
+
 /* Stepper +/- per la dimensione del font del box selezionato */
 .mod-fontsize-stepper{display:flex;align-items:stretch;gap:0;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
 .mod-fontsize-stepper .mod-fs-btn{padding:6px 14px;font-size:18px;line-height:1;border:none;border-radius:0;flex:0 0 auto;background:var(--bg-paper);color:var(--ink);font-weight:500}
@@ -978,12 +979,6 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .editor-section-title{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:500}
 .editor-section-body{padding:20px}
 .meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-
-.toastui-editor-defaultUI{border:none!important;font-family:var(--sans)!important}
-.toastui-editor-defaultUI-toolbar{background:var(--bg-sink)!important;border-bottom:1px solid var(--rule-soft)!important}
-.toastui-editor-contents{font-family:var(--serif)!important;font-size:16px!important;line-height:1.7!important;color:var(--ink-soft)!important;padding:24px!important}
-.toastui-editor-contents h1,.toastui-editor-contents h2,.toastui-editor-contents h3{font-family:var(--serif)!important;color:var(--ink)!important;border:none!important}
-.toastui-editor-mode-switch{display:none!important}
 
 /* MODALS */
 .modal-backdrop{position:fixed;inset:0;background:rgba(26,26,26,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .15s ease-out;overscroll-behavior:contain}
@@ -1716,6 +1711,70 @@ const BOOTSTRAP_PAT = _b1 + _b2 + _b3 + _b4 + _b5 + _b6 + _b7 + _b8;
 /* ============================ UTILITIES ============================ */
 const $ = (id) => document.getElementById(id);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+// Logger centrale: prefissa tutti i log con il nome del modulo per facilitare debug.
+// Modalità DEBUG attivabile da console: log.setDebug(true). Persiste in localStorage.
+// Es. uso: log.warn('loadModuloDettaglio', 'cache stale per', slug);
+const log = {
+  _debug: (typeof localStorage !== 'undefined' && localStorage.getItem('debug') === '1'),
+  setDebug(on) {
+    this._debug = !!on;
+    try { localStorage.setItem('debug', on ? '1' : '0'); } catch {}
+    console.info(`[log] debug mode: ${on ? 'ON' : 'OFF'}`);
+  },
+  debug(mod, ...args) { if (this._debug) console.log(`[${mod}]`, ...args); },
+  info(mod, ...args)  { console.info(`[${mod}]`, ...args); },
+  warn(mod, ...args)  { console.warn(`[${mod}]`, ...args); },
+  error(mod, ...args) { console.error(`[${mod}]`, ...args); },
+};
+window.log = log;  // espone per debug da console (es. log.setDebug(true))
+
+// Lazy loader per librerie esterne caricate on-demand. Riduce il bundle blocking del boot:
+// queste librerie servono solo per feature specifiche (PDF upload/download, image compression),
+// caricarle al boot rallenta tutti gli usi quotidiani (consultare procedure, rubrica, calendario)
+// di ~500ms su mobile.
+const _LIBS = {
+  jspdf: {
+    url: 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+    check: () => window.jspdf && window.jspdf.jsPDF,
+  },
+  pdfjs: {
+    url: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+    check: () => window.pdfjsLib,
+    onLoad: () => {
+      // Configurazione worker (deve essere fatta dopo che pdfjsLib è disponibile)
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    },
+  },
+  imageCompression: {
+    url: 'https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js',
+    check: () => typeof window.imageCompression === 'function',
+  },
+};
+
+const _libsLoading = new Map();
+
+// Carica una libreria esterna on-demand. Idempotente: chiamate ripetute restituiscono
+// la stessa Promise (durante caricamento) o risolvono subito (già caricata).
+async function _ensureLib(name) {
+  const lib = _LIBS[name];
+  if (!lib) throw new Error(`Libreria sconosciuta: ${name}`);
+  if (lib.check()) return;
+  if (_libsLoading.has(name)) return _libsLoading.get(name);
+
+  const promise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = lib.url;
+    script.onload = () => {
+      try { if (lib.onLoad) lib.onLoad(); } catch (e) { console.error(`[_ensureLib] onLoad ${name} failed:`, e); }
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`Caricamento libreria ${name} fallito`));
+    document.head.appendChild(script);
+  });
+  _libsLoading.set(name, promise);
+  return promise;
+}
 
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2456,6 +2515,8 @@ async function compressAndUploadImage(file, currentFilePath) {
     initialQuality: 0.80
   };
 
+  // browser-image-compression caricata lazy: necessario await prima dell'uso
+  await _ensureLib('imageCompression');
   const compressed = await imageCompression(file, options);
 
   // Sanitize filename: lowercase, no spaces, no accents
@@ -2511,54 +2572,6 @@ async function compressAndUploadImage(file, currentFilePath) {
     sizeBefore: file.size,
     sizeAfter: compressed.size
   };
-}
-
-// Wire a file input to upload + insert into the active Toast UI editor
-function attachImageUploadHandler(inputId, statusId) {
-  const input = document.getElementById(inputId);
-  const status = document.getElementById(statusId);
-  if (!input) return;
-  input.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!state.editingContext || !state.editingContext.path) {
-      toast('Salva prima la scheda per poter caricare immagini', 'warning');
-      input.value = '';
-      return;
-    }
-    if (status) status.textContent = 'Compressione...';
-    try {
-      const result = await compressAndUploadImage(file, state.editingContext.path);
-      const sizeKb = Math.round(result.sizeAfter / 1024);
-      const savings = Math.round((1 - result.sizeAfter / result.sizeBefore) * 100);
-      if (status) status.textContent = `${result.fileName} · ${sizeKb}KB (-${savings}%)`;
-
-      // Ask for alt/caption text
-      const alt = prompt('Didascalia / testo alternativo (opzionale):', file.name.replace(/\.[^.]+$/, ''));
-      const altText = alt || '';
-      const markdownSnippet = `![${altText}](${result.relativePath})`;
-
-      // Insert into the Toast UI editor at cursor
-      if (state.editorInstance) {
-        try {
-          state.editorInstance.insertText(markdownSnippet);
-        } catch (err) {
-          // Fallback: append at end
-          const current = state.editorInstance.getMarkdown();
-          state.editorInstance.setMarkdown(current + '\n\n' + markdownSnippet + '\n');
-        }
-        state.editingContext.isDirty = true;
-      }
-      toast(`Immagine caricata (${sizeKb}KB)`, 'success', 3000);
-      setTimeout(() => { if (status) status.textContent = ''; }, 5000);
-    } catch (err) {
-      console.error('Image upload error', err);
-      toast('Errore upload: ' + err.message, 'error', 5000);
-      if (status) status.textContent = 'Errore';
-    } finally {
-      input.value = '';
-    }
-  });
 }
 
 function toast(message, level = 'info', duration = 3500) {
@@ -3053,7 +3066,6 @@ const state = {
   tokensFile: null,
   index: { procedure: [], clinica: [], moduli: [], cestino: [], numeri: null, capitoli: [], lastIndexed: null },
   currentView: 'home',
-  editorInstance: null,
   editingContext: null,
   fuse: null,
   userPrefs: null,          // {pins: [...], _sha: null, _saveTimer: null, _pending: false}
@@ -3996,7 +4008,6 @@ function logout() {
   state.editingContext = null;
   state.userPrefs = null;
   state.userPrefsPath = null;
-  if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
   // Clear ETag cache + rate limit indicator
   etagCache.clear();
   try { sessionStorage.removeItem('collinettaai.etags'); } catch {}
@@ -4192,7 +4203,6 @@ function navigate(route, params = {}) {
   if (state.editingContext && state.editingContext.isDirty) {
     if (!confirm("Hai modifiche non salvate. Sicuro di uscire dall'editor?")) return;
   }
-  if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
   if (state.editingContext && state.editingContext.hasLock) {
     locks.release(state.editingContext.slug).catch(() => {});
   }
@@ -4461,19 +4471,72 @@ function renderPinnedGruppo(id) {
   </div>`;
 }
 
-function renderProcedureCard(p) {
-  const tagsHtml = (p.tag || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+// =============================================================================
+// SCHEDA_TYPES — config table per unificare procedure ↔ clinica (refactor A1)
+// =============================================================================
+// Procedure e schede cliniche sono modellate come due sistemi paralleli quasi identici:
+// stessa struttura file (.md con frontmatter+body), stesso flusso (lista → dettaglio →
+// editor → save), stesse modali (history, rename, delete). Storicamente erano implementati
+// con coppie di funzioni gemelle (renderProcedura/renderSchedaClinica, saveProcedura/
+// saveSchedaClinica, ecc.) che divergevano col tempo.
+//
+// Questa tabella centralizza le DIFFERENZE tra i due tipi (route name, path prefix,
+// label di UI), così le funzioni di rendering/save/rename diventano singole con un
+// parametro `type`. Aggiungere un terzo tipo (es. "linee guida") in futuro = 1 entry qui.
+//
+// Sotto-PR 1: la tabella + renderSchedaCard unificata (le 2 funzioni più piccole).
+// Le altre coppie (renderEditor, save, rename, history, ecc.) saranno migrate in step
+// successivi una alla volta, validando ogni step manualmente per evitare regressioni
+// (le funzioni rubrica e search hanno cicatrici fresche da debug recente).
+const SCHEDA_TYPES = {
+  procedura: {
+    indexKey: 'procedure',                 // → state.index.procedure
+    routeView: 'procedura',                // route per visualizzare singola scheda
+    routeEdit: 'procedura-edit',           // route per editor
+    routeList: 'procedure',                // route lista
+    pathPrefix: 'content/procedure',       // prefisso file su repo
+    pinType: 'procedura',                  // categoria pin per renderPinButton
+    contextMenuType: 'procedure',          // tipo per showNavContextMenu
+    aggiornatoLabel: 'Aggiornato',         // label genere maschile
+    label: 'Procedura',
+    labelPlural: 'Procedure',
+  },
+  clinica: {
+    indexKey: 'clinica',
+    routeView: 'clinica-scheda',
+    routeEdit: 'clinica-edit',
+    routeList: 'clinica',
+    pathPrefix: 'content/clinica',
+    pinType: 'clinica',
+    contextMenuType: 'clinica',
+    aggiornatoLabel: 'Aggiornata',         // label genere femminile (scheda)
+    label: 'Scheda clinica',
+    labelPlural: 'Schede cliniche',
+  }
+};
+
+// Card unica per qualunque tipo di scheda (procedura o clinica). Sostituisce le coppie
+// gemelle renderProcedureCard / renderClinicaCard. I 2 wrapper sotto restano come
+// backward-compat per non toccare i ~9 call site sparsi.
+function renderSchedaCard(scheda, type) {
+  const cfg = SCHEDA_TYPES[type];
+  if (!cfg) { console.error('[renderSchedaCard] tipo sconosciuto:', type); return ''; }
+  const tagsHtml = (scheda.tag || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
   return `
-    <div class="procedure-card" onclick="navigate('procedura', {slug:'${escapeHtml(p.slug)}'})">
-      <div class="procedure-card-title">${escapeHtml(p.titolo || p.slug)}
+    <div class="procedure-card" onclick="navigate('${cfg.routeView}', {slug:'${escapeHtml(scheda.slug)}'})">
+      <div class="procedure-card-title">${escapeHtml(scheda.titolo || scheda.slug)}
         <span class="card-actions">
-          ${renderPinButton('procedura', p.slug)}
-          <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'procedure', '${escapeJs(p.slug)}')" title="Azioni">⋯</button>
+          ${renderPinButton(cfg.pinType, scheda.slug)}
+          <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, '${cfg.contextMenuType}', '${escapeJs(scheda.slug)}')" title="Azioni">⋯</button>
         </span>
       </div>
       <div class="procedure-card-tags">${tagsHtml}</div>
-      <div class="procedure-card-meta"><span>Aggiornato ${timeAgo(p.ultima_modifica)}</span></div>
+      <div class="procedure-card-meta"><span>${cfg.aggiornatoLabel} ${timeAgo(scheda.ultima_modifica)}</span></div>
     </div>`;
+}
+
+function renderProcedureCard(p) {
+  return renderSchedaCard(p, 'procedura');
 }
 
 function renderManuale() {
@@ -5198,18 +5261,7 @@ function renderClinicaList(subFilter) {
 }
 
 function renderClinicaCard(c) {
-  const tagsHtml = (c.tag || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
-  return `
-    <div class="procedure-card" onclick="navigate('clinica-scheda', {slug:'${escapeHtml(c.slug)}'})">
-      <div class="procedure-card-title">${escapeHtml(c.titolo || c.slug)}
-        <span class="card-actions">
-          ${renderPinButton('clinica', c.slug)}
-          <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'clinica', '${escapeJs(c.slug)}')" title="Azioni">⋯</button>
-        </span>
-      </div>
-      <div class="procedure-card-tags">${tagsHtml}</div>
-      <div class="procedure-card-meta"><span>Aggiornata ${timeAgo(c.ultima_modifica)}</span></div>
-    </div>`;
+  return renderSchedaCard(c, 'clinica');
 }
 
 function renderSchedaClinica(slug) {
@@ -5372,41 +5424,23 @@ function renderEditorUIClinica(slug, frontmatter, body) {
     </div>
 
     <div class="editor-section">
-      <div class="editor-section-head" style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="editor-section-title">Corpo Markdown (opzionale)</div>
-        <label class="editor-img-upload" id="img-upload-btn-clinica">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          <span>Inserisci immagine</span>
-          <input type="file" accept="image/*" id="img-file-input-clinica">
-          <span class="editor-img-upload-status" id="img-upload-status-clinica"></span>
-        </label>
+      <div class="editor-section-head">
+        <div class="editor-section-title">Contenuto</div>
       </div>
       <div id="editor-wrapper"></div>
     </div>`;
 
-  // Se la scheda clinica usa il nuovo schema a blocchi, monta il block editor;
-  // altrimenti fallback a Toast UI per file legacy.
-  const usesBlockEditor = Array.isArray(frontmatter.contenuti);
-  if (usesBlockEditor) {
-    blockEditor.render($('editor-wrapper'), frontmatter.contenuti);
-    state.editingContext._usesBlockEditor = true;
-  } else {
-    state.editorInstance = new toastui.Editor({
-      el: $('editor-wrapper'),
-      height: '400px',
-      initialEditType: 'wysiwyg',
-      previewStyle: 'vertical',
-      initialValue: body,
-      usageStatistics: false,
-      hideModeSwitch: true,
-      toolbarItems: [['heading','bold','italic'],['hr','quote'],['ul','ol'],['table','link'],['code','codeblock']]
-    });
-
-    state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  // Tutte le schede usano il block editor (schema con `contenuti: []`).
+  // Se per qualche motivo il frontmatter non ha `contenuti` array (file legacy che non
+  // dovrebbero esistere in produzione), inizializzo a array vuoto e l'utente potrà ricostruire
+  // il contenuto a blocchi. Il body markdown puro non viene più supportato.
+  const contenuti = Array.isArray(frontmatter.contenuti) ? frontmatter.contenuti : [];
+  if (!Array.isArray(frontmatter.contenuti) && body && body.trim()) {
+    toast('Schema legacy rilevato: il body markdown è stato rimosso. Ricostruisci il contenuto con il block editor.', 'warning', 8000);
+    console.warn('[renderEditorUIClinica] frontmatter senza `contenuti` array per', slug, '— body markdown ignorato');
   }
-
-  // Image upload handler for clinica editor
-  attachImageUploadHandler('img-file-input-clinica', 'img-upload-status-clinica');
+  blockEditor.render($('editor-wrapper'), contenuti);
+  state.editingContext._usesBlockEditor = true;
 
   // Init chips
   chipsInit('meta-tag-chips', collectAllTags());
@@ -5457,14 +5491,9 @@ async function saveSchedaClinica() {
       ...((ctx.originalFrontmatter.cronologia_recente || []).slice(0, 4))
     ];
 
-    // Serializza secondo il tipo di editor usato
-    let newBody;
-    if (ctx._usesBlockEditor) {
-      nf.contenuti = blockEditor.getBlocks();
-      newBody = '';
-    } else {
-      newBody = state.editorInstance.getMarkdown();
-    }
+    // Tutte le schede usano il block editor: leggo i blocchi e azzero il body markdown
+    nf.contenuti = blockEditor.getBlocks();
+    const newBody = '';
     const newContent = stringifyMarkdown(nf, newBody);
     const commitMsg = `Aggiorna clinica/${ctx.slug} — ${nota} (by ${state.session.username})`;
 
@@ -5480,7 +5509,6 @@ async function saveSchedaClinica() {
     }
     state.editingContext = null;
     window.removeEventListener('beforeunload', beforeUnloadHandler);
-    if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
     navigate('clinica-scheda', { slug: ctx.slug });
   } catch (e) {
     toast('Errore: ' + e.message, 'error', 6000);
@@ -6347,48 +6375,20 @@ function renderEditorUI(slug, frontmatter, body) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L9 9l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
             <span style="margin-left:4px;">Importa con AI</span>
           </button>
-          <label class="editor-img-upload" id="img-upload-btn-proc">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            <span>Inserisci immagine</span>
-            <input type="file" accept="image/*" id="img-file-input-proc">
-            <span class="editor-img-upload-status" id="img-upload-status-proc"></span>
-          </label>
         </div>
       </div>
       <div id="editor-wrapper"></div>
     </div>`;
 
-  // Decide quale editor montare:
-  // - Se il frontmatter ha `contenuti` (array), usa il block editor (schema nuovo, Fase 2+)
-  // - Altrimenti fallback a Toast UI Editor (file legacy)
-  const usesBlockEditor = Array.isArray(frontmatter.contenuti);
-  if (usesBlockEditor) {
-    blockEditor.render($('editor-wrapper'), frontmatter.contenuti);
-    // Memorizzo flag per sapere come serializzare in save
-    state.editingContext._usesBlockEditor = true;
-  } else {
-    state.editorInstance = new toastui.Editor({
-      el: $('editor-wrapper'),
-      height: '600px',
-      initialEditType: 'wysiwyg',
-      previewStyle: 'vertical',
-      initialValue: body,
-      usageStatistics: false,
-      hideModeSwitch: true,
-      toolbarItems: [
-        ['heading', 'bold', 'italic', 'strike'],
-        ['hr', 'quote'],
-        ['ul', 'ol', 'task'],
-        ['table', 'link'],
-        ['code', 'codeblock']
-      ]
-    });
-
-    state.editorInstance.on('change', () => { if (state.editingContext) state.editingContext.isDirty = true; });
+  // Tutte le schede usano il block editor. Se manca `contenuti` array (file legacy),
+  // mostro avviso e inizializzo array vuoto.
+  const contenuti = Array.isArray(frontmatter.contenuti) ? frontmatter.contenuti : [];
+  if (!Array.isArray(frontmatter.contenuti) && body && body.trim()) {
+    toast('Schema legacy rilevato: il body markdown è stato rimosso. Ricostruisci il contenuto con il block editor.', 'warning', 8000);
+    console.warn('[renderEditorUI] frontmatter senza `contenuti` array per', slug, '— body markdown ignorato');
   }
-
-  // Image upload handler for procedure editor
-  attachImageUploadHandler('img-file-input-proc', 'img-upload-status-proc');
+  blockEditor.render($('editor-wrapper'), contenuti);
+  state.editingContext._usesBlockEditor = true;
 
   // Initialize chips fields
   function refreshSottocategorieChips() {
@@ -6435,11 +6435,11 @@ function renderEditorUI(slug, frontmatter, body) {
    2) L'app mostra un prompt completo da copiare in un'AI esterna
    3) L'utente incolla il JSON ottenuto, l'app valida e popola i blocchi.
 */
-function openAIImportModal(tipo) {
-  // Costruisco il prompt al volo: descrizione dei tipi di blocco + schema JSON.
-  // Questa è la "knowledge base" che l'AI esterna riceve, identica a quella usata
-  // dall'editor a blocchi nell'app.
-  const PROMPT_TEMPLATE = `Sei un assistente che converte testo medico/clinico in un JSON strutturato per un'app di documentazione clinica.
+// Template prompt per import AI di schede cliniche/procedure: descrizione dei tipi di blocco
+// + schema JSON. Estratto come costante a livello di modulo per leggibilità (era inline nel
+// modal, ~70 righe di string literal in mezzo alla logica UI).
+// Usa il placeholder __INSERT_TESTO__ per inserire il testo dell'utente.
+const AI_IMPORT_PROMPT_TEMPLATE = `Sei un assistente che converte testo medico/clinico in un JSON strutturato per un'app di documentazione clinica.
 
 L'output deve essere ESCLUSIVAMENTE un array JSON di oggetti "blocco". Nessun testo prima o dopo, nessun markdown code fence (no triple backticks), solo JSON puro che inizi con [ e finisca con ].
 
@@ -6448,37 +6448,37 @@ OGNI blocco ha: { "tipo": "<uno dei tipi>", "titolo": "<opzionale>", ...campi sp
 TIPI DI BLOCCO DISPONIBILI:
 
 1. text — paragrafo di testo. Supporta **grassetto**, *corsivo*, codice inline (con singole virgolette gravi).
-   Campi: { tipo:"text", titolo?:string, testo:string }
+ Campi: { tipo:"text", titolo?:string, testo:string }
 
 2. list — elenco puntato.
-   Campi: { tipo:"list", titolo?:string, items:string[] }
+ Campi: { tipo:"list", titolo?:string, items:string[] }
 
 3. checklist — lista di voci da spuntare (controlli, requisiti, step da completare).
-   Campi: { tipo:"checklist", titolo?:string, items:string[] }
+ Campi: { tipo:"checklist", titolo?:string, items:string[] }
 
 4. callout — riquadro di avviso/attenzione/info/successo.
-   Campi: { tipo:"callout", titolo?:string, variante:"warning"|"info"|"danger"|"success", testo:string }
+ Campi: { tipo:"callout", titolo?:string, variante:"warning"|"info"|"danger"|"success", testo:string }
 
 5. table — tabella con headers e righe.
-   Campi: { tipo:"table", titolo?:string, headers:string[], rows:string[][] }
+ Campi: { tipo:"table", titolo?:string, headers:string[], rows:string[][] }
 
 6. image — riferimento a un'immagine (NON inserire questo blocco a meno che non sia esplicitamente menzionato nel testo originale con un percorso o nome file).
-   Campi: { tipo:"image", src:string, alt?:string, caption?:string, descrizione?:string }
+ Campi: { tipo:"image", src:string, alt?:string, caption?:string, descrizione?:string }
 
 7. system_code — codici da inserire in sistemi gestionali (es. Galileo, Ormaweb).
-   Campi: { tipo:"system_code", titolo?:string, sistema:"Galileo"|"Ormaweb"|"Altro", percorso?:string, codici:[{codice:string, descrizione:string}], note?:string }
+ Campi: { tipo:"system_code", titolo?:string, sistema:"Galileo"|"Ormaweb"|"Altro", percorso?:string, codici:[{codice:string, descrizione:string}], note?:string }
 
 8. link — link esterno (paper, linee guida, sito).
-   Campi: { tipo:"link", titolo?:string, url:string, label?:string, fonte?:string, data_accesso?:string }
+ Campi: { tipo:"link", titolo?:string, url:string, label?:string, fonte?:string, data_accesso?:string }
 
 9. clinical_note — template di nota clinica (testo che il medico copierà nella cartella).
-   Campi: { tipo:"clinical_note", titolo?:string, testo:string }
+ Campi: { tipo:"clinical_note", titolo?:string, testo:string }
 
 10. form_ref — riferimento a un modulo dell'app (NON usare a meno che non sia esplicitamente menzionato).
-    Campi: { tipo:"form_ref", label:string, modulo:string }
+  Campi: { tipo:"form_ref", label:string, modulo:string }
 
 11. internal_ref — riferimento a un'altra procedura/scheda dell'app (NON usare a meno che non sia esplicitamente menzionato).
-    Campi: { tipo:"internal_ref", label:string, target_tipo:"procedura"|"clinica"|"modulo", target:string }
+  Campi: { tipo:"internal_ref", label:string, target_tipo:"procedura"|"clinica"|"modulo", target:string }
 
 LINEE GUIDA:
 - Mantieni la lingua del testo originale (italiano se il testo è in italiano).
@@ -6496,10 +6496,10 @@ LINEE GUIDA:
 
 ESEMPIO DI OUTPUT VALIDO:
 [
-  {"tipo":"callout","variante":"warning","titolo":"Prima di procedere","testo":"Verificare allergie e terapie in corso."},
-  {"tipo":"checklist","titolo":"Controlli pre-procedura","items":["INR < 1.5","Piastrine > 50.000","Consenso firmato"]},
-  {"tipo":"text","testo":"La procedura va eseguita in posizione laterale o seduta."},
-  {"tipo":"list","titolo":"Materiale necessario","items":["Ago atraumatico 22G","Provette per liquor x4","Antisettico"]}
+{"tipo":"callout","variante":"warning","titolo":"Prima di procedere","testo":"Verificare allergie e terapie in corso."},
+{"tipo":"checklist","titolo":"Controlli pre-procedura","items":["INR < 1.5","Piastrine > 50.000","Consenso firmato"]},
+{"tipo":"text","testo":"La procedura va eseguita in posizione laterale o seduta."},
+{"tipo":"list","titolo":"Materiale necessario","items":["Ago atraumatico 22G","Provette per liquor x4","Antisettico"]}
 ]
 
 TESTO DA CONVERTIRE:
@@ -6508,6 +6508,11 @@ __INSERT_TESTO__
 ---
 
 Restituisci SOLO l'array JSON, niente altro.`;
+
+function openAIImportModal(tipo) {
+  // Costruisco il prompt al volo: descrizione dei tipi di blocco + schema JSON.
+  // Questa è la "knowledge base" che l'AI esterna riceve, identica a quella usata
+  // dall'editor a blocchi nell'app.
 
   let step = 1;
   let rawText = '';
@@ -6531,7 +6536,7 @@ Restituisci SOLO l'array JSON, niente altro.`;
         </div>`;
     }
     if (step === 2) {
-      const fullPrompt = PROMPT_TEMPLATE.replace('__INSERT_TESTO__', rawText);
+      const fullPrompt = AI_IMPORT_PROMPT_TEMPLATE.replace('__INSERT_TESTO__', rawText);
       return `
         <div style="display:flex;gap:8px;margin-bottom:16px;">
           <span class="ai-step ai-step-done">1. Testo ✓</span>
@@ -6727,15 +6732,9 @@ async function saveProcedura() {
       ...((ctx.originalFrontmatter.cronologia_recente || []).slice(0, 4))
     ];
 
-    // Se la scheda usa l'editor a blocchi, leggo i blocchi dal modulo e li metto in nf.contenuti.
-    // Il body markdown resta sempre vuoto per le schede a blocchi (è voluto).
-    let newBody;
-    if (ctx._usesBlockEditor) {
-      nf.contenuti = blockEditor.getBlocks();
-      newBody = '';
-    } else {
-      newBody = state.editorInstance.getMarkdown();
-    }
+    // Tutte le schede usano il block editor: leggo i blocchi e azzero il body markdown.
+    nf.contenuti = blockEditor.getBlocks();
+    const newBody = '';
     const newContent = stringifyMarkdown(nf, newBody);
     const commitMsg = `Aggiorna ${ctx.slug} — ${nota} (by ${state.session.username})`;
 
@@ -6759,7 +6758,6 @@ async function saveProcedura() {
 
     state.editingContext = null;
     window.removeEventListener('beforeunload', beforeUnloadHandler);
-    if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
     navigate('procedura', { slug: ctx.slug });
   } catch (e) {
     toast('Errore salvataggio: ' + e.message, 'error', 6000);
@@ -6795,7 +6793,6 @@ async function handleConflict(ctx, ourNewContent, commitMsg) {
         const slugLocal = ctx.slug;
         state.editingContext = null;
         window.removeEventListener('beforeunload', beforeUnloadHandler);
-        if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
         await buildIndex();
         navigate('procedura-edit', { slug: slugLocal });
       }},
@@ -6808,7 +6805,6 @@ async function handleConflict(ctx, ourNewContent, commitMsg) {
           const slugLocal = ctx.slug;
           state.editingContext = null;
           window.removeEventListener('beforeunload', beforeUnloadHandler);
-          if (state.editorInstance) { try { state.editorInstance.destroy(); } catch {} state.editorInstance = null; }
           await buildIndex();
           navigate('procedura', { slug: slugLocal });
         } catch (e) {
@@ -8317,6 +8313,37 @@ async function copyNumber(n) {
 // della stessa sessione, ma garantisce dati freschi quando l'admin aggiorna su GitHub.
 state.moduliCache = state.moduliCache || {};       // { slug: { boxesData, pageUrls, formValues } }
 
+// Helper di persistenza modulo in sessionStorage. Esclude i dataUrl pesanti (pageUrls,
+// pageUrlsLight: possono pesare diversi MB ciascuno per moduli con molte pagine ad alta
+// risoluzione) dalla serializzazione. Senza questa esclusione, ogni keystroke nel form
+// (oninput) serializzava 2-10 MB → quota exceeded silenziosa con perdita di stato.
+// Le pageUrls/pageUrlsLight restano in memoria (state.moduliCache) e vengono ricaricate
+// da GitHub al refresh della pagina (loadModuloDettaglio).
+function _persistModulo(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  // Costruisco oggetto serializzabile escludendo i dataUrl pesanti
+  const lightweight = {
+    boxesData: c.boxesData,
+    boxesSha: c.boxesSha,
+    pristineBoxes: c.pristineBoxes,
+    formValues: c.formValues,
+    currentPage: c.currentPage,
+    zoom: c.zoom,
+    editMode: c.editMode,
+    selectedBoxIdx: c.selectedBoxIdx,
+  };
+  try {
+    sessionStorage.setItem('modulo:' + slug, JSON.stringify(lightweight));
+  } catch (e) {
+    // Quota exceeded o sessionStorage non disponibile (es. modalità privacy iOS)
+    // Non bloccare il flow, lo stato resta comunque in state.moduliCache (in-memory)
+    if (e.name !== 'QuotaExceededError') {
+      console.warn('[persistModulo]', slug, e);
+    }
+  }
+}
+
 // Carica boxes.yml + pre-calcola gli URL delle pagine PNG. Idempotente.
 async function loadModuloDettaglio(slug, options) {
   // options: { skipBoxes: true } per il primo render del viewer (apertura modulo).
@@ -8341,26 +8368,24 @@ async function loadModuloDettaglio(slug, options) {
     console.warn('[loadModuloDettaglio] cache stale per', slug, '— rigenero');
     delete state.moduliCache[slug];
   }
-  // Prova prima sessionStorage (sopravvive a refresh ma non a chiusura tab)
+  // Prova prima sessionStorage (sopravvive a refresh ma non a chiusura tab).
+  // Da quando _persistModulo esclude pageUrls/pageUrlsLight (troppo grandi per sessionStorage),
+  // qui ricostruiamo l'oggetto cache solo con i metadati: pageUrls verranno rifetchate dal repo
+  // (sotto). Questo è il comportamento corretto: sessionStorage ricorda boxesData/formValues
+  // (preziosi se l'utente sta compilando), le immagini sono sempre lazy-load da GitHub.
   try {
     const raw = sessionStorage.getItem('modulo:' + slug);
     if (raw) {
       const obj = JSON.parse(raw);
-      // Stesso check coerenza per la cache da sessionStorage
-      const m = (state.index.moduli || []).find(x => x.slug === slug);
-      const expectedPages = (m && m.pagine) || 1;
-      if (obj.pageUrls && obj.pageUrls.length >= expectedPages) {
+      if (obj.boxesData) {
+        // Pre-popolo la cache con i metadati; pageUrls verrà aggiunto dopo
         state.moduliCache[slug] = obj;
-        if (!opts.skipBoxes && !obj.boxesData) {
-          await loadModuloBoxes(slug);
-        }
-        return obj;
+        // ... e fall-through al fetch pageUrls
       }
-      // Stale: rimuovo da sessionStorage
-      console.warn('[loadModuloDettaglio] sessionStorage cache stale per', slug, '— rimuovo');
-      sessionStorage.removeItem('modulo:' + slug);
     }
-  } catch {}
+  } catch (e) {
+    console.warn('[loadModuloDettaglio] errore lettura sessionStorage:', e);
+  }
 
   const m = (state.index.moduli || []).find(x => x.slug === slug);
   if (!m) throw new Error('Modulo non trovato in indice: ' + slug);
@@ -8428,10 +8453,25 @@ async function loadModuloDettaglio(slug, options) {
   // (skipBoxes=true), pristine viene popolato in loadModuloBoxes() al momento del fetch.
   const pristineBoxes = boxesData ? JSON.parse(JSON.stringify(boxesData.box || [])) : null;
 
-  const obj = { boxesData, boxesSha, pristineBoxes, pageUrls, pageUrlsLight, formValues: {}, currentPage: 1 };
+  // Se sessionStorage aveva già metadati (boxesData, formValues, ecc. da una sessione precedente),
+  // li preservo e aggiungo solo pageUrls/pageUrlsLight appena fetchati. Altrimenti creo da zero.
+  const cachedMeta = state.moduliCache[slug] && state.moduliCache[slug].boxesData
+    ? state.moduliCache[slug] : null;
+  const obj = cachedMeta ? {
+    ...cachedMeta,
+    boxesData: cachedMeta.boxesData || boxesData,
+    boxesSha: cachedMeta.boxesSha || boxesSha,
+    pristineBoxes: cachedMeta.pristineBoxes || pristineBoxes,
+    pageUrls,
+    pageUrlsLight,
+  } : {
+    boxesData, boxesSha, pristineBoxes,
+    pageUrls, pageUrlsLight,
+    formValues: {},
+    currentPage: 1,
+  };
   state.moduliCache[slug] = obj;
-  // NON salvo in sessionStorage: i dataURL delle PNG possono pesare molti MB
-  // e supererebbero la quota di sessionStorage (5-10 MB tipicamente).
+  // _persistModulo NON salva pageUrls in sessionStorage (escluse perché pesanti)
   return obj;
 }
 
@@ -8796,27 +8836,40 @@ async function renderModulo(slug) {
 // Render "viewer-only": mostra solo le pagine PNG con bottoni Stampa/Condividi/Compila.
 // I box non sono caricati: l'utente vede subito il modulo senza l'overhead della lettura
 // di boxes.yml + setup del form di compilazione.
+// Helper unico per nav pagine + zoom toolbar dei moduli. Usato sia dal viewer (read-only)
+// che dal compilatore (editing form) — l'unica differenza erano le callback target.
+// mode: 'viewer' → callback changeModuloPageViewer / setModuloZoomViewer
+// mode: 'compilatore' → callback changeModuloPage / setModuloZoom
+function _renderModuloPageNav(slug, det, mode) {
+  const totalPages = det.pageUrls.length;
+  const cur = det.currentPage || 1;
+  const zoom = det.zoom || 1;
+  const fnPage = mode === 'viewer' ? 'changeModuloPageViewer' : 'changeModuloPage';
+  const fnZoom = mode === 'viewer' ? 'setModuloZoomViewer' : 'setModuloZoom';
+  const navHtml = totalPages > 1 ? `
+    <div class="mod-page-nav">
+      <button class="btn ghost mod-page-prev" ${cur <= 1 ? 'disabled' : ''} onclick="${fnPage}('${escapeJs(slug)}', ${cur - 1})" aria-label="Pagina precedente"><span class="mod-page-arrow">◀</span><span class="mod-page-text"> Precedente</span></button>
+      <span class="mod-page-indicator">Pagina ${cur} / ${totalPages}</span>
+      <button class="btn ghost mod-page-next" ${cur >= totalPages ? 'disabled' : ''} onclick="${fnPage}('${escapeJs(slug)}', ${cur + 1})" aria-label="Pagina successiva"><span class="mod-page-text">Successiva </span><span class="mod-page-arrow">▶</span></button>
+    </div>` : `<div class="mod-page-indicator" style="margin-bottom:8px;">Pagina unica</div>`;
+  const zoomToolbar = `
+    <div class="mod-zoom-toolbar">
+      <button class="btn ghost mod-zoom-btn" onclick="${fnZoom}('${escapeJs(slug)}', ${Math.max(0.5, zoom - 0.25)})" aria-label="Riduci zoom">−</button>
+      <span class="mod-zoom-indicator">${Math.round(zoom * 100)}%</span>
+      <button class="btn ghost mod-zoom-btn" onclick="${fnZoom}('${escapeJs(slug)}', ${Math.min(4, zoom + 0.25)})" aria-label="Aumenta zoom">+</button>
+      <button class="btn ghost mod-zoom-btn" onclick="${fnZoom}('${escapeJs(slug)}', 1)" aria-label="Reset zoom" title="Reset 100%">⟲</button>
+    </div>`;
+  return { navHtml, zoomToolbar };
+}
+
 function renderModuloViewer(slug, det) {
   const area = document.getElementById('mod-detail-area');
   if (!area) return;
   const { pageUrls, pageUrlsLight } = det;
   const displayUrls = pageUrlsLight && pageUrlsLight.length === pageUrls.length ? pageUrlsLight : pageUrls;
-  const totalPages = pageUrls.length;
   const cur = det.currentPage || 1;
   const zoom = det.zoom || 1;
-  const navHtml = totalPages > 1 ? `
-    <div class="mod-page-nav">
-      <button class="btn ghost mod-page-prev" ${cur <= 1 ? 'disabled' : ''} onclick="changeModuloPageViewer('${escapeJs(slug)}', ${cur - 1})" aria-label="Pagina precedente"><span class="mod-page-arrow">◀</span><span class="mod-page-text"> Precedente</span></button>
-      <span class="mod-page-indicator">Pagina ${cur} / ${totalPages}</span>
-      <button class="btn ghost mod-page-next" ${cur >= totalPages ? 'disabled' : ''} onclick="changeModuloPageViewer('${escapeJs(slug)}', ${cur + 1})" aria-label="Pagina successiva"><span class="mod-page-text">Successiva </span><span class="mod-page-arrow">▶</span></button>
-    </div>` : `<div class="mod-page-indicator" style="margin-bottom:8px;">Pagina unica</div>`;
-  const zoomToolbar = `
-    <div class="mod-zoom-toolbar">
-      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoomViewer('${escapeJs(slug)}', ${Math.max(0.5, zoom - 0.25)})" aria-label="Riduci zoom">−</button>
-      <span class="mod-zoom-indicator">${Math.round(zoom * 100)}%</span>
-      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoomViewer('${escapeJs(slug)}', ${Math.min(4, zoom + 0.25)})" aria-label="Aumenta zoom">+</button>
-      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoomViewer('${escapeJs(slug)}', 1)" aria-label="Reset zoom" title="Reset 100%">⟲</button>
-    </div>`;
+  const { navHtml, zoomToolbar } = _renderModuloPageNav(slug, det, 'viewer');
 
   area.innerHTML = `
     <div class="mod-toolbar" style="margin-bottom:16px;">
@@ -8835,20 +8888,14 @@ function renderModuloViewer(slug, det) {
     </div>`;
 }
 
-// Cambia pagina nel viewer-only
+// Cambia pagina nel viewer-only (versione legacy, ora wrapper della funzione unificata)
 function changeModuloPageViewer(slug, newPage) {
-  const c = state.moduliCache[slug];
-  if (!c) return;
-  c.currentPage = Math.max(1, Math.min(newPage, c.pageUrls.length));
-  renderModuloViewer(slug, c);
+  changeModuloPage(slug, newPage, 'viewer');
 }
 
-// Zoom nel viewer-only
+// Zoom nel viewer-only (versione legacy, ora wrapper della funzione unificata)
 function setModuloZoomViewer(slug, newZoom) {
-  const c = state.moduliCache[slug];
-  if (!c) return;
-  c.zoom = Math.max(0.5, Math.min(4, newZoom));
-  renderModuloViewer(slug, c);
+  setModuloZoom(slug, newZoom, 'viewer');
 }
 
 // Apre il compilatore: carica i box (se non già caricati) e renderizza il form completo.
@@ -8868,23 +8915,26 @@ async function apriModuloCompilatore(slug) {
 }
 
 // Apre la finestra di stampa con la pagina corrente del modulo
-function stampaModuloViewer(slug) {
-  const c = state.moduliCache[slug];
-  if (!c || !c.pageUrls || !c.pageUrls.length) return toast('Pagine non caricate', 'error');
-  // Apre nuova finestra con tutte le pagine ad alta risoluzione, lancia print.
+// Helper unico per stampa modulo (A4 fronte/retro). Usato da:
+// - stampaModuloViewer: passa le pagine originali ad alta risoluzione (preview viewer)
+// - stampaModuloCompilato: passa i canvas dataURL renderizzati con i valori utente
+//
+// CSS critico per print:
+// - @page A4 con margin 0: il browser usa l'intera pagina A4.
+// - .page = container 210×297mm con object-fit:contain → l'immagine entra senza overflow.
+//   Se l'aspect ratio del PNG sorgente è diverso da A4, lo spazio extra resta bianco MA
+//   resta DENTRO la stessa pagina fisica — niente pagina bianca extra.
+// - break-after: page sui contenitori (tranne l'ultimo) per garantire una pagina fisica
+//   per ogni pagina logica → il driver di stampa può abilitare fronte/retro.
+// - break-inside: avoid per evitare che il contenuto si spezzi su due pagine.
+function _stampaPagineA4(slug, pageDataUrls, suffix) {
+  if (!pageDataUrls || !pageDataUrls.length) return toast('Nessuna pagina da stampare', 'error');
   const w = window.open('', '_blank');
   if (!w) return toast('Popup bloccati: abilita i popup per stampare', 'warning', 4000);
   const m = (state.index.moduli || []).find(x => x.slug === slug);
   const titolo = m ? (m.titolo || slug) : slug;
-  // CSS critico per print:
-  // - @page A4 con margin 0: il browser usa l'intera pagina A4.
-  // - .page = container 210×297mm con object-fit:contain → l'immagine entra senza overflow.
-  //   Se l'aspect ratio del PNG sorgente è diverso da A4, lo spazio extra resta bianco MA
-  //   resta DENTRO la stessa pagina fisica — niente pagina bianca extra.
-  // - break-after: page sui contenitori (tranne l'ultimo) per garantire una pagina fisica
-  //   per ogni pagina logica → il driver di stampa può abilitare fronte/retro.
-  // - break-inside: avoid per evitare che il contenuto si spezzi su due pagine.
-  w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(titolo)}</title>
+  const titoloHead = suffix ? `${titolo} - ${suffix}` : titolo;
+  w.document.write(`<!DOCTYPE html><html><head><title>${escapeHtml(titoloHead)}</title>
     <style>
       @page { size: A4 portrait; margin: 0; }
       html, body { margin: 0; padding: 0; background: white; }
@@ -8900,10 +8950,7 @@ function stampaModuloViewer(slug) {
         break-after: page;
         break-inside: avoid;
       }
-      .page:last-child {
-        page-break-after: auto;
-        break-after: auto;
-      }
+      .page:last-child { page-break-after: auto; break-after: auto; }
       .page img {
         max-width: 100%;
         max-height: 100%;
@@ -8913,10 +8960,16 @@ function stampaModuloViewer(slug) {
         display: block;
       }
     </style></head><body>
-    ${c.pageUrls.map((u, i) => `<div class="page"><img src="${u}" alt="Pagina ${i+1}"></div>`).join('')}
+    ${pageDataUrls.map((u, i) => `<div class="page"><img src="${u}" alt="Pagina ${i+1}"></div>`).join('')}
     <script>window.onload = () => setTimeout(() => window.print(), 300);<\/script>
     </body></html>`);
   w.document.close();
+}
+
+function stampaModuloViewer(slug) {
+  const c = state.moduliCache[slug];
+  if (!c || !c.pageUrls || !c.pageUrls.length) return toast('Pagine non caricate', 'error');
+  _stampaPagineA4(slug, c.pageUrls);
 }
 
 // Condivide il modulo via Web Share API (se disponibile) o copia link
@@ -9011,8 +9064,14 @@ function renderModuloCompilatore(slug, det) {
             ${formHtml}
           </div>
           <div class="mod-form-actions" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn primary" onclick="downloadModuloPdf('${escapeJs(slug)}')">Scarica PDF</button>
-            <button class="btn ghost" onclick="downloadModuloPng('${escapeJs(slug)}')">Scarica PNG</button>
+            <div class="mod-dropdown-wrap">
+              <button class="btn primary" onclick="toggleModuloDownloadMenu(event,'${escapeJs(slug)}')">Scarica ▾</button>
+              <div class="mod-dropdown-menu" id="mod-download-menu-${escapeJs(slug)}">
+                <button type="button" onclick="downloadModuloPdf('${escapeJs(slug)}');closeModuloDownloadMenu();">📄 PDF</button>
+                <button type="button" onclick="downloadModuloPng('${escapeJs(slug)}');closeModuloDownloadMenu();">🖼 PNG</button>
+              </div>
+            </div>
+            <button class="btn ghost" onclick="stampaModuloCompilato('${escapeJs(slug)}')">🖨 Stampa</button>
             ${navigator.share ? `<button class="btn ghost" onclick="shareModulo('${escapeJs(slug)}')">Condividi</button>` : ''}
             <button class="btn ghost" onclick="resetModuloFormValues('${escapeJs(slug)}')" style="margin-left:auto;">Resetta</button>
           </div>
@@ -9035,7 +9094,7 @@ function toggleModuloEditMode(slug) {
   }
   c.editMode = !c.editMode;
   c.selectedBoxIdx = null;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   renderModuloCompilatore(slug, c);
 }
 
@@ -9141,7 +9200,7 @@ function selectModuloBox(slug, idx) {
   const b = (c.boxesData.box || [])[idx];
   const pageChanged = b && (b.pagina || 1) !== c.currentPage;
   if (pageChanged) c.currentPage = b.pagina || 1;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   if (pageChanged) {
     renderModuloCompilatore(slug, c);
   } else {
@@ -9165,7 +9224,7 @@ function addModuloBox(slug) {
   if (!c.boxesData.box) c.boxesData.box = [];
   c.boxesData.box.push(newBox);
   c.selectedBoxIdx = c.boxesData.box.length - 1;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   refreshModuloOverlays(slug);
   _refreshModuloEditorPanelLight(slug);
 }
@@ -9180,7 +9239,7 @@ function duplicateModuloBox(slug, idx) {
   copy.y = Math.min(95, (copy.y || 0) + 2);
   c.boxesData.box.push(copy);
   c.selectedBoxIdx = c.boxesData.box.length - 1;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   refreshModuloOverlays(slug);
   _refreshModuloEditorPanelLight(slug);
 }
@@ -9192,7 +9251,7 @@ function deleteModuloBox(slug, idx) {
   if (!confirm('Eliminare questo box?')) return;
   c.boxesData.box.splice(idx, 1);
   c.selectedBoxIdx = null;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   refreshModuloOverlays(slug);
   _refreshModuloEditorPanelLight(slug);
 }
@@ -9217,7 +9276,7 @@ function changeBoxFontSize(slug, idx, delta) {
     const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
     if (boxEl) delete boxEl.dataset.baseFontSize;
   }
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   refreshModuloOverlays(slug);
 }
 
@@ -9239,7 +9298,7 @@ function setBoxAttr(slug, idx, attr, value) {
       if (boxEl) delete boxEl.dataset.baseFontSize;
     }
   }
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   refreshModuloOverlays(slug);
   // Re-render del panel SOLO quando cambia 'campo' (le opzioni del dropdown formato dipendono
   // dal tipo del campo selezionato e devono essere ricostruite). Per align/font_size/formato
@@ -9265,7 +9324,7 @@ function setBoxTipo(slug, idx, tipo) {
     delete b.tipo;
     delete b.label;
   }
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   refreshModuloOverlays(slug);
   _refreshModuloEditorPanelLight(slug);
 }
@@ -9358,7 +9417,7 @@ function updateModuloField(slug, fieldId, subKey, val) {
   } else {
     c.formValues[fieldId] = val;
   }
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   // Aggiorno solo gli overlay box, non l'intero form (evita perdita focus)
   refreshModuloOverlays(slug);
 }
@@ -9427,7 +9486,7 @@ function selezionaPazienteRecente(slug, fieldId, idx) {
   c.formValues[fieldId].cognome = p.cognome;
   c.formValues[fieldId].nome = p.nome;
   c.formValues[fieldId].dataNascita = p.dataNascita;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   // Aggiorno gli input visivamente (no full re-render: preservo focus altri campi)
   const cognomeInput = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="cognome"]`);
   const nomeInput = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="nome"]`);
@@ -9456,7 +9515,7 @@ function setModuloMedicoMode(slug, fieldId, modalita) {
     v.nome = '';
   }
   c.formValues[fieldId] = v;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   // Re-render del compilatore per aggiornare i campi disabled/abilitati e i loro valori
   renderModuloCompilatore(slug, c);
 }
@@ -9466,7 +9525,7 @@ function resetModuloFormValues(slug) {
   const c = state.moduliCache[slug];
   if (!c) return;
   c.formValues = {};
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   renderModuloCompilatore(slug, c);
 }
 
@@ -9477,24 +9536,9 @@ function _renderModuloPaginatedPreview(slug, det) {
   // se disponibile: rendering molto più veloce, scroll/zoom fluidi anche su mobile.
   // pageUrls (originali alta risoluzione) restano disponibili per la generazione PDF/PNG output.
   const displayUrls = pageUrlsLight && pageUrlsLight.length === pageUrls.length ? pageUrlsLight : pageUrls;
-  const totalPages = pageUrls.length;
   const cur = det.currentPage || 1;
   const zoom = det.zoom || 1;
-  const navHtml = totalPages > 1 ? `
-    <div class="mod-page-nav">
-      <button class="btn ghost mod-page-prev" ${cur <= 1 ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur - 1})" aria-label="Pagina precedente"><span class="mod-page-arrow">◀</span><span class="mod-page-text"> Precedente</span></button>
-      <span class="mod-page-indicator">Pagina ${cur} / ${totalPages}</span>
-      <button class="btn ghost mod-page-next" ${cur >= totalPages ? 'disabled' : ''} onclick="changeModuloPage('${escapeJs(slug)}', ${cur + 1})" aria-label="Pagina successiva"><span class="mod-page-text">Successiva </span><span class="mod-page-arrow">▶</span></button>
-    </div>` : `<div class="mod-page-indicator" style="margin-bottom:8px;">Pagina unica</div>`;
-
-  // Toolbar zoom (utile soprattutto in editMode per posizionare box piccoli)
-  const zoomToolbar = `
-    <div class="mod-zoom-toolbar">
-      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoom('${escapeJs(slug)}', ${Math.max(0.5, zoom - 0.25)})" aria-label="Riduci zoom">−</button>
-      <span class="mod-zoom-indicator">${Math.round(zoom * 100)}%</span>
-      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoom('${escapeJs(slug)}', ${Math.min(4, zoom + 0.25)})" aria-label="Aumenta zoom">+</button>
-      <button class="btn ghost mod-zoom-btn" onclick="setModuloZoom('${escapeJs(slug)}', 1)" aria-label="Reset zoom" title="Reset 100%">⟲</button>
-    </div>`;
+  const { navHtml, zoomToolbar } = _renderModuloPageNav(slug, det, 'compilatore');
 
   return `
     ${navHtml}
@@ -9510,25 +9554,28 @@ function _renderModuloPaginatedPreview(slug, det) {
 }
 
 // Cambia il livello di zoom della preview pagina (1.0 = 100%, range 0.5-4.0)
-function setModuloZoom(slug, newZoom) {
+function setModuloZoom(slug, newZoom, mode) {
   const c = state.moduliCache[slug];
   if (!c) return;
   const oldZoom = c.zoom || 1;
   newZoom = Math.max(0.5, Math.min(4, newZoom));
   if (newZoom === oldZoom) return;
+  mode = mode || 'compilatore';
 
   // Salvo il centro visibile della pagina PRIMA del re-render, così posso ricentrarlo dopo.
   // Il container scrollabile è .mod-page-scroll. Calcolo la posizione del punto centrale del
   // viewport rispetto al contenuto totale (in coordinate "non zoomate").
-  const scrollEl = document.getElementById('mod-page-scroll-' + slug);
+  // Nota: in mode='viewer' lo scroll element è dentro renderModuloViewer (no id-suffisso slug),
+  // quindi cerchiamo per classe; in mode='compilatore' c'è il suffisso `mod-page-scroll-${slug}`.
+  const scrollEl = mode === 'viewer'
+    ? document.querySelector('#mod-viewer-section .mod-page-scroll')
+    : document.getElementById('mod-page-scroll-' + slug);
   let centerXInContent = null, centerYInContent = null;
   if (scrollEl) {
     const visW = scrollEl.clientWidth;
     const visH = scrollEl.clientHeight;
-    // Centro del viewport in coordinate del contenuto (post-zoom)
     const cxPost = scrollEl.scrollLeft + visW / 2;
     const cyPost = scrollEl.scrollTop + visH / 2;
-    // Converto in "frazione del contenuto" (indipendente dallo zoom): 0..1
     const totalWPost = scrollEl.scrollWidth;
     const totalHPost = scrollEl.scrollHeight;
     if (totalWPost > 0) centerXInContent = cxPost / totalWPost;
@@ -9536,25 +9583,30 @@ function setModuloZoom(slug, newZoom) {
   }
 
   c.zoom = newZoom;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  const sec = document.getElementById('mod-preview-section');
-  if (sec) {
-    sec.innerHTML = _renderModuloPaginatedPreview(slug, c);
-    // Dopo il re-render: ricentro lo scroll sul punto che era al centro prima.
-    // requestAnimationFrame perché serve aspettare che il browser abbia layout-ato il nuovo contenuto.
-    if (centerXInContent != null) {
-      requestAnimationFrame(() => {
-        const newScrollEl = document.getElementById('mod-page-scroll-' + slug);
-        if (!newScrollEl) return;
-        const visW = newScrollEl.clientWidth;
-        const visH = newScrollEl.clientHeight;
-        const totalW = newScrollEl.scrollWidth;
-        const totalH = newScrollEl.scrollHeight;
-        // Voglio: scrollLeft + visW/2 == centerXInContent * totalW
-        newScrollEl.scrollLeft = Math.max(0, centerXInContent * totalW - visW / 2);
-        newScrollEl.scrollTop = Math.max(0, centerYInContent * totalH - visH / 2);
-      });
-    }
+  _persistModulo(slug);
+
+  // Re-render: viewer ricostruisce tutto, compilatore solo la sezione preview
+  if (mode === 'viewer') {
+    renderModuloViewer(slug, c);
+  } else {
+    const sec = document.getElementById('mod-preview-section');
+    if (sec) sec.innerHTML = _renderModuloPaginatedPreview(slug, c);
+  }
+
+  // Dopo il re-render: ricentro lo scroll sul punto che era al centro prima.
+  if (centerXInContent != null) {
+    requestAnimationFrame(() => {
+      const newScrollEl = mode === 'viewer'
+        ? document.querySelector('#mod-viewer-section .mod-page-scroll')
+        : document.getElementById('mod-page-scroll-' + slug);
+      if (!newScrollEl) return;
+      const visW = newScrollEl.clientWidth;
+      const visH = newScrollEl.clientHeight;
+      const totalW = newScrollEl.scrollWidth;
+      const totalH = newScrollEl.scrollHeight;
+      newScrollEl.scrollLeft = Math.max(0, centerXInContent * totalW - visW / 2);
+      newScrollEl.scrollTop = Math.max(0, centerYInContent * totalH - visH / 2);
+    });
   }
 }
 
@@ -9564,13 +9616,18 @@ function onModuloPageImgLoad(slug, imgEl) {
 }
 
 // Cambia pagina visualizzata: re-renderizzo l'area preview (overlay si rinnoverà al carico img)
-function changeModuloPage(slug, newPage) {
+function changeModuloPage(slug, newPage, mode) {
   const c = state.moduliCache[slug];
   if (!c) return;
   c.currentPage = Math.max(1, Math.min(newPage, c.pageUrls.length));
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
-  const sec = document.getElementById('mod-preview-section');
-  if (sec) sec.innerHTML = _renderModuloPaginatedPreview(slug, c);
+  _persistModulo(slug);
+  mode = mode || 'compilatore';
+  if (mode === 'viewer') {
+    renderModuloViewer(slug, c);
+  } else {
+    const sec = document.getElementById('mod-preview-section');
+    if (sec) sec.innerHTML = _renderModuloPaginatedPreview(slug, c);
+  }
 }
 
 // Ridisegna gli overlay del modulo (chiamato da updateModuloField + onModuloPageImgLoad).
@@ -9702,7 +9759,7 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
     // Tap su area vuota: deseleziono il box senza full re-render (più fluido)
     if (c.selectedBoxIdx != null) {
       c.selectedBoxIdx = null;
-      try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+      _persistModulo(slug);
       // Re-render leggero: solo overlay + lista box nel pannello
       refreshModuloOverlays(slug);
       _refreshModuloEditorPanelLight(slug);
@@ -9738,7 +9795,7 @@ function _bindModuloOverlayInteractions(slug, layer, img) {
       if (!isSelected && !handleType) {
         // Prima volta che lo clicco: solo seleziono, non draggo (evita drift accidentali)
         c.selectedBoxIdx = idx;
-        try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+        _persistModulo(slug);
         // Re-render leggero (overlay+pannello) invece del full
         refreshModuloOverlays(slug);
         _refreshModuloEditorPanelLight(slug);
@@ -9915,7 +9972,7 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
       boxEl.style.left = box.x + '%';
       boxEl.style.top = box.y + '%';
     }
-    try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+    _persistModulo(slug);
     // NESSUN re-render full alla fine del drag.
   };
 
@@ -10056,12 +10113,19 @@ function _moduloOutputFileName(slug, ext) {
 }
 
 // Verifica che i campi required siano compilati. Restituisce array di label dei campi mancanti.
+// Considera SOLO i campi effettivamente referenziati dai box del modulo: se un campo è
+// dichiarato required nel template ma nessun box lo usa, non c'è motivo di richiederlo
+// (non comparirebbe comunque nell'output PDF/PNG).
 function _validateModuloRequired(slug) {
   const c = state.moduliCache[slug];
   if (!c) return [];
   const missing = [];
+  // Set dei campi usati dai box (esclude box firma, che non ha campo associato)
+  const campiUsati = new Set();
+  (c.boxesData.box || []).forEach(b => { if (b.campo) campiUsati.add(b.campo); });
   (c.boxesData.campi_richiesti || []).forEach(def => {
     if (!def.required) return;
+    if (!campiUsati.has(def.id)) return;  // campo non usato → non richiesto in pratica
     const v = c.formValues[def.id];
     if (def.tipo === 'paziente_completo') {
       if (!v || !v.cognome || !v.nome) missing.push(def.label);
@@ -10076,6 +10140,33 @@ function _validateModuloRequired(slug) {
 
 // Genera PNG (singola pagina o multi-page strip) e scarica.
 // Per moduli multi-pagina facciamo download multipli (una PNG per pagina).
+// Toggle del menu dropdown "Scarica" (PDF/PNG). Click outside chiude.
+function toggleModuloDownloadMenu(evt, slug) {
+  evt.stopPropagation();
+  const menu = document.getElementById(`mod-download-menu-${slug}`);
+  if (!menu) return;
+  const isOpen = menu.classList.contains('open');
+  // Chiudi tutti i dropdown aperti (solo uno alla volta)
+  document.querySelectorAll('.mod-dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (!isOpen) {
+    menu.classList.add('open');
+    // Click outside chiude
+    setTimeout(() => {
+      const closer = (e) => {
+        if (!menu.contains(e.target)) {
+          menu.classList.remove('open');
+          document.removeEventListener('click', closer);
+        }
+      };
+      document.addEventListener('click', closer);
+    }, 0);
+  }
+}
+
+function closeModuloDownloadMenu() {
+  document.querySelectorAll('.mod-dropdown-menu.open').forEach(m => m.classList.remove('open'));
+}
+
 async function downloadModuloPng(slug) {
   const missing = _validateModuloRequired(slug);
   if (missing.length && !confirm('Campi obbligatori non compilati:\n• ' + missing.join('\n• ') + '\n\nGenerare comunque il modulo?')) return;
@@ -10098,8 +10189,8 @@ async function downloadModuloPng(slug) {
 async function downloadModuloPdf(slug) {
   const missing = _validateModuloRequired(slug);
   if (missing.length && !confirm('Campi obbligatori non compilati:\n• ' + missing.join('\n• ') + '\n\nGenerare comunque il modulo?')) return;
-  if (!window.jspdf || !window.jspdf.jsPDF) return toast('Libreria PDF non caricata', 'error');
   try {
+    await _ensureLib('jspdf');
     const canvases = await _renderModuloTutteLePagine(slug);
     const blob = await _canvasesToPdfBlob(canvases);
     _triggerDownload(blob, _moduloOutputFileName(slug, 'pdf'));
@@ -10136,6 +10227,24 @@ async function _canvasesToPdfBlob(canvases) {
   return pdf.output('blob');
 }
 
+// Stampa il modulo COMPILATO: rende ogni pagina come canvas (con box riempiti), apre una
+// finestra con tutte le pagine in formato A4 e lancia il dialog di stampa del browser.
+// Stesso approccio di stampaModuloViewer ma con le immagini canvas riempite invece delle PNG vuote.
+async function stampaModuloCompilato(slug) {
+  const missing = _validateModuloRequired(slug);
+  if (missing.length && !confirm('Campi obbligatori non compilati:\n• ' + missing.join('\n• ') + '\n\nStampare comunque il modulo?')) return;
+  try {
+    const canvases = await _renderModuloTutteLePagine(slug);
+    if (!canvases.length) return toast('Nessuna pagina da stampare', 'error');
+    // Converto ogni canvas in dataURL JPEG (più leggero del PNG, qualità 0.92 sufficiente per stampa)
+    const pageDataUrls = canvases.map(c => c.toDataURL('image/jpeg', 0.92));
+    _stampaPagineA4(slug, pageDataUrls, 'compilato');
+  } catch (e) {
+    console.error(e);
+    toast('Errore stampa: ' + e.message, 'error');
+  }
+}
+
 // Trigger download di un Blob (cross-browser)
 function _triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -10162,8 +10271,13 @@ async function shareModulo(slug) {
     let file;
     const m = (state.index.moduli || []).find(x => x.slug === slug);
     const title = m ? (m.titolo || slug) : slug;
-    // PDF se supportato + jsPDF disponibile, altrimenti PNG
-    if (window.jspdf && window.jspdf.jsPDF) {
+    // Provo a caricare jsPDF (lazy): se OK genero PDF, altrimenti fallback a PNG prima pagina
+    let canUsePdf = false;
+    try {
+      await _ensureLib('jspdf');
+      canUsePdf = !!(window.jspdf && window.jspdf.jsPDF);
+    } catch {}
+    if (canUsePdf) {
       const blob = await _canvasesToPdfBlob(canvases);
       file = new File([blob], _moduloOutputFileName(slug, 'pdf'), { type: 'application/pdf' });
     } else {
@@ -10255,7 +10369,7 @@ async function salvaModuloBoxes(slug) {
 
     // 3) Aggiorna snapshot pristine (= il salvato è ora il "nuovo pristine")
     c.pristineBoxes = JSON.parse(JSON.stringify(c.boxesData.box || []));
-    try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+    _persistModulo(slug);
 
     toast('Modifiche salvate su GitHub', 'success');
     renderModuloCompilatore(slug, c);
@@ -10279,7 +10393,7 @@ function scartaModuloBoxesModifiche(slug) {
   if (!confirm('Scartare tutte le modifiche locali ai box?\n\nLe modifiche non salvate andranno perse.')) return;
   c.boxesData.box = JSON.parse(JSON.stringify(c.pristineBoxes));
   c.selectedBoxIdx = null;
-  try { sessionStorage.setItem('modulo:' + slug, JSON.stringify(c)); } catch {}
+  _persistModulo(slug);
   renderModuloCompilatore(slug, c);
   toast('Modifiche scartate', 'info');
 }
@@ -10490,7 +10604,8 @@ async function _handleNuovoModuloFiles(fileList) {
 
 // Splitta un PDF in pagine PNG via PDF.js. Renderizza ogni pagina a 200 DPI.
 async function _processPdfToPages(file, progressEl) {
-  if (!window.pdfjsLib) throw new Error('PDF.js non caricato');
+  // PDF.js caricata lazy: necessario await prima dell'uso
+  await _ensureLib('pdfjs');
   const arrayBuf = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuf }).promise;
   const SCALE = 2.0;  // ~150-200 DPI: buon compromesso qualità/dimensione
@@ -10518,12 +10633,11 @@ async function _processImageToPage(file, progressEl) {
   let blob = file;
   // Se è grossa o non-PNG, comprimi/riconverti
   if (file.size > 2 * 1024 * 1024 || !file.type.includes('png')) {
-    if (window.imageCompression) {
-      try {
-        blob = await window.imageCompression(file, { maxSizeMB: 2, maxWidthOrHeight: 2400, useWebWorker: true });
-      } catch (e) {
-        console.warn('[nuovoModulo] compressione fallita, uso originale:', e);
-      }
+    try {
+      await _ensureLib('imageCompression');
+      blob = await window.imageCompression(file, { maxSizeMB: 2, maxWidthOrHeight: 2400, useWebWorker: true });
+    } catch (e) {
+      console.warn('[nuovoModulo] compressione fallita, uso originale:', e);
     }
   }
   const dataUrl = await new Promise((resolve, reject) => {
@@ -10536,6 +10650,99 @@ async function _processImageToPage(file, progressEl) {
 }
 
 // Conferma e crea il modulo: upload PNG + boxes.yml + aggiorna index.yml
+// Boxes data di default per un nuovo modulo: 3 campi standard, 0 box.
+// L'admin disegnerà i box dopo la creazione tramite "Modifica box" sull'immagine.
+function _nuovoModuloDefaultBoxesData() {
+  return {
+    campi_richiesti: [
+      { id: 'paziente', label: 'Paziente', tipo: 'paziente_completo', required: true },
+      { id: 'medico', label: 'Medico', tipo: 'medico_nome', required: true },
+      { id: 'data', label: 'Data', tipo: 'data', default: 'oggi' }
+    ],
+    box: []
+  };
+}
+
+// STEP 1 — Upload delle PNG di ogni pagina come binari sul repo.
+async function _uploadPaginePNG(slug, pages, progressEl) {
+  for (let i = 0; i < pages.length; i++) {
+    if (progressEl) progressEl.textContent = `Upload pagina ${i+1}/${pages.length}…`;
+    const page = pages[i];
+    const path = `content/moduli/${slug}/page-${i+1}.png`;
+    // Converto blob in base64 (browser-safe, no atob su binari)
+    const base64 = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result.split(',')[1]);
+      r.onerror = reject;
+      r.readAsDataURL(page.blob);
+    });
+    await gh.putFile(path, base64, null, `Nuovo modulo ${slug}: pagina ${i+1}`, true);
+  }
+}
+
+// STEP 2 — Crea boxes.yml col template default.
+async function _creaBoxesYmlIniziale(slug, titolo) {
+  const boxesData = _nuovoModuloDefaultBoxesData();
+  const yamlStr = `# Box e campi per "${titolo}".\n# Coordinate in PERCENTUALE (0-100) sulla pagina, origine top-left.\n# Creato da ${state.session.username || '?'} il ${new Date().toLocaleString('it-IT')}.\n# Per disegnare i box, apri il modulo nell'app e usa "Modifica box".\n\n` +
+    jsyaml.dump(boxesData, { lineWidth: 120, noRefs: true, sortKeys: false });
+  await gh.putFile(`content/moduli/${slug}/boxes.yml`, yamlStr, null, `Nuovo modulo ${slug}: boxes.yml`);
+}
+
+// STEP 3 — Aggiorna content/moduli/index.yml aggiungendo la nuova entry.
+// Restituisce la entry creata (per popolare lo state locale subito).
+async function _appendModuloIndex(slug, draft) {
+  const indexPath = 'content/moduli/index.yml';
+  const today = new Date().toISOString().slice(0, 10);
+  const newEntry = {
+    slug,
+    titolo: draft.titolo.trim(),
+    descrizione: draft.descrizione.trim() || undefined,
+    pagine: draft.pages.length,
+    autore: draft.autore.trim() || undefined,
+    aggiornato: today
+  };
+  // Rimuovi chiavi undefined (jsyaml le scriverebbe come null, sporcando il file)
+  Object.keys(newEntry).forEach(k => newEntry[k] === undefined && delete newEntry[k]);
+
+  let indexFile = null;
+  try { indexFile = await gh.getFile(indexPath); } catch {}
+  let idx = { moduli: [] };
+  if (indexFile) {
+    idx = jsyaml.load(indexFile.content) || { moduli: [] };
+    if (!Array.isArray(idx.moduli)) idx.moduli = [];
+  }
+  idx.moduli.push(newEntry);
+  const newIndexContent = jsyaml.dump(idx, { lineWidth: 120, noRefs: true, sortKeys: false });
+  await gh.putFile(indexPath, newIndexContent, indexFile ? indexFile.sha : null, `Nuovo modulo: ${slug}`);
+  return { ...newEntry, path: indexPath };
+}
+
+// STEP 4 — Pre-popola state.moduliCache coi dataUrl locali (no roundtrip CDN).
+// Evita il delay di propagazione raw.githubusercontent.com (può servire 404 per
+// qualche secondo dopo il primo PUT). L'utente vede subito le PNG.
+// Al refresh dell'app, loadModuloDettaglio rifetcherà dal repo (Contents API).
+async function _prepoplaCacheModulo(slug, draft) {
+  const localPageUrls = draft.pages.map(p => p.dataUrl);
+  // Genero anche versioni light (max 1200px JPEG q.85) per editor/viewer più fluidi.
+  // Le originali restano in pageUrls per la generazione PDF/PNG output ad alta risoluzione.
+  const localPageUrlsLight = [];
+  for (const url of localPageUrls) {
+    try { localPageUrlsLight.push(await _resizeImageDataUrl(url, 1200)); }
+    catch { localPageUrlsLight.push(url); }
+  }
+  state.moduliCache = state.moduliCache || {};
+  state.moduliCache[slug] = {
+    boxesData: _nuovoModuloDefaultBoxesData(),
+    boxesSha: null,  // verrà popolato al prossimo getFile (al refresh)
+    pristineBoxes: [],
+    pageUrls: localPageUrls,           // originali alta risoluzione
+    pageUrlsLight: localPageUrlsLight, // versioni ridimensionate per editor
+    formValues: {},
+    currentPage: 1
+  };
+  // NB: NON salvato in sessionStorage (vedi _persistModulo: pageUrls escluse perché pesanti)
+}
+
 async function _confermaNuovoModulo() {
   const draft = _nuovoModuloDraft;
   if (!draft) return;
@@ -10549,99 +10756,18 @@ async function _confermaNuovoModulo() {
   if (progressEl) progressEl.style.display = 'block';
 
   try {
-    // 1. Carica le PNG sul repo
-    for (let i = 0; i < draft.pages.length; i++) {
-      if (progressEl) progressEl.textContent = `Upload pagina ${i+1}/${draft.pages.length}…`;
-      const page = draft.pages[i];
-      const path = `content/moduli/${slug}/page-${i+1}.png`;
-      // Converto blob in base64 (browser-safe)
-      const base64 = await new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result.split(',')[1]);
-        r.onerror = reject;
-        r.readAsDataURL(page.blob);
-      });
-      await gh.putFile(path, base64, null, `Nuovo modulo ${slug}: pagina ${i+1}`, true);
-    }
-
-    // 2. Crea boxes.yml con campi default e box vuoti
+    await _uploadPaginePNG(slug, draft.pages, progressEl);
     if (progressEl) progressEl.textContent = 'Creazione boxes.yml…';
-    const boxesData = {
-      campi_richiesti: [
-        { id: 'paziente', label: 'Paziente', tipo: 'paziente_completo', required: true },
-        { id: 'medico', label: 'Medico', tipo: 'medico_nome', required: true },
-        { id: 'data', label: 'Data', tipo: 'data', default: 'oggi' }
-      ],
-      box: []
-    };
-    const yamlStr = `# Box e campi per "${draft.titolo}".\n# Coordinate in PERCENTUALE (0-100) sulla pagina, origine top-left.\n# Creato da ${state.session.username || '?'} il ${new Date().toLocaleString('it-IT')}.\n# Per disegnare i box, apri il modulo nell'app e usa "Modifica box".\n\n` +
-      jsyaml.dump(boxesData, { lineWidth: 120, noRefs: true, sortKeys: false });
-    await gh.putFile(`content/moduli/${slug}/boxes.yml`, yamlStr, null, `Nuovo modulo ${slug}: boxes.yml`);
-
-    // 3. Aggiorna content/moduli/index.yml aggiungendo la nuova entry
+    await _creaBoxesYmlIniziale(slug, draft.titolo);
     if (progressEl) progressEl.textContent = 'Aggiornamento index.yml…';
-    const indexPath = 'content/moduli/index.yml';
-    const today = new Date().toISOString().slice(0, 10);
-    const newEntry = {
-      slug,
-      titolo: draft.titolo.trim(),
-      descrizione: draft.descrizione.trim() || undefined,
-      pagine: draft.pages.length,
-      autore: draft.autore.trim() || undefined,
-      aggiornato: today
-    };
-    // Rimuovi chiavi undefined (jsyaml le scriverebbe come null)
-    Object.keys(newEntry).forEach(k => newEntry[k] === undefined && delete newEntry[k]);
+    const indexEntry = await _appendModuloIndex(slug, draft);
 
-    let indexFile = null;
-    try { indexFile = await gh.getFile(indexPath); } catch {}
-    let idx = { moduli: [] };
-    if (indexFile) {
-      idx = jsyaml.load(indexFile.content) || { moduli: [] };
-      if (!Array.isArray(idx.moduli)) idx.moduli = [];
-    }
-    idx.moduli.push(newEntry);
-    const newIndexContent = jsyaml.dump(idx, { lineWidth: 120, noRefs: true, sortKeys: false });
-    await gh.putFile(indexPath, newIndexContent, indexFile ? indexFile.sha : null, `Nuovo modulo: ${slug}`);
-
-    // 4. Aggiorna stato locale (così appare subito senza rebuildIndex)
-    state.index.moduli.push({ ...newEntry, path: indexPath });
+    // Aggiorna stato locale (così appare subito senza rebuildIndex)
+    state.index.moduli.push(indexEntry);
     rebuildSearchIndex();
     renderNavTree();
 
-    // 5. Pre-popolo state.moduliCache[slug] coi dati appena caricati: usa i dataUrl locali
-    //    per le pagine, evitando il delay di propagazione raw.githubusercontent.com (che
-    //    può servire 404 per qualche secondo dopo il primo PUT). L'utente vede subito le PNG.
-    //    Al prossimo refresh dell'app, loadModuloDettaglio rifetcherà gli URL CDN definitivi.
-    const localPageUrls = draft.pages.map(p => p.dataUrl);
-    // Genero anche versioni light (max 1200px JPEG q.85) per editor/viewer più fluidi.
-    // Le originali restano in pageUrls per la generazione PDF/PNG output ad alta risoluzione.
-    const localPageUrlsLight = [];
-    for (const url of localPageUrls) {
-      try { localPageUrlsLight.push(await _resizeImageDataUrl(url, 1200)); }
-      catch { localPageUrlsLight.push(url); }
-    }
-    const boxesDataObj = {
-      campi_richiesti: [
-        { id: 'paziente', label: 'Paziente', tipo: 'paziente_completo', required: true },
-        { id: 'medico', label: 'Medico', tipo: 'medico_nome', required: true },
-        { id: 'data', label: 'Data', tipo: 'data', default: 'oggi' }
-      ],
-      box: []
-    };
-    state.moduliCache = state.moduliCache || {};
-    state.moduliCache[slug] = {
-      boxesData: boxesDataObj,
-      boxesSha: null,  // verrà popolato al prossimo getFile (al refresh)
-      pristineBoxes: [],
-      pageUrls: localPageUrls,        // originali alta risoluzione
-      pageUrlsLight: localPageUrlsLight, // versioni ridimensionate per editor
-      formValues: {},
-      currentPage: 1
-    };
-    // NB: NON salvo questo cache in sessionStorage perché i dataUrl PNG possono essere
-    // grandi (ogni pagina può pesare megabytes) e supererebbero la quota. La cache
-    // in-memory resta valida finché l'utente non ricarica l'app.
+    await _prepoplaCacheModulo(slug, draft);
 
     _nuovoModuloDraft = null;
     closeModal();
@@ -10726,18 +10852,41 @@ function renderCalendario(params) {
   const cal = state.calendarState;
   if (params && params.y) cal.year = +params.y;
   if (params && params.m !== undefined) cal.month = +params.m;
-  // Carica filtri persistiti
+
+  // Render scheletro completo (chiamato solo all'apertura della view).
+  // I successivi aggiornamenti (cambio mese, click giorno, toggle filtro) usano i refresh
+  // granulari `_calRefresh*` che riscrivono solo la sezione interessata → evita il flicker
+  // del full re-render e riduce la latenza percepita su mobile da ~100ms a ~20ms.
+  $('main-content').innerHTML = `
+    <div class="page-head">
+      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Calendario</div>
+      <h1 class="page-title">Calendario</h1>
+    </div>
+
+    <div class="cal-wrap">
+      <div>
+        <div class="cal-head" id="cal-controls"></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-legend" id="cal-legend"></div>
+      </div>
+      <div class="cal-events" id="cal-events"></div>
+    </div>
+  `;
+  _calRefreshControls();
+  _calRefreshGrid();
+  _calRefreshLegend();
+  _calRefreshEvents();
+}
+
+// Calcola lo stato derivato condiviso da grid/events (filtri categoria, eventi byDate).
+// Funzione pure: nessun side effect, output deterministico dato lo state.
+function _calComputeFiltered() {
   const prefs = (state.userPrefs && state.userPrefs.calendar_filters) || {};
   const hiddenCategories = new Set(Array.isArray(prefs.hidden_categories) ? prefs.hidden_categories : []);
-  // Filtro lezioni per anno: array di anni attivi. Se array vuoto/assente → tutti gli anni attivi
   const lezioniAnniAttivi = Array.isArray(prefs.lezioni_anni) && prefs.lezioni_anni.length > 0
     ? new Set(prefs.lezioni_anni.map(String))
     : null;
   const eventi = (state.index.calendar && state.index.calendar.eventi) || [];
-  const festivi = calFestiviItaliani(cal.year);
-  const todayStr = calFormatDate(new Date());
-
-  // Filtro: nascondi categorie disattivate; per categoria 'lezioni' applica filtro anno
   const isActive = (e) => {
     const cat = e.categoria || 'altro';
     if (hiddenCategories.has(cat)) return false;
@@ -10754,13 +10903,41 @@ function renderCalendario(params) {
     if (!byDate.has(e.data)) byDate.set(e.data, []);
     byDate.get(e.data).push(e);
   });
+  return { byDate, hiddenCategories, lezioniAnniAttivi };
+}
+
+// Riscrive solo la riga controlli mese (frecce navigazione, titolo mese, Oggi, Importa)
+function _calRefreshControls() {
+  const cal = state.calendarState;
+  const el = document.getElementById('cal-controls');
+  if (!cal || !el) return;
+  const monthLabel = `${CAL_MONTHS[cal.month]} ${cal.year}`;
+  el.innerHTML = `
+    <button class="cal-nav-btn" onclick="calPrevMonth()" title="Mese precedente" aria-label="Precedente">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="cal-nav-btn" onclick="calNextMonth()" title="Mese successivo" aria-label="Successivo">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="cal-title">${monthLabel}</div>
+    <button class="cal-nav-btn" onclick="calToday()" title="Oggi" aria-label="Oggi" style="width:auto;padding:0 10px;font-size:12px;font-family:var(--mono);">Oggi</button>
+    <button class="cal-nav-btn" onclick="openCalImportModal()" title="Importa guardie da testo" aria-label="Importa" style="width:auto;padding:0 10px;font-size:12px;font-family:var(--mono);">Importa</button>
+  `;
+}
+
+// Riscrive solo la griglia 6×7 dei giorni del mese
+function _calRefreshGrid() {
+  const cal = state.calendarState;
+  const el = document.getElementById('cal-grid');
+  if (!cal || !el) return;
+  const { byDate } = _calComputeFiltered();
+  const festivi = calFestiviItaliani(cal.year);
+  const todayStr = calFormatDate(new Date());
 
   // Costruisco la griglia del mese (6 settimane × 7 giorni, Lun-Dom)
   const firstOfMonth = new Date(cal.year, cal.month, 1);
   const dowFirst = (firstOfMonth.getDay() + 6) % 7; // 0 = Lun
-  const daysInMonth = new Date(cal.year, cal.month + 1, 0).getDate();
   const gridStart = new Date(cal.year, cal.month, 1 - dowFirst);
-
   const days = [];
   for (let i = 0; i < 42; i++) {
     const d = new Date(gridStart);
@@ -10768,34 +10945,45 @@ function renderCalendario(params) {
     const key = calFormatDate(d);
     const inMonth = d.getMonth() === cal.month;
     days.push({
-      key,
-      num: d.getDate(),
+      key, num: d.getDate(),
       dow: (d.getDay() + 6) % 7,
       inMonth,
       isToday: key === todayStr,
       isSelected: key === cal.selectedDate,
-      isFestivo: festivi.has(key) || d.getDay() === 0, // domenica festiva
+      isFestivo: festivi.has(key) || d.getDay() === 0,
       events: byDate.get(key) || []
     });
-    if (i >= 34 && !inMonth) break; // Tronco ultime righe vuote
+    if (i >= 34 && !inMonth) break;
   }
-  // Taglio a multipli di 7
   while (days.length % 7 !== 0) days.pop();
 
-  // Eventi del giorno selezionato
-  const selectedEvents = (byDate.get(cal.selectedDate) || []).sort((a,b) => (a.ora || '').localeCompare(b.ora || ''));
-  const selectedDateObj = (() => {
-    const parts = cal.selectedDate.split('-');
-    return new Date(+parts[0], +parts[1] - 1, +parts[2]);
-  })();
-  const selectedLabel = selectedDateObj.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  el.innerHTML = `
+    ${CAL_DOW.map(d => `<div class="cal-dow">${d}</div>`).join('')}
+    ${days.map(d => {
+      const classes = ['cal-day'];
+      if (!d.inMonth) classes.push('other-month');
+      if (d.isFestivo) classes.push('festivo');
+      if (d.isToday) classes.push('today');
+      if (d.isSelected) classes.push('selected');
+      const cats = [...new Set(d.events.map(e => e.categoria || 'altro'))].slice(0,5);
+      const dots = cats.map(c => `<span class="cal-dot ${c}"></span>`).join('');
+      return `<div class="${classes.join(' ')}" onclick="calSelectDay('${d.key}')">
+        <span class="cal-day-num">${d.num}</span>
+        <div class="cal-dots">${dots}</div>
+      </div>`;
+    }).join('')}
+  `;
+}
 
-  const monthLabel = `${CAL_MONTHS[cal.month]} ${cal.year}`;
-
-  const legendHtml = Object.entries(CAL_CATEGORIES).map(([k, v]) => {
+// Riscrive solo la legenda (filtri categoria + dropdown anni lezioni)
+function _calRefreshLegend() {
+  const cal = state.calendarState;
+  const el = document.getElementById('cal-legend');
+  if (!cal || !el) return;
+  const { hiddenCategories, lezioniAnniAttivi } = _calComputeFiltered();
+  el.innerHTML = Object.entries(CAL_CATEGORIES).map(([k, v]) => {
     const active = !hiddenCategories.has(k);
     if (k === 'lezioni') {
-      // Sotto-filtro per anno: mostra dropdown con checkbox 1°/2°/3°/4°
       const allAnniActive = !lezioniAnniAttivi || lezioniAnniAttivi.size === CAL_LEZIONE_ANNI.length;
       const dropdownHtml = cal.lezioniDropdownOpen ? `
         <div class="cal-legend-dropdown" onclick="event.stopPropagation();">
@@ -10822,83 +11010,53 @@ function renderCalendario(params) {
       <span class="cal-legend-dot" style="background:${v.color}"></span>${v.label}
     </span>`;
   }).join('');
+}
 
-  $('main-content').innerHTML = `
-    <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Calendario</div>
-      <h1 class="page-title">Calendario</h1>
+// Riscrive solo il pannello eventi del giorno selezionato (a destra)
+function _calRefreshEvents() {
+  const cal = state.calendarState;
+  const el = document.getElementById('cal-events');
+  if (!cal || !el) return;
+  const { byDate } = _calComputeFiltered();
+  const selectedEvents = (byDate.get(cal.selectedDate) || []).sort((a,b) => (a.ora || '').localeCompare(b.ora || ''));
+  const parts = cal.selectedDate.split('-');
+  const selectedDateObj = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  const selectedLabel = selectedDateObj.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  el.innerHTML = `
+    <div class="cal-events-head">
+      <span>${escapeHtml(selectedLabel)}</span>
+      <button class="cal-events-add" onclick="openCalEventModal('${cal.selectedDate}')" title="Aggiungi evento">+ Aggiungi</button>
     </div>
-
-    <div class="cal-wrap">
-      <div>
-        <div class="cal-head">
-          <button class="cal-nav-btn" onclick="calPrevMonth()" title="Mese precedente" aria-label="Precedente">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <button class="cal-nav-btn" onclick="calNextMonth()" title="Mese successivo" aria-label="Successivo">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-          <div class="cal-title">${monthLabel}</div>
-          <button class="cal-nav-btn" onclick="calToday()" title="Oggi" aria-label="Oggi" style="width:auto;padding:0 10px;font-size:12px;font-family:var(--mono);">Oggi</button>
-          <button class="cal-nav-btn" onclick="openCalImportModal()" title="Importa guardie da testo" aria-label="Importa" style="width:auto;padding:0 10px;font-size:12px;font-family:var(--mono);">Importa</button>
-        </div>
-        <div class="cal-grid">
-          ${CAL_DOW.map(d => `<div class="cal-dow">${d}</div>`).join('')}
-          ${days.map(d => {
-            const classes = ['cal-day'];
-            if (!d.inMonth) classes.push('other-month');
-            if (d.isFestivo) classes.push('festivo');
-            if (d.isToday) classes.push('today');
-            if (d.isSelected) classes.push('selected');
-            const cats = [...new Set(d.events.map(e => e.categoria || 'altro'))].slice(0,5);
-            const dots = cats.map(c => `<span class="cal-dot ${c}"></span>`).join('');
-            return `<div class="${classes.join(' ')}" onclick="calSelectDay('${d.key}')">
-              <span class="cal-day-num">${d.num}</span>
-              <div class="cal-dots">${dots}</div>
-            </div>`;
-          }).join('')}
-        </div>
-        <div class="cal-legend">${legendHtml}</div>
-      </div>
-
-      <div class="cal-events">
-        <div class="cal-events-head">
-          <span>${escapeHtml(selectedLabel)}</span>
-          <button class="cal-events-add" onclick="openCalEventModal('${cal.selectedDate}')" title="Aggiungi evento">+ Aggiungi</button>
-        </div>
-        ${selectedEvents.length === 0
-          ? `<div class="cal-empty">Nessun evento in questa data.</div>`
-          : selectedEvents.map(e => {
-              const cat = e.categoria || 'altro';
-              const catLabel = CAL_CATEGORIES[cat]?.label || cat;
-              // Orario inline: solo se presente. Mostra inizio[-fine] in formato compatto.
-              const timeStr = e.ora
-                ? (e.ora_fine ? `${e.ora}–${e.ora_fine}` : e.ora)
-                : '';
-              const timeHtml = timeStr
-                ? `<div class="cal-event-time-side">${escapeHtml(timeStr)}</div>`
-                : '';
-              // Simbolo ricorrenza piccolo accanto al titolo (no testo)
-              const recurIcon = e.ricorrenza
-                ? `<span class="cal-event-recur-icon" title="Evento ricorrente">↻</span>`
-                : '';
-              const annoLabel = (cat === 'lezioni' && e.anno)
-                ? ` · ${escapeHtml(e.anno)}° anno` : '';
-              return `<div class="cal-event ${cat}">
-                <div class="cal-event-body">
-                  <div class="cal-event-titolo">${escapeHtml(e.titolo || '(senza titolo)')}${recurIcon}</div>
-                  <div class="cal-event-cat">${escapeHtml(catLabel)}${annoLabel}</div>
-                  ${e.descrizione ? `<div class="cal-event-desc">${escapeHtml(e.descrizione)}</div>` : ''}
-                </div>
-                ${timeHtml}
-                <div class="cal-event-actions">
-                  <button onclick="openCalEventModal('${cal.selectedDate}','${escapeJs(e.id)}')" title="Modifica">✎</button>
-                </div>
-              </div>`;
-            }).join('')
-        }
-      </div>
-    </div>
+    ${selectedEvents.length === 0
+      ? `<div class="cal-empty">Nessun evento in questa data.</div>`
+      : selectedEvents.map(e => {
+          const cat = e.categoria || 'altro';
+          const catLabel = CAL_CATEGORIES[cat]?.label || cat;
+          const timeStr = e.ora
+            ? (e.ora_fine ? `${e.ora}–${e.ora_fine}` : e.ora)
+            : '';
+          const timeHtml = timeStr
+            ? `<div class="cal-event-time-side">${escapeHtml(timeStr)}</div>`
+            : '';
+          const recurIcon = e.ricorrenza
+            ? `<span class="cal-event-recur-icon" title="Evento ricorrente">↻</span>`
+            : '';
+          const annoLabel = (cat === 'lezioni' && e.anno)
+            ? ` · ${escapeHtml(e.anno)}° anno` : '';
+          return `<div class="cal-event ${cat}">
+            <div class="cal-event-body">
+              <div class="cal-event-titolo">${escapeHtml(e.titolo || '(senza titolo)')}${recurIcon}</div>
+              <div class="cal-event-cat">${escapeHtml(catLabel)}${annoLabel}</div>
+              ${e.descrizione ? `<div class="cal-event-desc">${escapeHtml(e.descrizione)}</div>` : ''}
+            </div>
+            ${timeHtml}
+            <div class="cal-event-actions">
+              <button onclick="openCalEventModal('${cal.selectedDate}','${escapeJs(e.id)}')" title="Modifica">✎</button>
+            </div>
+          </div>`;
+        }).join('')
+    }
   `;
 }
 
@@ -10906,29 +11064,40 @@ function calPrevMonth() {
   const c = state.calendarState;
   c.month--;
   if (c.month < 0) { c.month = 11; c.year--; }
-  renderCalendario();
+  // Cambio mese: aggiorno controlli (titolo) + griglia (giorni). Eventi/legenda NO.
+  _calRefreshControls();
+  _calRefreshGrid();
 }
 function calNextMonth() {
   const c = state.calendarState;
   c.month++;
   if (c.month > 11) { c.month = 0; c.year++; }
-  renderCalendario();
+  _calRefreshControls();
+  _calRefreshGrid();
 }
 function calToday() {
   const t = new Date();
   state.calendarState.year = t.getFullYear();
   state.calendarState.month = t.getMonth();
   state.calendarState.selectedDate = calFormatDate(t);
-  renderCalendario();
+  // Click "Oggi" può cambiare giorno selezionato + mese: aggiorno tutto tranne legenda.
+  _calRefreshControls();
+  _calRefreshGrid();
+  _calRefreshEvents();
 }
 function calSelectDay(dateStr) {
   const c = state.calendarState;
+  const oldMonth = c.month, oldYear = c.year;
   c.selectedDate = dateStr;
   // Se è in un altro mese, naviga a quel mese
   const parts = dateStr.split('-');
   c.year = +parts[0];
   c.month = +parts[1] - 1;
-  renderCalendario();
+  // Se mese cambia → refresh grid+controls; sempre refresh events (dipende da selectedDate).
+  // Sempre refresh grid anche se stesso mese (per highlight giorno selezionato).
+  if (c.year !== oldYear || c.month !== oldMonth) _calRefreshControls();
+  _calRefreshGrid();
+  _calRefreshEvents();
 }
 function _ensureCalFilters() {
   if (!state.userPrefs) return null;
@@ -10943,18 +11112,21 @@ function toggleCalCategory(cat) {
   if (idx >= 0) f.hidden_categories.splice(idx, 1);
   else f.hidden_categories.push(cat);
   if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
-  renderCalendario();
+  // Toggle filtro: aggiorna grid (dots), legend (stato attivo/inattivo), events.
+  _calRefreshGrid();
+  _calRefreshLegend();
+  _calRefreshEvents();
 }
 function toggleLezioniDropdown(evt) {
   if (evt) evt.stopPropagation();
   const c = state.calendarState;
   c.lezioniDropdownOpen = !c.lezioniDropdownOpen;
-  renderCalendario();
+  // Solo la legenda ha bisogno di redraw (apre/chiude dropdown).
+  _calRefreshLegend();
 }
 function toggleLezioniAnno(annoId, checked) {
   const f = _ensureCalFilters();
   if (!f) return;
-  // Se il filtro è null/vuoto, considero tutti attivi → uncheck di uno significa tenere tutti gli altri
   let current = Array.isArray(f.lezioni_anni) && f.lezioni_anni.length > 0
     ? f.lezioni_anni.map(String)
     : CAL_LEZIONE_ANNI.map(a => a.id);
@@ -10963,33 +11135,33 @@ function toggleLezioniAnno(annoId, checked) {
   } else {
     current = current.filter(x => x !== annoId);
   }
-  // Se tutti attivi → svuoto (default = tutti)
   if (current.length === CAL_LEZIONE_ANNI.length) f.lezioni_anni = [];
   else f.lezioni_anni = current;
   if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
-  renderCalendario();
+  _calRefreshGrid();
+  _calRefreshLegend();
+  _calRefreshEvents();
 }
 function toggleLezioniAnnoAll(checked) {
   const f = _ensureCalFilters();
   if (!f) return;
-  // checked=true → tutti gli anni (array vuoto = default tutti)
-  // checked=false → nessun anno (array vuoto sarebbe = tutti, quindi metto un placeholder impossibile)
   if (checked) {
     f.lezioni_anni = [];
   } else {
-    f.lezioni_anni = ['__none__']; // valore che nessun anno reale ha → nasconde tutto
+    f.lezioni_anni = ['__none__'];
   }
   if (typeof userPrefs !== 'undefined' && userPrefs.scheduleSave) userPrefs.scheduleSave();
-  renderCalendario();
+  _calRefreshGrid();
+  _calRefreshLegend();
+  _calRefreshEvents();
 }
 // Chiudi dropdown se l'utente clicca fuori
 document.addEventListener('click', (e) => {
   if (!state.calendarState || !state.calendarState.lezioniDropdownOpen) return;
   if (state.currentView !== 'calendario') return;
-  // Se il click è sulla legenda lezioni o dentro il dropdown, lascia stare
   if (e.target.closest('.cal-legend-dropdown') || e.target.closest('.cal-legend-item')) return;
   state.calendarState.lezioniDropdownOpen = false;
-  renderCalendario();
+  _calRefreshLegend();
 });
 
 // ==== Modal aggiunta/modifica evento ====
@@ -11154,7 +11326,7 @@ async function saveCalEventsBulk(events) {
   });
   await persistCalendar(eventi);
   toast(`${events.length} eventi creati`, 'success');
-  renderCalendario();
+  _calRefreshGrid(); _calRefreshEvents();
 }
 
 async function saveCalEvent(evt, isUpdate) {
@@ -11171,7 +11343,7 @@ async function saveCalEvent(evt, isUpdate) {
   }
   await persistCalendar(eventi);
   toast(isUpdate ? 'Evento aggiornato' : 'Evento creato', 'success');
-  renderCalendario();
+  _calRefreshGrid(); _calRefreshEvents();
 }
 
 async function deleteCalEvent(eventId) {
@@ -11195,7 +11367,7 @@ async function deleteCalEvent(eventId) {
               await persistCalendar(eventi);
               toast('Evento eliminato', 'success');
               closeModal();
-              renderCalendario();
+              _calRefreshGrid(); _calRefreshEvents();
             } catch (err) {
               console.error('[calendar] delete failed:', err);
               toast('Errore: ' + err.message, 'error');
@@ -11214,7 +11386,7 @@ async function deleteCalEvent(eventId) {
               await persistCalendar(eventi);
               toast('Eventi eliminati', 'success');
               closeModal();
-              renderCalendario();
+              _calRefreshGrid(); _calRefreshEvents();
             } catch (err) {
               console.error('[calendar] delete failed:', err);
               toast('Errore: ' + err.message, 'error');
@@ -11228,7 +11400,7 @@ async function deleteCalEvent(eventId) {
               await persistCalendar(eventi);
               toast('Serie eliminata', 'success');
               closeModal();
-              renderCalendario();
+              _calRefreshGrid(); _calRefreshEvents();
             } catch (err) {
               console.error('[calendar] delete failed:', err);
               toast('Errore: ' + err.message, 'error');
@@ -11253,7 +11425,7 @@ async function deleteCalEvent(eventId) {
             await persistCalendar(eventi);
             toast('Eliminato', 'success');
             closeModal();
-            renderCalendario();
+            _calRefreshGrid(); _calRefreshEvents();
           } catch (err) {
             console.error('[calendar] delete failed:', err);
             toast('Errore: ' + err.message, 'error');
@@ -11513,7 +11685,7 @@ async function calImportSave() {
     toast(`Importati ${nuovi.length} eventi`, 'success');
     state._calImportParsed = null;
     closeModal();
-    renderCalendario();
+    _calRefreshGrid(); _calRefreshEvents();
   } catch (err) {
     toast('Errore salvataggio: ' + err.message, 'error');
   }
@@ -12706,10 +12878,6 @@ function toggleEditMode(force) {
       locks.release(ctx.slug).catch(() => {});
     }
     // Distruggi editor instance (Toast UI legacy o block editor non ha destroy ma ok)
-    if (state.editorInstance) {
-      try { state.editorInstance.destroy(); } catch {}
-      state.editorInstance = null;
-    }
     window.removeEventListener('beforeunload', beforeUnloadHandler);
     state.editingContext = null;
     // Determina dove tornare: route corrente è del tipo `procedura-edit` o `clinica-edit`
@@ -13380,27 +13548,11 @@ function escapeJs(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '\\"'
 
 /* ----- Folder operations (multi-commit) ----- */
 
-async function multiCommitOperation(label, operations) {
-  // Each operation is { type: 'put'|'delete', path, content?, sha?, message }
-  // Returns total + executed counts
-  const total = operations.length;
-  let done = 0;
-  const failures = [];
-  for (const op of operations) {
-    try {
-      if (op.type === 'put') await gh.putFile(op.path, op.content, op.sha || null, op.message);
-      else if (op.type === 'delete') await gh.deleteFile(op.path, op.sha, op.message);
-      done++;
-    } catch (e) {
-      failures.push({ op, error: e.message });
-    }
-  }
-  return { total, done, failures };
-}
-
-// High-level operation with progress modal and rate-limit safety.
-// `ops` array of { putPath, putContent, deletePath, deleteSha, commitMsg, schedaSlug, schedaTitolo }
-async function executeMultiCommitOperation(label, ops) {
+// Operazione di rename atomico (put nuovo path + delete vecchio path) con progress modal
+// e rate-limit safety. Best-effort sugli accessori (img/) che non bloccano in caso di failure.
+// `ops` array di { putPath, putContent, deletePath, deleteSha, commitMsg, schedaSlug, schedaTitolo,
+//                  accessoriOldDir?, accessoriNewDir? }
+async function _githubBatchRename(label, ops) {
   const total = ops.length * 2;
   let done = 0;
   const failures = [];
@@ -13537,7 +13689,7 @@ async function renameSottocategoria(macro, oldSub) {
 
   if (!confirm(`Rinominare "${oldSub}" → "${newSub}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
 
-  const result = await executeMultiCommitOperation(`Rinomina ${oldSub} → ${newSub}`, ops);
+  const result = await _githubBatchRename(`Rinomina ${oldSub} → ${newSub}`, ops);
   if (result.ok) toast(`Rinominata: ${result.done}/${result.total}`, 'success');
   else toast(`Rinomina parziale: ${result.done}/${result.total}`, 'warning');
   await buildIndex();
@@ -13584,7 +13736,7 @@ async function moveSottocategoria(currentMacro, sub) {
 
   if (!confirm(`Spostare "${sub}" da "${currentMacro}" a "${dest}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
 
-  const result = await executeMultiCommitOperation(`Sposta ${sub} → ${dest}`, ops);
+  const result = await _githubBatchRename(`Sposta ${sub} → ${dest}`, ops);
   if (result.ok) toast(`Spostato: ${result.done}/${result.total}`, 'success');
   else toast(`Spostamento parziale: ${result.done}/${result.total}`, 'warning');
   await buildIndex();
@@ -14358,7 +14510,7 @@ async function renameMacroCategoria(macro) {
 
   if (!confirm(`Rinominare macro "${macro}" → "${newName}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
 
-  const result = await executeMultiCommitOperation(`Rinomina ${macro} → ${newName}`, ops);
+  const result = await _githubBatchRename(`Rinomina ${macro} → ${newName}`, ops);
   if (result.ok) toast(`Rinomina completata: ${result.done}/${result.total}`, 'success');
   else toast(`Rinomina parziale: ${result.done}/${result.total}`, 'warning');
   await buildIndex();
@@ -14422,7 +14574,7 @@ async function moveMacroToClinica(macro) {
     `Proseguire?`;
   if (!confirm(warnText)) return;
 
-  const result = await executeMultiCommitOperation(`Sposta ${macro} → clinica/${targetSub}`, ops);
+  const result = await _githubBatchRename(`Sposta ${macro} → clinica/${targetSub}`, ops);
   if (result.ok) toast(`Spostamento completato: ${result.done}/${result.total}`, 'success');
   else toast(`Spostamento parziale: ${result.done}/${result.total}. Vedi console.`, 'warning', 6000);
   await buildIndex();
@@ -14521,7 +14673,7 @@ async function renameClinicaSub(sub) {
 
   if (!confirm(`Rinominare sottocategoria "${sub}" → "${newSub}"?\n\n${affected.length} schede spostate.\n${neededCommits} commit GitHub.`)) return;
 
-  const result = await executeMultiCommitOperation(`Rinomina ${sub} → ${newSub}`, ops);
+  const result = await _githubBatchRename(`Rinomina ${sub} → ${newSub}`, ops);
   if (result.ok) toast(`Rinomina completata: ${result.done}/${result.total}`, 'success');
   else toast(`Rinomina parziale: ${result.done}/${result.total}`, 'warning');
   await buildIndex();
@@ -15503,8 +15655,90 @@ function closeModal() {
   $('modal-container').innerHTML = '';
 }
 
+// API helper sopra showModal per pattern comuni. NON sostituisce showModal (che resta
+// l'API base per modali con body custom), ma offre scorciatoie per i casi tipici:
+// - Modals.confirm({title, message, confirmLabel, danger, onConfirm}): conferma sì/no
+// - Modals.alert({title, message, label?}): notifica con un solo pulsante "OK"
+// - Modals.cancelAction({onCancel?}): genera l'action "Annulla" standard (chiude modale)
+const Modals = {
+  // Action "Annulla" riusabile (variant ghost, chiude sempre la modale + callback opzionale)
+  cancelAction(onCancel) {
+    return {
+      label: 'Annulla',
+      variant: 'ghost',
+      onClick: () => { if (onCancel) onCancel(); closeModal(); }
+    };
+  },
+
+  // Conferma sì/no. onConfirm può essere async; il pulsante viene disabilitato durante l'esec.
+  // Esempio: Modals.confirm({ title: 'Eliminare?', message: 'Operazione irreversibile.',
+  //   confirmLabel: 'Elimina', danger: true, onConfirm: async () => { await api.delete(); } });
+  confirm({ title, subtitle, message, confirmLabel, danger, onConfirm, onCancel }) {
+    showModal({
+      title,
+      subtitle,
+      body: message ? `<p style="margin:0;color:var(--ink-soft);font-size:14px;line-height:1.5;">${escapeHtml(message)}</p>` : '',
+      actions: [
+        Modals.cancelAction(onCancel),
+        {
+          label: confirmLabel || 'Conferma',
+          variant: danger ? 'danger' : '',
+          onClick: async (btn) => {
+            btn.disabled = true;
+            const oldLabel = btn.textContent;
+            btn.textContent = '…';
+            try {
+              if (onConfirm) await onConfirm(btn);
+              closeModal();
+            } catch (e) {
+              btn.disabled = false;
+              btn.textContent = oldLabel;
+              toast('Errore: ' + (e.message || e), 'error');
+            }
+          }
+        }
+      ]
+    });
+  },
+
+  // Notifica semplice con un solo bottone "OK" (o label custom)
+  alert({ title, subtitle, message, label }) {
+    showModal({
+      title,
+      subtitle,
+      body: message ? `<p style="margin:0;color:var(--ink-soft);font-size:14px;line-height:1.5;">${escapeHtml(message)}</p>` : '',
+      actions: [{ label: label || 'OK', onClick: () => closeModal() }]
+    });
+  }
+};
+window.Modals = Modals;
+
 /* ============================ INIT ============================ */
+// =============================================================================
+// EVENT LISTENERS GLOBALI
+// =============================================================================
+// initEventListeners è l'orchestratore: chiama gli init helper per dominio.
+// Ognuno di questi è autonomo e raggruppa event handler con stato condiviso (closure).
+//
+// I 7 setup in cui è stato spezzato:
+// - initLoginAndNav: form login + click su nav-item, logout, brand
+// - initMobileDrawer: hamburger, swipe sidebar, pull-down search, scroll lock body
+// - initTopbarMeasure: misura altezza topbar (var CSS --topbar-height) + resize listener
+// - initEditModeButtons: pulsanti edit/exit/commit/cancel tag, refresh indice
+// - initGlobalSearch: search input, clear, keyboard shortcut Cmd/Ctrl+K, ESC
+// - initWindowResize: cleanup mobile drawer + refresh overlay moduli su resize
+// - (ESC modale viene gestito dentro initGlobalSearch perché condivide l'handler keydown)
+
 function initEventListeners() {
+  initLoginAndNav();
+  initMobileDrawer();
+  initTopbarMeasure();
+  initEditModeButtons();
+  initGlobalSearch();
+  initWindowResize();
+}
+
+function initLoginAndNav() {
   $('login-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const u = $('login-username').value.trim();
@@ -15523,49 +15757,57 @@ function initEventListeners() {
   });
 
   $('brand-home').addEventListener('click', () => { closeMobileMenu(); resetDrill(); navigate('home'); });
+}
 
-  // Mobile drawer (hamburger)
-  let _scrollLockY = 0;
-  function isMobileViewport(){ return window.innerWidth <= 900; }
-  function openMobileMenu(){
-    if (!isMobileViewport()) return;
-    _scrollLockY = window.scrollY || window.pageYOffset || 0;
-    $('sidebar').classList.add('mobile-open');
-    $('sidebar-overlay').classList.add('show');
-    $('btn-hamburger').classList.add('active');
-    $('btn-hamburger').setAttribute('aria-expanded', 'true');
-    // Lock body scroll (iOS-safe: position fixed mantiene la posizione)
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${_scrollLockY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
+// Stato condiviso del mobile drawer (variabili in chiusura del modulo per essere accessibili
+// anche da brand-home click che chiama closeMobileMenu prima dell'init drawer)
+let _scrollLockY = 0;
+function isMobileViewport(){ return window.innerWidth <= 900; }
+function openMobileMenu(){
+  if (!isMobileViewport()) return;
+  _scrollLockY = window.scrollY || window.pageYOffset || 0;
+  $('sidebar').classList.add('mobile-open');
+  $('sidebar-overlay').classList.add('show');
+  $('btn-hamburger').classList.add('active');
+  $('btn-hamburger').setAttribute('aria-expanded', 'true');
+  // Lock body scroll (iOS-safe: position fixed mantiene la posizione)
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${_scrollLockY}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
+  document.body.style.width = '100%';
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileMenu(){
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;  // chiamato prima dell'init DOM
+  const wasOpen = sidebar.classList.contains('mobile-open');
+  sidebar.classList.remove('mobile-open');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (overlay) overlay.classList.remove('show');
+  const burger = document.getElementById('btn-hamburger');
+  if (burger) {
+    burger.classList.remove('active');
+    burger.setAttribute('aria-expanded', 'false');
   }
-  function closeMobileMenu(){
-    const wasOpen = $('sidebar').classList.contains('mobile-open');
-    $('sidebar').classList.remove('mobile-open');
-    $('sidebar-overlay').classList.remove('show');
-    $('btn-hamburger').classList.remove('active');
-    $('btn-hamburger').setAttribute('aria-expanded', 'false');
-    // Unlock body scroll e restore posizione
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.width = '';
-    document.body.style.overflow = '';
-    if (wasOpen && _scrollLockY) {
-      window.scrollTo(0, _scrollLockY);
-      _scrollLockY = 0;
-    }
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  document.body.style.width = '';
+  document.body.style.overflow = '';
+  if (wasOpen && _scrollLockY) {
+    window.scrollTo(0, _scrollLockY);
+    _scrollLockY = 0;
   }
+}
+
+function initMobileDrawer() {
   $('btn-hamburger').addEventListener('click', (e) => {
     e.stopPropagation();
     if ($('sidebar').classList.contains('mobile-open')) closeMobileMenu();
     else openMobileMenu();
   });
-  // Tap su overlay → chiude
   $('sidebar-overlay').addEventListener('click', closeMobileMenu);
   $('sidebar-close').addEventListener('click', closeMobileMenu);
 
@@ -15628,14 +15870,11 @@ function initEventListeners() {
   // ma questo è un fallback per browser che non lo supportano pienamente.
   document.addEventListener('touchmove', (e) => {
     if (!touchStart || !isMobileViewport()) return;
-    // Se siamo in modalità 'pulldown' con scroll a 0 e il gesto è principalmente verticale-giù,
-    // blocco il browser dal fare il suo pull-to-refresh nativo.
     if (touchStart.mode === 'pulldown' || touchStart.canPulldown) {
       const t = e.touches[0];
       if (!t) return;
       const dy = t.clientY - touchStart.y;
       const absDx = Math.abs(t.clientX - touchStart.x);
-      // Se sto già andando giù dalla posizione in cima e il gesto è verticale
       if (dy > 0 && absDx < HORIZ_TOLERANCE && isAtTopForPulldown(touchStart)) {
         e.preventDefault();
       }
@@ -15652,19 +15891,16 @@ function initEventListeners() {
     const absDy = Math.abs(dy);
     // Decido il mode al primo movimento significativo (>15px in una direzione)
     if (!touchStart.mode) {
-      if (absDx < 15 && absDy < 15) return; // ancora troppo piccolo
-      // Movimento prevalentemente verticale verso il basso → pulldown
+      if (absDx < 15 && absDy < 15) return;
       if (absDy > absDx && dy > 0 && touchStart.canPulldown) {
         touchStart.mode = 'pulldown';
       }
-      // Movimento prevalentemente orizzontale → swipe sidebar
       else if (absDx > absDy) {
         if (dx > 0 && touchStart.canOpen) touchStart.mode = 'open';
         else if (dx < 0 && touchStart.canClose) touchStart.mode = 'close';
         else { touchStart = null; return; }
       }
       else {
-        // Movimento verticale ma non compatibile con pulldown (es. scroll verso l'alto, o già scrollato)
         touchStart = null; return;
       }
     }
@@ -15673,8 +15909,7 @@ function initEventListeners() {
       if (absDx > HORIZ_TOLERANCE) { touchStart = null; return; }
       if (dy > PULL_DOWN_THRESHOLD) {
         // Su iOS/Android il focus+keyboard funziona in modo affidabile SOLO se chiamato
-        // durante touchend (gesto "completato"), non durante touchmove. Segno il flag
-        // e il touchend handler lo esegue.
+        // durante touchend (gesto "completato"), non durante touchmove.
         touchStart.shouldFocusSearch = true;
       }
     } else {
@@ -15689,14 +15924,11 @@ function initEventListeners() {
     }
   }, { passive: true });
   document.addEventListener('touchend', (e) => {
-    // Eseguo il focus della search in touchend per garantire l'apertura della tastiera su mobile
     if (touchStart && touchStart.shouldFocusSearch) {
       const input = document.getElementById('global-search');
       if (input) {
-        // requestAnimationFrame dà al browser un tick per chiudere il gesto prima del focus
         requestAnimationFrame(() => {
           input.focus();
-          // Su iOS serve un ulteriore trick: scroll nell'input per farlo visibile e attivo
           try {
             input.scrollIntoView({ block: 'center', behavior: 'instant' });
           } catch (e) {
@@ -15713,23 +15945,24 @@ function initEventListeners() {
   $('sidebar').addEventListener('click', (e) => {
     const navItem = e.target.closest('.nav-item, .nav-tree-row');
     if (!navItem || !isMobileViewport()) return;
-    // Non chiudo se è un click sul caret di espansione (non naviga)
     if (e.target.closest('.nav-tree-caret') || e.target.closest('.nav-edit-actions')) return;
     closeMobileMenu();
   });
   // Tap sul main content (fuori dalla sidebar) → chiude
   $('main-content').addEventListener('click', () => {
     if ($('sidebar').classList.contains('mobile-open')) closeMobileMenu();
-  }, true); // capture per intercettare prima di handler interni
+  }, true);
   // Chiudo con ESC
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && $('sidebar').classList.contains('mobile-open')) closeMobileMenu();
   });
-  // Resize: se passo a desktop, ripristino tutto
-  // Misura l'altezza reale della topbar e la propaga come CSS var.
-  // Necessario per scroll-margin-top accurato (deep-link a blocchi, sezioni).
-  // Le breakpoint statiche (60/68px) non sono affidabili perché la topbar wrap
-  // su mobile può crescere a 2 righe quando ci sono molti elementi.
+}
+
+// Misura l'altezza reale della topbar e la propaga come CSS var --topbar-height.
+// Necessario per scroll-margin-top accurato (deep-link a blocchi, sezioni).
+// Le breakpoint statiche (60/68px) non sono affidabili perché la topbar wrap
+// su mobile può crescere a 2 righe quando ci sono molti elementi.
+function initTopbarMeasure() {
   const measureTopbar = () => {
     const tb = document.querySelector('header.topbar');
     if (!tb) return;
@@ -15739,17 +15972,18 @@ function initEventListeners() {
     }
   };
   measureTopbar();
-  // Re-misura quando il layout cambia: dopo render, su resize, su orientation change
   window.addEventListener('resize', measureTopbar);
   window.addEventListener('orientationchange', () => setTimeout(measureTopbar, 100));
   // Doppio rAF per essere certi che fonts/layout siano stabili
   requestAnimationFrame(() => requestAnimationFrame(measureTopbar));
+}
 
+function initWindowResize() {
   window.addEventListener('resize', () => {
     if (!isMobileViewport() && $('sidebar').classList.contains('mobile-open')) {
       closeMobileMenu();
     }
-    // Se siamo su un modulo aperto, rallinea gli overlay box (l'immagine ha cambiato dimensione renderizzata)
+    // Se siamo su un modulo aperto, rallinea gli overlay box (l'immagine ha cambiato dimensione)
     if (state.currentView === 'modulo' && state.currentParams && state.currentParams.slug) {
       const slug = state.currentParams.slug;
       if (state.moduliCache[slug]) {
@@ -15759,7 +15993,9 @@ function initEventListeners() {
       }
     }
   });
+}
 
+function initEditModeButtons() {
   $('btn-edit-mode').addEventListener('click', () => toggleEditMode());
   $('btn-exit-edit').addEventListener('click', () => toggleEditMode(false));
   $('btn-commit-tags').addEventListener('click', () => commitTagEdits());
@@ -15780,7 +16016,9 @@ function initEventListeners() {
       toast('Errore refresh: ' + e.message, 'error');
     }
   });
+}
 
+function initGlobalSearch() {
   const searchInput = $('global-search');
   const searchClear = $('global-search-clear');
   let searchTimeout = null;
@@ -15804,8 +16042,6 @@ function initEventListeners() {
       } else {
         openSearchOverlay(q);
       }
-      // Riporta lo scroll in cima all'overlay quando la query cambia, così i nuovi
-      // risultati sono immediatamente visibili.
       if (overlay) {
         try { overlay.scrollTo({ top: 0, behavior: 'instant' }); }
         catch { overlay.scrollTop = 0; }
@@ -15818,18 +16054,12 @@ function initEventListeners() {
     const q = e.target.value;
     updateSearchClear();
     clearTimeout(searchTimeout);
-    // Se l'utente sta cancellando (q vuoto o 1 carattere), reagisco subito
     if (q.length < 2) {
       doSearch(q);
       return;
     }
     // Debounce 350ms per ricerche: evita lag durante typing veloce.
-    // Più lungo che desktop perché su mobile la digitazione è naturalmente più lenta
-    // e il rendering è più costoso; partire al primo pause vero è meglio che provare
-    // a stare dietro a ogni keystroke.
     searchTimeout = setTimeout(() => {
-      // requestIdleCallback se disponibile (Chrome/Edge): permette al browser di
-      // schedulare il render solo quando il thread principale è libero. Fallback rAF.
       const schedule = window.requestIdleCallback
         ? (cb) => window.requestIdleCallback(cb, { timeout: 200 })
         : (cb) => requestAnimationFrame(cb);
@@ -15845,8 +16075,7 @@ function initEventListeners() {
     });
   }
   // Se l'utente torna sull'input con testo già presente, riapri l'overlay con quei risultati.
-  // MA solo se l'overlay è effettivamente chiuso: altrimenti, quando l'utente cambia tab e torna,
-  // il focus event riapre l'overlay azzerando lo scroll. Non vogliamo questo.
+  // MA solo se l'overlay è effettivamente chiuso.
   searchInput.addEventListener('focus', () => {
     const q = searchInput.value;
     const overlay = document.getElementById('search-overlay');
@@ -15854,7 +16083,7 @@ function initEventListeners() {
     if (q.length >= 2 && !overlayOpen) openSearchOverlay(q);
   });
 
-  // Keyboard shortcut: Cmd/Ctrl + K focuses search
+  // Keyboard shortcut: Cmd/Ctrl + K focuses search; ESC chiude modale o overlay
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
