@@ -22,7 +22,7 @@
 })();
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>CollinettaAI</title>
 <meta name="description" content="CollinettaAI">
 <meta property="og:title" content="CollinettaAI">
@@ -1184,7 +1184,9 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 
 /* Items cliccabili UOC/Sezione — usati negli header dei rettangoli collassati durante la ricerca. */
 .ctx-uoc{cursor:pointer;color:var(--ink);font-weight:700;transition:color .12s}
-.ctx-sezione{cursor:pointer;color:var(--accent-muted);font-weight:400;transition:color .12s}
+/* Sezione: stesso colore ink della UOC ma peso normale per non gareggiare visivamente,
+   restando comunque ben leggibile (vs. accent-muted che era poco visibile su sfondo bianco). */
+.ctx-sezione{cursor:pointer;color:var(--ink);font-weight:500;transition:color .12s}
 .ctx-uoc:hover,.ctx-uoc:active{color:var(--accent);text-decoration:underline}
 .ctx-sezione:hover,.ctx-sezione:active{color:var(--accent);text-decoration:underline}
 .ctx-sep{color:var(--ink-faint)}
@@ -1258,12 +1260,12 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 .sede-bucket-loc{font-size:11px;color:var(--ink-muted);flex:1}
 .sede-bucket-header{display:flex;align-items:baseline;gap:10px;padding:8px 12px;background:var(--bg-sink);border-radius:4px;margin:14px 0 6px}
 .sede-bucket-header:first-child{margin-top:0}
-.sede-bucket-tipo{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.sede-bucket-tipo{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);font-weight:700}
 .sede-bucket-loc{font-size:13px;color:var(--ink)}
 .sede-bucket-altro{color:var(--ink-muted);font-style:italic}
 .sede-bucket-contatti{padding:0 4px}
 .sede-subbucket{margin:8px 0 4px;padding:0 0 0 12px;border-left:2px solid var(--rule-soft)}
-.sede-subbucket-header{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;padding:6px 0 4px;margin-top:4px}
+.sede-subbucket-header{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);font-weight:700;padding:6px 0 4px;margin-top:4px}
 .sede-subbucket-contatti{padding:0}
 .sede-fonte:hover{opacity:1;text-decoration:underline}
 
@@ -3580,13 +3582,23 @@ function rebuildSearchIndex() {
       };
       const sedeTipo = contactToSedeTipo.get(c.id) || '';
       const sedeTipoStr = sedeTipoAliases[sedeTipo] || sedeTipo;
+      // Forme "compatte" senza spazi/punti per gestire query concatenate (es. "neuroanestesia"
+      // che deve matchare "Neuro Anestesia"). Aggiungo le versioni compatte di gruppo/etichetta/
+      // sezione al campo `termini` perché Fuse fuzzy non gestisce bene rimozioni di spazio.
+      const stripSep = s => (s || '').replace(/[\s\-_.]+/g, '');
+      const compactForms = [
+        stripSep(g.nome),
+        stripSep(c.etichetta),
+        stripSep(c.sezione)
+      ].filter(s => s && s.length > 3).join(' ');
       const termini = [
         c.sezione || '',
         kind,
         kindAliases[kind] || '',
         sedeTipoStr,
         (c.alias || []).join(' '),
-        groupAliases
+        groupAliases,
+        compactForms
       ].filter(Boolean).join(' ');
       docs.push({
         type: 'numero', slug: c.id,
@@ -5424,8 +5436,14 @@ function renderEditorUIClinica(slug, frontmatter, body) {
     </div>
 
     <div class="editor-section">
-      <div class="editor-section-head">
+      <div class="editor-section-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
         <div class="editor-section-title">Contenuto</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button type="button" class="btn ghost sm" id="btn-ai-import-clinica" title="Importa una scheda clinica da testo grezzo con l'aiuto di un'AI esterna">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L9 9l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1z"/></svg>
+            <span style="margin-left:4px;">Importa con AI</span>
+          </button>
+        </div>
       </div>
       <div id="editor-wrapper"></div>
     </div>`;
@@ -5458,6 +5476,10 @@ function renderEditorUIClinica(slug, frontmatter, body) {
     navigate('clinica-scheda', { slug });
   };
   $('btn-save-edit').onclick = saveSchedaClinica;
+  // AI Import workflow: bottone opzionale per popolare i blocchi a partire da
+  // testo grezzo, tramite un'AI esterna.
+  const btnAiClinica = $('btn-ai-import-clinica');
+  if (btnAiClinica) btnAiClinica.onclick = () => openAIImportModal('clinica');
 }
 
 async function saveSchedaClinica() {
@@ -6439,13 +6461,69 @@ function renderEditorUI(slug, frontmatter, body) {
 // + schema JSON. Estratto come costante a livello di modulo per leggibilità (era inline nel
 // modal, ~70 righe di string literal in mezzo alla logica UI).
 // Usa il placeholder __INSERT_TESTO__ per inserire il testo dell'utente.
-const AI_IMPORT_PROMPT_TEMPLATE = `Sei un assistente che converte testo medico/clinico in un JSON strutturato per un'app di documentazione clinica.
+// Schema frontmatter per ogni tipo di scheda. Usato sia dall'editor sia dal prompt AI Import
+// per dire all'AI esterna quali campi può/deve compilare. NB: l'AI suggerisce i valori; il
+// medico li può sempre rivedere/modificare prima di salvare.
+const AI_FRONTMATTER_SCHEMA = {
+  procedura: {
+    titolo: 'Stringa breve, descrittiva, in italiano. Es: "Rachicentesi diagnostica".',
+    categoria: 'Una tra: bedside, richieste, farmacologiche, emergenze, gestione.',
+    sottocategoria: 'Stringa libera, una parola/breve frase. Es: "esami liquor", "ictus", "delirium".',
+    tag: 'Array di stringhe (parole chiave, lowercase). Es: ["liquor","puntura lombare","diagnostica"].',
+    termini_equivalenti: 'Array di sinonimi/forme alternative usate dai clinici per cercare la procedura. Es: ["puntura lombare","LP","tap lombare"].'
+  },
+  clinica: {
+    titolo: 'Stringa breve, descrittiva. Es: "Score NIHSS" o "Prognosi ictus ischemico".',
+    sottocategoria: 'Una tra: prognosi, gestione-post-acuta, scale-cliniche.',
+    tag: 'Array di stringhe (parole chiave, lowercase). Es: ["ictus","scala","emergenza"].',
+    termini_equivalenti: 'Array di sinonimi. Es: ["NIH stroke scale","scala NIH"].'
+  }
+};
 
-L'output deve essere ESCLUSIVAMENTE un array JSON di oggetti "blocco". Nessun testo prima o dopo, nessun markdown code fence (no triple backticks), solo JSON puro che inizi con [ e finisca con ].
+// Genera il prompt completo per l'AI esterna. Include: descrizione tipi blocco, schema
+// frontmatter del tipo scheda, opzionalmente l'istruzione di riassunto, e il testo grezzo.
+function buildAIImportPrompt(tipo, rawText, opts) {
+  opts = opts || {};
+  const riassumi = !!opts.riassumi;
+  const fmSchema = AI_FRONTMATTER_SCHEMA[tipo] || AI_FRONTMATTER_SCHEMA.procedura;
+  const fmFields = Object.entries(fmSchema).map(([k, v]) => `  - "${k}": ${v}`).join('\n');
+  const fmExample = tipo === 'clinica'
+    ? `{"titolo":"Score NIHSS","sottocategoria":"scale-cliniche","tag":["ictus","scala"],"termini_equivalenti":["NIH stroke scale","scala NIH"]}`
+    : `{"titolo":"Rachicentesi diagnostica","categoria":"bedside","sottocategoria":"esami liquor","tag":["liquor","puntura lombare"],"termini_equivalenti":["puntura lombare","LP"]}`;
 
-OGNI blocco ha: { "tipo": "<uno dei tipi>", "titolo": "<opzionale>", ...campi specifici }.
+  const riassuntoSection = riassumi
+    ? `MODALITÀ RIASSUNTO ATTIVA:
+- Se il testo originale è prolisso, ridondante o contiene divagazioni, RIASSUMI mantenendo l'essenziale clinico.
+- Privilegia chiarezza e concisione: rimuovi ripetizioni, riformula frasi pesanti.
+- NON omettere informazioni cliniche rilevanti (dosaggi, controindicazioni, criteri, codici).
+- Mantieni invariati: numeri, dosaggi, codici di sistemi (Galileo, Ormaweb), nomi di farmaci/strumenti, riferimenti bibliografici.
 
-TIPI DI BLOCCO DISPONIBILI:
+`
+    : `FEDELTÀ AL TESTO:
+- NON riassumere e NON inventare contenuti che non sono nel testo originale.
+- Riproduci tutto ciò che è clinicamente rilevante.
+
+`;
+
+  return `Sei un assistente che converte testo medico/clinico in un JSON strutturato per un'app di documentazione clinica.
+
+L'output deve essere ESCLUSIVAMENTE un oggetto JSON con due campi: "frontmatter" e "contenuti". Nessun testo prima o dopo, nessun markdown code fence (no triple backticks), solo JSON puro che inizi con { e finisca con }.
+
+STRUTTURA OUTPUT:
+{
+  "frontmatter": { ... },   // metadati della scheda (vedi sotto)
+  "contenuti": [ ... ]       // array di blocchi (vedi sotto)
+}
+
+CAMPI FRONTMATTER (per scheda di tipo "${tipo}"):
+${fmFields}
+
+Esempio frontmatter valido:
+${fmExample}
+
+L'utente potrà modificare i metadati dopo l'import: scegli valori sensati, non inventare se non hai segnali nel testo (in quel caso lascia il campo come stringa vuota o array vuoto).
+
+TIPI DI BLOCCO DISPONIBILI per "contenuti":
 
 1. text — paragrafo di testo. Supporta **grassetto**, *corsivo*, codice inline (con singole virgolette gravi).
  Campi: { tipo:"text", titolo?:string, testo:string }
@@ -6480,7 +6558,7 @@ TIPI DI BLOCCO DISPONIBILI:
 11. internal_ref — riferimento a un'altra procedura/scheda dell'app (NON usare a meno che non sia esplicitamente menzionato).
   Campi: { tipo:"internal_ref", label:string, target_tipo:"procedura"|"clinica"|"modulo", target:string }
 
-LINEE GUIDA:
+LINEE GUIDA CONTENUTI:
 - Mantieni la lingua del testo originale (italiano se il testo è in italiano).
 - Spezza il contenuto in blocchi logici: ogni sezione importante è un blocco a sé.
 - Per controlli pre-procedura, criteri, checklist usa "checklist".
@@ -6490,32 +6568,38 @@ LINEE GUIDA:
 - Le tabelle vanno preservate come "table".
 - I codici di sistemi gestionali (es. "SR MEDICINA → ESAME LIQUOR") vanno in "system_code".
 - I template di refertazione/nota di diario vanno in "clinical_note".
-- NON inventare contenuti che non sono nel testo originale.
 - NON usare image/form_ref/internal_ref a meno che non siano esplicitamente menzionati nel testo.
 - Se il testo originale contiene URL, usa il blocco "link".
 
-ESEMPIO DI OUTPUT VALIDO:
-[
-{"tipo":"callout","variante":"warning","titolo":"Prima di procedere","testo":"Verificare allergie e terapie in corso."},
-{"tipo":"checklist","titolo":"Controlli pre-procedura","items":["INR < 1.5","Piastrine > 50.000","Consenso firmato"]},
-{"tipo":"text","testo":"La procedura va eseguita in posizione laterale o seduta."},
-{"tipo":"list","titolo":"Materiale necessario","items":["Ago atraumatico 22G","Provette per liquor x4","Antisettico"]}
-]
+${riassuntoSection}ESEMPIO DI OUTPUT VALIDO:
+{
+  "frontmatter": ${fmExample},
+  "contenuti": [
+    {"tipo":"callout","variante":"warning","titolo":"Prima di procedere","testo":"Verificare allergie e terapie in corso."},
+    {"tipo":"checklist","titolo":"Controlli pre-procedura","items":["INR < 1.5","Piastrine > 50.000","Consenso firmato"]},
+    {"tipo":"text","testo":"La procedura va eseguita in posizione laterale o seduta."},
+    {"tipo":"list","titolo":"Materiale necessario","items":["Ago atraumatico 22G","Provette per liquor x4","Antisettico"]}
+  ]
+}
 
 TESTO DA CONVERTIRE:
 ---
-__INSERT_TESTO__
+${rawText}
 ---
 
-Restituisci SOLO l'array JSON, niente altro.`;
+Restituisci SOLO l'oggetto JSON, niente altro.`;
+}
 
 function openAIImportModal(tipo) {
   // Costruisco il prompt al volo: descrizione dei tipi di blocco + schema JSON.
   // Questa è la "knowledge base" che l'AI esterna riceve, identica a quella usata
   // dall'editor a blocchi nell'app.
+  // tipo: 'procedura' | 'clinica' — determina lo schema frontmatter incluso nel prompt
+  //                                  e i campi che verranno popolati al passo Importa.
 
   let step = 1;
   let rawText = '';
+  let riassumi = false;
   let aiJson = '';
 
   function renderStep() {
@@ -6527,16 +6611,21 @@ function openAIImportModal(tipo) {
           <span class="ai-step">3. JSON</span>
         </div>
         <p style="margin:0 0 12px;font-size:13px;color:var(--ink-soft);line-height:1.5;">
-          Incolla qui il testo grezzo della procedura (es. copiato da un PDF, da una linea guida, da un altro documento). 
+          Incolla qui il testo grezzo della ${tipo === 'clinica' ? 'scheda clinica' : 'procedura'} (es. copiato da un PDF, da una linea guida, da un altro documento).
           Al passo successivo riceverai un prompt da incollare in un'AI esterna (ChatGPT, Claude, Gemini), che lo convertirà in JSON strutturato.
         </p>
         <div class="field">
           <label>Testo grezzo</label>
-          <textarea id="ai-import-raw" rows="12" placeholder="Incolla qui il testo della procedura..." style="font-family:var(--mono);font-size:13px;line-height:1.5;">${escapeHtml(rawText)}</textarea>
-        </div>`;
+          <textarea id="ai-import-raw" rows="12" placeholder="Incolla qui il testo della ${tipo === 'clinica' ? 'scheda' : 'procedura'}..." style="font-family:var(--mono);font-size:13px;line-height:1.5;">${escapeHtml(rawText)}</textarea>
+        </div>
+        <label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:13px;line-height:1.4;cursor:pointer;color:var(--ink-soft);">
+          <input type="checkbox" id="ai-import-riassumi" ${riassumi ? 'checked' : ''} style="margin-top:2px;flex-shrink:0;">
+          <span><strong>Riassumi se il testo è prolisso o ridondante.</strong><br>
+          <span style="color:var(--ink-muted);font-size:12px;">L'AI manterrà l'essenziale clinico (dosaggi, codici, criteri) ma potrà accorciare frasi pesanti e rimuovere ripetizioni. Lascia disattivato se il testo è già conciso.</span></span>
+        </label>`;
     }
     if (step === 2) {
-      const fullPrompt = AI_IMPORT_PROMPT_TEMPLATE.replace('__INSERT_TESTO__', rawText);
+      const fullPrompt = buildAIImportPrompt(tipo, rawText, { riassumi });
       return `
         <div style="display:flex;gap:8px;margin-bottom:16px;">
           <span class="ai-step ai-step-done">1. Testo ✓</span>
@@ -6546,6 +6635,7 @@ function openAIImportModal(tipo) {
         <p style="margin:0 0 12px;font-size:13px;color:var(--ink-soft);line-height:1.5;">
           <strong>1.</strong> Copia il prompt qui sotto. <strong>2.</strong> Incollalo in <strong>ChatGPT</strong>, <strong>Claude</strong> o <strong>Gemini</strong>. <strong>3.</strong> Copia la risposta JSON che riceverai e incollala al passo successivo.
         </p>
+        ${riassumi ? '<p style="margin:0 0 8px;font-size:12px;color:var(--accent);"><strong>Modalità riassunto attiva</strong> — l\'AI accorcerà il testo se prolisso.</p>' : ''}
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px;">
           <button type="button" class="btn ghost sm" id="ai-copy-prompt">📋 Copia prompt</button>
         </div>
@@ -6559,13 +6649,16 @@ function openAIImportModal(tipo) {
           <span class="ai-step ai-step-active">3. JSON</span>
         </div>
         <p style="margin:0 0 12px;font-size:13px;color:var(--ink-soft);line-height:1.5;">
-          Incolla qui il <strong>JSON</strong> ricevuto dall'AI. Deve essere un array che inizia con <code>[</code> e finisce con <code>]</code>.
+          Incolla qui il <strong>JSON</strong> ricevuto dall'AI. Deve essere un oggetto con campi <code>frontmatter</code> e <code>contenuti</code>, racchiuso tra <code>{</code> e <code>}</code>.
         </p>
         <div class="field">
           <label>JSON dall'AI</label>
-          <textarea id="ai-import-json" rows="12" placeholder='[{"tipo":"text","testo":"..."}, ...]' style="font-family:var(--mono);font-size:12px;line-height:1.4;">${escapeHtml(aiJson)}</textarea>
+          <textarea id="ai-import-json" rows="12" placeholder='{"frontmatter":{...},"contenuti":[...]}' style="font-family:var(--mono);font-size:12px;line-height:1.4;">${escapeHtml(aiJson)}</textarea>
         </div>
-        <div id="ai-import-error" style="display:none;color:var(--danger);font-size:12px;margin-top:8px;padding:8px 10px;background:var(--danger-soft);border-radius:2px;"></div>`;
+        <div id="ai-import-error" style="display:none;color:var(--danger);font-size:12px;margin-top:8px;padding:8px 10px;background:var(--danger-soft);border-radius:2px;"></div>
+        <p style="margin:8px 0 0;font-size:12px;color:var(--ink-muted);line-height:1.4;">
+          I metadati (titolo, tag, ecc.) verranno pre-compilati dall'AI nei campi sopra: potrai modificarli prima di salvare.
+        </p>`;
     }
   }
 
@@ -6577,6 +6670,8 @@ function openAIImportModal(tipo) {
             const v = ($('ai-import-raw').value || '').trim();
             if (!v) { toast('Incolla del testo prima di continuare', 'error'); return; }
             rawText = v;
+            const cb = $('ai-import-riassumi');
+            riassumi = !!(cb && cb.checked);
             step = 2;
             rerenderModal();
           }
@@ -6601,12 +6696,30 @@ function openAIImportModal(tipo) {
             let parsed;
             try { parsed = JSON.parse(cleaned); }
             catch (e) { showAiError('JSON non valido: ' + e.message); return; }
-            if (!Array.isArray(parsed)) { showAiError('Il JSON deve essere un array di blocchi'); return; }
-            // Validazione minima: ogni blocco deve avere "tipo" tra quelli supportati
+            // Accetta sia il NUOVO schema {frontmatter, contenuti} sia il VECCHIO (array di blocchi
+            // diretto) per retrocompatibilità con prompt precedenti che l'utente potrebbe avere
+            // ancora aperti in chat AI.
+            let frontmatterIn = null;
+            let contenutiIn = null;
+            if (Array.isArray(parsed)) {
+              contenutiIn = parsed;
+            } else if (parsed && typeof parsed === 'object') {
+              if (Array.isArray(parsed.contenuti)) {
+                contenutiIn = parsed.contenuti;
+                frontmatterIn = (parsed.frontmatter && typeof parsed.frontmatter === 'object') ? parsed.frontmatter : null;
+              } else {
+                showAiError('JSON: manca il campo "contenuti" (array di blocchi)');
+                return;
+              }
+            } else {
+              showAiError('Il JSON deve essere un oggetto {frontmatter, contenuti} o un array di blocchi');
+              return;
+            }
+            // Validazione blocchi: ogni blocco deve avere "tipo" tra quelli supportati
             const VALID_TIPI = ['text','list','checklist','callout','table','image','system_code','link','form_ref','internal_ref','clinical_note'];
             const errors = [];
             const validBlocks = [];
-            parsed.forEach((b, i) => {
+            contenutiIn.forEach((b, i) => {
               if (!b || typeof b !== 'object' || !b.tipo) {
                 errors.push(`Blocco #${i+1}: manca il campo "tipo"`);
                 return;
@@ -6630,8 +6743,15 @@ function openAIImportModal(tipo) {
               const newBlocks = mode === 'append' ? [...existing, ...validBlocks] : validBlocks;
               blockEditor.render(wrapper, newBlocks);
               if (state.editingContext) state.editingContext.isDirty = true;
+              // Applico il frontmatter ai campi metadata dell'editor (sovrascrive solo i campi
+              // suggeriti dall'AI; gli altri restano com'erano).
+              let fmCount = 0;
+              if (frontmatterIn) {
+                fmCount = applyAIFrontmatter(tipo, frontmatterIn);
+              }
               const errMsg = errors.length ? ` (${errors.length} blocchi scartati)` : '';
-              toast(`${validBlocks.length} blocchi importati${errMsg}`, 'success');
+              const fmMsg = fmCount > 0 ? `, ${fmCount} metadati pre-compilati` : '';
+              toast(`${validBlocks.length} blocchi importati${fmMsg}${errMsg}`, 'success');
               closeModal();
             };
             if (hasExisting) {
@@ -6665,7 +6785,7 @@ function openAIImportModal(tipo) {
     setTimeout(() => {
       showModal({
         title: 'Importa con AI',
-        subtitle: 'Converti testo grezzo in blocchi strutturati con un\'AI esterna',
+        subtitle: `Converti testo grezzo in ${tipo === 'clinica' ? 'una scheda clinica' : 'una procedura'} con un'AI esterna`,
         body: renderStep(),
         actions: actionsForStep()
       });
@@ -6689,6 +6809,68 @@ function openAIImportModal(tipo) {
   }
 
   rerenderModal();
+}
+
+// Applica i metadati suggeriti dall'AI ai campi dell'editor. Restituisce il numero di
+// campi effettivamente popolati (per il toast di feedback). Sovrascrive solo i campi che
+// l'AI ha valorizzato; gli altri restano com'erano. L'utente può rivedere/modificare tutto
+// prima di salvare.
+function applyAIFrontmatter(tipo, fm) {
+  if (!fm || typeof fm !== 'object') return 0;
+  let count = 0;
+  // Helper: svuota una chips-list e re-popola con i valori dati. Usa chipsAdd
+  // (che è già il pattern di "scrittura" della chip field) dopo aver azzerato il dataset.
+  const replaceChips = (id, items) => {
+    const container = document.getElementById(id);
+    if (!container || typeof chipsAdd !== 'function') return false;
+    // Svuota chip esistenti dal DOM
+    container.querySelectorAll('.chip').forEach(c => c.remove());
+    container.dataset.values = '[]';
+    items.forEach(v => {
+      const slug = String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'');
+      if (slug) chipsAdd(id, slug, String(v));
+    });
+    return items.length > 0;
+  };
+  // titolo (procedura + clinica)
+  if (typeof fm.titolo === 'string' && fm.titolo.trim()) {
+    const el = $('meta-titolo');
+    if (el) { el.value = fm.titolo.trim(); count++; }
+  }
+  // tag (chips, procedura + clinica)
+  if (Array.isArray(fm.tag) && fm.tag.length) {
+    const tagsClean = fm.tag.filter(t => typeof t === 'string' && t.trim()).map(t => t.trim());
+    if (tagsClean.length && replaceChips('meta-tag-chips', tagsClean)) count++;
+  }
+  // termini equivalenti (chips, procedura + clinica)
+  if (Array.isArray(fm.termini_equivalenti) && fm.termini_equivalenti.length) {
+    const termClean = fm.termini_equivalenti.filter(t => typeof t === 'string' && t.trim()).map(t => t.trim());
+    if (termClean.length && replaceChips('meta-termini-chips', termClean)) count++;
+  }
+  if (tipo === 'procedura') {
+    // categoria (select)
+    if (typeof fm.categoria === 'string') {
+      const valid = ['bedside','richieste','farmacologiche','emergenze','gestione'];
+      if (valid.includes(fm.categoria)) {
+        const el = $('meta-categoria');
+        if (el) { el.value = fm.categoria; count++; }
+      }
+    }
+    // sottocategoria (chips single-value)
+    if (typeof fm.sottocategoria === 'string' && fm.sottocategoria.trim()) {
+      if (replaceChips('meta-sottocategoria-chips', [fm.sottocategoria.trim()])) count++;
+    }
+  } else if (tipo === 'clinica') {
+    // sottocategoria (select fissa)
+    if (typeof fm.sottocategoria === 'string') {
+      const valid = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+      if (valid.includes(fm.sottocategoria)) {
+        const el = $('meta-sottocategoria');
+        if (el) { el.value = fm.sottocategoria; count++; }
+      }
+    }
+  }
+  return count;
 }
 
 async function saveProcedura() {
@@ -14944,6 +15126,17 @@ function renderTagPage(tagName) {
 function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
+  // BUG FIX (mobile scroll-jump): quando applichiamo `body.search-overlay-open`
+  // (overflow:hidden + height:100%), il browser resetta window.scrollY a 0 perché
+  // il body non è più scrollabile. Devo salvare la posizione PRIMA e ripristinarla
+  // alla chiusura, così l'utente che era scrollato in basso ritrova la stessa posizione
+  // quando cancella la ricerca o chiude l'overlay (ma NON quando naviga a una nuova
+  // pagina cliccando un risultato — vedi closeSearchOverlay).
+  // Idempotente: se l'overlay è già aperto, non sovrascrivere il valore salvato.
+  if (overlay.classList.contains('hidden')) {
+    overlay._savedScrollY = window.scrollY || window.pageYOffset || 0;
+    overlay._savedRoute = state.currentView;  // per non ripristinare se cambia pagina
+  }
   overlay.classList.remove('hidden');
   // Blocca scroll del body sottostante con overflow:hidden su html + body.
   // NON uso position:fixed perché rompe la topbar sticky e su mobile crea
@@ -14984,9 +15177,27 @@ function openSearchOverlay(query) {
 function closeSearchOverlay() {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
+  if (overlay.classList.contains('hidden')) return;  // già chiuso, no-op
   overlay.classList.add('hidden');
   document.documentElement.classList.remove('search-overlay-open');
   document.body.classList.remove('search-overlay-open');
+  // Ripristina la posizione di scroll precedente SOLO se la rotta non è cambiata
+  // (l'utente sta cancellando/chiudendo la ricerca senza navigare). Se invece ha
+  // cliccato un risultato, navigate() ha già scrollato la pagina target a 0 e non
+  // dobbiamo riportarlo alla posizione vecchia.
+  const sameRoute = overlay._savedRoute === state.currentView;
+  const y = overlay._savedScrollY;
+  overlay._savedScrollY = null;
+  overlay._savedRoute = null;
+  if (sameRoute && typeof y === 'number' && y > 0) {
+    // requestAnimationFrame perché la rimozione delle classi su body dev'essere
+    // applicata dal browser PRIMA dello scrollTo (altrimenti il body sarebbe ancora
+    // overflow:hidden e lo scrollTo non avrebbe effetto).
+    requestAnimationFrame(() => {
+      try { window.scrollTo({ top: y, behavior: 'instant' }); }
+      catch { window.scrollTo(0, y); }
+    });
+  }
 }
 
 function renderSearchResults(query, targetId) {
@@ -15094,9 +15305,26 @@ function renderSearchResults(query, targetId) {
   };
   const tokenMatches = (token, text) => {
     if (text.includes(token)) return true;
+    // Match con spazi/trattini rimossi: "neuroanestesia" matcha "Neuro anestesia",
+    // "stroke unit" matcha "Stroke-unit", ecc. Confronta entrambi nelle versioni
+    // "compatte" (senza separatori) per gestire concatenazioni o rimozioni di spazi.
+    const compactToken = token.replace(/[\s\-_.]+/g, '');
+    if (compactToken !== token) {
+      const compactText = text.replace(/[\s\-_.]+/g, '');
+      if (compactText.includes(compactToken)) return true;
+    } else {
+      // Anche se il token NON ha separatori, il testo potrebbe averli: confronta col testo compatto.
+      const compactText = text.replace(/[\s\-_.]+/g, '');
+      if (compactText.includes(token)) return true;
+    }
     const alts = synonyms[token];
     if (alts) {
-      for (const alt of alts) if (text.includes(alt)) return true;
+      for (const alt of alts) {
+        if (text.includes(alt)) return true;
+        const compactAlt = alt.replace(/[\s\-_.]+/g, '');
+        const compactText = text.replace(/[\s\-_.]+/g, '');
+        if (compactText.includes(compactAlt)) return true;
+      }
     }
     return false;
   };
@@ -15149,6 +15377,20 @@ function renderSearchResults(query, targetId) {
   // Aggiungo gruppi il cui NOME/direttore/alias matcha interamente la query (no sezioni tipo,
   // che è troppo specifico: "ucic" non deve espandere tutta la Cardiologia)
   const allGroupsForSearch = getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd');
+  // Helper: vero se la query matcha interamente il nome/alias di una sezione del gruppo.
+  // Usato per espandere il gruppo quando l'utente cerca una sezione (es. "piastra operatoria
+  // gallucci"): la sezione corrispondente esiste in Cardiochirurgia → render espanso, non
+  // collassato. Senza questo, cercare un nome di sezione produrrebbe solo box "UOC · Sezione"
+  // collassati invece dell'header UOC con la sezione dentro.
+  const groupHasMatchingSezione = (g) => {
+    const sezioni = g.sezioni || [];
+    return sezioni.some(s => {
+      const sezText = [s.nome, Array.isArray(s.alias) ? s.alias.join(' ') : (s.alias || '')]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!sezText) return false;
+      return queryTerms.every(t => tokenMatches(t, sezText));
+    });
+  };
   allGroupsForSearch.forEach(g => {
     const nameAlias = [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
     const groupMatches = queryTerms.every(t => tokenMatches(t, nameAlias));
@@ -15166,7 +15408,11 @@ function renderSearchResults(query, targetId) {
         return tokensNotInName.every(t => tokenMatches(t, ctxt));
       });
     }
-    if (groupMatches || partialGroupMatch) {
+    // Match su sezione: cercare il nome di una sezione (anche se non matcha il nome UOC)
+    // espande comunque il gruppo. Esempio: "piastra operatoria gallucci" → UOC Cardiochirurgia
+    // espansa con la Piastra dentro, non box collassato isolato.
+    const sezioneMatches = queryTerms.length >= 1 && !isNumericQuery && groupHasMatchingSezione(g);
+    if (groupMatches || partialGroupMatch || sezioneMatches) {
       matchedGroupIds.add(g.id);
       if (!byGruppo.has(g.id)) {
         byGruppo.set(g.id, {
@@ -15326,9 +15572,9 @@ function renderSearchResults(query, targetId) {
     const numChipClass = isGuardia ? 'sr-num-chip-guardia' : isReparto ? 'sr-num-chip-reparto' : isUtile ? 'sr-num-chip-utile' : 'sr-num-chip';
     const numChipsHtml = parts.length
       ? parts.map(p => {
-          const prefix = p.type === 'pers' ? '<span class="sr-num-prefix">pers.</span>'
-                       : p.type === 'breve' ? '<span class="sr-num-prefix">br.</span>'
-                       : '';
+          // Prefisso "pers." per numeri personali (per distinguerli dai brevi). I numeri brevi
+          // non hanno prefisso: il loro formato (3-4 cifre) è già autoevidente per gli utenti.
+          const prefix = p.type === 'pers' ? '<span class="sr-num-prefix">pers.</span>' : '';
           return `<span class="sr-num-chip ${numChipClass} sr-num-chip-${p.type}">${prefix}${escapeHtml(p.value)}</span>`;
         }).join('')
       : `<span class="sr-num-chip ${numChipClass}">—</span>`;
@@ -16023,8 +16269,18 @@ function initGlobalSearch() {
   const searchClear = $('global-search-clear');
   let searchTimeout = null;
   let lastRenderedQuery = null;
+  // BUG FIX (mobile scroll-jump): updateSearchClear deve mutare il DOM SOLO quando lo
+  // stato del bottone cambia davvero (vuoto ↔ non-vuoto). Chiamarlo ad ogni keystroke
+  // con classList.toggle (anche se nop logico) può causare un repaint della topbar
+  // sticky con backdrop-filter, che su Android Chrome durante typing con tastiera aperta
+  // si traduce in micro-scroll della pagina sotto.
+  let _clearShown = null;  // null = non ancora deciso
   const updateSearchClear = () => {
-    if (searchClear) searchClear.classList.toggle('hidden', !searchInput.value);
+    if (!searchClear) return;
+    const shouldShow = !!searchInput.value;
+    if (shouldShow === _clearShown) return;  // no-op se stato invariato
+    _clearShown = shouldShow;
+    searchClear.classList.toggle('hidden', !shouldShow);
   };
   updateSearchClear();
   const doSearch = (q) => {
