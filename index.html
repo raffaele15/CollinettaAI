@@ -1032,7 +1032,7 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
    `overscroll-behavior-y:none` su html previene anche il pull-to-refresh
    del browser (che altrimenti si attiva quando si fa swipe verso il basso). */
 html.search-overlay-open,
-body.search-overlay-open{overscroll-behavior-y:none}
+body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavior-y:none;touch-action:none}
 /* L'overlay deve poter ricevere pan verticale per scroll, ma niente pull-to-refresh */
 body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-y:contain}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
@@ -15150,17 +15150,12 @@ function renderTagPage(tagName) {
 function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
-  // Scroll lock unificato (position:fixed sul body). Se il focus dell'input su mobile ha
-  // già bloccato lo scroll, lockSearchScroll è idempotente (non sovrascrive la posizione).
-  // Memorizzo la rotta corrente per decidere al close se ripristinare lo scroll: se l'utente
-  // naviga a un risultato la rotta cambia → non ripristino (la pagina target parte da 0).
+  // Salvo posizione scroll + rotta per ripristinare alla chiusura (se non si naviga).
   if (overlay.classList.contains('hidden')) {
+    overlay._savedScrollY = window.scrollY || window.pageYOffset || 0;
     overlay._savedRoute = state.currentView;
   }
-  lockSearchScroll();
   overlay.classList.remove('hidden');
-  // Classi per touch-action / overscroll-behavior dell'overlay (lo scroll lock vero è
-  // ora gestito da lockSearchScroll con position:fixed, non da overflow:hidden qui).
   document.documentElement.classList.add('search-overlay-open');
   document.body.classList.add('search-overlay-open');
   renderSearchResults(query, 'search-overlay-content');
@@ -15194,27 +15189,18 @@ function closeSearchOverlay() {
   overlay.classList.add('hidden');
   document.documentElement.classList.remove('search-overlay-open');
   document.body.classList.remove('search-overlay-open');
-  // Se l'utente ha navigato a un risultato (rotta cambiata), navigate() ha già scrollato
-  // la pagina target a 0: sblocco SENZA ripristinare la vecchia posizione. Altrimenti
-  // (chiusura/cancellazione senza navigare) ripristino la posizione pre-ricerca.
+  // Ripristina la posizione scroll precedente SOLO se la rotta non è cambiata (chiusura/
+  // cancellazione senza navigare). Se l'utente ha cliccato un risultato, navigate() ha già
+  // scrollato la pagina target a 0 e non dobbiamo riportarlo alla posizione vecchia.
   const sameRoute = overlay._savedRoute === state.currentView;
+  const y = overlay._savedScrollY;
+  overlay._savedScrollY = null;
   overlay._savedRoute = null;
-  // Se l'input non è più focused, sblocco lo scroll. Se è ancora focused (es. utente ha
-  // solo cancellato sotto i 2 caratteri ma sta ancora scrivendo), lascio il lock attivo
-  // così non si ripresenta lo scroll-jump al carattere successivo.
-  const searchInput = document.getElementById('global-search');
-  const stillFocused = document.activeElement === searchInput;
-  if (!sameRoute) {
-    // Navigato altrove: scarto la posizione salvata, sblocco senza ripristino
-    _searchScrollLockY = null;
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.width = '';
-    document.body.style.overflow = '';
-  } else if (!stillFocused) {
-    unlockSearchScroll();
+  if (sameRoute && typeof y === 'number' && y > 0) {
+    requestAnimationFrame(() => {
+      try { window.scrollTo({ top: y, behavior: 'instant' }); }
+      catch { window.scrollTo(0, y); }
+    });
   }
 }
 
@@ -16373,29 +16359,13 @@ function initGlobalSearch() {
       searchInput.focus();
     });
   }
-  // BUG FIX (mobile scroll-jump durante typing): su mobile, quando l'input nella topbar
-  // sticky riceve il focus e si digita, Android Chrome ridimensiona la visualViewport ad
-  // ogni keystroke (per i suggerimenti tastiera) e riposiziona la topbar sticky → la pagina
-  // sotto scrolla di pochi px ad ogni carattere, ANCHE prima che appaia l'overlay.
-  // Soluzione: blocco lo scroll del body GIÀ al focus dell'input (non aspetto i 2 caratteri
-  // per aprire l'overlay). Il body viene fissato con position:fixed (come il mobile drawer),
-  // così non può scrollare durante il typing. Sblocco al blur se l'overlay non è aperto.
+  // Se l'utente torna sull'input con testo già presente, riapri l'overlay con quei risultati.
+  // MA solo se l'overlay è effettivamente chiuso.
   searchInput.addEventListener('focus', () => {
-    if (isMobileViewport()) lockSearchScroll();
     const q = searchInput.value;
     const overlay = document.getElementById('search-overlay');
     const overlayOpen = overlay && !overlay.classList.contains('hidden');
     if (q.length >= 2 && !overlayOpen) openSearchOverlay(q);
-  });
-  searchInput.addEventListener('blur', () => {
-    // Sblocco solo se l'overlay NON è aperto (se è aperto, lo scroll lock serve ancora).
-    // setTimeout per dare tempo a un eventuale tap su un risultato di registrarsi prima
-    // dello sblocco (altrimenti il riposizionamento scroll può "spostare" il target del tap).
-    setTimeout(() => {
-      const overlay = document.getElementById('search-overlay');
-      const overlayOpen = overlay && !overlay.classList.contains('hidden');
-      if (!overlayOpen) unlockSearchScroll();
-    }, 100);
   });
 
   // Keyboard shortcut: Cmd/Ctrl + K focuses search; ESC chiude modale o overlay
@@ -16412,33 +16382,6 @@ function initGlobalSearch() {
       }
     }
   });
-}
-
-// Scroll lock condiviso tra il focus dell'input ricerca e l'overlay dei risultati.
-// Usa position:fixed sul body (iOS/Android-safe) e memorizza la posizione per ripristinarla.
-// Idempotente: chiamate multiple non sovrascrivono la posizione salvata.
-let _searchScrollLockY = null;
-function lockSearchScroll() {
-  if (_searchScrollLockY !== null) return;  // già bloccato
-  _searchScrollLockY = window.scrollY || window.pageYOffset || 0;
-  document.body.style.position = 'fixed';
-  document.body.style.top = `-${_searchScrollLockY}px`;
-  document.body.style.left = '0';
-  document.body.style.right = '0';
-  document.body.style.width = '100%';
-  document.body.style.overflow = 'hidden';
-}
-function unlockSearchScroll() {
-  if (_searchScrollLockY === null) return;  // non bloccato
-  const y = _searchScrollLockY;
-  _searchScrollLockY = null;
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.left = '';
-  document.body.style.right = '';
-  document.body.style.width = '';
-  document.body.style.overflow = '';
-  window.scrollTo(0, y);
 }
 
 async function init() {
