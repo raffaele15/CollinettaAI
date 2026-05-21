@@ -1032,7 +1032,7 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
    `overscroll-behavior-y:none` su html previene anche il pull-to-refresh
    del browser (che altrimenti si attiva quando si fa swipe verso il basso). */
 html.search-overlay-open,
-body.search-overlay-open{overflow:hidden!important;height:100%;overscroll-behavior-y:none;touch-action:none}
+body.search-overlay-open{overflow:hidden!important;overscroll-behavior-y:none;touch-action:none}
 /* L'overlay deve poter ricevere pan verticale per scroll, ma niente pull-to-refresh */
 body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-y:contain}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
@@ -15151,13 +15151,22 @@ function openSearchOverlay(query) {
   const overlay = document.getElementById('search-overlay');
   if (!overlay) return;
   // Salvo posizione scroll + rotta per ripristinare alla chiusura (se non si naviga).
-  if (overlay.classList.contains('hidden')) {
+  const wasHidden = overlay.classList.contains('hidden');
+  if (wasHidden) {
     overlay._savedScrollY = window.scrollY || window.pageYOffset || 0;
     overlay._savedRoute = state.currentView;
   }
   overlay.classList.remove('hidden');
   document.documentElement.classList.add('search-overlay-open');
   document.body.classList.add('search-overlay-open');
+  // Alcuni browser, applicando overflow:hidden al body/html scrollato, resettano
+  // visivamente lo scroll a 0 (la pagina "salta su"). Riporto subito la posizione salvata
+  // per compensare. Vale sia PC che mobile.
+  if (wasHidden && overlay._savedScrollY > 0) {
+    const y = overlay._savedScrollY;
+    window.scrollTo(0, y);
+    requestAnimationFrame(() => window.scrollTo(0, y));
+  }
   renderSearchResults(query, 'search-overlay-content');
   // Tap/swipe fuori dall'input attivo → chiudi tastiera mobile (blur input).
   if (!document._blurInputOnTouchBound) {
@@ -16359,13 +16368,42 @@ function initGlobalSearch() {
       searchInput.focus();
     });
   }
-  // Se l'utente torna sull'input con testo già presente, riapri l'overlay con quei risultati.
-  // MA solo se l'overlay è effettivamente chiuso.
+  // BUG FIX (scroll-jump al focus): l'input è dentro la topbar position:sticky. Quando
+  // riceve il focus mentre la pagina è scrollata, il browser fa uno smooth-scroll automatico
+  // per "allineare" l'elemento focused, portando la pagina in cima. Succede sia su PC che
+  // mobile, PRIMA ancora che si apra l'overlay. Per impedirlo: al focus salvo la posizione
+  // e la "pinno" (ripristino su ogni evento scroll) per una breve finestra, battendo
+  // l'animazione del browser. preventScroll nel focus programmatico non basta perché il
+  // focus da click dell'utente non lo possiamo intercettare con quell'opzione.
+  let _pinScrollY = null;
+  let _pinUntil = 0;
+  const onPinScroll = () => {
+    if (_pinScrollY === null) return;
+    if (performance.now() > _pinUntil) {
+      window.removeEventListener('scroll', onPinScroll);
+      _pinScrollY = null;
+      return;
+    }
+    if (Math.abs(window.scrollY - _pinScrollY) > 1) {
+      window.scrollTo(0, _pinScrollY);
+    }
+  };
   searchInput.addEventListener('focus', () => {
+    // Pin della posizione corrente per ~500ms per annullare il focus-scroll del browser
+    _pinScrollY = window.scrollY || window.pageYOffset || 0;
+    _pinUntil = performance.now() + 250;
+    window.removeEventListener('scroll', onPinScroll);
+    window.addEventListener('scroll', onPinScroll, { passive: true });
+
     const q = searchInput.value;
     const overlay = document.getElementById('search-overlay');
     const overlayOpen = overlay && !overlay.classList.contains('hidden');
     if (q.length >= 2 && !overlayOpen) openSearchOverlay(q);
+  });
+  // Quando l'input perde il focus, smetti di pinnare
+  searchInput.addEventListener('blur', () => {
+    _pinScrollY = null;
+    window.removeEventListener('scroll', onPinScroll);
   });
 
   // Keyboard shortcut: Cmd/Ctrl + K focuses search; ESC chiude modale o overlay
