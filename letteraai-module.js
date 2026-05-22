@@ -18,6 +18,7 @@
 const ghHost    = () => window.gh;
 const stateHost = () => window.state;
 const showModal = (o) => window.showModal(o);
+const closeModal= () => window.closeModal && window.closeModal();
 const Modals    = () => window.Modals;
 const toast     = (m,l) => window.toast(m, l||'info');
 const navigate  = (r,p) => window.navigate(r, p||{});
@@ -30,13 +31,12 @@ const canEdit   = () => { try { return !!stateHost().session.isAdmin; } catch(e)
 const ROOT = 'content/lettera-ai/';
 const PATHS = {
   root:          ROOT,
-  casiDir:       ROOT + 'casi/',
-  bozzeDir:      ROOT + 'bozze/',
+  casesFile:     ROOT + 'cases.json',      // casi + reparti in un unico array JSON (come standalone)
+  reportsFile:   ROOT + 'reports.json',    // segnalazioni errori (array JSON)
   promptsDir:    ROOT + 'prompts/',
   templatesDir:  ROOT + 'templates/',
   userOverrides: ROOT + 'user_overrides/',
   userTemplates: ROOT + 'user_templates/',
-  cestinoDir:    'cestino/lettera-ai/',
 };
 const PROMPT_PATHS = {
   DEFAULT_SYS:           PATHS.promptsDir + 'default_sys.md',
@@ -591,10 +591,11 @@ const DEFAULT_TEMPLATE_EMBEDDED = {
    STATO MODULO + shim di compatibilità "S" (mappa lo stato standalone)
    ═══════════════════════════════════════════════════════════════════════════ */
 const L = {
-  casi: [], bozze: [], templates: [],
+  casi: [], wards: [], allItems: [], templates: [],
   systemPromptSha: {},
   userOverride: '', userOverrideSha: null,
   userTemplateData: null, userTemplateSha: null,
+  _casesSha: null, _reportsSha: null,
   loaded: false,
   wiz: null,
 };
@@ -631,10 +632,10 @@ function getRefCase(){
   const c = L.casi.find(x => x.id === _refCaseId);
   if(!c) return null;
   return {
-    name: c.fm.diagnosi || c.id,
-    folder: c.fm.cartella_anonimizzata || '',
-    letter: c.fm.lettera_anonimizzata || '',
-    fingerprint: c.fm.fingerprint || '',
+    name: c.diagnosi || c.name || c.id,
+    folder: c.cartella || c.folder || '',
+    letter: c.letter || '',
+    fingerprint: c.fingerprint || '',
   };
 }
 
@@ -3024,6 +3025,31 @@ function buildFileContent(fm, body){
 async function ghGet(path){ try { return await ghHost().getFile(path); } catch(e){ return null; } }
 async function ghList(path){ try { const r = await ghHost().listDir(path); return Array.isArray(r)?r:[]; } catch(e){ return []; } }
 
+/* ── Storage libreria casi: file unico cases.json (array di casi + reparti) ──
+   Replica il design dello standalone: un solo JSON contiene sia i casi
+   (oggetti con letter/fingerprint) sia i reparti (oggetti con type:'ward').
+   Vantaggio vs cartella di .md: una sola chiamata API per leggere tutto. */
+async function loadCasesFile(){
+  const f = await ghGet(PATHS.casesFile);
+  if (!f || !f.content || !f.content.trim()){ L._casesSha = null; return []; }
+  L._casesSha = f.sha;
+  try {
+    const arr = JSON.parse(f.content);
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){ console.warn('[LetteraAI] cases.json non valido', e); return []; }
+}
+async function saveCasesFile(arr){
+  const content = JSON.stringify(arr, null, 2);
+  const res = await ghHost().putFile(
+    PATHS.casesFile, content, L._casesSha || null,
+    `LetteraAI — aggiorna libreria casi (by ${username()})`
+  );
+  // putFile ritorna i metadati col nuovo sha
+  if (res && res.content && res.content.sha) L._casesSha = res.content.sha;
+  else { const f = await ghGet(PATHS.casesFile); L._casesSha = f ? f.sha : null; }
+  return res;
+}
+
 /* Bootstrap prompt da repo (identico nello spirito allo standalone) */
 async function bootstrapPrompts(){
   for (const [varName, path] of Object.entries(PROMPT_PATHS)){
@@ -3065,20 +3091,6 @@ async function loadUserTemplateRepo(){
   else { _userTemplateData = null; L.userTemplateData = null; L.userTemplateSha = null; }
 }
 
-async function loadDir(dir){
-  const entries = await ghList(dir);
-  const out = [];
-  for (const e of entries){
-    if (e.type !== 'file' || !e.name.endsWith('.md')) continue;
-    const f = await ghGet(e.path);
-    if (!f) continue;
-    const { fm } = parseFrontmatter(f.content);
-    out.push({ id: fm.id || e.name.replace(/\.md$/,''), path: e.path, sha: f.sha, fm });
-  }
-  out.sort((a,b) => String(b.fm.data||'').localeCompare(String(a.fm.data||'')));
-  return out;
-}
-
 /* Entry: carica tutto. Chiamato da buildIndex hook + on-demand dalle viste. */
 async function loadLibrary(){
   if (!ghHost()) { L.loaded = false; return; }
@@ -3086,49 +3098,130 @@ async function loadLibrary(){
   await bootstrapTemplatesRepo();
   await loadUserOverrideRepo();
   await loadUserTemplateRepo();
-  L.casi = await loadDir(PATHS.casiDir);
-  L.bozze = await loadDir(PATHS.bozzeDir);
+  // cases.json: separo casi (con lettera) dai reparti (type:'ward')
+  const all = await loadCasesFile();
+  L.allItems = all;
+  L.casi  = all.filter(x => x.type !== 'ward');
+  L.wards = all.filter(x => x.type === 'ward');
   L.loaded = true;
-  try { stateHost().index.lettere = { casi: L.casi, bozze: L.bozze }; } catch(e){}
+  try { stateHost().index.lettere = { casi: L.casi, wards: L.wards }; } catch(e){}
 }
 
+/* Aggiunge un nuovo caso all'array e ripusha cases.json */
 async function saveCaso(caso){
-  const data = caso.data || todayISO();
-  const ward = slugify(caso.ward || 'reparto');
-  const id = caso.id || genId();
-  const path = `${PATHS.casiDir}${data}__${ward}__${id}.md`;
-  const fm = {
-    id, data, ward: caso.ward||'', diagnosi: caso.diagnosi||'', tipo: caso.tipo||'dimissione',
-    autore: username(), creato: new Date().toISOString(),
-    cartella_anonimizzata: caso.cartella||'', lettera_anonimizzata: caso.lettera||'',
-    fingerprint: caso.fingerprint||'',
+  const all = await loadCasesFile();
+  const id = caso.id || ('tpl_' + Date.now());
+  const item = {
+    id,
+    name: caso.name || caso.diagnosi || id,
+    folder: caso.folder || caso.ward || '',
+    letter: caso.lettera || caso.letter || '',
+    cartella: caso.cartella || '',
+    fingerprint: caso.fingerprint || '',
+    ward: caso.ward || '',
+    diagnosi: caso.diagnosi || '',
+    tipo: caso.tipo || 'dimissione',
+    wardId: caso.wardId || undefined,
+    autore: username(),
+    createdAt: new Date().toISOString(),
   };
-  const res = await ghHost().putFile(path, buildFileContent(fm, ''), caso._sha||null,
-    `Aggiungi caso lettera ${id} (by ${username()})`);
+  // Se è un update (id esistente), sostituisco; altrimenti append
+  const idx = all.findIndex(x => x.id === id);
+  if (idx >= 0) all[idx] = Object.assign({}, all[idx], item);
+  else all.push(item);
+  await saveCasesFile(all);
   await loadLibrary();
-  return res;
+  return item;
 }
-async function saveBozza(b){
-  const id = b.id || genId();
-  const path = `${PATHS.bozzeDir}${todayISO()}__${id}.md`;
-  const fm = {
-    id, data: todayISO(), ward: b.ward||'', diagnosi: b.diagnosi||'', tipo: b.tipo||'dimissione',
-    autore: username(), creato: new Date().toISOString(),
-    cartella_anonimizzata: b.anonText||'', lettera: b.outputLetter||'', prompt_costruito: b.builtPrompt||'',
-  };
-  const res = await ghHost().putFile(path, buildFileContent(fm, ''), b._sha||null,
-    `Salva bozza lettera ${id} (by ${username()})`);
-  await loadLibrary();
-  return res;
-}
+
+/* Elimina un caso dall'array (hard delete: lo standalone non aveva cestino per i casi) */
 async function softDeleteCaso(item){
-  const newPath = `${PATHS.cestinoDir}${item.id}__${tsCompact()}__${username()}.md`;
-  const f = await ghHost().getFile(item.path);
-  if (!f) throw new Error('File non trovato');
-  await ghHost().putFile(newPath, f.content, null, `Cestina caso ${item.id} (by ${username()})`);
-  await ghHost().deleteFile(item.path, f.sha, `Rimuovi caso ${item.id} (by ${username()})`);
+  const all = await loadCasesFile();
+  const filtered = all.filter(x => x.id !== item.id);
+  await saveCasesFile(filtered);
   await loadLibrary();
 }
+
+/* ── Gestione reparti (ward): salvati nello stesso cases.json con type:'ward' ── */
+async function createWardRepo(name){
+  if (!name || !name.trim()) throw new Error('Nome reparto mancante');
+  const all = await loadCasesFile();
+  if (all.find(x => x.type === 'ward' && (x.name||'').toLowerCase() === name.trim().toLowerCase()))
+    throw new Error('Esiste già un reparto con questo nome');
+  all.push({
+    id: 'ward_' + Date.now(), type: 'ward', name: name.trim(),
+    fingerprint: '', sourceCount: 0, createdAt: new Date().toISOString(),
+  });
+  await saveCasesFile(all);
+  await loadLibrary();
+}
+async function deleteWardRepo(id){
+  const all = await loadCasesFile();
+  await saveCasesFile(all.filter(x => x.id !== id));
+  await loadLibrary();
+}
+
+/* ── Segnalazioni errori (reports.json) ── */
+async function loadReportsFile(){
+  const f = await ghGet(PATHS.reportsFile);
+  if (!f || !f.content || !f.content.trim()){ L._reportsSha = null; return []; }
+  L._reportsSha = f.sha;
+  try { const arr = JSON.parse(f.content); return Array.isArray(arr) ? arr : []; }
+  catch(e){ return []; }
+}
+async function sendReportRepo(report){
+  const existing = await loadReportsFile();
+  existing.unshift(report); // più recenti in cima
+  const content = JSON.stringify(existing, null, 2);
+  const res = await ghHost().putFile(
+    PATHS.reportsFile, content, L._reportsSha || null,
+    `LetteraAI — segnalazione da ${report.username} [${report.category}]`
+  );
+  if (res && res.content && res.content.sha) L._reportsSha = res.content.sha;
+  return res;
+}
+async function deleteReportRepo(id){
+  const existing = await loadReportsFile();
+  const filtered = existing.filter(r => r.id !== id);
+  const content = JSON.stringify(filtered, null, 2);
+  const res = await ghHost().putFile(
+    PATHS.reportsFile, content, L._reportsSha || null,
+    `LetteraAI — elimina segnalazione ${id} (by ${username()})`
+  );
+  if (res && res.content && res.content.sha) L._reportsSha = res.content.sha;
+  return res;
+}
+
+/* ── Export/Import libreria JSON (backup/ripristino di cases.json) ──
+   Export: scarica l'intero array (casi + reparti) come file .json.
+   Import: fa merge col contenuto attuale ignorando i duplicati per id, poi ripusha. */
+function exportLibraryJson(){
+  const arr = L.allItems && L.allItems.length ? L.allItems : [...(L.casi||[]), ...(L.wards||[])];
+  if (!arr.length){ toast('Libreria vuota — nulla da esportare.','error'); return; }
+  const blob = new Blob([JSON.stringify(arr, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `letteraai_libreria_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  toast(`Esportati ${arr.length} elementi.`,'success');
+}
+async function importLibraryJson(file){
+  if (!file) return;
+  const text = await file.text();
+  let imported;
+  try { imported = JSON.parse(text); } catch(e){ throw new Error('File JSON non valido: '+e.message); }
+  if (!Array.isArray(imported)) throw new Error('Il file non contiene un array JSON valido.');
+  const existing = await loadCasesFile();
+  const existingIds = new Set(existing.map(x => x.id));
+  const newItems = imported.filter(x => x && x.id && !existingIds.has(x.id));
+  const merged = [...existing, ...newItems];
+  await saveCasesFile(merged);
+  await loadLibrary();
+  return { imported: imported.length, added: newItems.length, duplicates: imported.length - newItems.length, total: merged.length };
+}
+
 async function savePromptToRepo(varName, newText){
   const path = PROMPT_PATHS[varName];
   const res = await ghHost().putFile(path, newText, L.systemPromptSha[varName]||null,
@@ -3148,6 +3241,37 @@ async function saveUserOverrideToRepo(newText){
   if (res.content) L.userOverrideSha = res.content.sha;
   return res;
 }
+
+/* ── Editor template di libreria (admin): push/elimina su templates/<id>.json ── */
+async function saveLibraryTemplateRepo(tpl){
+  if (!canEdit()) throw new Error('Solo gli amministratori possono modificare i template');
+  if (!tpl.id) throw new Error('Template senza id');
+  const path = PATHS.templatesDir + tpl.id + '.json';
+  // Trova lo sha attuale (se il file esiste già)
+  const existing = _templates.find(t => t.id === tpl.id);
+  let sha = existing && existing._sha ? existing._sha : null;
+  if (!sha){ const f = await ghGet(path); sha = f ? f.sha : null; }
+  const clean = Object.assign({}, tpl); delete clean._sha;
+  const res = await ghHost().putFile(path, JSON.stringify(clean, null, 2), sha,
+    `LetteraAI — salva template ${tpl.id} (by ${username()})`);
+  if (res && res.content && res.content.sha) tpl._sha = res.content.sha;
+  // Aggiorna copia locale
+  const idx = _templates.findIndex(t => t.id === tpl.id);
+  if (idx >= 0) _templates[idx] = tpl; else _templates.push(tpl);
+  L.templates = _templates;
+  return res;
+}
+async function deleteLibraryTemplateRepo(templateId){
+  if (!canEdit()) throw new Error('Solo gli amministratori possono eliminare i template');
+  if (templateId === 'default') throw new Error('Il template di default non può essere eliminato');
+  const path = PATHS.templatesDir + templateId + '.json';
+  const f = await ghGet(path);
+  if (!f) throw new Error('Template non trovato sul repository');
+  await ghHost().deleteFile(path, f.sha, `LetteraAI — elimina template ${templateId} (by ${username()})`);
+  _templates = _templates.filter(t => t.id !== templateId);
+  L.templates = _templates;
+}
+
 async function saveUserTemplateToRepo(data){
   const path = PATHS.userTemplates + username() + '.json';
   const res = await ghHost().putFile(path, JSON.stringify(data, null, 2), L.userTemplateSha||null,
@@ -3170,7 +3294,7 @@ function jaccardKeywords(a, b){
 function selectRAGExamples(ward, diagnosi, tipo, k){
   k = k || 3;
   const scored = L.casi.map(c => ({ caso:c,
-    score: (c.fm.ward===ward?3:0) + jaccardKeywords(c.fm.diagnosi, diagnosi)*2 + (c.fm.tipo===tipo?1:0) }));
+    score: ((c.ward||c.folder)===ward?3:0) + jaccardKeywords(c.diagnosi||c.name, diagnosi)*2 + (c.tipo===tipo?1:0) }));
   scored.sort((a,b)=>b.score-a.score);
   return scored.filter(s=>s.score>0).slice(0,k).map(s=>s.caso);
 }
@@ -3205,6 +3329,112 @@ function buildCopyPrompt(wiz){
     userPrompt = buildUserPromptStr();
   }
   return fullSystem + '\n\n══════════════════════════════════════\nDATI DEL PAZIENTE\n══════════════════════════════════════\n\n' + userPrompt;
+}
+
+/* ── Verifica anti-allucinazioni: prompt copia-incolla ──
+   Costruisce un prompt che chiede a un'AI esterna di confrontare la lettera con la
+   cartella anonimizzata e restituire un array JSON di flag (contraddizioni/assenze/inferenze). */
+function buildVerificaPrompt(cartella, lettera){
+  const t3 = '```';
+  // Usa VERIFICA_SYSTEM (editabile da repo) come istruzione, poi inietta i due testi.
+  return `${VERIFICA_SYSTEM}
+
+CARTELLA CLINICA ANONIMIZZATA:
+${t3}
+${cartella}
+${t3}
+
+LETTERA DI DIMISSIONE:
+${t3}
+${lettera}
+${t3}`;
+}
+
+/* ── Export/Print lettera ──
+   renderLetterPrintHtml: testo → HTML stampabile (paragrafi + interlinea).
+   Versione semplificata rispetto allo standalone (niente parsing firma complesso):
+   preserva il testo con <pre> per mantenere allineamenti e tabelle testuali. */
+function renderLetterPrintHtml(text){
+  const escaped = (window.escapeHtml ? window.escapeHtml(text) : String(text||''));
+  return `<pre style="white-space:pre-wrap;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7;margin:0;">${escaped}</pre>`;
+}
+function printLetter(text){
+  if(!text || !text.trim()){ toast('Nessuna lettera da stampare.','error'); return; }
+  const w = window.open('', '_blank');
+  if(!w){ toast('Popup bloccato dal browser.','error'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lettera di dimissione</title>
+    <style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7;margin:2.5cm;color:#000}
+    pre{white-space:pre-wrap;font-family:inherit;margin:0}</style></head>
+    <body>${renderLetterPrintHtml(text)}</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>{ try{ w.print(); }catch(e){} }, 250);
+}
+/* Export Word via HTML-.doc: genera un file .doc (HTML con MIME Word) che Word apre
+   mantenendo font/interlinea. Robusto e senza dipendenze (no RTF della tabella). */
+function exportWordDoc(text, filename){
+  if(!text || !text.trim()){ toast('Nessuna lettera da esportare.','error'); return; }
+  const escaped = (window.escapeHtml ? window.escapeHtml(text) : String(text||''));
+  const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="UTF-8"><title>Lettera</title>
+    <style>@page{margin:2.5cm}body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7}
+    pre{white-space:pre-wrap;font-family:inherit;margin:0}</style></head>
+    <body><pre>${escaped}</pre></body></html>`;
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (filename || 'lettera_dimissione') + '.doc';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+/* ── Fingerprint: prompt di estrazione + editor strutturato V3 ── */
+function buildFingerprintPrompt(cartella, lettera){
+  let p = FINGERPRINT_PROMPT_V3;
+  if (cartella) p = p.replace('[INCOLLA QUI LA CARTELLA CLINICA ANONIMIZZATA]', cartella);
+  if (lettera)  p = p.replace('[INCOLLA QUI LA LETTERA DI DIMISSIONE]', lettera);
+  return p;
+}
+/* I 10 campi del fingerprint V3 (schema patologia-specifico) */
+const FP_V3_FIELDS = [
+  { k:'patologia',                  label:'Patologia',                       type:'text' },
+  { k:'diagnosi_pattern',           label:'Diagnosi pattern',                type:'area', rows:2 },
+  { k:'logica_diagnostica',         label:'Logica diagnostica',              type:'area', rows:4 },
+  { k:'decorso_esempio',            label:'Decorso esempio (narrativo)',     type:'area', rows:8 },
+  { k:'checklist_decorso',          label:'Checklist decorso',               type:'list' },
+  { k:'esami_aggiuntivi',           label:'Esami aggiuntivi',                type:'list' },
+  { k:'diari_da_monitorare',        label:'Diari da monitorare',             type:'list' },
+  { k:'raccomandazioni_specifiche', label:'Raccomandazioni specifiche',      type:'list' },
+  { k:'terapia_pattern',            label:'Terapia pattern',                 type:'area', rows:3 },
+  { k:'note',                       label:'Note (vincoli speciali)',         type:'area', rows:3 },
+];
+/* Rende un editor a campi per il fingerprint V3 dentro un container.
+   Restituisce l'HTML; la lettura avviene con readFpV3Editor(prefix). */
+function renderFpV3EditorHtml(fpObj, prefix){
+  fpObj = fpObj || {};
+  return FP_V3_FIELDS.map(f=>{
+    const id = prefix + '_' + f.k;
+    const val = fpObj[f.k];
+    if (f.type === 'text')
+      return `<div class="field"><label>${f.label}</label><input type="text" id="${id}" value="${escapeHtml(val||'')}"></div>`;
+    if (f.type === 'list'){
+      const txt = Array.isArray(val) ? val.join('\n') : '';
+      return `<div class="field"><label>${f.label} (uno per riga)</label><textarea id="${id}" rows="4" class="mono-input">${escapeHtml(txt)}</textarea></div>`;
+    }
+    return `<div class="field"><label>${f.label}</label><textarea id="${id}" rows="${f.rows||3}" class="mono-input">${escapeHtml(val||'')}</textarea></div>`;
+  }).join('');
+}
+function readFpV3Editor(prefix){
+  const get = (k)=>{ const el=document.getElementById(prefix+'_'+k); return el?el.value:''; };
+  const lines = (k)=> get(k).split('\n').map(s=>s.trim()).filter(Boolean);
+  const out = {};
+  FP_V3_FIELDS.forEach(f=>{
+    if (f.type==='list') out[f.k] = lines(f.k);
+    else out[f.k] = get(f.k);
+  });
+  return out;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3242,28 +3472,48 @@ function newWizard(seed){
   return Object.assign({
     step:1, rawText:'', anonText:'', substitutions:[], ward:'', diagnosi:'', tipo:'dimissione',
     prefs: JSON.parse(JSON.stringify(L.userTemplateData&&L.userTemplateData.prefs?L.userTemplateData.prefs:DEFAULT_USER_PREFS)),
-    xlsText:'', xlsRows:null, ragExamples:[], builtPrompt:'', outputLetter:'', bozzaId:null, fingerprint:'',
+    xlsText:'', xlsRows:null, ragExamples:[], builtPrompt:'', outputLetter:'', fingerprint:'',
   }, seed||{});
 }
 
 function renderLettereHome(){
-  if (!L.loaded){ mc().innerHTML = `<div class="loading"><span class="spinner"></span> Caricamento libreria lettere...</div>`;
-    loadLibrary().then(renderLettereHome); return; }
-  mc().innerHTML = pageHead('Lettere','Generatore lettere di dimissione',
+  if (!L.loaded){
+    if (L._homeLoadAttempted){
+      // loadLibrary è già stata tentata ma L.loaded resta false (es. gh non disponibile):
+      // mostro un errore invece di riciclare all'infinito (causava il freeze di Chrome).
+      mc().innerHTML = pageHead('LetteraAI','Generatore lettere di dimissione') +
+        `<div class="lt-note" style="border-left-color:var(--danger);color:var(--danger);">
+          Impossibile caricare la libreria. Verifica di aver effettuato l'accesso e che la
+          connessione a GitHub sia attiva. Ricarica la pagina e riprova.</div>`;
+      return;
+    }
+    L._homeLoadAttempted = true;
+    mc().innerHTML = `<div class="loading"><span class="spinner"></span> Caricamento libreria lettere...</div>`;
+    loadLibrary().then(renderLettereHome).catch(e => {
+      console.error('[LetteraAI] loadLibrary', e);
+      renderLettereHome();
+    });
+    return;
+  }
+  L._homeLoadAttempted = false;
+  mc().innerHTML = pageHead('LetteraAI','Generatore lettere di dimissione',
     `<button class="btn" onclick="window.Lettere.nuova()">Nuova lettera</button>`) + `
     <div class="lt-grid">
       <div class="lt-card" onclick="window.Lettere.nuova()">
         <div class="lt-card-title">Nuova lettera</div>
         <div class="lt-card-desc">Incolla la cartella, anonimizza, costruisci il prompt da copiare in un'AI esterna.</div></div>
-      <div class="lt-card" onclick="navigate('lettere-bozze')">
-        <div class="lt-card-title">Bozze <span class="lt-badge">${L.bozze.length}</span></div>
-        <div class="lt-card-desc">Lettere in lavorazione.</div></div>
       <div class="lt-card" onclick="navigate('lettere-libreria')">
         <div class="lt-card-title">Libreria casi <span class="lt-badge">${L.casi.length}</span></div>
         <div class="lt-card-desc">Esempi anonimizzati con fingerprint di stile.</div></div>
       <div class="lt-card" onclick="navigate('lettere-personalizzazioni')">
         <div class="lt-card-title">Mie personalizzazioni</div>
         <div class="lt-card-desc">Template personale e regole aggiuntive.</div></div>
+      <div class="lt-card" onclick="navigate('lettere-segnalazioni')">
+        <div class="lt-card-title">Segnalazioni</div>
+        <div class="lt-card-desc">Segnala errori o suggerimenti.</div></div>
+      ${canEdit()?`<div class="lt-card" onclick="navigate('lettere-reparti')">
+        <div class="lt-card-title">Reparti</div>
+        <div class="lt-card-desc">Gestisci i reparti personalizzati (admin).</div></div>`:''}
       ${canEdit()?`<div class="lt-card" onclick="navigate('lettere-config')">
         <div class="lt-card-title">Prompt &amp; template</div>
         <div class="lt-card-desc">Prompt di sistema e libreria template (admin).</div></div>`:''}
@@ -3317,7 +3567,7 @@ function wizStep3(){
   const w=L.wiz, p=w.prefs;
   const wardOpts=WARDS.map(x=>`<option${x===w.ward?' selected':''}>${escapeHtml(x)}</option>`).join('');
   const tipoOpts=TIPI.map(t=>`<option value="${t.id}"${t.id===w.tipo?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
-  const rag=(w.ragExamples||[]).map(c=>`<div class="lt-rag"><strong>${escapeHtml(c.fm.diagnosi||c.id)}</strong><span>${escapeHtml(c.fm.ward||'')} · ${escapeHtml(c.fm.tipo||'')}</span></div>`).join('')||'<div class="lt-sub-empty">Nessun esempio simile in libreria.</div>';
+  const rag=(w.ragExamples||[]).map(c=>`<div class="lt-rag"><strong>${escapeHtml(c.diagnosi||c.name||c.id)}</strong><span>${escapeHtml(c.ward||c.folder||'')} · ${escapeHtml(c.tipo||'')}</span></div>`).join('')||'<div class="lt-sub-empty">Nessun esempio simile in libreria.</div>';
   const seg=(key,opts)=>opts.map(o=>`<button class="lt-seg${p[key]===o.v?' on':''}" onclick="window.Lettere._setPref('${key}','${o.v}')">${o.l}</button>`).join('');
   return `<div class="lt-row">
       <div class="field" style="flex:1"><label>Reparto</label><select onchange="window.Lettere._setWard(this.value)">${wardOpts}</select></div>
@@ -3344,46 +3594,62 @@ function wizStep4(){
       <div class="lt-row" style="margin-top:8px"><button class="btn sm" onclick="window.Lettere._copyPrompt()">Copia prompt</button>
         <span class="lt-status">Incolla in Claude/ChatGPT, poi riporta sotto la lettera.</span></div></div>
     <div class="field"><label>Lettera generata (incolla la risposta dell'AI)</label>
-      <textarea id="lt-out" rows="14" placeholder="Incolla qui la lettera prodotta..." oninput="window.Lettere._set('outputLetter', this.value)"></textarea></div>
+      <textarea id="lt-out" rows="14" placeholder="Incolla qui la lettera prodotta..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea></div>
+    <div class="lt-row" style="margin-bottom:6px;flex-wrap:wrap;gap:8px">
+      <button class="btn ghost sm" onclick="window.Lettere._copyVerifica()">Verifica anti-allucinazioni</button>
+      <button class="btn ghost sm" onclick="window.Lettere._printLetter()">Stampa</button>
+      <button class="btn ghost sm" onclick="window.Lettere._exportWord()">Esporta Word</button>
+    </div>
+    <div id="lt-verifica-box"></div>
     <div class="field"><label>Fingerprint stilistico (JSON opzionale, per la libreria)</label>
+      <div class="lt-row" style="margin-bottom:6px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPromptWiz()">Copia prompt per estrarre fingerprint</button>
+        <span class="lt-status">Estrai il "fingerprint" di stile dalla lettera per arricchire la libreria.</span></div>
       <textarea id="lt-fp" rows="3" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}' oninput="window.Lettere._set('fingerprint', this.value)">${escapeHtml(w.fingerprint||'')}</textarea></div>
     <div class="lt-wiz-actions"><button class="btn ghost" onclick="window.Lettere.goStep(3)">← Indietro</button>
-      <div class="lt-row"><button class="btn ghost" onclick="window.Lettere._saveBozza()">Salva bozza</button>
-        <button class="btn" onclick="window.Lettere._addToLibrary()">Aggiungi a libreria</button></div></div>`;
+      <div class="lt-row"><button class="btn" onclick="window.Lettere._addToLibrary()">Aggiungi a libreria</button></div></div>`;
 }
 
 function renderLibreria(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderLibreria); return; }
   const rows=L.casi.map(c=>`<tr onclick="navigate('lettere-caso',{id:'${c.id}'})" style="cursor:pointer">
-    <td>${escapeHtml(c.fm.data||'')}</td><td>${escapeHtml(c.fm.ward||'')}</td><td>${escapeHtml(c.fm.diagnosi||'')}</td>
-    <td>${escapeHtml((TIPI.find(t=>t.id===c.fm.tipo)||{}).label||c.fm.tipo||'')}</td><td>${escapeHtml(c.fm.autore||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="lt-sub-empty">Libreria vuota.</td></tr>';
-  mc().innerHTML=pageHead('Libreria casi','Lettere',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+
+    <td>${escapeHtml((c.createdAt||'').slice(0,10))}</td><td>${escapeHtml(c.ward||c.folder||'')}</td><td>${escapeHtml(c.diagnosi||c.name||'')}</td>
+    <td>${escapeHtml((TIPI.find(t=>t.id===c.tipo)||{}).label||c.tipo||'')}</td><td>${escapeHtml(c.autore||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="lt-sub-empty">Libreria vuota.</td></tr>';
+  // Barra backup/ripristino (solo admin): esporta cases.json o importa con merge
+  const backupBar = canEdit() ? `
+    <div class="lt-row" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost sm" onclick="window.Lettere._exportLib()">Esporta libreria (JSON)</button>
+      <button class="btn ghost sm" onclick="document.getElementById('lt-import-file').click()">Importa libreria (JSON)</button>
+      <input type="file" id="lt-import-file" accept="application/json,.json" style="display:none" onchange="window.Lettere._importLib(this)">
+      <span class="lt-status" style="flex:1">${L.casi.length} casi · ${(L.wards||[]).length} reparti</span>
+    </div>` : '';
+  mc().innerHTML=pageHead('Libreria casi','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+
+    backupBar +
     `<table class="lt-table"><thead><tr><th>Data</th><th>Reparto</th><th>Diagnosi</th><th>Tipo</th><th>Autore</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-function renderBozze(){
-  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderBozze); return; }
-  const rows=L.bozze.map(b=>`<tr onclick="window.Lettere.openBozza('${b.id}')" style="cursor:pointer">
-    <td>${escapeHtml(b.fm.data||'')}</td><td>${escapeHtml(b.fm.ward||'')}</td><td>${escapeHtml(b.fm.diagnosi||'')}</td><td>${escapeHtml(b.fm.autore||'')}</td></tr>`).join('')||'<tr><td colspan="4" class="lt-sub-empty">Nessuna bozza.</td></tr>';
-  mc().innerHTML=pageHead('Bozze','Lettere',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+
-    `<table class="lt-table"><thead><tr><th>Data</th><th>Reparto</th><th>Diagnosi</th><th>Autore</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 function renderCaso(id){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(()=>renderCaso(id)); return; }
   const c=L.casi.find(x=>x.id===id);
-  if(!c){ mc().innerHTML=pageHead('Caso non trovato','Lettere')+'<p>Non disponibile.</p>'; return; }
+  if(!c){ mc().innerHTML=pageHead('Caso non trovato','LetteraAI')+'<p>Non disponibile.</p>'; return; }
   const del=canEdit()?`<button class="btn ghost sm" onclick="window.Lettere._delCaso('${id}')">Elimina</button>`:'';
-  mc().innerHTML=pageHead(c.fm.diagnosi||c.id,`${c.fm.ward||''} · ${c.fm.data||''}`,
-    `<button class="btn ghost" onclick="navigate('lettere-libreria')">← Libreria</button>${del}`)+`
-    <details class="lt-det"><summary>Cartella anonimizzata</summary><pre class="lt-pre">${escapeHtml(c.fm.cartella_anonimizzata||'(vuota)')}</pre></details>
-    <div class="lt-side-title" style="margin-top:18px">Lettera anonimizzata</div><pre class="lt-pre">${escapeHtml(c.fm.lettera_anonimizzata||'(vuota)')}</pre>
-    ${c.fm.fingerprint?`<details class="lt-det"><summary>Fingerprint stilistico</summary><pre class="lt-pre">${escapeHtml(c.fm.fingerprint)}</pre></details>`:''}`;
+  const edit=canEdit()?`<button class="btn ghost sm" onclick="window.Lettere._editCaso('${escapeHtml(id)}')">Modifica</button>`:'';
+  const expBtns=(c.letter&&c.letter.trim())?`
+    <div class="lt-row" style="margin:10px 0;gap:8px">
+      <button class="btn ghost sm" onclick="window.Lettere._printCaso('${escapeHtml(id)}')">Stampa</button>
+      <button class="btn ghost sm" onclick="window.Lettere._exportCaso('${escapeHtml(id)}')">Esporta Word</button>
+    </div>`:'';
+  mc().innerHTML=pageHead(c.diagnosi||c.name||c.id,`${c.ward||c.folder||''} · ${(c.createdAt||'').slice(0,10)}`,
+    `<button class="btn ghost" onclick="navigate('lettere-libreria')">← Libreria</button>${edit}${del}`)+`
+    ${c.cartella?`<details class="lt-det"><summary>Cartella anonimizzata</summary><pre class="lt-pre">${escapeHtml(c.cartella)}</pre></details>`:''}
+    <div class="lt-side-title" style="margin-top:18px">Lettera</div><pre class="lt-pre">${escapeHtml(c.letter||'(vuota)')}</pre>
+    ${expBtns}
+    ${c.fingerprint?`<details class="lt-det"><summary>Fingerprint stilistico</summary><pre class="lt-pre">${escapeHtml(typeof c.fingerprint==='string'?c.fingerprint:JSON.stringify(c.fingerprint,null,2))}</pre></details>`:''}`;
 }
 
 /* ── Mie personalizzazioni (tutti gli utenti) ── */
 function renderPersonalizzazioni(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderPersonalizzazioni); return; }
   const tplOpts=_templates.map(t=>`<option value="${escapeHtml(t.id)}"${(_userTemplateData&&_userTemplateData.base_template_id===t.id)?' selected':''}>${escapeHtml(t.name||t.id)}</option>`).join('');
-  mc().innerHTML=pageHead('Mie personalizzazioni','Lettere',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+`
+  mc().innerHTML=pageHead('Mie personalizzazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+`
     <div class="field"><label>Template di base</label><select id="lt-utpl-base">${tplOpts}</select></div>
     <div class="field"><label>Aggiunte personali (regole additive applicate sempre)</label>
       <textarea id="lt-uoverride" rows="6" class="mono-input" placeholder="es. Per FA cronica includere sempre HAS-BLED nel decorso">${escapeHtml(_userOverride||'')}</textarea></div>
@@ -3391,28 +3657,257 @@ function renderPersonalizzazioni(){
       <button class="btn" onclick="window.Lettere._saveMyPrefs()">Salva</button></div>`;
 }
 
+/* ── Segnalazioni errori (tutti possono inviare; admin vede e gestisce) ── */
+const REPORT_CATEGORIES = [
+  ['errore_lettera', 'Errore nella lettera generata'],
+  ['errore_anonimizzazione', "Errore nell'anonimizzazione"],
+  ['bug_ui', 'Bug interfaccia'],
+  ['suggerimento', 'Suggerimento / miglioramento'],
+  ['altro', 'Altro'],
+];
+function renderSegnalazioni(){
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderSegnalazioni); return; }
+  const catOpts = REPORT_CATEGORIES.map(([v,l])=>`<option value="${v}">${escapeHtml(l)}</option>`).join('');
+  // Form di invio (tutti)
+  let html = pageHead('Segnalazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`) + `
+    <div class="lt-card-static">
+      <div class="lt-side-title">Nuova segnalazione</div>
+      <div class="field"><label>Categoria</label><select id="rep-cat">${catOpts}</select></div>
+      <div class="field"><label>Descrizione del problema</label>
+        <textarea id="rep-desc" rows="5" placeholder="Descrivi il problema con quanti più dettagli possibili..."></textarea></div>
+      <div class="field"><label>Prompt utilizzato <span class="lt-status">(opzionale)</span></label>
+        <textarea id="rep-prompt" rows="3" class="mono-input" placeholder="Incolla qui il prompt, se rilevante"></textarea></div>
+      <div class="field"><label>Lettera prodotta <span class="lt-status">(opzionale)</span></label>
+        <textarea id="rep-letter" rows="3" class="mono-input" placeholder="Incolla qui la lettera, se rilevante"></textarea></div>
+      <div class="lt-wiz-actions"><span class="lt-status">Le segnalazioni sono visibili agli amministratori.</span>
+        <button class="btn" onclick="window.Lettere._sendReport()">Invia segnalazione</button></div>
+    </div>`;
+  // Lista segnalazioni (solo admin)
+  if(canEdit()){
+    html += `<div class="lt-side-title" style="margin-top:24px">Segnalazioni ricevute</div>
+      <div id="rep-list"><div class="loading"><span class="spinner"></span> Caricamento segnalazioni...</div></div>`;
+  }
+  mc().innerHTML = html;
+  if(canEdit()) _refreshReportsList();
+}
+async function _refreshReportsList(){
+  const box = document.getElementById('rep-list');
+  if(!box) return;
+  const reports = await loadReportsFile();
+  if(!reports.length){ box.innerHTML = '<div class="lt-sub-empty">Nessuna segnalazione.</div>'; return; }
+  const catLabel = (v) => (REPORT_CATEGORIES.find(c=>c[0]===v)||[null,v])[1];
+  box.innerHTML = reports.map(r=>`
+    <div class="lt-card-static" style="margin-bottom:10px">
+      <div class="lt-row" style="justify-content:space-between">
+        <strong>${escapeHtml(catLabel(r.category))}</strong>
+        <span class="lt-status">${escapeHtml((r.timestamp||'').slice(0,16).replace('T',' '))} · ${escapeHtml(r.username||'')}</span>
+      </div>
+      <p style="margin:8px 0;white-space:pre-wrap">${escapeHtml(r.description||'')}</p>
+      ${r.prompt?`<details class="lt-det"><summary>Prompt</summary><pre class="lt-pre">${escapeHtml(r.prompt)}</pre></details>`:''}
+      ${r.letter?`<details class="lt-det"><summary>Lettera</summary><pre class="lt-pre">${escapeHtml(r.letter)}</pre></details>`:''}
+      <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._delReport('${escapeHtml(r.id)}')">Elimina</button></div>
+    </div>`).join('');
+}
+
+/* ── Gestione reparti (admin): aggiungi/elimina ward in cases.json ── */
+function renderReparti(){
+  if(!canEdit()){ mc().innerHTML=pageHead('Reparti','LetteraAI')+'<p>Riservato agli utenti con permessi.</p>'; return; }
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderReparti); return; }
+  const rows = (L.wards||[]).map(w=>`
+    <tr><td>${escapeHtml(w.name||'')}</td>
+      <td>${escapeHtml((w.createdAt||'').slice(0,10))}</td>
+      <td style="text-align:right"><button class="btn ghost sm" onclick="window.Lettere._delWard('${escapeHtml(w.id)}')">Elimina</button></td></tr>`
+  ).join('') || '<tr><td colspan="3" class="lt-sub-empty">Nessun reparto personalizzato.</td></tr>';
+  mc().innerHTML = pageHead('Reparti','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`) + `
+    <div class="lt-card-static">
+      <div class="lt-side-title">Nuovo reparto</div>
+      <div class="lt-row"><input type="text" id="rep-ward-name" placeholder="Nome reparto" style="flex:1">
+        <button class="btn" onclick="window.Lettere._addWard()">Aggiungi</button></div>
+    </div>
+    <table class="lt-table" style="margin-top:16px"><thead><tr><th>Reparto</th><th>Creato</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
 /* ── Configurazione (admin): prompt + libreria template ── */
 function renderConfig(){
-  if(!canEdit()){ mc().innerHTML=pageHead('Configurazione','Lettere')+'<p>Riservato agli utenti con permessi.</p>'; return; }
+  if(!canEdit()){ mc().innerHTML=pageHead('Configurazione','LetteraAI')+'<p>Riservato agli utenti con permessi.</p>'; return; }
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderConfig); return; }
   const tabs=[['DEFAULT_SYS','Sistema'],['FINGERPRINT_PROMPT_V3','Fingerprint'],['VERIFICA_SYSTEM','Verifica'],['ESAMI_LAB_SYS','Esami lab']];
   const cur=L._cfgTab||'DEFAULT_SYS';
   const curVal={DEFAULT_SYS,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS}[cur];
   const tabBtns=tabs.map(([k,l])=>`<button class="lt-seg${cur===k?' on':''}" onclick="window.Lettere._cfgTab('${k}')">${l}</button>`).join('');
-  mc().innerHTML=pageHead('Prompt & template','Lettere',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+`
+  // Lista template di libreria
+  const tplRows=(_templates||[]).map(t=>{
+    const sectCount=(t.ordine_sezioni||[]).length;
+    const isDefault=t.id==='default';
+    const del=isDefault?'':`<button class="btn ghost sm" onclick="window.Lettere._delTpl('${escapeHtml(t.id)}')">Elimina</button>`;
+    return `<tr>
+      <td>${escapeHtml(t.name||t.id)}</td>
+      <td><code>${escapeHtml(t.id)}</code></td>
+      <td>${sectCount} sezioni</td>
+      <td style="text-align:right"><button class="btn ghost sm" onclick="window.Lettere._editTpl('${escapeHtml(t.id)}')">Modifica</button>${del}</td>
+    </tr>`;
+  }).join('');
+  mc().innerHTML=pageHead('Prompt & template','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+`
+    <div class="lt-side-title">Prompt di sistema</div>
     <div class="lt-segs" style="margin-bottom:12px">${tabBtns}</div>
-    <div class="field"><textarea id="lt-cfgtext" rows="20" class="mono-input">${escapeHtml(curVal)}</textarea></div>
+    <div class="field"><textarea id="lt-cfgtext" rows="18" class="mono-input">${escapeHtml(curVal)}</textarea></div>
     <div class="lt-wiz-actions"><span class="lt-status">Salvato in <code>${escapeHtml(PROMPT_PATHS[cur])}</code></span>
-      <button class="btn" onclick="window.Lettere._saveCfg('${cur}')">Salva prompt</button></div>`;
+      <button class="btn" onclick="window.Lettere._saveCfg('${cur}')">Salva prompt</button></div>
+
+    <div class="lt-side-title" style="margin-top:28px">Libreria template</div>
+    <div class="lt-row" style="margin-bottom:10px"><span class="lt-status" style="flex:1">Template di intestazione/struttura/firma. Modificabili e salvati in <code>${escapeHtml(PATHS.templatesDir)}</code></span>
+      <button class="btn" onclick="window.Lettere._editTpl('__new__')">Nuovo template</button></div>
+    <table class="lt-table"><thead><tr><th>Nome</th><th>ID</th><th>Sezioni</th><th></th></tr></thead><tbody>${tplRows}</tbody></table>`;
 }
+
+/* Editor template (modale): crea o modifica un template, con riordino sezioni drag&drop */
+function renderTemplateEditor(tplId){
+  const isNew = tplId === '__new__';
+  const tpl = isNew
+    ? { id:'', name:'', scenario:'dimissione_domicilio', intestazione:'', saluto:'', apertura:'',
+        chiusura:'', firma_specializzando_label:'[NOME_SPECIALIZZANDO]', firma_ruolo_sx:'Medico in formazione specialistica',
+        firma_dirigente_label:'[NOME_DIRIGENTE]', firma_ruolo_dx:'Dirigente medico',
+        ordine_sezioni:(DEFAULT_TEMPLATE_EMBEDDED.ordine_sezioni||[]).slice() }
+    : (_templates.find(t=>t.id===tplId) || null);
+  if (!tpl){ toast('Template non trovato','error'); return; }
+  const fld=(id,label,val,rows)=> rows
+    ? `<div class="field"><label>${label}</label><textarea id="tpl-${id}" rows="${rows}">${escapeHtml(val||'')}</textarea></div>`
+    : `<div class="field"><label>${label}</label><input type="text" id="tpl-${id}" value="${escapeHtml(val||'')}"></div>`;
+  const body=`
+    <div class="lt-row">
+      ${fld('id','ID (lettere minuscole, numeri, underscore)',tpl.id)}
+      ${fld('name','Nome visualizzato',tpl.name)}
+    </div>
+    ${isNew?'':'<input type="hidden" id="tpl-id" value="'+escapeHtml(tpl.id)+'">'}
+    ${fld('scenario','Scenario',tpl.scenario)}
+    ${fld('intestazione','Intestazione',tpl.intestazione,2)}
+    ${fld('saluto','Saluto',tpl.saluto)}
+    ${fld('apertura','Apertura',tpl.apertura,3)}
+    ${fld('chiusura','Chiusura',tpl.chiusura,2)}
+    <div class="lt-row">
+      ${fld('firma_specializzando_label','Firma sx (label)',tpl.firma_specializzando_label)}
+      ${fld('firma_ruolo_sx','Ruolo sx',tpl.firma_ruolo_sx)}
+    </div>
+    <div class="lt-row">
+      ${fld('firma_dirigente_label','Firma dx (label)',tpl.firma_dirigente_label)}
+      ${fld('firma_ruolo_dx','Ruolo dx',tpl.firma_ruolo_dx)}
+    </div>
+    <div class="field"><label>Sezioni (trascina per riordinare, spunta per includere)</label>
+      <div id="tpl-sections" class="lt-sections-editor"></div></div>`;
+  showModal({
+    title: isNew ? 'Nuovo template' : 'Modifica template',
+    subtitle: isNew ? 'Crea un nuovo template di lettera' : escapeHtml(tpl.name||tpl.id),
+    body,
+    actions: [
+      { label:'Annulla', variant:'ghost', onClick:()=>closeModal() },
+      { label:'Salva template', onClick:()=>window.Lettere._saveTpl(isNew, tplId) }
+    ]
+  });
+  // Popola l'editor delle sezioni (drag&drop + checkbox)
+  setTimeout(()=>renderSectionsEditor('tpl-sections', tpl.ordine_sezioni||[]), 50);
+}
+
+/* Editor sezioni con riordino drag&drop. Replica la logica dello standalone. */
+function renderSectionsEditor(containerId, currentOrder){
+  const container=document.getElementById(containerId);
+  if(!container) return;
+  const orderedIds=(currentOrder||[]).filter(id=>TEMPLATE_SECTIONS_AVAILABLE.find(s=>s.id===id));
+  const orderedSet=new Set(orderedIds);
+  const remaining=TEMPLATE_SECTIONS_AVAILABLE.filter(s=>!orderedSet.has(s.id)).map(s=>s.id);
+  const finalOrder=[...orderedIds,...remaining];
+  container.innerHTML=finalOrder.map(id=>{
+    const meta=TEMPLATE_SECTIONS_AVAILABLE.find(s=>s.id===id);
+    if(!meta) return '';
+    const enabled=orderedSet.has(id);
+    return `<div class="lt-section-row" draggable="true" data-section-id="${escapeHtml(id)}">
+      <span class="lt-drag-handle">⠿</span>
+      <input type="checkbox" ${enabled?'checked':''} data-section-cb="${escapeHtml(id)}">
+      <span class="lt-section-label">${escapeHtml(meta.label)}</span>
+      <span class="lt-section-id">${escapeHtml(id)}</span>
+    </div>`;
+  }).join('');
+  attachSectionDrag(container);
+}
+function attachSectionDrag(container){
+  let dragged=null;
+  container.querySelectorAll('.lt-section-row').forEach(row=>{
+    row.addEventListener('dragstart',()=>{ dragged=row; row.style.opacity='0.4'; });
+    row.addEventListener('dragend',()=>{ if(dragged)dragged.style.opacity='1'; dragged=null; });
+    row.addEventListener('dragover',(e)=>{ e.preventDefault();
+      const rect=row.getBoundingClientRect();
+      const after=(e.clientY-rect.top)>rect.height/2;
+      if(dragged&&dragged!==row){
+        if(after) row.parentNode.insertBefore(dragged,row.nextSibling);
+        else row.parentNode.insertBefore(dragged,row);
+      }});
+    row.addEventListener('drop',(e)=>e.preventDefault());
+  });
+}
+function getSectionOrder(containerId){
+  const container=document.getElementById(containerId);
+  if(!container) return [];
+  const out=[];
+  container.querySelectorAll('.lt-section-row').forEach(row=>{
+    const id=row.getAttribute('data-section-id');
+    const cb=row.querySelector('input[type="checkbox"]');
+    if(cb&&cb.checked) out.push(id);
+  });
+  return out;
+}
+
+/* ── Editor caso esistente (modale): modifica name/folder/letter/fingerprint ──
+   Il fingerprint può essere modificato in tre modi:
+   1) editor strutturato a campi (se è un V3 valido con patologia)
+   2) JSON grezzo in textarea
+   3) re-importato incollando il prompt di estrazione in un'AI esterna */
+function renderCaseEditor(id){
+  const c = L.casi.find(x => x.id === id);
+  if (!c){ toast('Caso non trovato','error'); return; }
+  const fpStr = typeof c.fingerprint === 'string' ? c.fingerprint : (c.fingerprint ? JSON.stringify(c.fingerprint) : '');
+  const fpObj = parseFpJson(fpStr);
+  const isV3 = fpObj && fpObj.patologia;
+  // Editor fingerprint: strutturato se V3, altrimenti textarea JSON grezzo
+  const fpEditor = isV3
+    ? `<div class="lt-side-title" style="margin-top:6px">Fingerprint (editor strutturato V3)</div>
+       <div id="ce-fp-v3">${renderFpV3EditorHtml(fpObj, 'ce-fpv3')}</div>`
+    : `<div class="field"><label>Fingerprint (JSON grezzo)</label>
+        <textarea id="ce-fp-raw" rows="6" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'>${escapeHtml(fpStr)}</textarea></div>`;
+  const body = `
+    <div class="field"><label>Nome / Diagnosi</label><input type="text" id="ce-name" value="${escapeHtml(c.diagnosi||c.name||'')}"></div>
+    <div class="lt-row">
+      <div class="field" style="flex:1"><label>Reparto</label><input type="text" id="ce-folder" value="${escapeHtml(c.ward||c.folder||'')}"></div>
+      <div class="field" style="flex:1"><label>Tipo</label><input type="text" id="ce-tipo" value="${escapeHtml(c.tipo||'dimissione')}"></div>
+    </div>
+    <div class="field"><label>Cartella anonimizzata</label><textarea id="ce-cartella" rows="5" class="mono-input">${escapeHtml(c.cartella||'')}</textarea></div>
+    <div class="field"><label>Lettera</label><textarea id="ce-letter" rows="8" class="mono-input">${escapeHtml(c.letter||'')}</textarea></div>
+    ${fpEditor}
+    <details class="lt-det" style="margin-top:10px"><summary>Ri-estrai fingerprint da un'AI esterna</summary>
+      <p class="lt-status" style="margin:8px 0">Copia il prompt di estrazione, incollalo in Claude/ChatGPT con cartella e lettera, poi incolla qui sotto il JSON risultante e premi "Importa".</p>
+      <div class="lt-row" style="margin-bottom:8px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPrompt('${escapeHtml(id)}')">Copia prompt fingerprint</button></div>
+      <textarea id="ce-fp-import" rows="4" class="mono-input" placeholder="Incolla qui il JSON del fingerprint estratto..."></textarea>
+      <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._importFp('${escapeHtml(id)}')">Importa fingerprint</button></div>
+    </details>`;
+  showModal({
+    title: 'Modifica caso',
+    subtitle: escapeHtml(c.diagnosi || c.name || id),
+    body,
+    actions: [
+      { label:'Annulla', variant:'ghost', onClick:()=>closeModal() },
+      { label:'Salva modifiche', onClick:()=>window.Lettere._saveEditedCase(id) }
+    ]
+  });
+}
+
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    API PUBBLICA — window.Lettere
    ═══════════════════════════════════════════════════════════════════════════ */
 window.Lettere = {
   loadLibrary,
-  renderHome: renderLettereHome, renderWizard, renderLibreria, renderBozze,
+  renderHome: renderLettereHome, renderWizard, renderLibreria,
   renderCaso, renderPersonalizzazioni, renderConfig,
+  renderSegnalazioni, renderReparti,
   isReady: () => L.loaded,
 
   nuova(){ L.wiz = newWizard(); navigate('lettere-nuovo'); },
@@ -3445,7 +3940,6 @@ window.Lettere = {
   _copyPrompt(){ const ta=document.getElementById('lt-prompt'); if(ta){ ta.select();
     try{document.execCommand('copy');}catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(L.wiz.builtPrompt).catch(()=>{});
     toast('Prompt copiato.','success'); } },
-  async _saveBozza(){ try{ await saveBozza(L.wiz); toast('Bozza salvata.','success'); navigate('lettere-bozze'); }catch(e){ toast('Errore: '+e.message,'error'); } },
   async _addToLibrary(){ if(!L.wiz.outputLetter.trim()){ toast('Incolla prima la lettera generata.','error'); return; }
     const flags=detectResidualPII(L.wiz.outputLetter);
     const doSave=async()=>{ try{ await saveCaso({ ward:L.wiz.ward, diagnosi:L.wiz.diagnosi, tipo:L.wiz.tipo,
@@ -3454,13 +3948,137 @@ window.Lettere = {
     if(flags.length){ Modals().confirm({ title:'Possibili dati residui nella lettera',
       message:'La lettera contiene pattern che potrebbero essere dati personali ('+flags.map(f=>f.label).join(', ')+'). Salvare comunque?',
       confirmLabel:'Salva', danger:true, onConfirm:doSave }); } else doSave(); },
-  openBozza(id){ const b=L.bozze.find(x=>x.id===id); if(!b)return;
-    L.wiz=newWizard({ bozzaId:id, _sha:b.sha, ward:b.fm.ward, diagnosi:b.fm.diagnosi, tipo:b.fm.tipo,
-      anonText:b.fm.cartella_anonimizzata||'', outputLetter:b.fm.lettera||'', builtPrompt:b.fm.prompt_costruito||'', step:4 });
-    navigate('lettere-nuovo'); },
+
+  // ── Verifica anti-allucinazioni / export / stampa ──
+  async _copyVerifica(){
+    const lettera=(L.wiz&&L.wiz.outputLetter||'').trim();
+    const cartella=(L.wiz&&L.wiz.anonText||'').trim();
+    if(!cartella){ toast('Manca la cartella anonimizzata (Step 1-2).','error'); return; }
+    if(!lettera){ toast('Incolla prima la lettera generata.','error'); return; }
+    const prompt=buildVerificaPrompt(cartella, lettera);
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt di verifica copiato. Incollalo in un\'AI esterna.','success'); }
+    catch(e){ toast('Copia non riuscita.','error'); }
+    // Mostra il prompt anche a schermo (per copia manuale + spiegazione)
+    const box=document.getElementById('lt-verifica-box');
+    if(box) box.innerHTML=`<div class="lt-card-static">
+      <div class="lt-side-title">Prompt di verifica</div>
+      <p class="lt-status" style="margin:0 0 8px">Incolla questo prompt in Claude/ChatGPT: ti restituirà le eventuali incongruenze tra cartella e lettera (contraddizioni, dati assenti, inferenze).</p>
+      <textarea rows="6" class="mono-input" readonly onclick="this.select()">${escapeHtml(prompt)}</textarea></div>`;
+  },
+  _printLetter(){ printLetter((L.wiz&&L.wiz.outputLetter)||''); },
+  _exportWord(){ const w=L.wiz||{}; const fn=('lettera_'+(w.ward||'dimissione')+'_'+(w.diagnosi||'')).replace(/[^a-z0-9_]+/gi,'_').toLowerCase(); exportWordDoc(w.outputLetter||'', fn); },
+  async _copyFpPromptWiz(){
+    const cartella=(L.wiz&&L.wiz.anonText||'').trim();
+    const lettera=(L.wiz&&L.wiz.outputLetter||'').trim();
+    if(!lettera){ toast('Incolla prima la lettera generata.','error'); return; }
+    const prompt=buildFingerprintPrompt(cartella, lettera);
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt fingerprint copiato. Incollalo in un\'AI esterna.','success'); }
+    catch(e){ toast('Copia non riuscita.','error'); }
+  },
+  _printCaso(id){ const c=L.casi.find(x=>x.id===id); if(c) printLetter(c.letter||''); },
+  _exportCaso(id){ const c=L.casi.find(x=>x.id===id); if(!c)return; const fn=('lettera_'+(c.ward||c.folder||'')+'_'+(c.diagnosi||c.name||'')).replace(/[^a-z0-9_]+/gi,'_').toLowerCase(); exportWordDoc(c.letter||'', fn); },
+
+  // ── Edit caso esistente + fingerprint ──
+  _editCaso(id){ renderCaseEditor(id); },
+  async _saveEditedCase(id){
+    const c=L.casi.find(x=>x.id===id); if(!c){ toast('Caso non trovato','error'); return; }
+    const get=(eid)=>{ const el=document.getElementById(eid); return el?el.value:''; };
+    const name=get('ce-name').trim();
+    if(!name){ toast('Inserisci un nome/diagnosi.','error'); return; }
+    // Fingerprint: dall'editor V3 strutturato (se presente) o dal JSON grezzo
+    let fingerprint;
+    if(document.getElementById('ce-fpv3_patologia')){
+      fingerprint = JSON.stringify(readFpV3Editor('ce-fpv3'));
+    } else {
+      fingerprint = get('ce-fp-raw').trim();
+    }
+    const updated={
+      id, name, diagnosi:name,
+      ward:get('ce-folder').trim(), folder:get('ce-folder').trim(),
+      tipo:get('ce-tipo').trim()||'dimissione',
+      cartella:get('ce-cartella'), letter:get('ce-letter'),
+      fingerprint,
+      wardId:c.wardId, autore:c.autore||username(), createdAt:c.createdAt,
+    };
+    try{ await saveCaso(updated); toast('Modifiche salvate.','success'); closeModal(); renderCaso(id); }
+    catch(e){ toast('Errore: '+e.message,'error'); }
+  },
+  async _copyFpPrompt(id){
+    const c=L.casi.find(x=>x.id===id); if(!c)return;
+    // Usa i valori attuali nei campi dell'editor (se aperti) o quelli del caso
+    const cartella=(document.getElementById('ce-cartella')||{}).value || c.cartella || '';
+    const lettera=(document.getElementById('ce-letter')||{}).value || c.letter || '';
+    const prompt=buildFingerprintPrompt(cartella, lettera);
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt fingerprint copiato.','success'); }
+    catch(e){ toast('Copia non riuscita.','error'); }
+  },
+  _importFp(id){
+    const ta=document.getElementById('ce-fp-import'); if(!ta)return;
+    const raw=(ta.value||'').replace(/```json[\s\S]*?```|```/g,'').trim();
+    if(!raw){ toast('Incolla il JSON del fingerprint.','error'); return; }
+    let parsed;
+    try{ parsed=JSON.parse(raw); }catch(e){ toast('JSON non valido: '+e.message,'error'); return; }
+    // Normalizzo: V3 (patologia+decorso_esempio), V2 (lettera_modello), legacy 4-field
+    let fpObj;
+    if(parsed.patologia && parsed.decorso_esempio){ fpObj=parsed; }
+    else if(parsed.lettera_modello){ fpObj=parsed; }
+    else if(parsed.apertura||parsed.decorso||parsed.terapia||parsed.chiusura){ fpObj=parsed; }
+    else { toast('Schema fingerprint non riconosciuto.','error'); return; }
+    // Aggiorno il caso col nuovo fingerprint e riapro l'editor per review
+    const c=L.casi.find(x=>x.id===id); if(!c)return;
+    c.fingerprint=JSON.stringify(fpObj);
+    toast('Fingerprint importato. Rivedi e salva.','success');
+    renderCaseEditor(id);
+  },
   _delCaso(id){ const c=L.casi.find(x=>x.id===id); if(!c)return;
-    Modals().confirm({ title:'Eliminare il caso?', subtitle:`<strong>${escapeHtml(c.fm.diagnosi||id)}</strong> sarà spostato nel cestino.`,
-      confirmLabel:'Sposta nel cestino', danger:true, onConfirm:async()=>{ try{ await softDeleteCaso(c); toast('Caso cestinato.','success'); navigate('lettere-libreria'); }catch(e){ toast('Errore: '+e.message,'error'); } } }); },
+    Modals().confirm({ title:'Eliminare il caso?', subtitle:`<strong>${escapeHtml(c.diagnosi||c.name||id)}</strong> sarà rimosso dalla libreria.`,
+      confirmLabel:'Elimina', danger:true, onConfirm:async()=>{ try{ await softDeleteCaso(c); toast('Caso eliminato.','success'); navigate('lettere-libreria'); }catch(e){ toast('Errore: '+e.message,'error'); } } }); },
+
+  // ── Backup/ripristino libreria JSON ──
+  _exportLib(){ exportLibraryJson(); },
+  async _importLib(input){
+    const file = input && input.files && input.files[0];
+    input.value = ''; // reset così re-importare lo stesso file ri-triggera l'onchange
+    if(!file) return;
+    try{
+      const r = await importLibraryJson(file);
+      toast(`Importati ${r.added} nuovi (${r.duplicates} duplicati ignorati). Totale: ${r.total}.`,'success');
+      renderLibreria();
+    }catch(e){ toast('Errore import: '+e.message,'error'); }
+  },
+
+  // ── Segnalazioni ──
+  async _sendReport(){
+    const desc=(document.getElementById('rep-desc').value||'').trim();
+    if(!desc){ toast('Inserisci una descrizione.','error'); return; }
+    const report={
+      id:'rep_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      username:username(), timestamp:new Date().toISOString(),
+      category:document.getElementById('rep-cat').value,
+      description:desc,
+      prompt:(document.getElementById('rep-prompt').value||'').trim()||null,
+      letter:(document.getElementById('rep-letter').value||'').trim()||null,
+    };
+    try{ await sendReportRepo(report); toast('Segnalazione inviata. Grazie!','success'); navigate('lettere'); }
+    catch(e){ toast('Errore invio: '+e.message,'error'); }
+  },
+  _delReport(id){
+    Modals().confirm({ title:'Eliminare la segnalazione?', confirmLabel:'Elimina', danger:true,
+      onConfirm:async()=>{ try{ await deleteReportRepo(id); toast('Segnalazione eliminata.','success'); _refreshReportsList(); }catch(e){ toast('Errore: '+e.message,'error'); } } });
+  },
+
+  // ── Reparti ──
+  async _addWard(){
+    const name=(document.getElementById('rep-ward-name').value||'').trim();
+    if(!name){ toast('Inserisci un nome reparto.','error'); return; }
+    try{ await createWardRepo(name); toast('Reparto aggiunto.','success'); renderReparti(); }
+    catch(e){ toast('Errore: '+e.message,'error'); }
+  },
+  _delWard(id){
+    const w=(L.wards||[]).find(x=>x.id===id); if(!w)return;
+    Modals().confirm({ title:'Eliminare il reparto?', subtitle:`<strong>${escapeHtml(w.name||'')}</strong>`, confirmLabel:'Elimina', danger:true,
+      onConfirm:async()=>{ try{ await deleteWardRepo(id); toast('Reparto eliminato.','success'); renderReparti(); }catch(e){ toast('Errore: '+e.message,'error'); } } });
+  },
 
   async _saveMyPrefs(){ const base=document.getElementById('lt-utpl-base').value;
     const override=document.getElementById('lt-uoverride').value;
@@ -3471,6 +4089,43 @@ window.Lettere = {
   _cfgTab(k){ L._cfgTab=k; renderConfig(); },
   async _saveCfg(varName){ const ta=document.getElementById('lt-cfgtext'); if(!ta)return;
     try{ await savePromptToRepo(varName, ta.value); toast('Prompt salvato.','success'); }catch(e){ toast('Errore: '+e.message,'error'); } },
+
+  // ── Editor template di libreria ──
+  _editTpl(id){ renderTemplateEditor(id); },
+  async _saveTpl(isNew, origId){
+    const get=(k)=>{ const el=document.getElementById('tpl-'+k); return el?el.value:''; };
+    const id=(get('id')||'').trim();
+    if(!id || !/^[a-z0-9_]+$/.test(id)){ toast('ID non valido: usa solo lettere minuscole, numeri e underscore.','error'); return; }
+    const tpl={
+      id,
+      name: get('name').trim() || id,
+      scenario: get('scenario'),
+      intestazione: get('intestazione'),
+      saluto: get('saluto'),
+      apertura: get('apertura'),
+      chiusura: get('chiusura'),
+      firma_specializzando_label: get('firma_specializzando_label'),
+      firma_ruolo_sx: get('firma_ruolo_sx'),
+      firma_dirigente_label: get('firma_dirigente_label'),
+      firma_ruolo_dx: get('firma_ruolo_dx'),
+      ordine_sezioni: getSectionOrder('tpl-sections'),
+      updatedAt: new Date().toISOString(),
+    };
+    // Preserva lo _sha se è un update dello stesso id
+    if(!isNew){ const ex=_templates.find(t=>t.id===id); if(ex&&ex._sha) tpl._sha=ex._sha; }
+    try{
+      await saveLibraryTemplateRepo(tpl);
+      // Se ho rinominato l'id di un template esistente, elimino il vecchio file
+      if(!isNew && origId && origId!=='__new__' && origId!==id && origId!=='default'){
+        try{ await deleteLibraryTemplateRepo(origId); }catch(e){}
+      }
+      toast('Template salvato.','success'); closeModal(); renderConfig();
+    }catch(e){ toast('Errore: '+e.message,'error'); }
+  },
+  _delTpl(id){
+    Modals().confirm({ title:'Eliminare il template?', subtitle:`<code>${escapeHtml(id)}</code>`, confirmLabel:'Elimina', danger:true,
+      onConfirm:async()=>{ try{ await deleteLibraryTemplateRepo(id); toast('Template eliminato.','success'); renderConfig(); }catch(e){ toast('Errore: '+e.message,'error'); } } });
+  },
 };
 
 /* ── CSS (usa solo le CSS variables di CollinettaAI) ── */
@@ -3497,6 +4152,13 @@ window.Lettere = {
   .lt-two-col{display:grid;grid-template-columns:2fr 1fr;gap:18px}
   @media(max-width:700px){.lt-two-col{grid-template-columns:1fr}}
   .lt-side-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px}
+  .lt-card-static{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px 18px;margin-bottom:14px}
+  .lt-sections-editor{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow:auto;border:1px solid var(--rule-soft);border-radius:2px;padding:8px;background:var(--bg-sink)}
+  .lt-section-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;cursor:move}
+  .lt-section-row:hover{border-color:var(--accent)}
+  .lt-drag-handle{color:var(--ink-faint);font-family:var(--mono);font-size:11px;cursor:grab}
+  .lt-section-label{flex:1;font-size:13px;color:var(--ink)}
+  .lt-section-id{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
   .lt-subs{max-height:380px;overflow:auto;display:flex;flex-direction:column;gap:5px}
   .lt-sub{font-size:12px;padding:5px 8px;background:var(--bg-paper);border:1px solid var(--rule-soft);border-radius:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .lt-sub code{font-size:11px;background:var(--bg-sink);padding:1px 5px}
