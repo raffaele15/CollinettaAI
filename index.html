@@ -1812,11 +1812,11 @@ function ensureLetterAI() {
 // Mostra un placeholder di caricamento e gestisce gli errori con un messaggio in pagina.
 async function _openLetterAI(renderFn, ...args) {
   const mc = document.getElementById('main-content');
-  if (mc) mc.innerHTML = '<div style="padding:48px;text-align:center;color:var(--ink-muted);">Caricamento LetterAI…</div>';
+  if (mc) mc.innerHTML = '<div style="padding:48px;text-align:center;color:var(--ink-muted);">Caricamento LetteraAI…</div>';
   try {
     const L = await ensureLetterAI();
     if (typeof L[renderFn] === 'function') {
-      // Pre-carica la libreria casi/bozze la prima volta (così i conteggi sono pronti)
+      // Pre-carica la libreria casi la prima volta (così i conteggi sono pronti)
       if (!L.isReady() && typeof L.loadLibrary === 'function') {
         try { await L.loadLibrary(); } catch (e) { console.warn('[LetterAI] loadLibrary', e); }
       }
@@ -1826,8 +1826,8 @@ async function _openLetterAI(renderFn, ...args) {
     }
   } catch (e) {
     console.error('[LetterAI]', e);
-    if (mc) mc.innerHTML = `<div style="padding:48px;text-align:center;color:var(--danger);">Impossibile caricare LetterAI.<br><span style="font-size:13px;color:var(--ink-muted);">${escapeHtml(e.message)}</span></div>`;
-    toast('Errore caricamento LetterAI', 'error');
+    if (mc) mc.innerHTML = `<div style="padding:48px;text-align:center;color:var(--danger);">Impossibile caricare LetteraAI.<br><span style="font-size:13px;color:var(--ink-muted);">${escapeHtml(e.message)}</span></div>`;
+    toast('Errore caricamento LetteraAI', 'error');
   }
 }
 
@@ -3047,6 +3047,9 @@ const gh = {
     return await res.json();
   }
 };
+// Esposto su window per il modulo LetterAI (letteraai-module.js), che accede via window.gh.
+// Necessario perché `const gh` top-level NON diventa automaticamente proprietà di window.
+window.gh = gh;
 
 /*
  * Modulo `gh_auth`: fa CRUD sul repo AUTH (CollinettaAI-auth) usando il PAT-auth
@@ -3130,6 +3133,8 @@ const state = {
   pendingContattoScrollId: null,  // id contatto da scrollare dopo render UOC (apertura via filter=contattoId)
   moduliCache: {}              // { slug: { boxesData, pageUrls, formValues, currentPage } } per moduli compilabili
 };
+// Esposto su window per il modulo LetterAI (letteraai-module.js), che accede via window.state.
+window.state = state;
 
 /* Dopo il render di una scheda, chiama questa per scrollare al blocco in attesa.
    Se l'elemento esiste, scrolla con flash; poi consuma pendingBlockHash.
@@ -3427,7 +3432,7 @@ async function buildIndex() {
   }
 
   state.index = index;
-  // LetterAI: pre-carica la libreria casi/bozze in background, così il conteggio in sidebar
+  // LetterAI: pre-carica la libreria casi in background, così il conteggio in sidebar
   // è pronto. Non-bloccante e best-effort: se il modulo non è ancora caricato o le cartelle
   // non esistono, il modulo carica comunque on-demand all'apertura della sezione.
   if (typeof ensureLetterAI === 'function') {
@@ -4138,9 +4143,10 @@ const urlRouter = (function() {
       case 'lettere':                  return ['lettere'];
       case 'lettere-nuovo':            return ['lettere', 'nuovo'];
       case 'lettere-libreria':         return ['lettere', 'libreria'];
-      case 'lettere-bozze':            return ['lettere', 'bozze'];
       case 'lettere-caso':             return ['lettere', 'caso', p.id];
       case 'lettere-personalizzazioni':return ['lettere', 'personalizzazioni'];
+      case 'lettere-segnalazioni':     return ['lettere', 'segnalazioni'];
+      case 'lettere-reparti':          return ['lettere', 'reparti'];
       case 'lettere-config':           return ['lettere', 'config'];
       default:                return ['home'];
     }
@@ -4194,9 +4200,10 @@ const urlRouter = (function() {
       case 'lettere':
         if (second === 'nuovo')             return { route: 'lettere-nuovo', params: {}, blockHash };
         if (second === 'libreria')          return { route: 'lettere-libreria', params: {}, blockHash };
-        if (second === 'bozze')             return { route: 'lettere-bozze', params: {}, blockHash };
         if (second === 'caso')              return { route: 'lettere-caso', params: { id: third }, blockHash };
         if (second === 'personalizzazioni') return { route: 'lettere-personalizzazioni', params: {}, blockHash };
+        if (second === 'segnalazioni')      return { route: 'lettere-segnalazioni', params: {}, blockHash };
+        if (second === 'reparti')           return { route: 'lettere-reparti', params: {}, blockHash };
         if (second === 'config')            return { route: 'lettere-config', params: {}, blockHash };
         return { route: 'lettere', params: {}, blockHash };
       default: return { route: 'home', params: {}, blockHash };
@@ -4346,9 +4353,10 @@ function navigate(route, params = {}) {
     case 'lettere':                  _openLetterAI('renderHome'); break;
     case 'lettere-nuovo':            _openLetterAI('renderWizard'); break;
     case 'lettere-libreria':         _openLetterAI('renderLibreria'); break;
-    case 'lettere-bozze':            _openLetterAI('renderBozze'); break;
     case 'lettere-caso':             _openLetterAI('renderCaso', params.id); break;
     case 'lettere-personalizzazioni':_openLetterAI('renderPersonalizzazioni'); break;
+    case 'lettere-segnalazioni':     _openLetterAI('renderSegnalazioni'); break;
+    case 'lettere-reparti':          _openLetterAI('renderReparti'); break;
     case 'lettere-config':           _openLetterAI('renderConfig'); break;
     default: renderHome();
   }
@@ -13251,7 +13259,7 @@ function getRootNavNodes() {
     { id: 'moduli', label: 'Moduli', count: state.index.moduli.length, kind: 'top', slug: 'moduli', navTarget: { route: 'moduli', params: {} }, children: () => buildModuliChildren() },
     { id: 'calendario', label: 'Calendario', count: ((state.index.calendar && state.index.calendar.eventi) || []).length, kind: 'top', slug: 'calendario', navTarget: { route: 'calendario', params: {} } },
     { id: 'manuale', label: 'Manuale', count: (state.index.capitoli || []).length, kind: 'top', slug: 'manuale', navTarget: { route: 'manuale', params: {} }, children: () => buildManualeChildren() },
-    { id: 'lettere', label: 'LetterAI', count: ((state.index.lettere && state.index.lettere.casi) || []).length, kind: 'top', slug: 'lettere', navTarget: { route: 'lettere', params: {} } },
+    { id: 'lettere', label: 'LetteraAI', count: ((state.index.lettere && state.index.lettere.casi) || []).length, kind: 'top', slug: 'lettere', navTarget: { route: 'lettere', params: {} } },
   ];
 }
 
