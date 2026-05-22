@@ -4149,8 +4149,10 @@ const urlRouter = (function() {
       case 'lettere-esporta':          return ['lettere', 'esporta'];
       case 'lettere-libreria':         return ['lettere', 'libreria'];
       case 'lettere-caso':             return ['lettere', 'caso', p.id];
+      case 'lettere-impostazioni':     return ['lettere', 'impostazioni'];
       case 'lettere-personalizzazioni':return ['lettere', 'personalizzazioni'];
       case 'lettere-segnalazioni':     return ['lettere', 'segnalazioni'];
+      case 'lettere-segnalazioni-admin':return ['lettere', 'segnalazioni-admin'];
       case 'lettere-reparti':          return ['lettere', 'reparti'];
       case 'lettere-config':           return ['lettere', 'config'];
       default:                return ['home'];
@@ -4211,7 +4213,9 @@ const urlRouter = (function() {
         if (second === 'esporta')           return { route: 'lettere-esporta', params: {}, blockHash };
         if (second === 'libreria')          return { route: 'lettere-libreria', params: {}, blockHash };
         if (second === 'caso')              return { route: 'lettere-caso', params: { id: third }, blockHash };
+        if (second === 'impostazioni')      return { route: 'lettere-impostazioni', params: {}, blockHash };
         if (second === 'personalizzazioni') return { route: 'lettere-personalizzazioni', params: {}, blockHash };
+        if (second === 'segnalazioni-admin')return { route: 'lettere-segnalazioni-admin', params: {}, blockHash };
         if (second === 'segnalazioni')      return { route: 'lettere-segnalazioni', params: {}, blockHash };
         if (second === 'reparti')           return { route: 'lettere-reparti', params: {}, blockHash };
         if (second === 'config')            return { route: 'lettere-config', params: {}, blockHash };
@@ -4369,8 +4373,10 @@ function navigate(route, params = {}) {
     case 'lettere-esporta':          _openLetterAI('renderEsporta'); break;
     case 'lettere-libreria':         _openLetterAI('renderLibreria'); break;
     case 'lettere-caso':             _openLetterAI('renderCaso', params.id); break;
+    case 'lettere-impostazioni':     _openLetterAI('renderImpostazioni'); break;
     case 'lettere-personalizzazioni':_openLetterAI('renderPersonalizzazioni'); break;
     case 'lettere-segnalazioni':     _openLetterAI('renderSegnalazioni'); break;
+    case 'lettere-segnalazioni-admin':_openLetterAI('renderSegnalazioniAdmin'); break;
     case 'lettere-reparti':          _openLetterAI('renderReparti'); break;
     case 'lettere-config':           _openLetterAI('renderConfig'); break;
     default: renderHome();
@@ -13572,7 +13578,8 @@ function buildModuliChildren() {
 }
 
 // LetteraAI: voci di navigazione (flusso lettera + strumenti), come i panel dell'originale.
-// Le voci admin (Reparti, Prompt & template) appaiono solo se l'utente è admin.
+// Le voci admin (Segnalazioni, Editor Prompt) appaiono solo se l'utente è admin.
+// I Reparti NON sono una voce separata: la gestione reparti è dentro Libreria Casi.
 function buildLettereChildren() {
   const isAdmin = !!(state.session && state.session.isAdmin);
   const mk = (id, label, route, kind) => ({
@@ -13586,17 +13593,19 @@ function buildLettereChildren() {
     mk('genera', 'Genera lettera', 'lettere-genera'),
     mk('verifica', 'Verifica', 'lettere-verifica'),
     mk('esporta', 'Esporta', 'lettere-esporta'),
-    // Strumenti
+    // Strumenti (stesso ordine dell'originale)
     mk('libreria', 'Libreria casi', 'lettere-libreria'),
+    mk('impostazioni', 'Impostazioni', 'lettere-impostazioni'),
     mk('personalizzazioni', 'Mie personalizzazioni', 'lettere-personalizzazioni'),
     mk('segnalazioni', 'Segnala errori', 'lettere-segnalazioni'),
   ];
   if (isAdmin) {
-    nodes.push(mk('reparti', 'Reparti', 'lettere-reparti'));
-    nodes.push(mk('config', 'Prompt & template', 'lettere-config'));
+    nodes.push(mk('segnalazioni-admin', 'Segnalazioni', 'lettere-segnalazioni-admin'));
+    nodes.push(mk('config', 'Editor Prompt', 'lettere-config'));
   }
   return nodes;
 }
+
 
 
 function buildManualeChildren() {
