@@ -3496,27 +3496,35 @@ function renderLettereHome(){
     return;
   }
   L._homeLoadAttempted = false;
+  const adminItems = canEdit() ? `
+    <div class="lt-home-row" onclick="navigate('lettere-reparti')">
+      <span class="lt-home-ic">🏥</span><div><div class="lt-home-t">Reparti</div><div class="lt-home-d">Gestisci i reparti personalizzati (admin).</div></div></div>
+    <div class="lt-home-row" onclick="navigate('lettere-config')">
+      <span class="lt-home-ic">📝</span><div><div class="lt-home-t">Prompt &amp; template</div><div class="lt-home-d">Prompt di sistema e libreria template (admin).</div></div></div>` : '';
   mc().innerHTML = pageHead('LetteraAI','Generatore lettere di dimissione',
     `<button class="btn" onclick="window.Lettere.nuova()">Nuova lettera</button>`) + `
-    <div class="lt-grid">
-      <div class="lt-card" onclick="window.Lettere.nuova()">
-        <div class="lt-card-title">Nuova lettera</div>
-        <div class="lt-card-desc">Incolla la cartella, anonimizza, costruisci il prompt da copiare in un'AI esterna.</div></div>
-      <div class="lt-card" onclick="navigate('lettere-libreria')">
-        <div class="lt-card-title">Libreria casi <span class="lt-badge">${L.casi.length}</span></div>
-        <div class="lt-card-desc">Esempi anonimizzati con fingerprint di stile.</div></div>
-      <div class="lt-card" onclick="navigate('lettere-personalizzazioni')">
-        <div class="lt-card-title">Mie personalizzazioni</div>
-        <div class="lt-card-desc">Template personale e regole aggiuntive.</div></div>
-      <div class="lt-card" onclick="navigate('lettere-segnalazioni')">
-        <div class="lt-card-title">Segnalazioni</div>
-        <div class="lt-card-desc">Segnala errori o suggerimenti.</div></div>
-      ${canEdit()?`<div class="lt-card" onclick="navigate('lettere-reparti')">
-        <div class="lt-card-title">Reparti</div>
-        <div class="lt-card-desc">Gestisci i reparti personalizzati (admin).</div></div>`:''}
-      ${canEdit()?`<div class="lt-card" onclick="navigate('lettere-config')">
-        <div class="lt-card-title">Prompt &amp; template</div>
-        <div class="lt-card-desc">Prompt di sistema e libreria template (admin).</div></div>`:''}
+    <div class="lt-home-group">Flusso di generazione</div>
+    <div class="lt-home-list">
+      <div class="lt-home-row" onclick="navigate('lettere-carica')">
+        <span class="lt-home-n">1</span><div><div class="lt-home-t">Carica cartella</div><div class="lt-home-d">Incolla o carica la cartella clinica (testo, PDF, esami XLS).</div></div></div>
+      <div class="lt-home-row" onclick="navigate('lettere-anonimizza')">
+        <span class="lt-home-n">2</span><div><div class="lt-home-t">Anonimizza dati</div><div class="lt-home-d">Rimuove i dati identificativi del paziente. Rivedi le sostituzioni.</div></div></div>
+      <div class="lt-home-row" onclick="navigate('lettere-genera')">
+        <span class="lt-home-n">3</span><div><div class="lt-home-t">Genera lettera</div><div class="lt-home-d">Opzioni (reparto, tipo, preferenze) e prompt da copiare nell'AI esterna.</div></div></div>
+      <div class="lt-home-row" onclick="navigate('lettere-verifica')">
+        <span class="lt-home-n">4</span><div><div class="lt-home-t">Verifica</div><div class="lt-home-d">Controllo anti-allucinazioni: confronta cartella e lettera.</div></div></div>
+      <div class="lt-home-row" onclick="navigate('lettere-esporta')">
+        <span class="lt-home-n">5</span><div><div class="lt-home-t">Esporta</div><div class="lt-home-d">Stampa o esporta in Word, salva il caso in libreria.</div></div></div>
+    </div>
+    <div class="lt-home-group">Strumenti</div>
+    <div class="lt-home-list">
+      <div class="lt-home-row" onclick="navigate('lettere-libreria')">
+        <span class="lt-home-ic">📚</span><div><div class="lt-home-t">Libreria casi <span class="lt-badge">${L.casi.length}</span></div><div class="lt-home-d">Esempi anonimizzati con fingerprint di stile.</div></div></div>
+      <div class="lt-home-row" onclick="navigate('lettere-personalizzazioni')">
+        <span class="lt-home-ic">✦</span><div><div class="lt-home-t">Mie personalizzazioni</div><div class="lt-home-d">Template personale e regole aggiuntive.</div></div></div>
+      <div class="lt-home-row" onclick="navigate('lettere-segnalazioni')">
+        <span class="lt-home-ic">⚠</span><div><div class="lt-home-t">Segnala errori</div><div class="lt-home-d">Segnala errori o suggerimenti.</div></div></div>
+      ${adminItems}
     </div>
     <div class="lt-note"><strong>Privacy.</strong> Anonimizzazione e parsing avvengono nel browser.
       Nessun dato del paziente è inviato automaticamente: il prompt va copiato a mano nell'AI esterna.</div>`;
@@ -3548,9 +3556,11 @@ function wizStep1(){
       <input type="file" id="lt-pdf" accept="application/pdf" style="display:none" onchange="window.Lettere._onPdf(this.files[0])">
       <button class="btn ghost sm" onclick="document.getElementById('lt-xls').click()">Carica esami (XLS)</button>
       <input type="file" id="lt-xls" accept=".xls,.xlsx" style="display:none" onchange="window.Lettere._onXls(this.files[0])">
+      <button class="btn ghost sm" onclick="window.Lettere._clearXls()" title="Rimuovi gli esami caricati">Rimuovi esami</button>
+      <button class="btn ghost sm" onclick="window.Lettere._clearAll()" title="Svuota testo ed esami">↺ Reset</button>
       <span id="lt-parse-status" class="lt-status"></span></div>
     <div class="lt-wiz-actions"><span></span>
-      <button class="btn" onclick="window.Lettere._step1Next()">Anonimizza →</button></div>`;
+      <button class="btn" onclick="window.Lettere._caricaNext()">Anonimizza →</button></div>`;
 }
 function wizStep2(){
   const w=L.wiz;
@@ -3560,8 +3570,8 @@ function wizStep2(){
       <textarea id="lt-anon" rows="16" class="mono-input" oninput="window.Lettere._set('anonText', this.value)"></textarea></div>
     <div class="lt-side"><div class="lt-side-title">Sostituzioni (${(w.substitutions||[]).length})</div><div class="lt-subs">${subs}</div></div>
    </div><div id="lt-pii-warn"></div>
-   <div class="lt-wiz-actions"><button class="btn ghost" onclick="window.Lettere.goStep(1)">← Indietro</button>
-     <button class="btn" onclick="window.Lettere._step2Next()">Conferma →</button></div>`;
+   <div class="lt-wiz-actions"><button class="btn ghost" onclick="navigate('lettere-carica')">← Indietro</button>
+     <button class="btn" onclick="navigate('lettere-genera')">Genera →</button></div>`;
 }
 function wizStep3(){
   const w=L.wiz, p=w.prefs;
@@ -3582,10 +3592,24 @@ function wizStep3(){
       <div class="lt-pref-row"><label>Raccomandazioni</label><div class="lt-segs">${seg('rac',[{v:'main',l:'Principali'},{v:'all',l:'Tutte'}])}</div></div>
       <div class="lt-pref-row"><label>Terapia dimissione</label><div class="lt-segs">${seg('ter',[{v:'last',l:'Ultima'},{v:'lastPlusHome',l:'+ domiciliare'}])}</div></div>
       <div class="field"><label>Altre preferenze (testo libero)</label><textarea rows="2" oninput="window.Lettere._setPref('custom', this.value)">${escapeHtml(p.custom||'')}</textarea></div>
+      <div class="lt-row" style="justify-content:flex-end"><button class="btn ghost sm" onclick="window.Lettere._resetPrefs()" title="Ripristina le preferenze salvate">↺ Ripristina preferenze</button></div>
     </div>
-    <div class="lt-side-title">Esempi simili (fingerprint usato come riferimento)</div><div class="lt-rags">${rag}</div>
-    <div class="lt-wiz-actions"><button class="btn ghost" onclick="window.Lettere.goStep(2)">← Indietro</button>
-      <button class="btn" onclick="window.Lettere._buildPrompt()">Costruisci prompt →</button></div>`;
+    <div class="lt-side-title">Esempi simili (fingerprint usato come riferimento)</div><div class="lt-rags">${rag}</div>`;
+}
+// wizStep3Combined: pagina "Genera" = opzioni (wizStep3) + prompt da copiare + lettera generata.
+function wizStep3Combined(){
+  const w=L.wiz;
+  return wizStep3() + `
+    <div class="lt-side-title" style="margin-top:20px">Prompt da copiare nell'AI esterna</div>
+    <div class="field"><textarea id="lt-prompt" rows="10" class="mono-input" readonly>${escapeHtml(w.builtPrompt||'')}</textarea>
+      <div class="lt-row" style="margin-top:8px"><button class="btn sm" onclick="window.Lettere._copyPrompt()">Copia prompt</button>
+        <button class="btn ghost sm" onclick="window.Lettere._rebuildPrompt()">Ricostruisci prompt</button>
+        <span class="lt-status">Incolla in Claude/ChatGPT, poi riporta sotto la lettera.</span></div></div>
+    <div class="field"><label>Lettera generata (incolla la risposta dell'AI)</label>
+      <textarea id="lt-out" rows="12" placeholder="Incolla qui la lettera prodotta..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
+      <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-out')">📋 Incolla dagli appunti</button>
+        <button class="btn ghost sm" onclick="window.Lettere._copyLetter()">Copia testo lettera</button></div></div>
+    ${flowNav('lettere-anonimizza','lettere-verifica','Verifica →')}`;
 }
 function wizStep4(){
   const w=L.wiz;
@@ -3607,6 +3631,103 @@ function wizStep4(){
       <textarea id="lt-fp" rows="3" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}' oninput="window.Lettere._set('fingerprint', this.value)">${escapeHtml(w.fingerprint||'')}</textarea></div>
     <div class="lt-wiz-actions"><button class="btn ghost" onclick="window.Lettere.goStep(3)">← Indietro</button>
       <div class="lt-row"><button class="btn" onclick="window.Lettere._addToLibrary()">Aggiungi a libreria</button></div></div>`;
+}
+
+/* ── Pagine separate del flusso (navigabili da sidebar/home come l'originale) ──
+   Condividono lo stato L.wiz. Ogni pagina ha la barra di flusso in alto e i pulsanti
+   avanti/indietro che navigano tra le route (non goStep). */
+function ensureWiz(){ if(!L.wiz) L.wiz = newWizard(); return L.wiz; }
+const LT_FLOW = [
+  { route:'lettere-carica',     label:'Carica' },
+  { route:'lettere-anonimizza', label:'Anonimizza' },
+  { route:'lettere-genera',     label:'Genera' },
+  { route:'lettere-verifica',   label:'Verifica' },
+  { route:'lettere-esporta',    label:'Esporta' },
+];
+function flowBar(activeRoute){
+  return '<div class="lt-flowbar">' + LT_FLOW.map((f,i)=>{
+    const active = f.route===activeRoute;
+    return `<button class="lt-flowstep${active?' active':''}" onclick="navigate('${f.route}')"><span class="lt-flown">${i+1}</span>${f.label}</button>`;
+  }).join('<span class="lt-flowsep"></span>') + '</div>';
+}
+function flowNav(prevRoute, nextRoute, nextLabel){
+  const prev = prevRoute ? `<button class="btn ghost" onclick="navigate('${prevRoute}')">← Indietro</button>` : '<span></span>';
+  const next = nextRoute ? `<button class="btn" onclick="navigate('${nextRoute}')">${nextLabel||'Avanti →'}</button>` : '<span></span>';
+  return `<div class="lt-wiz-actions">${prev}${next}</div>`;
+}
+function flowPageShell(activeRoute, title, bodyHtml){
+  mc().innerHTML = pageHead(title, 'LetteraAI',
+    `<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`) +
+    flowBar(activeRoute) + `<div class="lt-wizbody">${bodyHtml}</div>`;
+}
+
+function renderCarica(){
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderCarica); return; }
+  const w=ensureWiz();
+  flowPageShell('lettere-carica','Carica cartella', wizStep1());
+  const t=document.getElementById('lt-raw'); if(t) t.value=w.rawText||'';
+}
+function renderAnonimizza(){
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderAnonimizza); return; }
+  const w=ensureWiz();
+  // Se non ho ancora anonimizzato ma ho del testo grezzo, anonimizzo ora
+  if(!w.anonText && w.rawText && w.rawText.trim()){
+    try{ const res=anonymizeText(w.rawText); w.anonText=res.text; w.substitutions=res.substitutions; }catch(e){}
+  }
+  flowPageShell('lettere-anonimizza','Anonimizza dati', wizStep2());
+  const t=document.getElementById('lt-anon'); if(t) t.value=w.anonText||'';
+  // Avviso PII residua (se ci sono pattern sospetti nel testo anonimizzato)
+  try{
+    const flags=detectResidualPII(w.anonText||'');
+    const box=document.getElementById('lt-pii-warn');
+    if(box && flags && flags.length){
+      box.innerHTML=`<div class="lt-note" style="border-left-color:var(--warning);color:var(--warning)">
+        <strong>Attenzione:</strong> possibili dati personali residui (${flags.map(f=>escapeHtml(f.label)).join(', ')}). Controlla e correggi a mano se necessario.</div>`;
+    }
+  }catch(e){}
+}
+function renderGenera(){
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderGenera); return; }
+  const w=ensureWiz();
+  // Costruisco/aggiorno il prompt con le opzioni correnti
+  w.builtPrompt = buildCopyPrompt(w);
+  flowPageShell('lettere-genera','Genera lettera', wizStep3Combined());
+  const t=document.getElementById('lt-prompt'); if(t) t.value=w.builtPrompt||'';
+  const o=document.getElementById('lt-out'); if(o) o.value=w.outputLetter||'';
+}
+function renderVerifica(){
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderVerifica); return; }
+  const w=ensureWiz();
+  const body=`
+    <div class="lt-note">Confronta la cartella anonimizzata con la lettera generata per individuare
+      contraddizioni, dati assenti o inferenze non supportate. Copia il prompt e incollalo in un'AI esterna.</div>
+    <div class="field"><label>Lettera da verificare</label>
+      <textarea id="lt-vout" rows="10" class="mono-input" placeholder="Incolla qui la lettera (o riprendila dallo step Genera)..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
+      <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-vout')">📋 Incolla dagli appunti</button></div></div>
+    <div class="lt-row" style="margin-bottom:8px"><button class="btn" onclick="window.Lettere._copyVerifica()">Copia prompt di verifica</button></div>
+    <div id="lt-verifica-box"></div>
+    ${flowNav('lettere-genera','lettere-esporta','Esporta →')}`;
+  flowPageShell('lettere-verifica','Verifica', body);
+}
+function renderEsporta(){
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderEsporta); return; }
+  const w=ensureWiz();
+  const body=`
+    <div class="field"><label>Lettera finale</label>
+      <textarea id="lt-eout" rows="12" class="mono-input" placeholder="Incolla o rivedi qui la lettera finale..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
+      <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-eout')">📋 Incolla dagli appunti</button>
+        <button class="btn ghost sm" onclick="window.Lettere._copyLetter()">Copia testo lettera</button></div></div>
+    <div class="lt-row" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost" onclick="window.Lettere._printLetter()">Stampa</button>
+      <button class="btn ghost" onclick="window.Lettere._exportWord()">Esporta Word</button>
+    </div>
+    <div class="field"><label>Fingerprint stilistico (JSON opzionale, per la libreria)</label>
+      <div class="lt-row" style="margin-bottom:6px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPromptWiz()">Copia prompt per estrarre fingerprint</button>
+        <span class="lt-status">Estrai il "fingerprint" di stile dalla lettera per arricchire la libreria.</span></div>
+      <textarea id="lt-fp" rows="3" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}' oninput="window.Lettere._set('fingerprint', this.value)">${escapeHtml(w.fingerprint||'')}</textarea></div>
+    <div class="lt-wiz-actions"><button class="btn ghost" onclick="navigate('lettere-verifica')">← Indietro</button>
+      <button class="btn" onclick="window.Lettere._addToLibrary()">Aggiungi a libreria</button></div>`;
+  flowPageShell('lettere-esporta','Esporta', body);
 }
 
 function renderLibreria(){
@@ -3906,11 +4027,12 @@ function renderCaseEditor(id){
 window.Lettere = {
   loadLibrary,
   renderHome: renderLettereHome, renderWizard, renderLibreria,
+  renderCarica, renderAnonimizza, renderGenera, renderVerifica, renderEsporta,
   renderCaso, renderPersonalizzazioni, renderConfig,
   renderSegnalazioni, renderReparti,
   isReady: () => L.loaded,
 
-  nuova(){ L.wiz = newWizard(); navigate('lettere-nuovo'); },
+  nuova(){ L.wiz = newWizard(); navigate('lettere-carica'); },
   goStep(n){ if(L.wiz){ L.wiz.step=n; renderWizard(); } },
   _set(k,v){ if(L.wiz) L.wiz[k]=v; },
   _setPref(k,v){ if(L.wiz&&L.wiz.prefs) L.wiz.prefs[k]=v; renderWizard(); },
@@ -3937,6 +4059,38 @@ window.Lettere = {
       confirmLabel:'Procedi', danger:true, onConfirm:go }); return; }
     go(); },
   _buildPrompt(){ L.wiz.builtPrompt=buildCopyPrompt(L.wiz); L.wiz.step=4; renderWizard(); },
+  // Flusso a pagine separate: anonimizza il testo grezzo e naviga alla pagina Anonimizza
+  _caricaNext(){ const w=ensureWiz(); if(!w.rawText||!w.rawText.trim()){ toast('Inserisci il testo clinico.','error'); return; }
+    try{ const r=anonymizeText(w.rawText); w.anonText=r.text; w.substitutions=r.substitutions; }catch(e){ toast('Errore anonimizzazione: '+e.message,'error'); return; }
+    navigate('lettere-anonimizza'); },
+  // Ricostruisce il prompt nella pagina Genera con le opzioni correnti + aggiorna gli esempi RAG
+  _rebuildPrompt(){ const w=ensureWiz(); w.ragExamples=selectRAGExamples(w.ward,w.diagnosi,w.tipo); w.builtPrompt=buildCopyPrompt(w);
+    const ta=document.getElementById('lt-prompt'); if(ta) ta.value=w.builtPrompt; toast('Prompt aggiornato.','success'); },
+
+  // ── Reset / clear / copia / incolla (parità con l'originale) ──
+  _clearAll(){ Modals().confirm({ title:'Svuotare la cartella?', message:'Il testo caricato e gli esami verranno cancellati.', confirmLabel:'Svuota', danger:true,
+    onConfirm:()=>{ const w=ensureWiz(); w.rawText=''; w.anonText=''; w.substitutions=[]; w.xlsText=''; w.xlsRows=null;
+      const t=document.getElementById('lt-raw'); if(t) t.value=''; const st=document.getElementById('lt-parse-status'); if(st) st.textContent='';
+      toast('Cartella svuotata.','success'); } }); },
+  _clearXls(){ const w=ensureWiz(); if(!w.xlsText){ toast('Nessun file esami da rimuovere.','info'); return; }
+    // Rimuovo il blocco esami dal testo grezzo
+    if(w.xlsText && w.rawText) w.rawText=w.rawText.replace(w.xlsText,'').trim();
+    w.xlsText=''; w.xlsRows=null;
+    const t=document.getElementById('lt-raw'); if(t) t.value=w.rawText||'';
+    const st=document.getElementById('lt-parse-status'); if(st) st.textContent='Esami rimossi.';
+    toast('Esami rimossi.','success'); },
+  _newLetter(){ Modals().confirm({ title:'Nuova lettera?', message:'I dati correnti andranno persi.', confirmLabel:'Nuova lettera', danger:true,
+    onConfirm:()=>{ L.wiz=newWizard(); navigate('lettere-carica'); toast('Nuova lettera avviata.','success'); } }); },
+  _resetPrefs(){ const w=ensureWiz();
+    w.prefs=JSON.parse(JSON.stringify(L.userTemplateData&&L.userTemplateData.prefs?L.userTemplateData.prefs:DEFAULT_USER_PREFS));
+    renderGenera(); toast('Preferenze ripristinate.','success'); },
+  _copyLetter(){ const w=ensureWiz(); const txt=w.outputLetter||'';
+    if(!txt.trim()){ toast('Nessuna lettera da copiare.','error'); return; }
+    if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast('Lettera copiata.','success')).catch(()=>toast('Copia non riuscita.','error'));
+    else toast('Copia non supportata.','error'); },
+  async _pasteInto(elId){ try{ const txt=await navigator.clipboard.readText();
+      const el=document.getElementById(elId); if(el){ el.value=txt; el.dispatchEvent(new Event('input',{bubbles:true})); toast('Incollato dagli appunti.','success'); } }
+    catch(e){ toast('Lettura appunti non riuscita (permesso negato?).','error'); } },
   _copyPrompt(){ const ta=document.getElementById('lt-prompt'); if(ta){ ta.select();
     try{document.execCommand('copy');}catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(L.wiz.builtPrompt).catch(()=>{});
     toast('Prompt copiato.','success'); } },
@@ -4153,6 +4307,23 @@ window.Lettere = {
   @media(max-width:700px){.lt-two-col{grid-template-columns:1fr}}
   .lt-side-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px}
   .lt-card-static{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px 18px;margin-bottom:14px}
+  /* Home a lista (sezioni una sotto l'altra come categorie Procedure) */
+  .lt-home-group{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:18px 0 8px}
+  .lt-home-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  .lt-home-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;cursor:pointer;transition:border-color .12s,background .12s}
+  .lt-home-row:hover{border-color:var(--accent);background:var(--bg-raised)}
+  .lt-home-n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .lt-home-ic{flex:0 0 26px;text-align:center;font-size:16px}
+  .lt-home-t{font-size:14px;font-weight:600;color:var(--ink)}
+  .lt-home-d{font-size:12px;color:var(--ink-muted);margin-top:2px}
+  /* Barra di flusso in cima alle pagine del wizard */
+  .lt-flowbar{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--rule-soft)}
+  .lt-flowstep{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:transparent;border:1px solid var(--rule);border-radius:20px;font-size:12px;color:var(--ink-soft);cursor:pointer}
+  .lt-flowstep:hover{border-color:var(--accent);color:var(--ink)}
+  .lt-flowstep.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .lt-flowstep.active .lt-flown{background:rgba(255,255,255,.25);color:#fff}
+  .lt-flown{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:700}
+  .lt-flowsep{flex:0 0 6px}
   .lt-sections-editor{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow:auto;border:1px solid var(--rule-soft);border-radius:2px;padding:8px;background:var(--bg-sink)}
   .lt-section-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:3px;cursor:move}
   .lt-section-row:hover{border-color:var(--accent)}
