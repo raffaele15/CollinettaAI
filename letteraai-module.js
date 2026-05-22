@@ -3497,10 +3497,10 @@ function renderLettereHome(){
   }
   L._homeLoadAttempted = false;
   const adminItems = canEdit() ? `
-    <div class="lt-home-row" onclick="navigate('lettere-reparti')">
-      <span class="lt-home-ic">🏥</span><div><div class="lt-home-t">Reparti</div><div class="lt-home-d">Gestisci i reparti personalizzati (admin).</div></div></div>
+    <div class="lt-home-row" onclick="navigate('lettere-segnalazioni-admin')">
+      <span class="lt-home-ic">📋</span><div><div class="lt-home-t">Segnalazioni</div><div class="lt-home-d">Segnalazioni ricevute dagli utenti (admin).</div></div></div>
     <div class="lt-home-row" onclick="navigate('lettere-config')">
-      <span class="lt-home-ic">📝</span><div><div class="lt-home-t">Prompt &amp; template</div><div class="lt-home-d">Prompt di sistema e libreria template (admin).</div></div></div>` : '';
+      <span class="lt-home-ic">📝</span><div><div class="lt-home-t">Editor Prompt</div><div class="lt-home-d">Prompt di sistema e libreria template (admin).</div></div></div>` : '';
   mc().innerHTML = pageHead('LetteraAI','Generatore lettere di dimissione',
     `<button class="btn" onclick="window.Lettere.nuova()">Nuova lettera</button>`) + `
     <div class="lt-home-group">Flusso di generazione</div>
@@ -3519,11 +3519,13 @@ function renderLettereHome(){
     <div class="lt-home-group">Strumenti</div>
     <div class="lt-home-list">
       <div class="lt-home-row" onclick="navigate('lettere-libreria')">
-        <span class="lt-home-ic">📚</span><div><div class="lt-home-t">Libreria casi <span class="lt-badge">${L.casi.length}</span></div><div class="lt-home-d">Esempi anonimizzati con fingerprint di stile.</div></div></div>
+        <span class="lt-home-ic">📚</span><div><div class="lt-home-t">Libreria Casi <span class="lt-badge">${L.casi.length}</span></div><div class="lt-home-d">Esempi anonimizzati con fingerprint di stile, e gestione reparti.</div></div></div>
+      <div class="lt-home-row" onclick="navigate('lettere-impostazioni')">
+        <span class="lt-home-ic">⚙</span><div><div class="lt-home-t">Impostazioni</div><div class="lt-home-d">Preferenze di default per la generazione delle lettere.</div></div></div>
       <div class="lt-home-row" onclick="navigate('lettere-personalizzazioni')">
         <span class="lt-home-ic">✦</span><div><div class="lt-home-t">Mie personalizzazioni</div><div class="lt-home-d">Template personale e regole aggiuntive.</div></div></div>
       <div class="lt-home-row" onclick="navigate('lettere-segnalazioni')">
-        <span class="lt-home-ic">⚠</span><div><div class="lt-home-t">Segnala errori</div><div class="lt-home-d">Segnala errori o suggerimenti.</div></div></div>
+        <span class="lt-home-ic">⚠</span><div><div class="lt-home-t">Segnala Errori</div><div class="lt-home-d">Segnala errori o suggerimenti.</div></div></div>
       ${adminItems}
     </div>
     <div class="lt-note"><strong>Privacy.</strong> Anonimizzazione e parsing avvengono nel browser.
@@ -3548,19 +3550,46 @@ function renderWizard(){
 }
 
 function wizStep1(){
-  return `<div class="field"><label>Testo clinico (cartella, esami, referti)</label>
-    <textarea id="lt-raw" rows="14" class="mono-input" placeholder="Incolla qui il testo della cartella clinica..."
-      oninput="window.Lettere._set('rawText', this.value)"></textarea></div>
-    <div class="lt-row">
-      <button class="btn ghost sm" onclick="document.getElementById('lt-pdf').click()">Carica PDF cartella</button>
-      <input type="file" id="lt-pdf" accept="application/pdf" style="display:none" onchange="window.Lettere._onPdf(this.files[0])">
-      <button class="btn ghost sm" onclick="document.getElementById('lt-xls').click()">Carica esami (XLS)</button>
-      <input type="file" id="lt-xls" accept=".xls,.xlsx" style="display:none" onchange="window.Lettere._onXls(this.files[0])">
-      <button class="btn ghost sm" onclick="window.Lettere._clearXls()" title="Rimuovi gli esami caricati">Rimuovi esami</button>
-      <button class="btn ghost sm" onclick="window.Lettere._clearAll()" title="Svuota testo ed esami">↺ Reset</button>
-      <span id="lt-parse-status" class="lt-status"></span></div>
-    <div class="lt-wiz-actions"><span></span>
-      <button class="btn" onclick="window.Lettere._caricaNext()">Anonimizza →</button></div>`;
+  const w=L.wiz||{};
+  const xlsLoaded = w.xlsText && w.xlsText.trim();
+  return `
+    <div class="lt-card-static">
+      <div class="lt-side-title">Carica PDF cartella clinica completa</div>
+      <div class="lt-dropzone" onclick="document.getElementById('lt-pdf').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');window.Lettere._onPdf(event.dataTransfer.files[0])">
+        <input type="file" id="lt-pdf" accept="application/pdf" multiple style="display:none" onchange="window.Lettere._onPdf(this.files[0])">
+        <div class="lt-dz-ic">📁</div>
+        <div class="lt-dz-txt"><strong>Clicca o trascina uno o più PDF</strong></div>
+      </div>
+      <div id="lt-pdf-status" class="lt-dz-status" style="display:none"><span id="lt-pdf-status-txt"></span></div>
+    </div>
+
+    <div class="lt-card-static">
+      <div class="lt-side-title">Carica tabella esami di laboratorio — opzionale</div>
+      <div class="lt-dropzone" onclick="document.getElementById('lt-xls').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');window.Lettere._onXls(event.dataTransfer.files[0])">
+        <input type="file" id="lt-xls" accept=".xls,.xlsx,.csv" style="display:none" onchange="window.Lettere._onXls(this.files[0])">
+        <div class="lt-dz-ic">🧪</div>
+        <div class="lt-dz-txt"><strong>Clicca o trascina XLS</strong></div>
+      </div>
+      <div id="lt-xls-status" class="lt-dz-status" style="display:none"><span id="lt-xls-status-txt"></span></div>
+      ${xlsLoaded?`<div class="lt-xls-preview">
+        <div class="lt-xls-preview-h">Anteprima valori estratti</div>
+        <div class="lt-xls-preview-c">${escapeHtml(w.xlsText.slice(0,2000))}</div>
+        <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._clearXls()">✕ Rimuovi</button></div>
+      </div>`:''}
+    </div>
+
+    <div class="field"><label>Testo cartella clinica completa</label>
+      <textarea id="lt-raw" rows="12" class="mono-input" placeholder="Incolla qui il testo copiato dal PDF della cartella clinica"
+        oninput="window.Lettere._set('rawText', this.value)"></textarea></div>
+    <div class="lt-wiz-actions">
+      <button class="btn ghost" onclick="window.Lettere._clearAll()">✕ Reset</button>
+      <button class="btn" onclick="window.Lettere._caricaNext()">Avanti → Anonimizza</button></div>`;
 }
 function wizStep2(){
   const w=L.wiz;
@@ -3732,21 +3761,58 @@ function renderEsporta(){
 
 function renderLibreria(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderLibreria); return; }
-  const rows=L.casi.map(c=>`<tr onclick="navigate('lettere-caso',{id:'${c.id}'})" style="cursor:pointer">
+  const admin=canEdit();
+  // Filtro per reparto (come l'originale): __all__ tutti, __none__ senza reparto, oppure nome reparto
+  const wardFilter = L._libWardFilter || '__all__';
+  const wardNames = (L.wards||[]).map(w=>w.name).filter(Boolean);
+  const filterOpts = `<option value="__all__"${wardFilter==='__all__'?' selected':''}>Tutti i reparti</option>` +
+    `<option value="__none__"${wardFilter==='__none__'?' selected':''}>— Senza reparto</option>` +
+    wardNames.map(n=>`<option value="${escapeHtml(n)}"${wardFilter===n?' selected':''}>${escapeHtml(n)}</option>`).join('');
+  // Casi filtrati
+  const casiFiltrati = L.casi.filter(c=>{
+    if(wardFilter==='__all__') return true;
+    const w=c.ward||c.folder||'';
+    if(wardFilter==='__none__') return !w;
+    return w===wardFilter;
+  });
+  const rows=casiFiltrati.map(c=>`<tr onclick="navigate('lettere-caso',{id:'${c.id}'})" style="cursor:pointer">
     <td>${escapeHtml((c.createdAt||'').slice(0,10))}</td><td>${escapeHtml(c.ward||c.folder||'')}</td><td>${escapeHtml(c.diagnosi||c.name||'')}</td>
-    <td>${escapeHtml((TIPI.find(t=>t.id===c.tipo)||{}).label||c.tipo||'')}</td><td>${escapeHtml(c.autore||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="lt-sub-empty">Libreria vuota.</td></tr>';
-  // Barra backup/ripristino (solo admin): esporta cases.json o importa con merge
-  const backupBar = canEdit() ? `
+    <td>${escapeHtml((TIPI.find(t=>t.id===c.tipo)||{}).label||c.tipo||'')}</td><td>${escapeHtml(c.autore||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="lt-sub-empty">Nessun caso.</td></tr>';
+  // Barra backup/ripristino (solo admin)
+  const backupBar = admin ? `
     <div class="lt-row" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
-      <button class="btn ghost sm" onclick="window.Lettere._exportLib()">Esporta libreria (JSON)</button>
-      <button class="btn ghost sm" onclick="document.getElementById('lt-import-file').click()">Importa libreria (JSON)</button>
+      <button class="btn ghost sm" onclick="window.Lettere._exportLib()">⬇ Esporta libreria (JSON)</button>
+      <button class="btn ghost sm" onclick="document.getElementById('lt-import-file').click()">⬆ Importa libreria (JSON)</button>
       <input type="file" id="lt-import-file" accept="application/json,.json" style="display:none" onchange="window.Lettere._importLib(this)">
-      <span class="lt-status" style="flex:1">${L.casi.length} casi · ${(L.wards||[]).length} reparti</span>
     </div>` : '';
-  mc().innerHTML=pageHead('Libreria casi','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+
-    backupBar +
-    `<table class="lt-table"><thead><tr><th>Data</th><th>Reparto</th><th>Diagnosi</th><th>Tipo</th><th>Autore</th></tr></thead><tbody>${rows}</tbody></table>`;
+  // Card gestione Reparti (solo admin), come nell'originale dentro Libreria Casi
+  const repartiRows=(L.wards||[]).map(w=>`
+    <tr><td>${escapeHtml(w.name||'')}</td><td>${escapeHtml((w.createdAt||'').slice(0,10))}</td>
+      <td style="text-align:right"><button class="btn ghost sm" onclick="window.Lettere._delWard('${escapeHtml(w.id)}')">✕ Elimina</button></td></tr>`
+  ).join('')||'<tr><td colspan="3" class="lt-sub-empty">Nessun reparto.</td></tr>';
+  const repartiCard = admin ? `
+    <div class="lt-card-static" style="margin-top:20px">
+      <div class="lt-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="lt-side-title" style="margin:0">Reparti</div>
+        <div class="lt-row"><input type="text" id="lt-ward-name" placeholder="Nome nuovo reparto" style="width:200px">
+          <button class="btn sm" onclick="window.Lettere._addWard()">+ Nuovo Reparto</button></div>
+      </div>
+      <table class="lt-table"><thead><tr><th>Reparto</th><th>Creato</th><th></th></tr></thead><tbody>${repartiRows}</tbody></table>
+    </div>` : '';
+  mc().innerHTML=pageHead('Libreria Casi','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`)+
+    backupBar + `
+    <div class="lt-card-static">
+      <div class="lt-row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span class="lt-status">${casiFiltrati.length} cas${casiFiltrati.length===1?'o':'i'}${wardFilter!=='__all__'?' (filtrati)':''} · ${(L.wards||[]).length} repart${(L.wards||[]).length===1?'o':'i'}</span>
+        <div class="lt-row" style="align-items:center;gap:8px"><label style="margin:0;white-space:nowrap">🏥 Reparto</label>
+          <select onchange="window.Lettere._setLibWardFilter(this.value)" style="min-width:160px">${filterOpts}</select></div>
+      </div>
+      <table class="lt-table"><thead><tr><th>Data</th><th>Reparto</th><th>Diagnosi</th><th>Tipo</th><th>Autore</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>` +
+    repartiCard;
 }
+// renderReparti rimane come alias di Libreria (la gestione reparti è integrata lì)
+function renderReparti(){ navigate('lettere-libreria'); }
 function renderCaso(id){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(()=>renderCaso(id)); return; }
   const c=L.casi.find(x=>x.id===id);
@@ -3778,7 +3844,29 @@ function renderPersonalizzazioni(){
       <button class="btn" onclick="window.Lettere._saveMyPrefs()">Salva</button></div>`;
 }
 
-/* ── Segnalazioni errori (tutti possono inviare; admin vede e gestisce) ── */
+/* ── Impostazioni: preferenze di default per la generazione (panel5 originale) ──
+   Sono le preferenze salvate nel template utente, applicate come default a ogni nuova lettera. */
+function renderImpostazioni(){
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderImpostazioni); return; }
+  const p = (L.userTemplateData && L.userTemplateData.prefs) ? L.userTemplateData.prefs : DEFAULT_USER_PREFS;
+  const seg=(key,opts)=>opts.map(o=>`<button class="lt-seg${p[key]===o.v?' on':''}" onclick="window.Lettere._setDefPref('${key}','${o.v}')">${o.l}</button>`).join('');
+  mc().innerHTML=pageHead('Impostazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`)+`
+    <div class="lt-card-static">
+      <div class="lt-side-title">Preferenze generazione lettera (default)</div>
+      <div class="lt-prefs">
+        <div class="lt-pref-row"><label>Esami laboratorio</label><div class="lt-segs">${seg('lab',[{v:'all',l:'Tutti i valori'},{v:'altered',l:'Solo patologici'}])}</div></div>
+        <div class="lt-pref-row"><label>Accertamenti strumentali</label><div class="lt-segs">${seg('acc',[{v:'brief',l:'Sintetici'},{v:'extended',l:'Estesi'}])}</div></div>
+        <div class="lt-pref-row"><label>Decorso clinico</label><div class="lt-segs">${seg('dec',[{v:'short',l:'Conciso'},{v:'standard',l:'Standard'},{v:'long',l:'Dettagliato'}])}</div></div>
+        <div class="lt-pref-row"><label>Anamnesi</label><div class="lt-segs">${seg('an',[{v:'essential',l:'Essenziale'},{v:'complete',l:'Completa'}])}</div></div>
+        <div class="lt-pref-row"><label>Raccomandazioni</label><div class="lt-segs">${seg('rac',[{v:'main',l:'Principali'},{v:'all',l:'Tutte'}])}</div></div>
+        <div class="lt-pref-row"><label>Terapia dimissione</label><div class="lt-segs">${seg('ter',[{v:'last',l:'Ultima terapia'},{v:'lastPlusHome',l:'+ domiciliare'}])}</div></div>
+      </div>
+      <div class="lt-wiz-actions"><button class="btn ghost sm" onclick="window.Lettere._resetDefPrefs()">↺ Reset</button>
+        <button class="btn" onclick="window.Lettere._saveDefPrefs()">✓ Salva Preferenze</button></div>
+    </div>`;
+}
+
+/* ── Segnala errori (tutti possono inviare) — solo il form ── */
 const REPORT_CATEGORIES = [
   ['errore_lettera', 'Errore nella lettera generata'],
   ['errore_anonimizzazione', "Errore nell'anonimizzazione"],
@@ -3789,8 +3877,7 @@ const REPORT_CATEGORIES = [
 function renderSegnalazioni(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderSegnalazioni); return; }
   const catOpts = REPORT_CATEGORIES.map(([v,l])=>`<option value="${v}">${escapeHtml(l)}</option>`).join('');
-  // Form di invio (tutti)
-  let html = pageHead('Segnalazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`) + `
+  mc().innerHTML = pageHead('Segnala Errori','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`) + `
     <div class="lt-card-static">
       <div class="lt-side-title">Nuova segnalazione</div>
       <div class="field"><label>Categoria</label><select id="rep-cat">${catOpts}</select></div>
@@ -3800,16 +3887,17 @@ function renderSegnalazioni(){
         <textarea id="rep-prompt" rows="3" class="mono-input" placeholder="Incolla qui il prompt, se rilevante"></textarea></div>
       <div class="field"><label>Lettera prodotta <span class="lt-status">(opzionale)</span></label>
         <textarea id="rep-letter" rows="3" class="mono-input" placeholder="Incolla qui la lettera, se rilevante"></textarea></div>
-      <div class="lt-wiz-actions"><span class="lt-status">Le segnalazioni sono visibili agli amministratori.</span>
+      <div class="lt-wiz-actions"><button class="btn ghost sm" onclick="window.Lettere._resetReport()">↺ Reset</button>
         <button class="btn" onclick="window.Lettere._sendReport()">Invia segnalazione</button></div>
     </div>`;
-  // Lista segnalazioni (solo admin)
-  if(canEdit()){
-    html += `<div class="lt-side-title" style="margin-top:24px">Segnalazioni ricevute</div>
-      <div id="rep-list"><div class="loading"><span class="spinner"></span> Caricamento segnalazioni...</div></div>`;
-  }
-  mc().innerHTML = html;
-  if(canEdit()) _refreshReportsList();
+}
+/* ── Segnalazioni (admin) — solo la lista delle segnalazioni ricevute ── */
+function renderSegnalazioniAdmin(){
+  if(!canEdit()){ mc().innerHTML=pageHead('Segnalazioni','LetteraAI')+'<p>Riservato agli amministratori.</p>'; return; }
+  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderSegnalazioniAdmin); return; }
+  mc().innerHTML = pageHead('Segnalazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`) +
+    `<div id="rep-list"><div class="loading"><span class="spinner"></span> Caricamento segnalazioni...</div></div>`;
+  _refreshReportsList();
 }
 async function _refreshReportsList(){
   const box = document.getElementById('rep-list');
@@ -3826,26 +3914,8 @@ async function _refreshReportsList(){
       <p style="margin:8px 0;white-space:pre-wrap">${escapeHtml(r.description||'')}</p>
       ${r.prompt?`<details class="lt-det"><summary>Prompt</summary><pre class="lt-pre">${escapeHtml(r.prompt)}</pre></details>`:''}
       ${r.letter?`<details class="lt-det"><summary>Lettera</summary><pre class="lt-pre">${escapeHtml(r.letter)}</pre></details>`:''}
-      <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._delReport('${escapeHtml(r.id)}')">Elimina</button></div>
+      <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._delReport('${escapeHtml(r.id)}')">🗑 Elimina</button></div>
     </div>`).join('');
-}
-
-/* ── Gestione reparti (admin): aggiungi/elimina ward in cases.json ── */
-function renderReparti(){
-  if(!canEdit()){ mc().innerHTML=pageHead('Reparti','LetteraAI')+'<p>Riservato agli utenti con permessi.</p>'; return; }
-  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderReparti); return; }
-  const rows = (L.wards||[]).map(w=>`
-    <tr><td>${escapeHtml(w.name||'')}</td>
-      <td>${escapeHtml((w.createdAt||'').slice(0,10))}</td>
-      <td style="text-align:right"><button class="btn ghost sm" onclick="window.Lettere._delWard('${escapeHtml(w.id)}')">Elimina</button></td></tr>`
-  ).join('') || '<tr><td colspan="3" class="lt-sub-empty">Nessun reparto personalizzato.</td></tr>';
-  mc().innerHTML = pageHead('Reparti','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`) + `
-    <div class="lt-card-static">
-      <div class="lt-side-title">Nuovo reparto</div>
-      <div class="lt-row"><input type="text" id="rep-ward-name" placeholder="Nome reparto" style="flex:1">
-        <button class="btn" onclick="window.Lettere._addWard()">Aggiungi</button></div>
-    </div>
-    <table class="lt-table" style="margin-top:16px"><thead><tr><th>Reparto</th><th>Creato</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 /* ── Configurazione (admin): prompt + libreria template ── */
@@ -4030,6 +4100,7 @@ window.Lettere = {
   renderCarica, renderAnonimizza, renderGenera, renderVerifica, renderEsporta,
   renderCaso, renderPersonalizzazioni, renderConfig,
   renderSegnalazioni, renderReparti,
+  renderImpostazioni, renderSegnalazioniAdmin,
   isReady: () => L.loaded,
 
   nuova(){ L.wiz = newWizard(); navigate('lettere-carica'); },
@@ -4040,15 +4111,23 @@ window.Lettere = {
   _setTipo(v){ L.wiz.tipo=v; L.wiz.ragExamples=selectRAGExamples(L.wiz.ward,L.wiz.diagnosi,v); },
   _setDiag(v){ L.wiz.diagnosi=v; L.wiz.ragExamples=selectRAGExamples(L.wiz.ward,v,L.wiz.tipo); },
 
-  async _onPdf(file){ if(!file)return; const st=document.getElementById('lt-parse-status'); if(st)st.textContent='Lettura PDF...';
-    try{ const t=await extractPdfText(file); L.wiz.rawText=(L.wiz.rawText?L.wiz.rawText+'\n\n':'')+t;
-      const ta=document.getElementById('lt-raw'); if(ta)ta.value=L.wiz.rawText; if(st)st.textContent='PDF aggiunto.'; }
-    catch(e){ if(st)st.textContent='Errore PDF: '+e.message; } },
-  async _onXls(file){ if(!file)return; const st=document.getElementById('lt-parse-status'); if(st)st.textContent='Lettura esami XLS...';
-    try{ const rows=await extractXlsRows(file); L.wiz.xlsRows=rows; L.wiz.xlsText=xlsToRawText(rows, '').text;
-      L.wiz.rawText=(L.wiz.rawText?L.wiz.rawText+'\n\n':'')+L.wiz.xlsText;
-      const ta=document.getElementById('lt-raw'); if(ta)ta.value=L.wiz.rawText; if(st)st.textContent='Esami aggiunti.'; }
-    catch(e){ if(st)st.textContent='Errore XLS: '+e.message; } },
+  async _onPdf(file){ if(!file)return; const w=ensureWiz();
+    const box=document.getElementById('lt-pdf-status'); const txt=document.getElementById('lt-pdf-status-txt');
+    if(box) box.style.display='block'; if(txt) txt.textContent='Lettura PDF…';
+    try{ const t=await extractPdfText(file); w.rawText=(w.rawText?w.rawText+'\n\n':'')+t;
+      const ta=document.getElementById('lt-raw'); if(ta)ta.value=w.rawText;
+      if(txt) txt.textContent='✓ PDF aggiunto al testo.'; }
+    catch(e){ if(txt) txt.textContent='Errore PDF: '+e.message; } },
+  async _onXls(file){ if(!file)return; const w=ensureWiz();
+    const box=document.getElementById('lt-xls-status'); const txt=document.getElementById('lt-xls-status-txt');
+    if(box) box.style.display='block'; if(txt) txt.textContent='Lettura esami XLS…';
+    try{ const rows=await extractXlsRows(file); w.xlsRows=rows; w.xlsText=xlsToRawText(rows, '').text;
+      w.rawText=(w.rawText?w.rawText+'\n\n':'')+w.xlsText;
+      // Ri-renderizzo la pagina per mostrare l'anteprima dei valori estratti, poi ripristino il testo
+      renderCarica();
+      const ta=document.getElementById('lt-raw'); if(ta)ta.value=w.rawText;
+      toast('Esami aggiunti.','success'); }
+    catch(e){ if(txt) txt.textContent='Errore XLS: '+e.message; } },
 
   _step1Next(){ if(!L.wiz.rawText.trim()){ toast('Inserisci il testo clinico.','error'); return; }
     const r=anonymizeText(L.wiz.rawText); L.wiz.anonText=r.text; L.wiz.substitutions=r.substitutions; L.wiz.step=2; renderWizard(); },
@@ -4223,16 +4302,37 @@ window.Lettere = {
 
   // ── Reparti ──
   async _addWard(){
-    const name=(document.getElementById('rep-ward-name').value||'').trim();
+    const el=document.getElementById('lt-ward-name'); const name=(el&&el.value||'').trim();
     if(!name){ toast('Inserisci un nome reparto.','error'); return; }
-    try{ await createWardRepo(name); toast('Reparto aggiunto.','success'); renderReparti(); }
+    try{ await createWardRepo(name); toast('Reparto aggiunto.','success'); renderLibreria(); }
     catch(e){ toast('Errore: '+e.message,'error'); }
   },
   _delWard(id){
     const w=(L.wards||[]).find(x=>x.id===id); if(!w)return;
     Modals().confirm({ title:'Eliminare il reparto?', subtitle:`<strong>${escapeHtml(w.name||'')}</strong>`, confirmLabel:'Elimina', danger:true,
-      onConfirm:async()=>{ try{ await deleteWardRepo(id); toast('Reparto eliminato.','success'); renderReparti(); }catch(e){ toast('Errore: '+e.message,'error'); } } });
+      onConfirm:async()=>{ try{ await deleteWardRepo(id); toast('Reparto eliminato.','success'); renderLibreria(); }catch(e){ toast('Errore: '+e.message,'error'); } } });
   },
+  _setLibWardFilter(v){ L._libWardFilter=v; renderLibreria(); },
+
+  // ── Impostazioni: preferenze di default (salvate nel template utente) ──
+  _setDefPref(key,val){
+    if(!L.userTemplateData) L.userTemplateData={};
+    if(!L.userTemplateData.prefs) L.userTemplateData.prefs=JSON.parse(JSON.stringify(DEFAULT_USER_PREFS));
+    L.userTemplateData.prefs[key]=val; renderImpostazioni();
+  },
+  _resetDefPrefs(){
+    if(!L.userTemplateData) L.userTemplateData={};
+    L.userTemplateData.prefs=JSON.parse(JSON.stringify(DEFAULT_USER_PREFS));
+    renderImpostazioni(); toast('Preferenze ripristinate ai default.','info');
+  },
+  async _saveDefPrefs(){
+    const data = L.userTemplateData || {};
+    if(!data.prefs) data.prefs=JSON.parse(JSON.stringify(DEFAULT_USER_PREFS));
+    try{ await saveUserTemplateToRepo(data); toast('Preferenze salvate.','success'); }
+    catch(e){ toast('Errore: '+e.message,'error'); }
+  },
+  _resetReport(){ ['rep-desc','rep-prompt','rep-letter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    const cat=document.getElementById('rep-cat'); if(cat) cat.selectedIndex=0; toast('Modulo segnalazione svuotato.','info'); },
 
   async _saveMyPrefs(){ const base=document.getElementById('lt-utpl-base').value;
     const override=document.getElementById('lt-uoverride').value;
@@ -4307,6 +4407,16 @@ window.Lettere = {
   @media(max-width:700px){.lt-two-col{grid-template-columns:1fr}}
   .lt-side-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px}
   .lt-card-static{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px 18px;margin-bottom:14px}
+  /* Dropzone upload (replica panel0 originale) */
+  .lt-dropzone{border:2px dashed var(--rule);border-radius:4px;padding:24px 20px;text-align:center;cursor:pointer;background:var(--bg-sink);transition:border-color .15s}
+  .lt-dropzone:hover,.lt-dropzone.drag{border-color:var(--accent)}
+  .lt-dz-ic{font-size:24px;margin-bottom:6px;opacity:.7}
+  .lt-dz-txt{font-family:var(--mono);font-size:11px;color:var(--ink-muted)}
+  .lt-dz-txt strong{color:var(--ink)}
+  .lt-dz-status{margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+  .lt-xls-preview{margin-top:10px}
+  .lt-xls-preview-h{font-family:var(--mono);font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+  .lt-xls-preview-c{background:var(--bg-sink);border:1px solid var(--rule);border-radius:3px;padding:10px 12px;font-family:var(--mono);font-size:10px;color:var(--ink-soft);max-height:200px;overflow-y:auto;white-space:pre-wrap}
   /* Home a lista (sezioni una sotto l'altra come categorie Procedure) */
   .lt-home-group{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:18px 0 8px}
   .lt-home-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
