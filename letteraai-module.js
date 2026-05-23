@@ -47,9 +47,13 @@ const PROMPT_PATHS = {
 
 /* ── CDN (lazy-load: solo al primo uso) ── */
 const CDN = {
-  pdfjs:     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js',
-  pdfworker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js',
-  sheetjs:   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  // pdf.js 3.11.174 = build UMD "classica" che espone window.pdfjsLib via <script>.
+  // (la 4.x è ESM-only: pdf.min.mjs, non caricabile con loadScriptOnce → "Load fail")
+  // Stesso CDN/versione usati da index.html (_LIBS) e dall'app standalone originale:
+  // se index.html ha già caricato pdf.js, extractPdfText lo riusa senza ricaricare.
+  pdfjs:     'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+  pdfworker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
+  sheetjs:   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
 };
 
 const WARDS = ['Stroke Unit','Clinica Neurologica','Neurologia','Neurochirurgia','Altro'];
@@ -3479,8 +3483,11 @@ function readFpV3Editor(prefix){
    PARSING PDF / XLS (lazy-load)
    ═══════════════════════════════════════════════════════════════════════════ */
 async function extractPdfText(file){
-  await loadScriptOnce(CDN.pdfjs);
-  if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = CDN.pdfworker;
+  // Riusa pdf.js se index.html (CollinettaAI) l'ha già caricato; altrimenti caricalo.
+  if (!window.pdfjsLib) await loadScriptOnce(CDN.pdfjs);
+  if (!window.pdfjsLib) throw new Error('pdf.js non disponibile dopo il caricamento.');
+  // Configura il worker solo se non già impostato (index.html lo configura al load)
+  if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) window.pdfjsLib.GlobalWorkerOptions.workerSrc = CDN.pdfworker;
   const buf = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
   let text = '';
@@ -3488,8 +3495,9 @@ async function extractPdfText(file){
   return text;
 }
 async function extractXlsRows(file){
-  await loadScriptOnce(CDN.sheetjs);
+  if (!window.XLSX) await loadScriptOnce(CDN.sheetjs);
   const XLS = window.XLSX;
+  if (!XLS) throw new Error('SheetJS (xlsx) non disponibile dopo il caricamento.');
   const buf = await file.arrayBuffer();
   const wb = XLS.read(buf, { type:'array', cellText:true, cellDates:true });
   const ws = wb.Sheets[wb.SheetNames[0]];
