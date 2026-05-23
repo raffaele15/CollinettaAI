@@ -1345,6 +1345,64 @@ function freezeLabLines(text) {
   return { frozen, restore };
 }
 
+// Termini clinici/strutturali che NON vanno trattati come nomi (falsi positivi anonimizzazione).
+const TRAILING_SKIP = new Set([
+  // Preposizioni / articoli
+  'alla','alle','allo','agli','della','delle','dello','degli',
+  'nella','nelle','nello','negli','sulla','sulle','sullo','sugli',
+  'dalla','dalle','dallo','dagli',
+  // Header di sezione clinica / parole cliniche comuni
+  'fisico','obiettivo','generale','neurologico','neurologica',
+  'patologica','remota','prossima','fisiologica','familiare',
+  'clinico','diagnostico','intervento','motivo','esame','esami',
+  'nota','noto','noti','note','verso','decorso','durante',
+  'anamnesi','terapia','allergie','allergia','paziente','pazienti',
+  'stampa','stampato','rappresentazione','numero','numeri',
+  'ingresso','uscita','reparto','reparti','ricovero','dimissione',
+  'medico','medici','clinica','cliniche','diagnosi',
+  // Termini clinici che sembrano nomi
+  'lieve','paresi','plegia','grave','segni','respiro','vigile',
+  'presenza','stazionario','stazionaria','prosegue','presenta',
+  'presentano','somministrata','somministrato','rilevati','rilevato',
+  'monitorata','monitorato','posturato','posturata','diuresi',
+  'apiretico','apiretica','addome','obiettività',
+  'esiti','resto','presso','previo','classe','giorno',
+  'nessuna','nessuno','sostanzialmente','attualmente',
+  'corretta','corretto','integra','integro','valida','valido',
+  'spontanea','spontaneo','continua','continuo','libera','libero',
+  'profonda','profondo','precedente','precedenti',
+  'risposta','procedura','osservazioni','condizioni',
+  'quesito','multifibre','sostituto',
+  // Prodotti nutrizionali / farmaci brand
+  'nutrison','peptamen','isolyte','ensure','fresubin','cubitan',
+  'fortimel','prosure','abound','resource','glucerna',
+  // Nomi stranieri che compaiono in contesti clinici
+  'mercedes',
+  // Parole strutturali del documento
+  'data','tipo','pagina','page','fine','inizio','sezione',
+  // Header sezione lab/radiologia (per pattern ALLCAPS)
+  'stroke','pronto','soccorso','azienda','regione',
+  'profilo','urinario','formula','conteggio','microscopia','metaboliti',
+  'ematologia','costituenti','marcatori','coagulazione',
+  // Aggettivi clinici dopo i due punti
+  'ridotto','ridotta','modesto','modesta','discreto','discretamente',
+  'sottile','sottili','crescita','alcuni','alcune','comparsa',
+  'bradicardia','reperti','screening','positivo','negativo',
+  // Header di sezione / termini strutturali (falsi positivi ALLCAPS)
+  'emorragia','cerebrale','intraparenchimale','cranio','encefalo',
+  'emisoma','progetto','riabilitativo','indagine','frontespizio',
+  'infermieristico','neuro','energy','medica','batteriologica',
+  'sieroimmunologica','descrizione',
+]);
+
+// Preposizioni di cognomi composti italiani: in una coppia CamelCase, se l'altra parola
+// NON è in TRAILING_SKIP, trattala come nome (es. "Alice Dalle" → nome). Blocca
+// l'anonimizzazione solo se TUTTE le parole non-preposizione sono in TRAILING_SKIP.
+const SURNAME_PREPS = new Set([
+  'dal','dalla','dalle','dallo','del','della','delle','dello',
+  'dei','degli','di','de','la','lo','li','le',
+]);
+
 function shouldSkipName(words) {
   // words: array of strings from a matched CamelCase group
   // Returns true if this should NOT be treated as a name
@@ -1354,6 +1412,8 @@ function shouldSkipName(words) {
   return nonPrep.some(w => TRAILING_SKIP.has(w.toLowerCase()));
 }
 
+// Soglia di distanza di edit per il fuzzy matching dei nomi: parole corte → match esatto.
+function fuzzyThreshold(word){ return word.length<=5 ? 1 : 2; }
 function levenshtein(a,b) {
   const m=a.length,n=b.length;
   if(Math.abs(m-n)>2)return 99;
@@ -1682,403 +1742,6 @@ function isAbnormal(value,refRange){
   return numVal<lo||numVal>hi;
 }
 
-// ── freezeLabLines ──
-function freezeLabLines(text) {
-  const placeholders = [];
-  let idx = 0;
-  let frozen = text;
-
-  frozen = frozen.replace(/^[ \t]*[PBUCSE]-[A-Z].*/gm, (match) => {
-    const key = '\x00LAB' + (idx++) + '\x00';
-    placeholders.push({ key, value: match });
-    return key;
-  });
-
-  frozen = frozen.replace(/^(?:[A-Z] ){4,}[A-Z]\s*$/gm, (match) => {
-    const key = '\x00LAB' + (idx++) + '\x00';
-    placeholders.push({ key, value: match });
-    return key;
-  });
-
-  frozen = frozen.replace(/^Costituente\s+Risultato\s+Unit[^\n]*/gm, (match) => {
-    const key = '\x00LAB' + (idx++) + '\x00';
-    placeholders.push({ key, value: match });
-    return key;
-  });
-
-  frozen = frozen.replace(/^[ \t]*[A-Z][A-Z\s\-\/\(\)]{3,}\*?\s+[\d,]+\s+\S+.*$/gm, (match) => {
-    if (/\d/.test(match)) {
-      const key = '\x00LAB' + (idx++) + '\x00';
-      placeholders.push({ key, value: match });
-      return key;
-    }
-    return match;
-  });
-
-  (function() {
-    const lines2 = frozen.split('\n');
-    const labZone = new Array(lines2.length).fill(false);
-    const isAnalyte = (l) => /^[PBUSE]-[A-Z]/.test(l.trim()) || /^\x00LAB/.test(l.trim());
-
-    for (let i = 0; i < lines2.length; i++) {
-      if (isAnalyte(lines2[i])) {
-        for (let j = Math.max(0,i-8); j < Math.min(lines2.length,i+8); j++) labZone[j] = true;
-      }
-    }
-    let inBlock = false;
-    for (let i = 0; i < lines2.length; i++) {
-      if (/^Al Medico Curante\s*:/m.test(lines2[i]) || /^##\s+ESAMI DI LABORATORIO/.test(lines2[i])) inBlock = true;
-      if (inBlock) {
-        labZone[i] = true;
-        if (/^_{10,}/.test(lines2[i]) || /^Copia di documento/.test(lines2[i])) inBlock = false;
-      }
-    }
-    frozen = lines2.map((line, i) => {
-      if (!labZone[i]) return line;
-      const t = line.trim();
-      if (t.length > 3 && /^[A-Z][A-Z\s\-\/\(\)']{3,}$/.test(t)) {
-        const key = '\x00LAB' + (idx++) + '\x00';
-        placeholders.push({ key, value: line });
-        return key;
-      }
-      return line;
-    }).join('\n');
-  })();
-
-  const restore = (s) => {
-    let out = s;
-    for (const { key, value } of placeholders) {
-      out = out.split(key).join(value);
-    }
-    return out;
-  };
-
-  return { frozen, restore };
-}
-
-// ── applyRegex ──
-function applyRegex(text) {
-  const reps = [];
-  let result = text;
-  const rules = [...ANON_CONFIG.regexRules];
-  for (const rule of rules) {
-    const re = new RegExp(rule.pattern.source, rule.pattern.flags);
-    if (re.global) re.lastIndex = 0;
-    if (typeof rule.replace === 'function') {
-      result = result.replace(re, (...args) => {
-        const fullMatch = args[0].trim();
-        const replaced = rule.replace(...args);
-        // Only register in reps if the replace actually changed the text
-        if (replaced !== args[0] && fullMatch.length > 1 && !reps.find(r => r.orig === fullMatch))
-          reps.push({ orig: fullMatch, repl: rule.label,
-            type: rule.type === 'id'   ? 'ID/Codice'
-                : rule.type === 'date' ? 'Data sensibile'
-                : rule.type === 'name' ? 'Nome'
-                : 'Boilerplate' });
-        return replaced;
-      });
-    } else {
-      result = result.replace(re, (match) => {
-        const m = match.trim();
-        if (m.length > 1 && !reps.find(r => r.orig === m))
-          reps.push({ orig: m, repl: rule.label,
-            type: rule.type === 'id'   ? 'ID/Codice'
-                : rule.type === 'date' ? 'Data sensibile'
-                : rule.type === 'name' ? 'Nome'
-                : 'Boilerplate' });
-        return rule.label;
-      });
-    }
-  }
-  return { text: result, reps };
-}
-
-// ── shouldSkipName ──
-function shouldSkipName(words) {
-  // words: array of strings from a matched CamelCase group
-  // Returns true if this should NOT be treated as a name
-  const nonPrep = words.filter(w => !SURNAME_PREPS.has(w.toLowerCase()));
-  if (nonPrep.length === 0) return true; // all prepositions → skip
-  // If ANY non-preposition word is in TRAILING_SKIP → skip (clinical term)
-  return nonPrep.some(w => TRAILING_SKIP.has(w.toLowerCase()));
-}
-
-// ── levenshtein ──
-function levenshtein(a,b) {
-  const m=a.length,n=b.length;
-  if(Math.abs(m-n)>2)return 99;
-  if(m===0)return n; if(n===0)return m;
-  let prev=Array.from({length:n+1},(_,i)=>i);
-  for(let i=1;i<=m;i++){
-    const curr=[i];
-    for(let j=1;j<=n;j++){
-      const cost=a[i-1]===b[j-1]?0:1;
-      curr[j]=Math.min(curr[j-1]+1,prev[j]+1,prev[j-1]+cost);
-    }
-    prev=curr;
-  }
-  return prev[n];
-}
-
-// ── isFuzzyName ──
-function isFuzzyName(token,bkTree,maxDist){
-  if(token.length<3)return false;
-  return bkTree.search(token.toLowerCase(),maxDist).length>0;
-}
-
-// ── applyNameDict ──
-function applyNameDict(text) {
-  if(!NAMES_DB.loaded)return{text,reps:[]};
-  const reps=[];
-  let result=text;
-  const addRep=(orig,type)=>{if(!reps.find(r=>r.orig===orig))reps.push({orig,repl:'[NOME]',type});};
-
-  const exactSurnameSet=new Set(NAMES_DB.surnames);
-  const exactFirstSet=new Set(NAMES_DB.firstNames);
-
-  function tokenise(str){
-    const tokens=[];
-    const re=/\S+/g; let m;
-    while((m=re.exec(str))!==null){
-      const t=m[0];
-      const isCapWord=/^[A-ZÀÈÉÌÒÙ][a-zàèéìòùA-ZÀÈÉÌÒÙ'-]+$/.test(t)||/^[A-ZÀÈÉÌÒÙ]{2,}$/.test(t);
-      tokens.push({text:t,start:m.index,end:m.index+t.length,isCapWord});
-    }
-    return tokens;
-  }
-
-  function applySpans(str,spans,type){
-    spans.sort((a,b)=>a.start-b.start);
-    let out='',prev=0;
-    for(const s of spans){out+=str.slice(prev,s.start)+'[NOME]';addRep(s.orig,type);prev=s.end;}
-    return out+str.slice(prev);
-  }
-
-  // Pass 1: exact pairs
-  const pass1Spans=[];
-  const tokens=tokenise(result);
-  for(let i=0;i<tokens.length-1;i++){
-    const t1=tokens[i],t2=tokens[i+1];
-    if(!t1.isCapWord||!t2.isCapWord)continue;
-    const w1=t1.text.replace(/[.,;:!?]$/,'').toLowerCase();
-    const w2=t2.text.replace(/[.,;:!?]$/,'').toLowerCase();
-    const isPair=(exactSurnameSet.has(w1)&&exactFirstSet.has(w2))||
-                 (exactFirstSet.has(w1)&&exactSurnameSet.has(w2))||
-                 (exactSurnameSet.has(w1)&&exactSurnameSet.has(w2));
-    if(isPair){pass1Spans.push({start:t1.start,end:t2.end,orig:t1.text+' '+t2.text});i++;continue;}
-    if(/^[A-Z]\.$/.test(t1.text)&&exactSurnameSet.has(w2)){
-      pass1Spans.push({start:t1.start,end:t2.end,orig:t1.text+' '+t2.text});i++;
-    }
-  }
-  result=applySpans(result,pass1Spans,'Nome+Cognome (coppia esatta)');
-
-  // Pass 2: fuzzy pairs
-  const tokens2=tokenise(result);
-  const pass2Spans=[];
-  const SKIP2=new Set([
-    'nascita','cognome','nome','sesso','reparto','diagnosi','anamnesi',
-    'terapia','esame','referto','paziente','medico','infermiere',
-    'ambulatorio','ricovero','dimissione','urgente','ordinario',
-    'stroke','unita','scala','valore','misura','dato','nota',
-    'stato','grado','tipo','data','ora','firma','timbro',
-    'mese','anno','giorno','settimana',
-    'setto','atrio','mitrale','aortica','ventricolo','valvola',
-    'glucosio','urea','creatinina','sodio','potassio','cloro',
-    'calcio','fosfato','albumina','bilirubina','totale','coniugata',
-    'inorganico','inorganica','urico','acido','ratio','tempo',
-    'protrombina','trombina','fibrinogeno','ferritina','transferrina',
-    'colesterolo','trigliceridi','emoglobina','ematocrito','piastrine',
-    'leucociti','eritrociti','basofili','eosinofili','neutrofili',
-    'linfociti','monociti','reticolociti','glicemia','insulina',
-    'cortisolo','troponina','mioglobina','procalcitonina','sideremia',
-    'proteinuria','microalbuminuria','cistatina','osmolalita','clearance',
-    'bicarbonato','magnesio','zinco','fosforo','transaminasi','lipasi',
-    'amilasi','fosfatasi','creatinchinasi','lattato','deidrogenasi',
-    'costituente','risultato','riferimento','precedente',
-    'intervallo','metodo','campione','commento','obiettivo',
-    'terapeutico','normalizzato','alterata','digiuno',
-    'gravidanza','emolizzato','sovrastima','reattiva',
-    'mmol','umol','nmol','litro','litri',
-    'neurologica','neurologico','neurologici','neurologia',
-    'obiettivo','obbiettivo','generale','ingresso',
-    'soccorso','pronto','clinica','unita','unit',
-    'fisiatrica','fisiatrico','fisiatria',
-    'cardiologica','cardiologia','radiologia',
-    'nefrologia','pneumologia','ortopedia',
-    'geriatria','medicina','chirurgia','riabilitazione',
-    'decorso','clinico','farmacologica','motivo',
-    'patologica','remota','fisiologica','familiare',
-    'accertamenti','strumentali','laboratorio','specialistiche',
-    'valutazioni','obiettivi',
-    'curante','attenzione','cortese','collega','egregio',
-    'dimettiamo','odierna','assistita','assistito',
-    'ricoverata','ricoverato','degenza',
-    'glicata','glicato','glicosata','glicosato',
-    'metaboliti','speciali','lipidico','lipidica',
-    'coagulativo','coagulativa','tiroideo','tiroidea',
-    'eritrocitario','eritrocitaria','sierologico','microscopico',
-    'ormonale','aptoglobina',
-    // ── Nutritional products / brand drugs ──
-    'nutrison','peptamen','isolyte','ensure','fresubin','cubitan',
-    'fortimel','prosure','abound','resource','glucerna','multifibre',
-    // ── Clinical terms that look like names ──
-    'quesito','sostituto','primario',
-  ]);
-  for(let i=0;i<tokens2.length-1;i++){
-    const t1=tokens2[i],t2=tokens2[i+1];
-    if(!t1.isCapWord||!t2.isCapWord)continue;
-    if(t1.text==='[NOME]'||t2.text==='[NOME]')continue;
-    const w1=t1.text.replace(/[.,;:!?]$/,'').toLowerCase();
-    const w2=t2.text.replace(/[.,;:!?]$/,'').toLowerCase();
-    if(w1.length<4||w2.length<4)continue;
-    if(SKIP2.has(w1)||SKIP2.has(w2))continue;
-    const th1=fuzzyThreshold(w1),th2=fuzzyThreshold(w2);
-    const isFuzzyPair=(isFuzzyName(w1,bkSurnames,th1)&&isFuzzyName(w2,bkFirstNames,th2))||
-                      (isFuzzyName(w1,bkFirstNames,th1)&&isFuzzyName(w2,bkSurnames,th2));
-    if(isFuzzyPair){pass2Spans.push({start:t1.start,end:t2.end,orig:t1.text+' '+t2.text});i++;}
-  }
-  pass2Spans.sort((a,b)=>a.start-b.start);
-  let out2='',prev2=0;
-  for(const s of pass2Spans){out2+=result.slice(prev2,s.start)+'[NOME]';addRep(s.orig,'Nome+Cognome (coppia fuzzy ~2 lettere)');prev2=s.end;}
-  result=out2+result.slice(prev2);
-
-  // Pass 3: exact individual surnames
-  const allSurnames=[...exactSurnameSet];
-  allSurnames.sort((a,b)=>b.length-a.length);
-  const CLINICAL_KEYWORDS=new Set([
-    'nascita','cognome','nome','sesso','reparto','diagnosi','anamnesi',
-    'terapia','esame','referto','paziente','medico','infermiere',
-    'ambulatorio','ricovero','dimissione','urgente','ordinario',
-    'stroke','unita','scala','valore','valori','misura','dato','nota',
-    'stato','grado','tipo','data','ora','firma','timbro',
-    'mese','anno','giorno','giorni','settimana',
-    'setto','atrio','mitrale','aortica','ventricolo','valvola',
-    'glucosio','urea','creatinina','sodio','potassio','cloro',
-    'calcio','fosfato','albumina','bilirubina','totale','coniugata',
-    'inorganico','inorganica','urico','acido','ratio','tempo',
-    'protrombina','trombina','fibrinogeno','ferritina','transferrina',
-    'colesterolo','trigliceridi','emoglobina','ematocrito','piastrine',
-    'leucociti','eritrociti','basofili','eosinofili','neutrofili',
-    'linfociti','monociti','reticolociti','glicemia','insulina',
-    'cortisolo','troponina','mioglobina','procalcitonina','sideremia',
-    'proteinuria','microalbuminuria','cistatina','osmolalita','clearance',
-    'bicarbonato','magnesio','zinco','fosforo','transaminasi','lipasi',
-    'amilasi','fosfatasi','creatinchinasi','lattato','deidrogenasi',
-    'costituente','risultato','riferimento','precedente',
-    'intervallo','metodo','campione','commento','obiettivo',
-    'terapeutico','normalizzato','alterata','digiuno',
-    'gravidanza','emolizzato','sovrastima','reattiva',
-    'mmol','umol','nmol','litro','litri',
-    'neurologica','neurologico','neurologici','neurologia',
-    'obiettivo','obbiettivo','generale','ingresso',
-    'soccorso','pronto','clinica','fisiatrica','fisiatrico','fisiatria',
-    'cardiologica','cardiologia','radiologia','nefrologia',
-    'pneumologia','ortopedia','geriatria','medicina','chirurgia',
-    'riabilitazione','decorso','clinico','farmacologica','motivo',
-    'patologica','remota','fisiologica','familiare',
-    'accertamenti','strumentali','laboratorio','specialistiche',
-    'valutazioni','obiettivi','unita',
-    'curante','attenzione','cortese','collega','egregio',
-    'dimettiamo','odierna','assistita','assistito',
-    'ricoverata','ricoverato','degenza',
-    'glicata','glicato','glicosata','glicosato',
-    'metaboliti','speciali','lipidico','lipidica',
-    'coagulativo','coagulativa','tiroideo','tiroidea',
-    'eritrocitario','eritrocitaria','sierologico','microscopico',
-    'ormonale','aptoglobina',
-    // ── Termini clinici/anatomici che sono anche cognomi italiani ──
-    'gentili','franca','franco','corso','corsi',
-    'vigile','vigili','semplici','semplice',
-    'alla','alle','allo','agli',
-    'esami','motivi','pazienti',
-    'capo','piano','piani','presente','presenti',
-    'durante','bianco','bianchi','bianca','bianche',
-    'rosso','rossi','rossa','rosse',
-    'ferro','noto','nota','noti','note',
-    'falda','falde','quadro','quadri',
-    'stabile','stabili','modesto','modesta','modesti',
-    'minuto','minuti','minuta','massa','masse',
-    'modica','modico','modici','modiche',
-    'luce','recupero','campo','campi',
-    'consiglio','consigli','massimo','massima',
-    'minimi','minimo','minima','minime',
-    'febbraio','gennaio','marzo','aprile','maggio','giugno',
-    'luglio','agosto','settembre','ottobre','novembre','dicembre',
-    'prossimi','prossimo','prossima','prossime',
-    'secondo','seconda','secondi','seconde',
-    'lettera','lettere','parziale','parziali',
-    'venoso','venosa','venosi','venose',
-    'assenza','toni','tono',
-    'sala','sale','volta','volte',
-    'busta','buste','medici',
-    'compatto','compatta','compatti',
-    'terzo','terza','terzi','terze',
-    'inferiore','inferiori','superiore','superiori',
-    'sensitivo','sensitiva','sensitivi',
-    'orario','orari','corporeo','corporea',
-    'fini','fine','destro','destra','destri','destre',
-    'sinistro','sinistra','sinistri','sinistre',
-    'sottile','sottili','corno','corni',
-    'laterale','laterali','mediana','mediane','mediano',
-    'basale','basali','frontale','frontali',
-    'parietale','parietali','temporale','temporali',
-    'occipitale','occipitali',
-    'dorsale','dorsali','cervicale','cervicali',
-    'torace','addome','polmonare','polmonari',
-    'pleurica','pleuriche','pleurico',
-    'asse','assiale','lungo','lunga','lunghi','lunghe',
-    'breve','brevi','acuta','acuto','acuti','acute',
-    'grave','gravi','lieve','lievi',
-    'chetoni','chetone',
-    'trasferiamo','trasferimento','trasferito','trasferita',
-    'invasione','evoluzione','riduzione','estensione',
-    'perfusione','diffusione','infusione','conclusione',
-    'formazione','pressione','depressione','impressione',
-    'stria','strie','areola','areole',
-    'continua','continuo','continui','continue',
-    'corretta','corretto','corretti','corrette',
-    'integra','integro','integri','integre',
-    'libera','libero','liberi','libere',
-    'valida','valido','validi','valide',
-    'costante','costanti','completa','completo',
-    'flaccida','flaccido','rigida','rigido',
-    'spontanea','spontaneo','spontanei','spontanee',
-    'profonda','profondo','profondi','profonde',
-    'bene','beni','male','mali',
-    'positivo','positiva','positivi','positive',
-    'negativo','negativa','negativi','negative',
-    'assente','assenti','normale','normali',
-    'raro','rara','rari','rare',
-    'naso','nasale','nasali','orale','orali',
-    'corto','corta','corti','corte',
-    'alto','alta','alti','alte',
-    'basso','bassa','bassi','basse',
-    'medio','media','medi','medie',
-    'grosso','grossa','grossi','grosse',
-    'piccolo','piccola','piccoli','piccole',
-    'chiaro','chiara','chiari','chiare',
-    'paresi','uscita','numero','numeri',
-    'presenza','stazionario','stazionaria',
-    'prosegue','somministrata','somministrato',
-    'rilevati','rilevato','rilevata',
-    'monitorata','monitorato','posturato','posturata',
-    'presenta','presentano','diuresi',
-    'apiretico','apiretica',
-    'verso','allergie','allergia',
-    // ── Prodotti nutrizionali / brand farmaceutici spesso in cartella ──
-    'nutrison','peptamen','isolyte','ensure','fresubin','cubitan',
-    'fortimel','prosure','abound','resource','glucerna',
-    'quesito','multifibre','sostituto',
-  ]);
-  for(const name of allSurnames){
-    if(name.length<4)continue;
-    if(CLINICAL_KEYWORDS.has(name.toLowerCase()))continue;
-    const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    const re=new RegExp(`(?<![\\w\\u00C0-\\u024F])${escaped}(?![\\w\\u00C0-\\u024F])`,'gi');
-    if(re.test(result))result=result.replace(re,(m)=>{addRep(m,'Cognome (esatto)');return'[NOME]';});
-  }
-  return{text:result,reps};
-}
 
 // ── extractDischargeLetter ──
 function extractDischargeLetter(anonText) {
