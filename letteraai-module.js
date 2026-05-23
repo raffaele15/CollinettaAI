@@ -874,6 +874,16 @@ const ANON_CONFIG = {
       label: '[FIRMA_DIGITALE]', type: 'boiler' },
     { pattern: /Firmato\s+il[:\s]+[\d\/]+\s+Ora[:\s]+[\d:\.]+[^\n]*/g,
       label: '[FIRMA_DIGITALE]', type: 'boiler' },
+    // Firma digitale con nome del medico firmatario, vari formati:
+    // "Firmato il: 13/04/2026 10:38:33 da Giovanni Muciaccia"
+    { pattern: /Firmat[oa]\s+il\s*:?\s*\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}(?:\s+\d{1,2}[:\.]\d{2}(?:[:\.]\d{2})?)?\s+da\s+[A-ZÀ-Ü][a-zà-ü'\-]+(?:\s+[A-ZÀ-Ü][a-zà-ü'\-]+)+/g,
+      label: 'Firmato da [OPERATORE]', type: 'name' },
+    // "Firmato da Giovanni Muciaccia il 13/04/2026"
+    { pattern: /Firmat[oa]\s+da\s+[A-ZÀ-Ü][a-zà-ü'\-]+(?:\s+[A-ZÀ-Ü][a-zà-ü'\-]+)+\s+il\s*:?\s*\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}[^\n]*/g,
+      label: 'Firmato da [OPERATORE]', type: 'name' },
+    // "Sottoscritto/Validato/Refertato da NOME COGNOME"
+    { pattern: /(?:Sottoscritto|Validato|Refertato|Redatto|Compilato)\s+(?:digitalmente\s+)?da\s+[A-ZÀ-Ü][a-zà-ü'\-]+(?:\s+[A-ZÀ-Ü][a-zà-ü'\-]+)+/g,
+      label: '[OPERATORE]', type: 'name' },
     { pattern: /Il\s+referto\s+è\s+conservato\s+secondo\s+la\s+normativa[^\n]*/gi,
       label: '[CONSERVAZIONE]', type: 'boiler' },
     { pattern: /Copia\s+di\s+(?:documento|referto)\s+firmato\s+e\s+conservato[^\n]*/gi,
@@ -905,7 +915,7 @@ const ANON_CONFIG = {
     { pattern: /Al\s+Medico\s+Curante\s*:\s*\S+\s+\S+/gi,
       label: 'Al Medico Curante: [PAZIENTE]', type: 'name' },
     { pattern: /Provenienza\s*:\s*[^\n]+/gi, label: '[PROVENIENZA]', type: 'boiler' },
-    { pattern: /Medico\s+[Rr]ichiedente\s*:\s*(?:[A-Z][a-z\u00C0-\u00FF][a-zA-Z\u00C0-\u00FF]*|[A-Z]{2,})(?:\s+(?:[A-Z][a-zA-Z\u00C0-\u00FF]+|[A-Z]{2,}))*/g,
+    { pattern: /Medico\s+[Rr]ichiedente\s*:\s*(?:\[(?:NOME|PAZIENTE|OPERATORE)\]|[A-Z][a-z\u00C0-\u00FF][a-zA-Z\u00C0-\u00FF]*|[A-Z]{2,})(?:\s+(?:\[(?:NOME|PAZIENTE|OPERATORE)\]|[A-Z][a-zA-Z\u00C0-\u00FF]+|[A-Z]{2,}))*/g,
       label: 'Medico richiedente: [OPERATORE]', type: 'name' },
     { pattern: /Medico\s+[Rr]efertante\s*:\s*[A-Z][a-z\u00C0-\u00FF][a-zA-Z\u00C0-\u00FF]*(?:\s+[A-Z][a-zA-Z\u00C0-\u00FF]+)*/g,
       label: 'Medico refertante: [OPERATORE]', type: 'name' },
@@ -1207,6 +1217,94 @@ const ANON_CONFIG = {
     /^Dipartimento\s+[A-Z][^\n]*/i,
     /^Dipartimento\s+di\s+[A-Z][^\n]*/i,
     /^Dip\.\s+[A-Z][^\n]*/i,
+    // ── Firma digitale / conservazione / metadati referto (riduzione token) ──
+    // Intestazione di pagina: "PAGINA 1 - RICOVERO 12345678" (il nome paziente che segue
+    // viene gestito separatamente dall'estrazione del frontespizio)
+    /^PAGINA\s+\d+\s*[-–]\s*RICOVERO\s+\d+[^\n]*$/i,
+    /^\[?PAGINA\]?\s*[-–]\s*RICOVERO\s+[^\n]*$/i,
+    // Disclaimer di firma digitale e conservazione sostitutiva
+    /^Referto\s+firmat[oa]\s+digitalmente[^\n]*/i,
+    // "Rappresentazione di un referto firmato elettronicamente, conservato..."
+    /^Rappresentazione\s+di\s+un\s+referto\s+firmato[^\n]*$/i,
+    /^(?:Copia|Stampa)\s+di\s+(?:un\s+)?(?:documento|referto)\s+firmat[oa][^\n]*$/i,
+    // "Referto firmato/firmata da [OPERATORE] DATA ORA" (firma con data, dopo anonimizzazione nome)
+    /^Referto\s+firmat[oa]\s+da\s+[^\n]*\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}[^\n]*$/i,
+    /^(?:Documento|Referto)\s+(?:informatico\s+)?(?:firmat[oa]|sottoscritto)\s+(?:digitalmente|elettronicamente)[^\n]*/i,
+    /^(?:Il\s+presente\s+)?(?:documento|referto)\s+(?:è\s+)?conservat[oa][^\n]*/i,
+    /^Conservazione\s+(?:sostitutiva|a\s+norma)[^\n]*/i,
+    /^Versione\s+\d+\s*,?\s*(?:Conservazione)?[^\n]*$/i,
+    /^vigente\.\s*$/i,
+    // Riga di firma finale: "Firmato il: DATA ORA da NOME COGNOME" / "Firmato da NOME il DATA"
+    /^(?:vigente\.\s*)?Firmat[oa]\s+(?:il)?\s*:?\s*\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}[^\n]*\bda\b[^\n]*$/i,
+    /^(?:vigente\.\s*)?Firmat[oa]\s+da\s+[A-Z][^\n]*\bil\b\s*:?\s*\d{1,2}[\/\.-]\d{1,2}[^\n]*$/i,
+    // Telefono/fax con prefisso "T." o "T.+" (formato intestazione AOPD)
+    /^T\.?\s*\+?\s*39\s+0?\d[\d\s\.\-]+$/i,
+    /^T\.?\s*\+?\s*\d[\d\s\.\-]{6,}$/,
+    /^(?:Tel|Fax|T|F)\.?\s*[:\.\-]?\s*\+?\s*\d{2,4}[\d\s\.\-\/]{5,}$/i,
+    // Cod.Fisc./P.IVA aziendale su riga (con numero sulla stessa riga)
+    /^Cod\.?\s*Fisc\.?\s*\/?\s*P\.?\s*IVA\s+\d[\d\s]*$/i,
+    /^P\.?\s*IVA\s*\/?\s*Cod\.?\s*Fisc\.?\s+\d[\d\s]*$/i,
+    // Numero referto / protocollo: "Referto: 131038253-1", "Protocollo: ..."
+    /^Referto\s*:\s*\d[\d\-\/]*\s*$/i,
+    /^(?:Protocollo|Prot\.?|N\.?\s*Referto|Nr\.?\s*Referto|ID\s+Referto)\s*[:\.]?\s*[\d\-\/]+\s*$/i,
+    // Dominio web senza www/http (es. "Aopd.veneto.it")
+    /^[A-Za-z][A-Za-z0-9\-]*(?:\.[A-Za-z0-9\-]+)+\.(?:it|com|org|net|eu|gov\.it)\s*$/i,
+    // Riga "e-mail [qualcosa]" o "PEC: ..."
+    /^(?:e-?mail|posta\s+elettronica|PEC)\s*[:\.]?\s*[^\n]*$/i,
+    // ── Righe amministrative aggiuntive (rimozione aggressiva) ──
+    // Codici/numeri amministrativi: Nosografico, SDO, Episodio, Accettazione, Pratica, Matricola
+    /^(?:Nr\.?|N\.?|Numero|Cod(?:ice)?\.?)\s*(?:Nosografic[oa]|SDO|Episodi[oa]|Accettazione|Pratica|Matricola|Cartella|Paziente|Assistito)\s*[:\.]?\s*[\w\d\-\/]+\s*$/i,
+    /^(?:Nosografico|SDO|Episodio|Accettazione|Matricola|N\.?\s*Cartella)\s*[:\.]?\s*[\w\d\-\/]+\s*$/i,
+    // Tessera sanitaria / STP / ENI / numeri tessera
+    /^(?:Tessera\s+Sanitaria|TEAM|STP|ENI)\s*[:\.]?\s*[\w\d\-\/]+\s*$/i,
+    // Riga "Stampato/Prodotto/Generato il ... da ..." (metadati di stampa)
+    /^(?:Stampat[oa]|Prodott[oa]|Generat[oa]|Estratt[oa])\s+(?:il\s+|in\s+data\s+)?[^\n]*$/i,
+    /^(?:Data\s+e\s+ora\s+(?:di\s+)?stampa|Data\/ora\s+stampa)\s*[:\.]?\s*[^\n]*$/i,
+    // Riga di solo numero di pagina o "Pagina N" / "Pag. N di M"
+    /^Pag(?:ina)?\.?\s*\d+(?:\s*(?:di|\/)\s*\d+)?\s*$/i,
+    /^\d+\s*\/\s*\d+\s*$/,
+    // Codice a barre / identificativi alfanumerici lunghi isolati
+    /^[A-Z0-9]{10,}\s*$/,
+    /^Codice\s+(?:a\s+)?barr[ae]\s*[:\.]?\s*[^\n]*$/i,
+    // Orari di apertura / ricevimento / segreteria
+    /^(?:Orari[oe]\s+(?:di\s+)?(?:apertura|ricevimento|visita)|Ricevimento)\s*[:\.]?\s*[^\n]*$/i,
+    // Riga "Distretto / ASL / AULSS / Regione di residenza" amministrativa
+    /^(?:Distretto|ASL|AULSS|ULSS|Azienda\s+Sanitaria)\s+(?:di\s+)?[^\n]*$/i,
+    // Disclaimer privacy / trattamento dati (GDPR)
+    /^(?:Informativa\s+(?:sulla\s+)?privacy|Trattamento\s+dei\s+dati|Ai\s+sensi\s+(?:dell'art|del\s+(?:Reg|D\.?Lgs)))[^\n]*$/i,
+    /^(?:I\s+dati\s+(?:personali\s+)?(?:sono|saranno|verranno)\s+trattati)[^\n]*$/i,
+    // Riga di disclaimer "documento privo di valore" o "non sostituisce"
+    /^(?:Il\s+presente\s+documento|Questo\s+documento|Tale\s+documento)\s+[^\n]*(?:valore\s+legale|originale|sostituisce|priv[oa])[^\n]*$/i,
+    // Riga "Allegati: ..." amministrativa
+    /^Allegati?\s*[:\.]?\s*\d+\s*$/i,
+    // ── Referti strumentali (ECG/EEG): righe amministrative residue ──
+    // Numero referto con suffisso -ADT/-RX ecc., eventualmente seguito da tag
+    /^Referto\s*:\s*[\d\-]+(?:-[A-Z]{2,4})\b[^\n]*$/i,
+    /^N\.?\s*Richiesta\s*:\s*[\d\-]+(?:-[A-Z]{2,4})?\s*$/i,
+    /^Versione\s+Referto\s*:?\s*\d*\s*$/i,
+    // "CC: N" / "CC: S" (flag amministrativo copia conoscenza)
+    /^CC\s*:\s*[A-Z]\s*$/i,
+    // "ID Persona:" / "ID Paziente:" seguito da numeri sparsi
+    /^ID\s+(?:Persona|Paziente|Interno)\s*:?\s*[\d\s]*$/i,
+    /^\[ID_[A-Z]+\]\s*[\d\s]*$/,
+    // Numero pratica isolato seguito da "Data Esame"
+    /^\d{6,}\s+Data\s+Esame\s*:?[^\n]*$/i,
+    // Riga "Refertato/Firmato da NOME, Data: ... Ora: ..." (testo grezzo pre-anon)
+    /^Refertat[oa]\s+da\s*:\s*[^\n]*\bData\s*:[^\n]*Ora\s*:[^\n]*$/i,
+    /^(?:Dott\.?(?:ssa)?\s+)?[A-Z][a-zà-ü]+\s+[A-Z][a-zà-ü]+\s+Firmat[oa]\s+il\s*:[^\n]*$/i,
+    // Sesso scritto per esteso su riga isolata
+    /^(?:Femmina|Maschio)\s*$/i,
+    // Etichette demografiche isolate (residuo layout a colonne PDF)
+    /^(?:Et[àa]|Nato\s+il|Nata\s+il|Nome|Cognome|Sesso|Nominativo|Anni)\s*:?\s*$/i,
+    // "COGNOME NOME Età:" — riga col nome paziente seguito da etichetta (layout colonne)
+    /^[A-ZÀÈÉÌÒÙ][A-Za-zÀ-ü'\-]+\s+[A-ZÀÈÉÌÒÙ][A-Za-zÀ-ü'\-]+\s+(?:Et[àa]|Anni)\s*:?\s*$/,
+    // Singole derivazioni ECG su riga isolata (I, II, III, aVR, aVL, aVF, V1–V6)
+    /^(?:I{1,3}|aV[RLF]|V[1-6])\s*$/,
+    // Device / frequenza campionamento / provenienza tecnica
+    /^Frequenza\s+campionamento\s*:[^\n]*$/i,
+    /^Device\s*:[^\n]*$/i,
+    /^[^\n]*\bDevice\s*:\s*[A-Z][^\n]*$/i,
+    /^Provenienza\s+(?:Az\.?\s*Osp\.?|Azienda)[^\n]*$/i,
   ],
 }
 
@@ -1771,6 +1869,32 @@ function extractPatientData(rawText) {
         }
       }
     }
+  }
+
+  // ── Pattern 0.1 — "Nominativo: CANETTI MARIA" (referti ambulatoriali/ECG) ──
+  // Spesso seguito da "Anni:" / "Data Nascita:" / "Sesso:"
+  if (!pd.cognome || !pd.nome) {
+    const nomM = rawText.match(/Nominativo\s*:\s*([A-ZÀÈÉÌÒÙ][A-Za-zÀ-ü'\-]+(?:\s+[A-ZÀÈÉÌÒÙ][A-Za-zÀ-ü'\-]+)+?)(?:\s+(?:Anni|Et[àa]|Data\s*[Nn]ascita|Sesso|C\.?F\.?|N\.?\s*Richiesta|Nato)\b|\s*$|\s{2,})/);
+    if (nomM) {
+      const words = nomM[1].trim().split(/\s+/).filter(w => w.length >= 2);
+      if (words.length >= 2) {
+        // Convenzione referti: "COGNOME NOME" → primo = cognome, resto = nome
+        pd.cognome = words.shift();
+        pd.nome = words.join(' ');
+      }
+    }
+  }
+
+  // ── Pattern 0.2 — "Nome:" e "Cognome:" su righe/segmenti separati ──
+  // Es. ECG in fondo: "... Nome: \n Cognome:" preceduti da "MARIA CANETTI"
+  // oppure "Nome: MARIA" e "Cognome: CANETTI" esplicite
+  if (!pd.nome) {
+    const nm = rawText.match(/(?<![A-Za-z])Nome\s*:\s*([A-ZÀÈÉÌÒÙ][A-Za-zÀ-ü'\-]{1,30})(?:\s|$|,)/);
+    if (nm && !/^complet/i.test(nm[1])) pd.nome = nm[1].trim();
+  }
+  if (!pd.cognome) {
+    const cm = rawText.match(/Cognome\s*:\s*([A-ZÀÈÉÌÒÙ][A-Za-zÀ-ü'\-]{1,30})(?:\s|$|,)/);
+    if (cm) pd.cognome = cm[1].trim();
   }
 
   // Pattern 1 — "Cognome: ROSSI  Nome: MARIO  Data nascita: 01/01/1940"
@@ -3622,6 +3746,20 @@ function wizStep2(){
   const subsList=(w.substitutions||[]).slice(0,200).map(s=>`<div class="lt-sub"><code>${escapeHtml((s.orig||'').slice(0,50))}</code> → <span>${escapeHtml(s.repl||'')}</span>${s.type?`<span class="lt-sub-type">${escapeHtml(s.type)}</span>`:''}</div>`).join('')||'<div class="lt-sub-empty">Nessuna sostituzione.</div>';
   const nSub=(w.substitutions||[]).length;
   const open = L._anonSubsOpen ? ' open' : '';
+  // Sezione "Blocchi rimossi" (righe amministrative/boilerplate eliminate per ridurre i token)
+  const blocks=(w.strippedBlocks||[]);
+  const nBlk=blocks.length;
+  const blkOpen = L._strippedOpen ? ' open' : '';
+  const blkList=blocks.slice(0,300).map(b=>`<div class="lt-sub"><span class="lt-sub-type">✂ ${escapeHtml(b.tag||'Boilerplate')}</span> <code>${escapeHtml((b.text||'').slice(0,90))}</code></div>`).join('')||'<div class="lt-sub-empty">Nessun blocco rimosso.</div>';
+  const blkSection = nBlk ? `
+    <div class="lt-collapsible${blkOpen}" id="lt-stripped">
+      <button class="lt-collapsible-toggle" onclick="window.Lettere._toggleStripped()">
+        <span class="lt-ct-icon">▶</span>
+        <span class="lt-ct-label">✂ Blocchi rimossi (righe amministrative)</span>
+        <span class="lt-ct-count">${nBlk}</span>
+      </button>
+      <div class="lt-collapsible-body"><div class="lt-subs">${blkList}</div></div>
+    </div>` : '';
   return `
     <div class="lt-collapsible${open}" id="lt-anon-subs">
       <button class="lt-collapsible-toggle" onclick="window.Lettere._toggleAnonSubs()">
@@ -3631,6 +3769,7 @@ function wizStep2(){
       </button>
       <div class="lt-collapsible-body"><div class="lt-subs">${subsList}</div></div>
     </div>
+    ${blkSection}
     <div class="lt-diff-grid">
       <div class="lt-diff-col">
         <div class="lt-dlabel">Testo cartella clinica completa da anonimizzare</div>
@@ -3641,7 +3780,6 @@ function wizStep2(){
         <div class="lt-diff-scroll"><textarea id="lt-anon" class="lt-dtext" oninput="window.Lettere._set('anonText', this.value)"></textarea></div>
       </div>
     </div>
-    <div id="lt-pii-warn"></div>
     <div class="lt-note" style="border-left-color:var(--danger);color:var(--danger)">⚠ Verifica il testo a destra. Correggi manualmente qualsiasi dato rimasto prima di procedere.</div>
     <div class="lt-wiz-actions"><button class="btn ghost" onclick="navigate('lettere-carica')">← Indietro</button>
       <button class="btn" onclick="navigate('lettere-genera')">Avanti → Genera</button></div>`;
@@ -3851,15 +3989,6 @@ function renderAnonimizza(){
   }
   flowPageShell('lettere-anonimizza','Anonimizza dati', wizStep2());
   const t=document.getElementById('lt-anon'); if(t) t.value=w.anonText||'';
-  // Avviso PII residua (se ci sono pattern sospetti nel testo anonimizzato)
-  try{
-    const flags=detectResidualPII(w.anonText||'');
-    const box=document.getElementById('lt-pii-warn');
-    if(box && flags && flags.length){
-      box.innerHTML=`<div class="lt-note" style="border-left-color:var(--warning);color:var(--warning)">
-        <strong>Attenzione:</strong> possibili dati personali residui (${flags.map(f=>escapeHtml(f.label)).join(', ')}). Controlla e correggi a mano se necessario.</div>`;
-    }
-  }catch(e){}
 }
 function renderGenera(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderGenera); return; }
@@ -4644,6 +4773,7 @@ window.Lettere = {
   },
   _setLibWardFilter(v){ L._libWardFilter=v; renderLibreria(); },
   _toggleAnonSubs(){ L._anonSubsOpen=!L._anonSubsOpen; const el=document.getElementById('lt-anon-subs'); if(el) el.classList.toggle('open', L._anonSubsOpen); },
+  _toggleStripped(){ L._strippedOpen=!L._strippedOpen; const el=document.getElementById('lt-stripped'); if(el) el.classList.toggle('open', L._strippedOpen); },
 
   // ── Impostazioni: preferenze di default (salvate nel template utente) ──
   _setDefPref(key,val){
