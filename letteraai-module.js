@@ -2978,6 +2978,11 @@ function buildUserPromptStr(){
   return p;
 }
 
+// ── Stato preferenze "Esami Lab" (modello esami_lab) ──
+let _eLabMode = 'all';   // 'all' | 'altered'
+let _eLabCustom = '';
+function getELabCustomText(){ return (_eLabCustom||'').trim(); }
+
 // ── buildEsamiLabPrefsBlock ──
 function buildEsamiLabPrefsBlock(){
   const parts = [];
@@ -3318,8 +3323,18 @@ function buildCopyPrompt(wiz){
   S.userPrefs = L.userTemplateData && L.userTemplateData.prefs ? L.userTemplateData.prefs : DEFAULT_USER_PREFS;
   S_XLS.text = wiz.xlsText || '';
   S_XLS.rawRows = wiz.xlsRows || null;
-  _refCaseId = (wiz.ragExamples && wiz.ragExamples[0]) ? wiz.ragExamples[0].id : null;
-  _refInjectMode = _refCaseId ? 'fingerprint' : 'none';
+  // Rispetta la modalità di selezione del caso scelta dall'utente:
+  // - 'auto' (default): primo esempio RAG
+  // - 'manual': mantiene _refCaseId scelto a mano
+  // - 'none': nessun caso
+  const refMode = (L && L._refMode) || 'auto';
+  if (refMode === 'auto'){
+    _refCaseId = (wiz.ragExamples && wiz.ragExamples[0]) ? wiz.ragExamples[0].id : null;
+    if (_refInjectMode === 'none') _refInjectMode = _refCaseId ? 'fingerprint' : 'none';
+  } else if (refMode === 'none'){
+    _refCaseId = null; _refInjectMode = 'none';
+  }
+  // in 'manual' lasciamo _refCaseId e _refInjectMode come impostati dall'utente
 
   const isLab = wiz.tipo === 'esami_lab';
   let fullSystem, userPrompt;
@@ -3327,16 +3342,31 @@ function buildCopyPrompt(wiz){
     fullSystem = ESAMI_LAB_SYS + buildEsamiLabPrefsBlock();
     userPrompt = buildEsamiLabUserPrompt();
   } else {
-    fullSystem = getEffectiveSystemPrompt();
+    fullSystem = (wiz.sysPromptOverride!==undefined && wiz.sysPromptOverride!==null && wiz.sysPromptOverride!=='')
+      ? wiz.sysPromptOverride : getEffectiveSystemPrompt();
     const { wardFpObj } = getActiveFpObjects();
     const refCase = getRefCase();
     const refFpObj = (_refInjectMode==='fingerprint'||_refInjectMode==='both') ? parseFpJson(refCase?.fingerprint||'') : null;
-    if (wardFpObj) fullSystem += buildWardFpSystemAddendum(wardFpObj);
-    if (refFpObj)  fullSystem += buildFpSystemAddendum(refFpObj);
-    fullSystem += buildPreferencesPromptBlock();
+    // gli addendum si applicano solo se non si sta usando un override manuale completo
+    if (!(wiz.sysPromptOverride)){
+      if (wardFpObj) fullSystem += buildWardFpSystemAddendum(wardFpObj);
+      if (refFpObj)  fullSystem += buildFpSystemAddendum(refFpObj);
+      fullSystem += buildPreferencesPromptBlock();
+    }
     userPrompt = buildUserPromptStr();
   }
+  // Salvo le parti separate per i tab Completo/Istruzioni/Caso Clinico
+  wiz._lastSystem = fullSystem;
+  wiz._lastUser = userPrompt;
   return fullSystem + '\n\n══════════════════════════════════════\nDATI DEL PAZIENTE\n══════════════════════════════════════\n\n' + userPrompt;
+}
+// Testo da mostrare nel box prompt secondo il tab selezionato
+function _promptViewText(wiz, tab){
+  const sys = wiz._lastSystem || '';
+  const usr = wiz._lastUser || '';
+  if (tab === 'system') return sys;
+  if (tab === 'user')   return usr;
+  return wiz.builtPrompt || (sys + '\n\n══════════════════════════════════════\nDATI DEL PAZIENTE\n══════════════════════════════════════\n\n' + usr);
 }
 
 /* ── Verifica anti-allucinazioni: prompt copia-incolla ──
@@ -3535,9 +3565,7 @@ function renderLettereHome(){
       <div class="lt-home-row" onclick="navigate('lettere-segnalazioni')">
         <span class="lt-home-ic">⚠</span><div><div class="lt-home-t">Segnala Errori</div><div class="lt-home-d">Segnala errori o suggerimenti.</div></div></div>
       ${adminItems}
-    </div>
-    <div class="lt-note"><strong>Privacy.</strong> Anonimizzazione e parsing avvengono nel browser.
-      Nessun dato del paziente è inviato automaticamente: il prompt va copiato a mano nell'AI esterna.</div>`;
+    </div>`;
 }
 
 /* ── Wizard ── */
@@ -3662,8 +3690,9 @@ function wizStep3Combined(){
       <input type="text" value="${escapeHtml(w.transferWard||'')}" placeholder="es. Riabilitazione Neurologica, Ospedale di Vicenza" oninput="window.Lettere._set('transferWard', this.value)"></div>` : '';
   const cardModello=`<div class="lt-card-static">
     <div class="lt-side-title">Modello di lettera</div>
-    <div class="lt-tiles">${tile('dimissione','🏠','Dimissione')}${tile('trasferimento','🏥','Trasferimento')}${tile('completamento','📋','Completamento')}</div>
+    <div class="lt-tiles">${tile('dimissione','🏠','Dimissione')}${tile('trasferimento','🏥','Trasferimento')}${tile('esami_lab','🧪','Esami Lab')}</div>
     ${transferRow}</div>`;
+  const isLab = w.tipo==='esami_lab';
 
   // ── Card 2: Caso di riferimento (tab auto/manuale/nessuno + inject) ──
   const refMode = L._refMode || 'auto';
@@ -3717,14 +3746,38 @@ function wizStep3Combined(){
       <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._resetPrefs()" title="Ripristina le preferenze salvate">↺ Ripristina salvate</button></div>
     </div></div>`;
 
+  // ── Card preferenze Esami di Laboratorio (mostrata solo in modalità esami_lab) ──
+  const elabSeg=(v,l,title)=>`<button class="lt-tab${_eLabMode===v?' on':''}" title="${title}" onclick="window.Lettere._setELab('${v}')">${l}</button>`;
+  const cardELab=`<div class="lt-card-static">
+    <div class="lt-side-title">Preferenze esami di laboratorio</div>
+    <div class="lt-prefblock"><label>Valori da includere</label>
+      <div class="lt-tabs">${elabSeg('all','Tutti i valori','Tutti i valori con unità e range')}${elabSeg('altered','Solo patologici','Solo i valori alterati + i 6 obbligatori')}</div></div>
+    <div class="lt-prefblock"><label>Altre preferenze</label>
+      <textarea rows="2" placeholder="Aggiungi istruzioni specifiche per questa sezione..." oninput="window.Lettere._setELabCustom(this.value)">${escapeHtml(_eLabCustom||'')}</textarea></div>
+  </div>`;
+
   // ── Diagnosi (campo necessario al RAG, non c'era come card a sé nell'originale ma serve) ──
   const cardDiag=`<div class="field"><label>Diagnosi principale</label>
     <input type="text" value="${escapeHtml(w.diagnosi||'')}" oninput="window.Lettere._setDiag(this.value)" placeholder="es. ictus ischemico territorio MCA dx"></div>`;
 
-  // ── Card 4: Prompt completo ──
+  // ── Card "Istruzioni generali" (system prompt modificabile inline, collassabile) ──
+  const sysOpen=L._sysPromptOpen?' open':'';
+  const sysVal = (w.sysPromptOverride!==undefined && w.sysPromptOverride!==null) ? w.sysPromptOverride : getEffectiveSystemPrompt();
+  const cardSys = isLab ? '' : `<div class="lt-collapsible${sysOpen}" id="lt-sys-coll">
+    <button class="lt-collapsible-toggle" onclick="window.Lettere._toggleSysPrompt()">
+      <span class="lt-ct-icon">▶</span><span class="lt-ct-label">Istruzioni generali — modificabili</span></button>
+    <div class="lt-collapsible-body">
+      <textarea id="lt-sysprompt" rows="10" class="mono-input" oninput="window.Lettere._setSysPrompt(this.value)">${escapeHtml(sysVal)}</textarea>
+      <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._resetSysPrompt()">⟲ Ripristina istruzioni di default</button></div>
+    </div></div>`;
+
+  // ── Card 4: Prompt completo (con tab Completo/Istruzioni/Caso Clinico) ──
+  const ptab = L._promptTab || 'full';
+  const ptabBtn=(k,l)=>`<button class="lt-tab${ptab===k?' on':''}" onclick="window.Lettere._setPromptTab('${k}')">${l}</button>`;
   const cardPrompt=`<div class="lt-card-static">
     <div class="lt-side-title">Prompt completo</div>
-    <textarea id="lt-prompt" rows="12" class="mono-input" readonly>${escapeHtml(w.builtPrompt||'')}</textarea>
+    <div class="lt-tabs" style="margin-bottom:10px">${ptabBtn('full','Completo')}${ptabBtn('system','Istruzioni')}${ptabBtn('user','Caso clinico')}</div>
+    <textarea id="lt-prompt" rows="12" class="mono-input" readonly>${escapeHtml(_promptViewText(w, ptab))}</textarea>
     <div class="lt-row" style="margin-top:8px">
       <button class="btn sm" onclick="window.Lettere._copyPrompt()">⎘ Copia prompt per AI esterna</button>
       <button class="btn ghost sm" onclick="window.Lettere._rebuildPrompt()">↻ Ricostruisci</button></div></div>`;
@@ -3734,9 +3787,13 @@ function wizStep3Combined(){
     <div class="lt-side-title">Lettera generata (incolla la risposta dell'AI)</div>
     <textarea id="lt-out" rows="12" placeholder="Incolla qui la lettera prodotta..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
     <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-out')">📋 Incolla dagli appunti</button>
+      <button class="btn ghost sm" onclick="window.Lettere._formatPasted()">✨ Pulisci formattazione</button>
       <button class="btn ghost sm" onclick="window.Lettere._copyLetter()">Copia testo lettera</button></div></div>`;
 
-  return cardModello + cardDiag + cardRef + cardPrefs + cardPrompt + cardOut +
+  return cardModello + (isLab
+      ? cardELab
+      : (cardDiag + cardRef + cardPrefs + cardSys))
+    + cardPrompt + cardOut +
     flowNav('lettere-anonimizza','lettere-verifica','Avanti → Verifica');
 }
 function wizStep4(){
@@ -3824,41 +3881,109 @@ function renderGenera(){
   // Costruisco/aggiorno il prompt con le opzioni correnti
   w.builtPrompt = buildCopyPrompt(w);
   flowPageShell('lettere-genera','Genera lettera', wizStep3Combined());
-  const t=document.getElementById('lt-prompt'); if(t) t.value=w.builtPrompt||'';
+  const t=document.getElementById('lt-prompt'); if(t) t.value=_promptViewText(w, L._promptTab||'full');
   const o=document.getElementById('lt-out'); if(o) o.value=w.outputLetter||'';
 }
 function renderVerifica(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderVerifica); return; }
   const w=ensureWiz();
+  const flags=L._verifFlags||[];
+  // Vista evidenziata a destra
+  const highlightHtml = flags.length
+    ? _renderVerifHighlight(w.outputLetter||'', flags)
+    : '<span class="lt-status">Qui viene visualizzato il testo verificato dall\'AI.</span>';
+  const rightLabel = flags.length ? `${flags.length} segnalazion${flags.length===1?'e':'i'}` : 'in attesa di verifica';
+  // Dettaglio segnalazioni
+  const sevLabel={contraddizione:'Contraddice la cartella',assente:'Assente dalla cartella',inferenza:'Inferenza non esplicita'};
+  const sevClass={contraddizione:'lt-sev-red',assente:'lt-sev-orange',inferenza:'lt-sev-yellow'};
+  const flagsDetail = flags.length ? `
+    <div style="margin-top:18px">
+      <div class="lt-side-title">Dettaglio segnalazioni — ${flags.length}</div>
+      ${flags.map((f,idx)=>`<div class="lt-flag ${sevClass[f.severity]||''}" onclick="window.Lettere._activateFlag(${idx})" style="cursor:pointer" title="Clicca per evidenziare nel testo">
+        <div class="lt-flag-q">"${escapeHtml(f.quote||'')}"</div>
+        <div class="lt-flag-r"><strong>${escapeHtml(sevLabel[f.severity]||f.severity||'')}:</strong> ${escapeHtml(f.reason||'')}</div>
+      </div>`).join('')}
+    </div>` : '';
   const body=`
-    <div class="lt-note">Confronta la cartella anonimizzata con la lettera generata per individuare
-      contraddizioni, dati assenti o inferenze non supportate. Copia il prompt e incollalo in un'AI esterna.</div>
-    <div class="field"><label>Lettera da verificare</label>
-      <textarea id="lt-vout" rows="10" class="mono-input" placeholder="Incolla qui la lettera (o riprendila dallo step Genera)..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
-      <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-vout')">📋 Incolla dagli appunti</button></div></div>
-    <div class="lt-row" style="margin-bottom:8px"><button class="btn" onclick="window.Lettere._copyVerifica()">Copia prompt di verifica</button></div>
-    <div id="lt-verifica-box"></div>
-    ${flowNav('lettere-genera','lettere-esporta','Esporta →')}`;
+    <div class="lt-note" style="border-left-color:var(--accent)">
+      Modifica la lettera nel pannello sinistro. Il pannello destro mostra le frasi evidenziate dopo la verifica:
+      <span class="lt-leg lt-sev-red">rosso = contraddice la cartella</span>
+      <span class="lt-leg lt-sev-orange">arancio = assente dalla cartella</span>
+      <span class="lt-leg lt-sev-yellow">giallo = inferenza non esplicita</span>
+    </div>
+    <div class="lt-row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn" onclick="window.Lettere._copyVerifica()">⎘ Copia prompt di verifica per AI esterna</button>
+      <button class="btn ghost" onclick="window.Lettere._togglePasteVerifica()">📋 Incolla risultato verifica AI esterna</button>
+    </div>
+    <div id="lt-paste-verif" style="display:${L._pasteVerifOpen?'block':'none'};margin-bottom:12px">
+      <div class="lt-card-static" style="border-color:var(--accent)">
+        <div class="lt-side-title">Incolla il risultato della verifica dall'AI esterna</div>
+        <textarea id="lt-verif-json" rows="6" class="mono-input" placeholder="Incolla qui il JSON generato dall'AI esterna (array di oggetti con quote, severity, reason)..."></textarea>
+        <div class="lt-row" style="margin-top:8px">
+          <button class="btn sm" onclick="window.Lettere._applyVerif()">Applica evidenziazione</button>
+          <button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-verif-json')">📋 Incolla dagli appunti</button>
+          <button class="btn ghost sm" onclick="window.Lettere._togglePasteVerifica()">✗ Annulla</button>
+        </div>
+      </div>
+    </div>
+    <div class="lt-verif-grid">
+      <div class="lt-diff-col">
+        <div class="lt-dlabel">Lettera <span class="lt-edit-hint">✏ modificabile</span></div>
+        <textarea id="lt-vout" class="lt-dtext" placeholder="Verifica con AI o incolla qui il testo generato dall'AI esterna" oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
+      </div>
+      <div class="lt-diff-col">
+        <div class="lt-dlabel">Analisi — ${rightLabel}</div>
+        <div class="lt-dtext lt-paper" id="lt-verif-hl">${highlightHtml}</div>
+      </div>
+    </div>
+    ${flagsDetail}
+    <div class="lt-wiz-actions"><button class="btn ghost" onclick="navigate('lettere-genera')">← Indietro</button>
+      <button class="btn" onclick="navigate('lettere-esporta')">✓ Finalizza → Esporta</button></div>`;
   flowPageShell('lettere-verifica','Verifica', body);
+}
+// Evidenzia nel testo le frasi segnalate dalla verifica
+function _renderVerifHighlight(text, flags){
+  if(!text) return '<span class="lt-status">Nessuna lettera da analizzare.</span>';
+  let html = escapeHtml(text);
+  const sevClass={contraddizione:'lt-hl-red',assente:'lt-hl-orange',inferenza:'lt-hl-yellow'};
+  // Sostituisco ogni quote con una versione evidenziata (match su testo escaped)
+  flags.forEach((f,idx)=>{
+    if(!f.quote) return;
+    const q=escapeHtml(f.quote.trim());
+    if(!q) return;
+    const cls=sevClass[f.severity]||'lt-hl-yellow';
+    // sostituzione semplice della prima occorrenza
+    const i=html.indexOf(q);
+    if(i>=0){ html = html.slice(0,i) + `<mark id="lt-vmark${idx}" class="${cls}">${q}</mark>` + html.slice(i+q.length); }
+  });
+  return html;
 }
 function renderEsporta(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderEsporta); return; }
   const w=ensureWiz();
+  const hasLetter = w.outputLetter && w.outputLetter.trim();
+  const preview = hasLetter
+    ? `<div class="lt-dtext lt-paper" id="lt-letter-out" style="min-height:500px">${escapeHtml(w.outputLetter)}</div>`
+    : `<div class="lt-dtext lt-paper" style="min-height:200px"><span class="lt-status">Nessuna lettera. Generala nello step Genera o incollala qui sotto.</span></div>
+       <div class="field" style="margin-top:10px"><textarea id="lt-eout" rows="8" class="mono-input" placeholder="Incolla qui la lettera finale..." oninput="window.Lettere._set('outputLetter', this.value)"></textarea>
+         <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-eout')">📋 Incolla dagli appunti</button></div></div>`;
   const body=`
-    <div class="field"><label>Lettera finale</label>
-      <textarea id="lt-eout" rows="12" class="mono-input" placeholder="Incolla o rivedi qui la lettera finale..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
-      <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-eout')">📋 Incolla dagli appunti</button>
-        <button class="btn ghost sm" onclick="window.Lettere._copyLetter()">Copia testo lettera</button></div></div>
-    <div class="lt-row" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
-      <button class="btn ghost" onclick="window.Lettere._printLetter()">Stampa</button>
-      <button class="btn ghost" onclick="window.Lettere._exportWord()">Esporta Word</button>
+    ${preview}
+    <div class="lt-row" style="margin-top:18px;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="window.Lettere._exportWord()">⬇ Esporta Word</button>
+      <button class="btn ghost" onclick="window.Lettere._copyLetter()">⎘ Copia testo</button>
+      <button class="btn ghost" onclick="window.Lettere._printLetter()">⎙ Stampa / PDF</button>
+      <button class="btn ghost" onclick="navigate('lettere-verifica')">← Indietro</button>
+      <button class="btn ghost" onclick="window.Lettere._newLetter()">↺ Nuova lettera</button>
     </div>
-    <div class="field"><label>Fingerprint stilistico (JSON opzionale, per la libreria)</label>
-      <div class="lt-row" style="margin-bottom:6px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPromptWiz()">Copia prompt per estrarre fingerprint</button>
-        <span class="lt-status">Estrai il "fingerprint" di stile dalla lettera per arricchire la libreria.</span></div>
-      <textarea id="lt-fp" rows="3" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}' oninput="window.Lettere._set('fingerprint', this.value)">${escapeHtml(w.fingerprint||'')}</textarea></div>
-    <div class="lt-wiz-actions"><button class="btn ghost" onclick="navigate('lettere-verifica')">← Indietro</button>
-      <button class="btn" onclick="window.Lettere._addToLibrary()">Aggiungi a libreria</button></div>`;
+    <div class="lt-card-static" style="margin-top:20px">
+      <div class="lt-side-title">Salva in libreria</div>
+      <div class="field"><label>Fingerprint stilistico (JSON opzionale)</label>
+        <div class="lt-row" style="margin-bottom:6px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPromptWiz()">Copia prompt per estrarre fingerprint</button>
+          <span class="lt-status">Estrai il "fingerprint" di stile dalla lettera per arricchire la libreria.</span></div>
+        <textarea id="lt-fp" rows="3" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}' oninput="window.Lettere._set('fingerprint', this.value)">${escapeHtml(w.fingerprint||'')}</textarea></div>
+      <div class="lt-row" style="justify-content:flex-end"><button class="btn" onclick="window.Lettere._addToLibrary()">✓ Aggiungi a libreria</button></div>
+    </div>`;
   flowPageShell('lettere-esporta','Esporta', body);
 }
 
@@ -3939,12 +4064,49 @@ function renderCaso(id){
 function renderPersonalizzazioni(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderPersonalizzazioni); return; }
   const tplOpts=_templates.map(t=>`<option value="${escapeHtml(t.id)}"${(_userTemplateData&&_userTemplateData.base_template_id===t.id)?' selected':''}>${escapeHtml(t.name||t.id)}</option>`).join('');
-  mc().innerHTML=pageHead('Mie personalizzazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+`
-    <div class="field"><label>Template di base</label><select id="lt-utpl-base">${tplOpts}</select></div>
-    <div class="field"><label>Aggiunte personali (regole additive applicate sempre)</label>
-      <textarea id="lt-uoverride" rows="6" class="mono-input" placeholder="es. Per FA cronica includere sempre HAS-BLED nel decorso">${escapeHtml(_userOverride||'')}</textarea></div>
-    <div class="lt-wiz-actions"><span class="lt-status">Salvati in <code>${PATHS.userOverrides}${escapeHtml(username())}.md</code></span>
-      <button class="btn" onclick="window.Lettere._saveMyPrefs()">Salva</button></div>`;
+  // Valori effettivi del template personale (base + overrides)
+  const ov = (_userTemplateData && _userTemplateData.overrides) || {};
+  const baseTpl = _templates.find(t=>t.id===(_userTemplateData&&_userTemplateData.base_template_id)) || _templates[0] || {};
+  const v=(k,def)=> (ov[k]!==undefined ? ov[k] : (baseTpl[k]!==undefined ? baseTpl[k] : (def||'')));
+  const ordine = (ov.ordine_sezioni && ov.ordine_sezioni.length) ? ov.ordine_sezioni : (baseTpl.ordine_sezioni||[]);
+  mc().innerHTML=pageHead('Mie personalizzazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`)+`
+    <div class="lt-card-static">
+      <div class="lt-side-title">Aggiunte personali alle regole (override additivo)</div>
+      <p class="lt-status" style="margin:0 0 10px">Regole aggiuntive applicate sempre, in coda al system prompt. Salvate in <code>${PATHS.userOverrides}${escapeHtml(username())}.md</code></p>
+      <textarea id="lt-uoverride" rows="10" class="mono-input" placeholder="AGGIUNTE PERSONALI:&#10;- Per FA cronica includere sempre HAS-BLED nel decorso&#10;- ...">${escapeHtml(_userOverride||'')}</textarea>
+      <div class="lt-row" style="margin-top:10px">
+        <button class="btn" onclick="window.Lettere._saveOverride()">Salva</button>
+        <button class="btn ghost" onclick="window.Lettere._discardOverride()">✕ Scarta modifiche</button></div>
+    </div>
+
+    <div class="lt-card-static">
+      <div class="lt-side-title">Mio template di lettera</div>
+      <div class="field"><label>Template di base</label><select id="lt-utpl-base" onchange="window.Lettere._onUserTplBase(this.value)">${tplOpts}</select></div>
+      <div class="field"><label>Intestazione (a chi è indirizzata la lettera)</label>
+        <input type="text" id="utpl-intestazione" value="${escapeHtml(v('intestazione'))}" placeholder="Alla cortese attenzione del Medico Curante"></div>
+      <div class="field"><label>Saluto (riga prima dell'apertura)</label>
+        <input type="text" id="utpl-saluto" value="${escapeHtml(v('saluto'))}" placeholder="Egregi Colleghi,"></div>
+      <div class="field"><label>Apertura (testo dopo il saluto, prima della diagnosi)</label>
+        <textarea id="utpl-apertura" rows="3">${escapeHtml(v('apertura'))}</textarea></div>
+      <div class="field"><label>Chiusura</label>
+        <input type="text" id="utpl-chiusura" value="${escapeHtml(v('chiusura'))}" placeholder="Rimaniamo a disposizione e porgiamo cordiali saluti."></div>
+      <div class="lt-row">
+        <div class="field" style="flex:1"><label>Firma — colonna sinistra (placeholder)</label>
+          <input type="text" id="utpl-firma-sx" value="${escapeHtml(v('firma_specializzando_label'))}" placeholder="[NOME_SPECIALIZZANDO]">
+          <label style="font-size:9px;color:var(--ink-faint);margin-top:6px">Ruolo colonna sinistra</label>
+          <input type="text" id="utpl-ruolo-sx" value="${escapeHtml(v('firma_ruolo_sx'))}" placeholder="Medico in formazione specialistica"></div>
+        <div class="field" style="flex:1"><label>Firma — colonna destra (placeholder)</label>
+          <input type="text" id="utpl-firma-dx" value="${escapeHtml(v('firma_dirigente_label'))}" placeholder="[NOME_DIRIGENTE]">
+          <label style="font-size:9px;color:var(--ink-faint);margin-top:6px">Ruolo colonna destra</label>
+          <input type="text" id="utpl-ruolo-dx" value="${escapeHtml(v('firma_ruolo_dx'))}" placeholder="Dirigente medico"></div>
+      </div>
+      <div class="field"><label>Ordine delle sezioni della lettera (trascina per riordinare)</label>
+        <div id="utpl-sections"></div></div>
+      <div class="lt-row" style="justify-content:flex-end;gap:8px"><button class="btn ghost" onclick="window.Lettere._resetMyTpl()">↺ Ripristina default</button>
+        <button class="btn" onclick="window.Lettere._saveMyTpl()">Salva template</button></div>
+    </div>`;
+  // Renderizzo l'editor di riordino sezioni (riusa l'helper esistente)
+  setTimeout(()=>renderSectionsEditor('utpl-sections', ordine), 50);
 }
 
 /* ── Impostazioni: preferenze di default per la generazione (panel5 originale) ──
@@ -4023,12 +4185,13 @@ async function _refreshReportsList(){
 
 /* ── Configurazione (admin): prompt + libreria template ── */
 function renderConfig(){
-  if(!canEdit()){ mc().innerHTML=pageHead('Configurazione','LetteraAI')+'<p>Riservato agli utenti con permessi.</p>'; return; }
+  if(!canEdit()){ mc().innerHTML=pageHead('Editor Prompt','LetteraAI')+'<p>Riservato agli amministratori.</p>'; return; }
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderConfig); return; }
-  const tabs=[['DEFAULT_SYS','Sistema'],['FINGERPRINT_PROMPT_V3','Fingerprint'],['VERIFICA_SYSTEM','Verifica'],['ESAMI_LAB_SYS','Esami lab']];
+  // Tab prompt con le etichette dell'originale
+  const tabs=[['DEFAULT_SYS','Prompt di sistema'],['FINGERPRINT_PROMPT_V3','Prompt estrazione decorso'],['VERIFICA_SYSTEM','Prompt verifica'],['ESAMI_LAB_SYS','Prompt esami lab']];
   const cur=L._cfgTab||'DEFAULT_SYS';
   const curVal={DEFAULT_SYS,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS}[cur];
-  const tabBtns=tabs.map(([k,l])=>`<button class="lt-seg${cur===k?' on':''}" onclick="window.Lettere._cfgTab('${k}')">${l}</button>`).join('');
+  const tabBtns=tabs.map(([k,l])=>`<button class="lt-tab${cur===k?' on':''}" onclick="window.Lettere._cfgTab('${k}')">${l}</button>`).join('');
   // Lista template di libreria
   const tplRows=(_templates||[]).map(t=>{
     const sectCount=(t.ordine_sezioni||[]).length;
@@ -4040,18 +4203,27 @@ function renderConfig(){
       <td>${sectCount} sezioni</td>
       <td style="text-align:right"><button class="btn ghost sm" onclick="window.Lettere._editTpl('${escapeHtml(t.id)}')">Modifica</button>${del}</td>
     </tr>`;
-  }).join('');
-  mc().innerHTML=pageHead('Prompt & template','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← Lettere</button>`)+`
-    <div class="lt-side-title">Prompt di sistema</div>
-    <div class="lt-segs" style="margin-bottom:12px">${tabBtns}</div>
-    <div class="field"><textarea id="lt-cfgtext" rows="18" class="mono-input">${escapeHtml(curVal)}</textarea></div>
-    <div class="lt-wiz-actions"><span class="lt-status">Salvato in <code>${escapeHtml(PROMPT_PATHS[cur])}</code></span>
-      <button class="btn" onclick="window.Lettere._saveCfg('${cur}')">Salva prompt</button></div>
+  }).join('')||'<tr><td colspan="4" class="lt-sub-empty">Nessun template.</td></tr>';
+  mc().innerHTML=pageHead('Editor Prompt + Template','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`)+`
+    <div class="lt-card-static">
+      <div class="lt-side-title">Prompt globali</div>
+      <div class="lt-tabs" style="margin-bottom:12px">${tabBtns}</div>
+      <div class="lt-status" style="margin-bottom:6px">Salvato in <code>${escapeHtml(PROMPT_PATHS[cur]||'')}</code></div>
+      <textarea id="lt-cfgtext" rows="20" class="mono-input">${escapeHtml(curVal)}</textarea>
+      <div class="lt-row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="window.Lettere._saveCfg('${cur}')">Salva</button>
+        <button class="btn ghost" onclick="window.Lettere._resetCfgEmbedded('${cur}')" title="Resetta al fallback embedded (non salva)">⟲ Resetta a default embedded</button>
+        <button class="btn ghost" onclick="window.Lettere._discardCfg()" title="Scarta le modifiche">✕ Scarta modifiche</button>
+      </div>
+    </div>
 
-    <div class="lt-side-title" style="margin-top:28px">Libreria template</div>
-    <div class="lt-row" style="margin-bottom:10px"><span class="lt-status" style="flex:1">Template di intestazione/struttura/firma. Modificabili e salvati in <code>${escapeHtml(PATHS.templatesDir)}</code></span>
-      <button class="btn" onclick="window.Lettere._editTpl('__new__')">Nuovo template</button></div>
-    <table class="lt-table"><thead><tr><th>Nome</th><th>ID</th><th>Sezioni</th><th></th></tr></thead><tbody>${tplRows}</tbody></table>`;
+    <div class="lt-card-static">
+      <div class="lt-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="lt-side-title" style="margin:0">Libreria template lettera</div>
+        <button class="btn sm" onclick="window.Lettere._editTpl('__new__')">+ Nuovo template</button>
+      </div>
+      <table class="lt-table"><thead><tr><th>Nome</th><th>ID</th><th>Sezioni</th><th></th></tr></thead><tbody>${tplRows}</tbody></table>
+    </div>`;
 }
 
 /* Editor template (modale): crea o modifica un template, con riordino sezioni drag&drop */
@@ -4222,6 +4394,18 @@ window.Lettere = {
   _setRefCase(id){ _refCaseId=id||null; const w=ensureWiz(); w.builtPrompt=buildCopyPrompt(w); renderGenera(); },
   _setRefInject(mode){ _refInjectMode=mode; const w=ensureWiz(); w.builtPrompt=buildCopyPrompt(w); renderGenera(); },
   _togglePrefs(){ L._prefsOpen=!L._prefsOpen; const el=document.getElementById('lt-prefs-coll'); if(el) el.classList.toggle('open', L._prefsOpen); },
+  // Preferenze modello Esami Lab
+  _setELab(mode){ _eLabMode=mode; const w=ensureWiz(); w.builtPrompt=buildCopyPrompt(w); renderGenera(); },
+  _setELabCustom(v){ _eLabCustom=v; const w=ensureWiz(); w.builtPrompt=buildCopyPrompt(w); const ta=document.getElementById('lt-prompt'); if(ta) ta.value=w.builtPrompt; },
+  // System prompt modificabile inline (card "Istruzioni generali")
+  _toggleSysPrompt(){ L._sysPromptOpen=!L._sysPromptOpen; const el=document.getElementById('lt-sys-coll'); if(el) el.classList.toggle('open', L._sysPromptOpen); },
+  _setSysPrompt(v){ const w=ensureWiz(); w.sysPromptOverride=v; w.builtPrompt=buildCopyPrompt(w); const ta=document.getElementById('lt-prompt'); if(ta) ta.value=_promptViewText(w, L._promptTab||'full'); },
+  _resetSysPrompt(){ const w=ensureWiz(); w.sysPromptOverride=null; w.builtPrompt=buildCopyPrompt(w); renderGenera(); toast('Istruzioni ripristinate.','info'); },
+  _setPromptTab(t){ L._promptTab=t; renderGenera(); },
+  // Pulisce la formattazione della lettera incollata (righe vuote in eccesso, placeholder noti)
+  _formatPasted(){ const w=ensureWiz(); let txt=(w.outputLetter||'').replace(/\n{3,}/g,'\n\n').trim();
+    txt=txt.replace(/\[CITTA\]/g,'Padova').replace(/\[REPARTO\]/g, w.ward||'reparto');
+    w.outputLetter=txt; const ta=document.getElementById('lt-out'); if(ta) ta.value=txt; toast('Formattazione ripulita.','success'); },
 
   async _onPdf(file){ if(!file)return; const w=ensureWiz();
     const box=document.getElementById('lt-pdf-status'); const txt=document.getElementById('lt-pdf-status-txt');
@@ -4283,7 +4467,8 @@ window.Lettere = {
       const el=document.getElementById(elId); if(el){ el.value=txt; el.dispatchEvent(new Event('input',{bubbles:true})); toast('Incollato dagli appunti.','success'); } }
     catch(e){ toast('Lettura appunti non riuscita (permesso negato?).','error'); } },
   _copyPrompt(){ const ta=document.getElementById('lt-prompt'); if(ta){ ta.select();
-    try{document.execCommand('copy');}catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(L.wiz.builtPrompt).catch(()=>{});
+    const txt=ta.value||(L.wiz&&L.wiz.builtPrompt)||'';
+    try{document.execCommand('copy');}catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(txt).catch(()=>{});
     toast('Prompt copiato.','success'); } },
   async _addToLibrary(){ if(!L.wiz.outputLetter.trim()){ toast('Incolla prima la lettera generata.','error'); return; }
     const flags=detectResidualPII(L.wiz.outputLetter);
@@ -4296,19 +4481,36 @@ window.Lettere = {
 
   // ── Verifica anti-allucinazioni / export / stampa ──
   async _copyVerifica(){
-    const lettera=(L.wiz&&L.wiz.outputLetter||'').trim();
-    const cartella=(L.wiz&&L.wiz.anonText||'').trim();
-    if(!cartella){ toast('Manca la cartella anonimizzata (Step 1-2).','error'); return; }
+    const w=ensureWiz();
+    const lettera=(w.outputLetter||'').trim();
+    const cartella=(w.anonText||'').trim();
+    if(!cartella){ toast('Manca la cartella anonimizzata (step Anonimizza).','error'); return; }
     if(!lettera){ toast('Incolla prima la lettera generata.','error'); return; }
     const prompt=buildVerificaPrompt(cartella, lettera);
-    try{ await navigator.clipboard.writeText(prompt); toast('Prompt di verifica copiato. Incollalo in un\'AI esterna.','success'); }
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt di verifica copiato. Incollalo in un\'AI esterna, poi incolla qui il risultato.','success'); }
     catch(e){ toast('Copia non riuscita.','error'); }
-    // Mostra il prompt anche a schermo (per copia manuale + spiegazione)
-    const box=document.getElementById('lt-verifica-box');
-    if(box) box.innerHTML=`<div class="lt-card-static">
-      <div class="lt-side-title">Prompt di verifica</div>
-      <p class="lt-status" style="margin:0 0 8px">Incolla questo prompt in Claude/ChatGPT: ti restituirà le eventuali incongruenze tra cartella e lettera (contraddizioni, dati assenti, inferenze).</p>
-      <textarea rows="6" class="mono-input" readonly onclick="this.select()">${escapeHtml(prompt)}</textarea></div>`;
+  },
+  _togglePasteVerifica(){ L._pasteVerifOpen=!L._pasteVerifOpen; const el=document.getElementById('lt-paste-verif'); if(el) el.style.display=L._pasteVerifOpen?'block':'none'; },
+  // Click su una segnalazione → evidenzia e scrolla al mark corrispondente
+  _activateFlag(idx){
+    document.querySelectorAll('mark.lt-flag-active').forEach(m=>m.classList.remove('lt-flag-active'));
+    const mark=document.getElementById('lt-vmark'+idx);
+    if(mark){ mark.classList.add('lt-flag-active'); mark.scrollIntoView({behavior:'smooth',block:'center'}); }
+  },
+  _applyVerif(){
+    const ta=document.getElementById('lt-verif-json'); if(!ta) return;
+    const raw=(ta.value||'').replace(/```json[\s\S]*?```|```/g,'').trim();
+    if(!raw){ toast('Incolla il JSON del risultato verifica.','error'); return; }
+    let parsed;
+    try{ parsed=JSON.parse(raw); }catch(e){ toast('JSON non valido: '+e.message,'error'); return; }
+    if(!Array.isArray(parsed)){ toast('Il risultato deve essere un array di segnalazioni.','error'); return; }
+    // Normalizzo le severity (rosso/arancio/giallo → contraddizione/assente/inferenza)
+    const map={rosso:'contraddizione',red:'contraddizione',arancio:'assente',orange:'assente',giallo:'inferenza',yellow:'inferenza',
+      contraddizione:'contraddizione',assente:'assente',inferenza:'inferenza'};
+    L._verifFlags = parsed.map(f=>({ quote:f.quote||f.frase||'', severity:map[(f.severity||f.tipo||'').toLowerCase()]||'inferenza', reason:f.reason||f.motivo||'' })).filter(f=>f.quote);
+    L._pasteVerifOpen=false;
+    toast(`${L._verifFlags.length} segnalazioni applicate.`,'success');
+    renderVerifica();
   },
   _printLetter(){ printLetter((L.wiz&&L.wiz.outputLetter)||''); },
   _exportWord(){ const w=L.wiz||{}; const fn=('lettera_'+(w.ward||'dimissione')+'_'+(w.diagnosi||'')).replace(/[^a-z0-9_]+/gi,'_').toLowerCase(); exportWordDoc(w.outputLetter||'', fn); },
@@ -4447,15 +4649,53 @@ window.Lettere = {
   _resetReport(){ ['rep-desc','rep-prompt','rep-letter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     const cat=document.getElementById('rep-cat'); if(cat) cat.selectedIndex=0; toast('Modulo segnalazione svuotato.','info'); },
 
-  async _saveMyPrefs(){ const base=document.getElementById('lt-utpl-base').value;
-    const override=document.getElementById('lt-uoverride').value;
-    try{ await saveUserOverrideToRepo(override);
-      const data=_userTemplateData||{}; data.base_template_id=base; data.updatedAt=new Date().toISOString();
-      await saveUserTemplateToRepo(data); toast('Personalizzazioni salvate.','success'); }
-    catch(e){ toast('Errore: '+e.message,'error'); } },
+  // ── Mie personalizzazioni ──
+  async _saveOverride(){
+    const el=document.getElementById('lt-uoverride'); const override=el?el.value:'';
+    try{ await saveUserOverrideToRepo(override); _userOverride=override; toast('Aggiunte personali salvate.','success'); }
+    catch(e){ toast('Errore: '+e.message,'error'); }
+  },
+  _discardOverride(){ const el=document.getElementById('lt-uoverride'); if(el) el.value=_userOverride||''; toast('Modifiche scartate.','info'); },
+  _onUserTplBase(id){
+    if(!_userTemplateData) _userTemplateData={};
+    _userTemplateData.base_template_id=id;
+    L.userTemplateData=_userTemplateData;
+    renderPersonalizzazioni();
+  },
+  async _saveMyTpl(){
+    const get=(id)=>{ const el=document.getElementById(id); return el?el.value:''; };
+    const data=_userTemplateData||{};
+    data.base_template_id=get('lt-utpl-base')||data.base_template_id;
+    data.overrides=Object.assign({}, data.overrides, {
+      intestazione:get('utpl-intestazione'),
+      saluto:get('utpl-saluto'),
+      apertura:get('utpl-apertura'),
+      chiusura:get('utpl-chiusura'),
+      firma_specializzando_label:get('utpl-firma-sx'),
+      firma_ruolo_sx:get('utpl-ruolo-sx'),
+      firma_dirigente_label:get('utpl-firma-dx'),
+      firma_ruolo_dx:get('utpl-ruolo-dx'),
+      ordine_sezioni:getSectionOrder('utpl-sections'),
+    });
+    data.updatedAt=new Date().toISOString();
+    try{ await saveUserTemplateToRepo(data); toast('Template personale salvato.','success'); }
+    catch(e){ toast('Errore: '+e.message,'error'); }
+  },
+  _resetMyTpl(){
+    Modals().confirm({ title:'Ripristinare il template al default?', message:'Cancellerà le tue personalizzazioni del template (intestazione, firme, ordine sezioni).', confirmLabel:'Ripristina', danger:true,
+      onConfirm:async()=>{
+        const data={ base_template_id:(_templates[0]&&_templates[0].id)||'default', overrides:{}, updatedAt:new Date().toISOString() };
+        try{ await saveUserTemplateToRepo(data); toast('Template ripristinato al default.','success'); renderPersonalizzazioni(); }
+        catch(e){ toast('Errore: '+e.message,'error'); }
+      } });
+  },
   _cfgTab(k){ L._cfgTab=k; renderConfig(); },
   async _saveCfg(varName){ const ta=document.getElementById('lt-cfgtext'); if(!ta)return;
     try{ await savePromptToRepo(varName, ta.value); toast('Prompt salvato.','success'); }catch(e){ toast('Errore: '+e.message,'error'); } },
+  _resetCfgEmbedded(varName){ const ta=document.getElementById('lt-cfgtext'); if(!ta)return;
+    const fb=PROMPT_EMBEDDED_FALLBACKS[varName]; if(fb!==undefined){ ta.value=fb; toast('Ripristinato al default embedded (non ancora salvato).','info'); } },
+  _discardCfg(){ const cur=L._cfgTab||'DEFAULT_SYS'; const ta=document.getElementById('lt-cfgtext');
+    const cv={DEFAULT_SYS,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS}[cur]; if(ta){ ta.value=cv; toast('Modifiche scartate.','info'); } },
 
   // ── Editor template di libreria ──
   _editTpl(id){ renderTemplateEditor(id); },
@@ -4565,6 +4805,23 @@ window.Lettere = {
   .lt-prefblock{margin-bottom:14px}
   .lt-prefblock label{display:block;margin-bottom:6px;font-size:12px;color:var(--ink)}
   .lt-prefblock textarea{width:100%}
+  /* Verifica (replica panel3) */
+  .lt-verif-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+  .lt-paper{background:var(--bg-paper);font-family:'Times New Roman',serif;font-size:13px;line-height:1.7}
+  textarea.lt-dtext[id="lt-vout"]{font-family:'Times New Roman',serif;font-size:13px;line-height:1.7}
+  .lt-leg{display:inline-block;border-radius:3px;padding:0 6px;margin:0 3px;font-size:11px}
+  .lt-sev-red,.lt-hl-red{background:rgba(220,53,53,.22)}
+  .lt-sev-orange,.lt-hl-orange{background:rgba(220,140,30,.22)}
+  .lt-sev-yellow,.lt-hl-yellow{background:rgba(210,190,0,.28)}
+  mark.lt-hl-red,mark.lt-hl-orange,mark.lt-hl-yellow{color:var(--ink);border-radius:2px;padding:0 2px}
+  mark.lt-flag-active{outline:2px solid var(--accent);outline-offset:1px;font-weight:600}
+  .lt-flag{border-left:3px solid var(--rule);padding:8px 12px;margin-bottom:8px;background:var(--bg-paper);border-radius:0 3px 3px 0}
+  .lt-flag.lt-sev-red{border-left-color:var(--danger);background:rgba(220,53,53,.06)}
+  .lt-flag.lt-sev-orange{border-left-color:#dc8c1e;background:rgba(220,140,30,.06)}
+  .lt-flag.lt-sev-yellow{border-left-color:#d2be00;background:rgba(210,190,0,.06)}
+  .lt-flag-q{font-family:'Times New Roman',serif;font-size:13px;font-style:italic;margin-bottom:4px}
+  .lt-flag-r{font-size:12px;color:var(--ink-soft)}
+  @media (max-width:760px){ .lt-verif-grid{grid-template-columns:1fr} }
   /* Home a lista (sezioni una sotto l'altra come categorie Procedure) */
   .lt-home-group{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:18px 0 8px}
   .lt-home-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
