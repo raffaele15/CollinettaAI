@@ -1305,6 +1305,35 @@ const ANON_CONFIG = {
     /^Device\s*:[^\n]*$/i,
     /^[^\n]*\bDevice\s*:\s*[A-Z][^\n]*$/i,
     /^Provenienza\s+(?:Az\.?\s*Osp\.?|Azienda)[^\n]*$/i,
+    // ── Frontespizio infermieristico / rete sociale (dati di terzi, poco utili) ──
+    /^FRONTESPIZIO\s+INFERMIERISTICO\s*$/i,
+    /^Rete\s+sociale\s*$/i,
+    /^Cognome\/Nome\s+Relazione\s+Tipo\s+Ruolo[^\n]*$/i,   // intestazione tabella contatti
+    /^Accompagnat[oa]\s*:[^\n]*$/i,
+    /^Vive\s+(?:solo|presso|con)\s*:[^\n]*$/i,
+    /^(?:Care\s*giver|Caregiver|Persona\s+di\s+riferimento|Riferimento\s+familiare)\s*:[^\n]*$/i,
+    /^(?:Stato\s+civile|Scolarit[àa]|Professione|Occupazione|Condizione\s+abitativa)\s*:[^\n]*$/i,
+    // Righe della tabella rete sociale: "cognome nome  Relazione  Tipo  Ruolo  [tel]"
+    // Relazione = Padre/Madre/Figlio/Figlia/Coniuge/Fratello/Sorella/Marito/Moglie/Tutore...
+    /^[a-zà-ü'\-]+\s+[a-zà-ü'\-]+\s+(?:Padre|Madre|Figli[oa]|Coniuge|Fratell[oa]|Sorella|Marit[oa]|Mogli[e]|Convivente|Tutore|Nipote|Zi[oa]|Cugin[oa]|Genitore|Parente|Amic[oa]|Vicin[oa]|Assistente)\b[^\n]*$/i,
+    // Stessa riga ma con nome in maiuscolo
+    /^[A-ZÀ-Ü][a-zà-ü'\-]+\s+[A-ZÀ-Ü][a-zà-ü'\-]+\s+(?:Padre|Madre|Figli[oa]|Coniuge|Fratell[oa]|Sorella|Marit[oa]|Mogli[e]|Convivente|Tutore|Nipote|Genitore|Parente)\b[^\n]*$/,
+    // Riga di solo "principale" / "secondario" (residuo colonna Ruolo)
+    /^(?:principale|secondari[oa]|riferimento)\s*$/i,
+    // Riga anagrafica del frontespizio (testo grezzo): nome + "Paziente:" + segni inequivocabili
+    // (Nato il / RIC_AO / Nosologico). NON scatta su frasi cliniche con "Paziente:" generico.
+    /^[A-ZÀ-Ü][A-Za-zÀ-ü'\- ]*Paziente\s*:\s*(?=.*(?:Nato\/?a?\s+il|RIC[_\s]AO|Nosologic|Nosografic))[^\n]*$/i,
+    /^\[(?:PAZIENTE|NOME)\]\s*Paziente\s*:\s*(?=.*(?:Nato\/?a?\s+il|DATA_NASCITA|ID_RICOVERO|NOSOLOGICO))[^\n]*$/i,
+    // Etichette anagrafiche del frontespizio infermieristico
+    /^MMG\/PLS\s*:[^\n]*$/i,
+    /^(?:Nosologic[oa]|Nosografic[oa])\s*:[^\n]*$/i,
+    /^(?:Indirizzo\s+(?:domicilio|residenza)|Domicilio|Residenza)\s*:[^\n]*$/i,
+    /^Telefono\s*\d*\s*:[^\n]*$/i,
+    /^Data\s+di\s+ingresso\s*:[^\n]*$/i,
+    /^SSN\s*:\s*\d+\s*$/i,
+    // Riga "Codice fiscale: XXX SSN: YYY" del frontespizio (solo identificatori)
+    /^Codice\s+fiscale\s*:\s*[A-Z0-9]{6,}\s*(?:SSN\s*:\s*\d+)?\s*$/i,
+    /^Direttore\s*:\s*(?:Prof|Dott)[^\n]*$/i,
   ],
 }
 
@@ -1835,6 +1864,21 @@ function extractPatientData(rawText) {
       const y = parseInt(yy);
       return pre + (y > 30 ? '19' : '20') + yy;
     });
+  }
+
+  // ── Pattern 0.0 (MAX PRIORITY) — "COGNOME NOMEPaziente: ... Nato il: DD/MM/YYYY" ──
+  // Frontespizio dove il nome precede l'etichetta "Paziente:" e la data segue "Nato il:"
+  // Es: "CANETTI MARIAPaziente: Nato il: 20/03/1920 RIC_AO_..."
+  {
+    const m = rawText.match(/([A-ZÀÈÉÌÒÙ][A-ZÀÈÉÌÒÙ'\- ]{2,40}?)\s*Paziente\s*:\s*(?:Nato\/?a?\s+il\s*:?\s*)?(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})?/);
+    if (m) {
+      const words = m[1].trim().split(/\s+/).filter(w => w.length >= 2);
+      if (words.length >= 2) {
+        pd.nome = words.pop();
+        pd.cognome = words.join(' ');
+        if (m[2]) pd.dataNascita = expandYear(m[2].replace(/-/g,'/'));
+      }
+    }
   }
 
   // ── Pattern 0 (HIGHEST PRIORITY) — Frontespizio ────────────────────────
