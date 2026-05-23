@@ -1392,7 +1392,7 @@ const TRAILING_SKIP = new Set([
   'emorragia','cerebrale','intraparenchimale','cranio','encefalo',
   'emisoma','progetto','riabilitativo','indagine','frontespizio',
   'infermieristico','neuro','energy','medica','batteriologica',
-  'sieroimmunologica','descrizione',
+  'sieroimmunologica','descrizione','multifibre',
 ]);
 
 // Preposizioni di cognomi composti italiani: in una coppia CamelCase, se l'altra parola
@@ -1413,7 +1413,7 @@ function shouldSkipName(words) {
 }
 
 // Soglia di distanza di edit per il fuzzy matching dei nomi: parole corte → match esatto.
-function fuzzyThreshold(word){ return word.length<=5 ? 1 : 2; }
+function fuzzyThreshold(word){return word.length<=5?1:2;}
 function levenshtein(a,b) {
   const m=a.length,n=b.length;
   if(Math.abs(m-n)>2)return 99;
@@ -1699,18 +1699,322 @@ function loadNameDictionaryLocal(){
   NAMES_DB.firstNames = fb.map(n => n.toLowerCase());
   NAMES_DB.loaded = true;
 }
+
+// ═══════════════════════════════════════════════════
+// STRIP BOILERPLATE (verbatim da standalone)
+// ═══════════════════════════════════════════════════
+function stripBoilerplate(text) {
+  const stripped = [];
+  const lines = text.split('\n');
+  const cleaned = lines.filter(line => {
+    for (const pat of ANON_CONFIG.boilerplateLinePatterns) {
+      if (pat.test(line.trim())) {
+        const t = line.trim();
+        if (t.length > 2 && !stripped.find(b => b.text === t))
+          stripped.push({ text: t, tag: 'Boilerplate' });
+        return false;
+      }
+    }
+    return true;
+  });
+  return {
+    clean: cleaned.join('\n').replace(/\n{3,}/g, '\n\n').trim(),
+    strippedBlocks: stripped,
+  };
+}
+
+// ═══════════════════════════════════════════════════
+// PATIENT DATA EXTRACTION (verbatim da standalone)
+// Estrae nome/cognome/data di nascita dal frontespizio PRIMA dell'anonimizzazione.
+// ═══════════════════════════════════════════════════
+function extractPatientData(rawText) {
+  const pd = { nome: '', cognome: '', dataNascita: '' };
+  const lines = rawText.split('\n');
+
+  // Helper: expand 2-digit year to 4-digit
+  function expandYear(d) {
+    return d.replace(/(\d{2}[\/\-]\d{2}[\/\-])(\d{2})$/, (m,pre,yy) => {
+      const y = parseInt(yy);
+      return pre + (y > 30 ? '19' : '20') + yy;
+    });
+  }
+
+  // ── Pattern 0 (HIGHEST PRIORITY) — Frontespizio ────────────────────────
+  // "COGNOME NOMEPaziente: DD/MM/YYYY" (glued) or with whitespace/newline
+  // This is the most reliable source: the demographic header at the top of the PDF
+  {
+    // Try glued format first: "COGNOME NOMEPaziente:" (PDF.js often concatenates)
+    const fpGlued = rawText.match(/([A-ZÀÈÉÌÒÙ][A-ZÀÈÉÌÒÙ'\- ]+?)(?:\s*)Paziente\s*:\s*(\d{2}\/\d{2}\/\d{2,4})/);
+    if (fpGlued) {
+      const namePart = fpGlued[1].trim();
+      const words = namePart.split(/\s+/).filter(w => w.length >= 2);
+      if (words.length >= 2) {
+        // Last word is nome, everything before is cognome (handles "DE ROSSI MARIO")
+        pd.nome = words.pop();
+        pd.cognome = words.join(' ');
+        pd.dataNascita = expandYear(fpGlued[2]);
+      }
+    }
+    // Also try: name on line before "Paziente: DD/MM/YYYY"
+    if (!pd.cognome || !pd.nome) {
+      for (let i = 0; i < lines.length; i++) {
+        const pzM = lines[i].match(/^\s*Paziente\s*:\s*(\d{2}\/\d{2}\/\d{2,4})/);
+        if (pzM && i > 0) {
+          const prev = lines[i-1].trim();
+          const words = prev.split(/\s+/).filter(w => /^[A-ZÀÈÉÌÒÙ]/.test(w) && w.length >= 2);
+          if (words.length >= 2) {
+            pd.nome = words.pop();
+            pd.cognome = words.join(' ');
+            pd.dataNascita = expandYear(pzM[1]);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Pattern 1 — "Cognome: ROSSI  Nome: MARIO  Data nascita: 01/01/1940"
+  // Only fill fields not already found by Pattern 0 (frontespizio)
+  for (const line of lines) {
+    // Guard: skip lines containing "NOME COMPLETO" (it's a label, not a name)
+    if (/NOME\s+COMPLETO/i.test(line)) continue;
+    if (!pd.cognome) {
+      const cogM = line.match(/Cognome\s*[:\s]+([A-ZÀ-Ü][A-Za-zÀ-ü\s'\-]{1,40}?)(?:\s{2,}|\t|$)/i);
+      if (cogM) pd.cognome = cogM[1].trim();
+    }
+    if (!pd.nome) {
+      const nomM = line.match(/(?<!\w)Nome\s*[:\s]+([A-ZÀ-Ü][A-Za-zÀ-ü\s'\-]{1,40}?)(?:\s{2,}|\t|$)/i);
+      if (nomM) pd.nome = nomM[1].trim();
+    }
+    if (!pd.dataNascita) {
+      const dnM = line.match(/[Nn]ato(?:\/a)?\s+il\s*:?\s*(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})|[Dd]ata\s+(?:di\s+)?[Nn]ascita\s*[:\s]+(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})/);
+      if (dnM) pd.dataNascita = expandYear((dnM[1]||dnM[2]).replace(/-/g,'/'));
+    }
+  }
+
+  // Pattern 2 — "Episodio RIC_AO_XXXXX ROSSI MARIO nato/a il 01/01/1940"
+  if (!pd.cognome || !pd.nome) {
+    const epM = rawText.match(/Episodio\s+\S+\s+([A-ZÀÈÉÌÒÙ][A-ZÀÈÉÌÒÙ\s]{1,25}?)\s+([A-ZÀÈÉÌÒÙ][A-ZÀÈÉÌÒÙ\s]{1,25}?)\s+nato\/a\s+il\s+(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})/);
+    if (epM) {
+      if (!pd.cognome) pd.cognome = epM[1].trim();
+      if (!pd.nome)    pd.nome    = epM[2].trim();
+      if (!pd.dataNascita) pd.dataNascita = expandYear(epM[3].replace(/-/g,'/'));
+    }
+  }
+
+  // Pattern 3 — "il sig./la sig.ra COGNOME NOME (d.n. DD/MM/YYYY)" or "(DD/MM/YY)"
+  if (!pd.cognome || !pd.nome) {
+    const sigM = rawText.match(/(?:il\s+sig(?:nor)?\.?|la\s+sig(?:nora)?\.?(?:ra)?\.?|il\s+paziente)\s+([A-ZÀ-Ü][a-zA-ZÀ-ü'\-]+)\s+([A-ZÀ-Ü][a-zA-ZÀ-ü'\-]+)/i);
+    if (sigM) {
+      if (!pd.cognome) pd.cognome = sigM[1].trim();
+      if (!pd.nome)    pd.nome    = sigM[2].trim();
+    }
+  }
+
+  // Pattern 4 — "d.n. DD/MM/YYYY" or "d.n. DD/MM/YY" or "(d. n. DD/MM/YY)"
+  if (!pd.dataNascita) {
+    const dnM = rawText.match(/d\.?\s*n\.?\s+(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})/i);
+    if (dnM) {
+      pd.dataNascita = expandYear(dnM[1].replace(/-/g,'/'));
+    }
+  }
+
+  // Pattern 5 — "COGNOME NOME\nPaziente:" or ALLCAPS name on line before "Paziente:"
+  if (!pd.cognome || !pd.nome) {
+    for (let i = 0; i < lines.length; i++) {
+      if (/^Paziente\s*:/i.test(lines[i]) && i > 0) {
+        const prev = lines[i-1].trim();
+        const nameM = prev.match(/^([A-ZÀÈÉÌÒÙ]{2,})\s+([A-ZÀÈÉÌÒÙ]{2,})$/);
+        if (nameM) {
+          if (!pd.cognome) pd.cognome = nameM[1].trim();
+          if (!pd.nome)    pd.nome    = nameM[2].trim();
+          break;
+        }
+      }
+    }
+  }
+
+  // Pattern 6 — "COGNOME NOME  DD/MM/YYYY  XXXXXXXX" demographic header
+  if (!pd.cognome || !pd.nome) {
+    const hdrM = rawText.match(/\b([A-ZÀÈÉÌÒÙ]{2,})\s+([A-ZÀÈÉÌÒÙ]{2,})\s+(\d{2}\/\d{2}\/\d{4})\s+\d+/);
+    if (hdrM) {
+      const yr = parseInt(hdrM[3].slice(6));
+      if (yr >= 1900 && yr <= 2010) {
+        if (!pd.cognome) pd.cognome = hdrM[1].trim();
+        if (!pd.nome)    pd.nome    = hdrM[2].trim();
+        if (!pd.dataNascita) pd.dataNascita = hdrM[3];
+      }
+    }
+  }
+
+  // Pattern 7 (fallback) — first plausible birthdate in document
+  if (!pd.dataNascita) {
+    const dnM2 = rawText.match(/\b(\d{2}\/\d{2}\/\d{4})\b/);
+    if (dnM2) {
+      const yr = parseInt(dnM2[1].slice(6));
+      if (yr >= 1900 && yr <= 2010) pd.dataNascita = dnM2[1];
+    }
+  }
+
+  // Capitalize properly: "ROSSI" → "Rossi", "MARIO" → "Mario"
+  function cap(s){ return s.replace(/\b\w+/g, w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()); }
+  if (pd.cognome) pd.cognome = cap(pd.cognome);
+  if (pd.nome)    pd.nome    = cap(pd.nome);
+
+  return pd;
+}
+
+// ═══════════════════════════════════════════════════
+// REINSERIMENTO DATI PAZIENTE NELLA LETTERA (verbatim da standalone)
+// Sostituisce i placeholder [PAZIENTE_NOME] e [DATA_NASCITA] con i dati reali
+// estratti dalla cartella, in fase di finalizzazione/esportazione.
+// ═══════════════════════════════════════════════════
+function applyPatientData(text, pd) {
+  if (!pd) return text;
+  let out = text;
+  // Full name placeholder
+  const fullName = [pd.cognome, pd.nome].filter(Boolean).join(' ');
+  if (fullName) out = out.replace(/\[PAZIENTE_NOME\]/g, fullName);
+  // Date of birth
+  if (pd.dataNascita) out = out.replace(/\[DATA_NASCITA\]/g, pd.dataNascita);
+  return out;
+}
+
+// Finalizza la lettera: reinserisce i dati paziente reali + [CITTA]/[REPARTO],
+// replica esattamente la funzione finalizzaLettera dello standalone.
+function finalizeLetter(w){
+  if(!w || !w.outputLetter) return '';
+  let letter = w.outputLetter;
+  // Reinserisce nome paziente e data di nascita estratti dalla cartella grezza
+  letter = applyPatientData(letter, w.patientData);
+  // [CITTA] → Padova, [REPARTO] → reparto attivo
+  const ward = (w.ward || '').trim();
+  letter = letter.replace(/\[CITTA\]/g, 'Padova');
+  letter = letter.replace(/\[REPARTO\]/g, ward || 'reparto');
+  // Pulizia righe vuote in eccesso
+  letter = letter.replace(/\n{3,}/g, '\n\n').trim();
+  return letter;
+}
+
 function anonymizeText(rawText){
-  if (!rawText || !rawText.trim()) return { text:'', substitutions:[] };
+  if (!rawText || !rawText.trim()) return { text:'', substitutions:[], strippedBlocks:[], patientData:{nome:'',cognome:'',dataNascita:''} };
   loadNameDictionaryLocal();
-  const { frozen, restore } = freezeLabLines(rawText);
+
+  // Stage 0 — estrai i dati del paziente dal testo grezzo PRIMA dell'anonimizzazione
+  const patientData = extractPatientData(rawText);
+
+  // Stage 1 — rimozione righe boilerplate istituzionali
+  const { clean: cleanRaw, strippedBlocks } = stripBoilerplate(rawText);
+
+  // ── Stage 0.5 — Pre-anonimizza nome paziente & data nascita dal frontespizio ──
+  // Sostituisce TUTTE le occorrenze del nome del paziente e della DOB in tutto il
+  // documento prima dei pattern regex. È il passaggio più affidabile perché il
+  // frontespizio è la fonte autorevole dell'identità del paziente.
+  let clean = cleanRaw;
+  const pdReps = [];
+  const pd = patientData;
+  if (pd.cognome || pd.nome) {
+    const cog = pd.cognome, nom = pd.nome;
+    const variants = [];
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (cog && nom) {
+      const cogU = cog.toUpperCase(), nomU = nom.toUpperCase();
+      variants.push({ pat: esc(cogU) + '\\s+' + esc(nomU), label: '[PAZIENTE]' });
+      variants.push({ pat: esc(nomU) + '\\s+' + esc(cogU), label: '[PAZIENTE]' });
+      variants.push({ pat: esc(cog) + '\\s+' + esc(nom), label: '[PAZIENTE]' });
+      variants.push({ pat: esc(nom) + '\\s+' + esc(cog), label: '[PAZIENTE]' });
+      variants.push({ pat: esc(cogU) + '\\s+' + esc(nom), label: '[PAZIENTE]' });
+      variants.push({ pat: esc(cog) + '\\s+' + esc(nomU), label: '[PAZIENTE]' });
+      variants.push({ pat: esc(nomU) + '\\s+' + esc(cog), label: '[PAZIENTE]' });
+      variants.push({ pat: esc(nom) + '\\s+' + esc(cogU), label: '[PAZIENTE]' });
+    }
+    if (cog && cog.length >= 3) {
+      variants.push({ pat: '\\b' + esc(cog.toUpperCase()) + '\\b', label: '[PAZIENTE]' });
+      variants.push({ pat: '\\b' + esc(cog) + '\\b', label: '[PAZIENTE]' });
+    }
+    if (nom && nom.length >= 3) {
+      variants.push({ pat: '\\b' + esc(nom.toUpperCase()) + '\\b', label: '[NOME]' });
+      variants.push({ pat: '\\b' + esc(nom) + '\\b', label: '[NOME]' });
+    }
+    variants.sort((a,b) => b.pat.length - a.pat.length);
+    for (const v of variants) {
+      try {
+        const re = new RegExp(v.pat, 'g');
+        const before = clean;
+        clean = clean.replace(re, v.label);
+        if (clean !== before) {
+          pdReps.push({ orig: v.pat.replace(/\\[bsS+*?^${}()|[\]\\]/g,'').replace(/\\\s\+/g,' '), repl: v.label, type: 'Nome' });
+        }
+      } catch(e) {}
+    }
+  }
+  if (pd.dataNascita) {
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      const re = new RegExp(esc(pd.dataNascita), 'g');
+      clean = clean.replace(re, '[DATA_NASCITA]');
+    } catch(e) {}
+    const short2 = pd.dataNascita.replace(/(\d{2}\/\d{2}\/)(?:19|20)(\d{2})$/, '$1$2');
+    if (short2 !== pd.dataNascita) {
+      try {
+        const re2 = new RegExp(esc(short2), 'g');
+        clean = clean.replace(re2, '[DATA_NASCITA]');
+      } catch(e) {}
+    }
+    pdReps.push({ orig: pd.dataNascita, repl: '[DATA_NASCITA]', type: 'Data sensibile' });
+  }
+
+  // Stage 1 (regex strutturale) + Stage 2 (dizionario) con freeze/restore delle righe lab
+  const { frozen, restore } = freezeLabLines(clean);
+  let finalText = clean, reps = [...pdReps];
   const res = applyRegex(frozen);
-  let finalText, allReps = res.reps;
-  if (NAMES_DB.loaded) {
+
+  if (!NAMES_DB.loaded) {
+    finalText = restore(res.text);
+    reps = [...pdReps, ...res.reps];
+  } else {
     const res2 = applyNameDict(res.text);
-    allReps = [...res.reps, ...res2.reps];
     finalText = restore(res2.text);
-  } else { finalText = restore(res.text); }
-  return { text: finalText, substitutions: allReps };
+    reps = [...pdReps, ...res.reps, ...res2.reps];
+
+    // ── GLOBAL SWEEP ──
+    // Ogni nome rilevato viene sostituito in TUTTE le sue occorrenze per coerenza.
+    // Salta parole cliniche comuni che potrebbero essere finite in un match più ampio.
+    const SWEEP_SKIP = new Set([
+      'alla','alle','allo','agli','della','delle','dello','degli',
+      'nella','nelle','nello','negli','sulla','sulle','sullo','sugli',
+      'dalla','dalle','dallo','dagli',
+      'esame','esami','motivo','motivi','paziente','pazienti',
+      'data','date','nome','cognome','firma','tipo',
+      'obiettivo','obiettivi','generale','generali',
+      'ingresso','uscita','reparto','reparti',
+      'clinica','clinico','clinici','cliniche',
+      'decorso','terapia','diagnosi','anamnesi',
+      'dimissione','ricovero','medico','medici',
+      'luce','nota','noto','noti','note',
+      'stampa','stampato','rappresentazione',
+      'lieve','paresi','plegia','grave','segni',
+      'respiro','vigile','presenza','stazionario',
+      'verso','durante','allergie','numero',
+      'fisico','diagnostico','intervento',
+      'addome','diuresi','apiretico',
+      'prosegue','somministrata','rilevati',
+      'monitorata','posturato','presenta',
+      'nutrison','peptamen','isolyte','ensure','fresubin',
+      'cubitan','fortimel','prosure','abound','resource','glucerna',
+    ]);
+    const sweepReps = [...reps].sort((a,b) => b.orig.length - a.orig.length);
+    for (const r of sweepReps) {
+      if (!r.orig || r.orig.length < 2) continue;
+      if (!r.orig.includes(' ') && SWEEP_SKIP.has(r.orig.toLowerCase())) continue;
+      try {
+        const esc = r.orig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        finalText = finalText.replace(new RegExp(esc, 'g'), r.repl);
+      } catch(e) {}
+    }
+  }
+
+  return { text: finalText, substitutions: reps, strippedBlocks, patientData };
 }
 function detectResidualPII(text){
   const flags = [];
@@ -3153,9 +3457,24 @@ async function extractPdfText(file){
   if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) window.pdfjsLib.GlobalWorkerOptions.workerSrc = CDN.pdfworker;
   const buf = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
-  let text = '';
-  for (let i=1;i<=pdf.numPages;i++){ const page = await pdf.getPage(i); const c = await page.getTextContent(); text += c.items.map(it=>it.str).join(' ')+'\n'; }
-  return text;
+  let full = '';
+  for (let i=1;i<=pdf.numPages;i++){
+    const page = await pdf.getPage(i);
+    const ct = await page.getTextContent();
+    // Ricostruisce i ritorni a capo (come l'app originale): nuova riga quando la
+    // coordinata Y (transform[5]) cambia di oltre 5px, più i fine-riga espliciti (hasEOL).
+    let pt='', ly=null;
+    for (const it of ct.items){
+      if ('str' in it){
+        if (ly!==null && Math.abs(it.transform[5]-ly)>5) pt+='\n';
+        pt += it.str;
+        if (it.hasEOL) pt+='\n';
+        ly = it.transform[5];
+      }
+    }
+    full += pt.trim() + '\n\n';
+  }
+  return full.replace(/\n{3,}/g,'\n\n').trim();
 }
 async function extractXlsRows(file){
   if (!window.XLSX) await loadScriptOnce(CDN.sheetjs);
@@ -3179,7 +3498,7 @@ function pageHead(title, eyebrow, actionsHtml){
 }
 function newWizard(seed){
   return Object.assign({
-    step:1, rawText:'', anonText:'', substitutions:[], ward:'', diagnosi:'', tipo:'dimissione',
+    step:1, rawText:'', anonText:'', substitutions:[], patientData:{nome:'',cognome:'',dataNascita:''}, strippedBlocks:[], ward:'', diagnosi:'', tipo:'dimissione',
     prefs: JSON.parse(JSON.stringify(L.userTemplateData&&L.userTemplateData.prefs?L.userTemplateData.prefs:DEFAULT_USER_PREFS)),
     xlsText:'', xlsRows:null, ragExamples:[], builtPrompt:'', outputLetter:'', fingerprint:'',
   }, seed||{});
@@ -3528,7 +3847,7 @@ function renderAnonimizza(){
   const w=ensureWiz();
   // Se non ho ancora anonimizzato ma ho del testo grezzo, anonimizzo ora
   if(!w.anonText && w.rawText && w.rawText.trim()){
-    try{ const res=anonymizeText(w.rawText); w.anonText=res.text; w.substitutions=res.substitutions; }catch(e){}
+    try{ const res=anonymizeText(w.rawText); w.anonText=res.text; w.substitutions=res.substitutions; w.patientData=res.patientData; w.strippedBlocks=res.strippedBlocks; }catch(e){}
   }
   flowPageShell('lettere-anonimizza','Anonimizza dati', wizStep2());
   const t=document.getElementById('lt-anon'); if(t) t.value=w.anonText||'';
@@ -3609,7 +3928,7 @@ function renderVerifica(){
     </div>
     ${flagsDetail}
     <div class="lt-wiz-actions"><button class="btn ghost" onclick="navigate('lettere-genera')">← Indietro</button>
-      <button class="btn" onclick="navigate('lettere-esporta')">✓ Finalizza → Esporta</button></div>`;
+      <button class="btn" onclick="window.Lettere._finalizzaEsporta()">✓ Finalizza → Esporta</button></div>`;
   flowPageShell('lettere-verifica','Verifica', body);
 }
 // Evidenzia nel testo le frasi segnalate dalla verifica
@@ -3632,6 +3951,12 @@ function _renderVerifHighlight(text, flags){
 function renderEsporta(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderEsporta); return; }
   const w=ensureWiz();
+  // Sicurezza: se la lettera contiene ancora placeholder non sostituiti
+  // (es. l'utente è arrivato qui senza passare dal pulsante "Finalizza"),
+  // reinserisce automaticamente i dati paziente reali.
+  if(w.outputLetter && /\[(?:PAZIENTE_NOME|DATA_NASCITA|CITTA|REPARTO)\]/.test(w.outputLetter)){
+    w.outputLetter = finalizeLetter(w);
+  }
   const hasLetter = w.outputLetter && w.outputLetter.trim();
   const preview = hasLetter
     ? `<div class="lt-dtext lt-paper" id="lt-letter-out" style="min-height:500px">${escapeHtml(w.outputLetter)}</div>`
@@ -4097,7 +4422,7 @@ window.Lettere = {
     catch(e){ if(txt) txt.textContent='Errore XLS: '+e.message; } },
 
   _step1Next(){ if(!L.wiz.rawText.trim()){ toast('Inserisci il testo clinico.','error'); return; }
-    const r=anonymizeText(L.wiz.rawText); L.wiz.anonText=r.text; L.wiz.substitutions=r.substitutions; L.wiz.step=2; renderWizard(); },
+    const r=anonymizeText(L.wiz.rawText); L.wiz.anonText=r.text; L.wiz.substitutions=r.substitutions; L.wiz.patientData=r.patientData; L.wiz.strippedBlocks=r.strippedBlocks; L.wiz.step=2; renderWizard(); },
   _step2Next(){ const flags=detectResidualPII(L.wiz.anonText);
     const go=()=>{ L.wiz.step=3; L.wiz.ragExamples=selectRAGExamples(L.wiz.ward,L.wiz.diagnosi,L.wiz.tipo); renderWizard(); };
     if(flags.length){ Modals().confirm({ title:'Possibili dati residui',
@@ -4107,11 +4432,18 @@ window.Lettere = {
   _buildPrompt(){ L.wiz.builtPrompt=buildCopyPrompt(L.wiz); L.wiz.step=4; renderWizard(); },
   // Flusso a pagine separate: anonimizza il testo grezzo e naviga alla pagina Anonimizza
   _caricaNext(){ const w=ensureWiz(); if(!w.rawText||!w.rawText.trim()){ toast('Inserisci il testo clinico.','error'); return; }
-    try{ const r=anonymizeText(w.rawText); w.anonText=r.text; w.substitutions=r.substitutions; }catch(e){ toast('Errore anonimizzazione: '+e.message,'error'); return; }
+    try{ const r=anonymizeText(w.rawText); w.anonText=r.text; w.substitutions=r.substitutions; w.patientData=r.patientData; w.strippedBlocks=r.strippedBlocks; }catch(e){ toast('Errore anonimizzazione: '+e.message,'error'); return; }
     navigate('lettere-anonimizza'); },
   // Ricostruisce il prompt nella pagina Genera con le opzioni correnti + aggiorna gli esempi RAG
   _rebuildPrompt(){ const w=ensureWiz(); w.ragExamples=selectRAGExamples(w.ward,w.diagnosi,w.tipo); w.builtPrompt=buildCopyPrompt(w);
     const ta=document.getElementById('lt-prompt'); if(ta) ta.value=w.builtPrompt; toast('Prompt aggiornato.','success'); },
+  // Finalizza la lettera (reinserisce nome/cognome/data nascita reali + [CITTA]/[REPARTO]) e va all'Esporta
+  _finalizzaEsporta(){ const w=ensureWiz();
+    // Prima salva eventuali modifiche fatte nel pannello sinistro della Verifica
+    const ed=document.getElementById('lt-vout'); if(ed && ed.value.trim()) w.outputLetter=ed.value;
+    if(!w.outputLetter || !w.outputLetter.trim()){ toast('Genera o incolla prima la lettera.','error'); return; }
+    w.outputLetter = finalizeLetter(w);   // reinserisce i dati paziente reali
+    navigate('lettere-esporta'); },
 
   // ── Reset / clear / copia / incolla (parità con l'originale) ──
   _clearAll(){ Modals().confirm({ title:'Svuotare la cartella?', message:'Il testo caricato e gli esami verranno cancellati.', confirmLabel:'Svuota', danger:true,
@@ -4142,9 +4474,22 @@ window.Lettere = {
     try{document.execCommand('copy');}catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(txt).catch(()=>{});
     toast('Prompt copiato.','success'); } },
   async _addToLibrary(){ if(!L.wiz.outputLetter.trim()){ toast('Incolla prima la lettera generata.','error'); return; }
-    const flags=detectResidualPII(L.wiz.outputLetter);
+    // Privacy: la libreria è un modello per il RAG e non deve contenere dati reali.
+    // Se la lettera è stata finalizzata (nome/cognome/data reali reinseriti),
+    // li riconverto in placeholder prima di salvare.
+    let letteraDaSalvare = L.wiz.outputLetter;
+    const pd = L.wiz.patientData;
+    if(pd && (pd.nome || pd.cognome)){
+      const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const full = [pd.cognome, pd.nome].filter(Boolean).join(' ');
+      if(full){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp(esc(full),'g'),'[PAZIENTE_NOME]'); }catch(e){} }
+      if(pd.cognome && pd.cognome.length>=3){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp('\\b'+esc(pd.cognome)+'\\b','g'),'[PAZIENTE_NOME]'); }catch(e){} }
+      if(pd.nome && pd.nome.length>=3){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp('\\b'+esc(pd.nome)+'\\b','g'),'[PAZIENTE_NOME]'); }catch(e){} }
+      if(pd.dataNascita){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp(esc(pd.dataNascita),'g'),'[DATA_NASCITA]'); }catch(e){} }
+    }
+    const flags=detectResidualPII(letteraDaSalvare);
     const doSave=async()=>{ try{ await saveCaso({ ward:L.wiz.ward, diagnosi:L.wiz.diagnosi, tipo:L.wiz.tipo,
-        cartella:L.wiz.anonText, lettera:L.wiz.outputLetter, fingerprint:(L.wiz.fingerprint||'').trim() });
+        cartella:L.wiz.anonText, lettera:letteraDaSalvare, fingerprint:(L.wiz.fingerprint||'').trim() });
       toast('Caso aggiunto.','success'); navigate('lettere-libreria'); }catch(e){ toast('Errore: '+e.message,'error'); } };
     if(flags.length){ Modals().confirm({ title:'Possibili dati residui nella lettera',
       message:'La lettera contiene pattern che potrebbero essere dati personali ('+flags.map(f=>f.label).join(', ')+'). Salvare comunque?',
