@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   MODULO LETTERE — generatore lettere di dimissione/trasferimento (LetteraAI) 
+   MODULO LETTERE — generatore lettere di dimissione/trasferimento (LetteraAI)
    Integrazione additiva in CollinettaAI — versione COPIA-INCOLLA (nessuna API)
 
    La LOGICA DI DOMINIO (anonimizzazione, fingerprint V3, template, override,
@@ -825,10 +825,10 @@ const ANON_CONFIG = {
       label: '[SSN]', type: 'id' },
     { pattern: /Indirizzo\s+(?:domicilio|residenza)\s*:?\s*[^\n\r]+/gi,
       label: '[INDIRIZZO_PAZIENTE]', type: 'boiler' },
-    { pattern: /\b(?:VIA|VIALE|CORSO|PIAZZA|PIAZZALE|PIAZZETTA|LARGO|VICOLO|STRADA|BORGATA|CONTRADA|LOCALIT[AÀ]|FRAZIONE)\s+[A-Z][A-Z\s,\u00C0-\u00FF]+[,\s]\d+(?:\s*[-\/]\s*[A-Z0-9]+)?/gi,
+    { pattern: /\b(?:VIA|VIALE|CORSO|PIAZZA|PIAZZALE|PIAZZETTA|LARGO|VICOLO|STRADA|BORGATA|CONTRADA|LOCALIT[AÀ]|FRAZIONE)\s+[A-Z][A-Z\s,\u00C0-\u00FF]+[,\s]\d+(?:\s*[-\/]\s*[A-Z0-9]+)?/g,
       label: '[INDIRIZZO_PAZIENTE]', type: 'boiler' },
-    // "domicilio: <address>" or "residenza: <address>" after label
-    { pattern: /(?:domicilio|residenza)\s*:\s*[^\n\r]{5,}/gi,
+    // "domicilio: <address>" or "residenza: <address>" after label (richiede confine parola prima)
+    { pattern: /\b(?:domicilio|residenza)\s*:\s*[^\n\r]{5,}/gi,
       label: '[INDIRIZZO_PAZIENTE]', type: 'boiler' },
     // ALL CAPS patient name before Paziente: keyword
     { pattern: /(?:Paziente|Intestatario|Nominativo)\s*:\s*[A-Z]{2,}(?:\s+[A-Z]{2,})?/g,
@@ -937,11 +937,21 @@ const ANON_CONFIG = {
       label: 'Responsabile: [OPERATORE]', type: 'name' },
     { pattern: /Operatore\s*:\s*[A-Z][a-z\u00C0-\u00FF][a-zA-Z\u00C0-\u00FF]*(?:\s+[A-Z][a-zA-Z\u00C0-\u00FF]+)*/g,
       label: 'Operatore: [OPERATORE]', type: 'name' },
+    // Nome medico su riga propria tra "Richiesta in data" e "Quesito" (verbali consulenza)
+    // Es: "Richiesta in data\nTine' Mariaenrica\nQuesito"
+    { pattern: /(Richiesta\s+in\s+data\s*\n)[A-Z][a-zà-ü'\-]+(?:\s+[A-Z][a-zà-ü'\-]+){0,2}(\s*\n\s*Quesito)/g,
+      replace: (m, pre, post) => pre + '[OPERATORE]' + post, label: '[OPERATORE]', type: 'name' },
+    // Nome dopo "Responsabile:" inline (es. "Anni: 34Responsabile: NOME")
+    { pattern: /Responsabile\s*:\s*[A-Z][a-zà-ü'\-]+(?:\s+[A-Z][a-zà-ü'\-]+){0,2}/g,
+      label: 'Responsabile: [OPERATORE]', type: 'name' },
+    // "Prof. . R Cognome" / "Prof. R. Cognome" — iniziale puntata residua
+    { pattern: /Prof\.?\s*\.?\s*[A-Z]\.?\s+[A-Z][a-zà-ü'\-]+/g,
+      label: 'Prof. [OPERATORE]', type: 'name' },
     { pattern: /Richiesta\s+in\s+data\s*:\s*[\d\/\s:]+(?:per\s+il[\d\/\s:]+)?/gi,
       label: 'Richiesta in data: [DATA]', type: 'boiler' },
     { pattern: /Azienda\s+Ospedale\s*-\s*Universit\u00e0\s+Padova\s*:\s*Via[^\n]+/gi,
       label: '[INDIRIZZO_AZ]', type: 'boiler' },
-    { pattern: /Via\s+[A-Z][a-z]+\s+[A-Z][a-z]+(?:ini)?\s+\d+[^\n]*/gi,
+    { pattern: /\bVia\s+[A-Z][a-zà-ü]+(?:\s+[A-Z][a-zà-ü]+)*\s+\d+[^\n]*/g,
       label: '[INDIRIZZO]', type: 'boiler' },
     { pattern: /C\.F\.\s+P\.IVA\s+\d{11}/gi, label: '[CF_PIVA_AZ]', type: 'boiler' },
     // ── LAB HEADER — protect "Costituente Risultato Unita'" line ──────────
@@ -1346,6 +1356,73 @@ const ANON_CONFIG = {
     // Riga "Codice fiscale: XXX SSN: YYY" del frontespizio (solo identificatori)
     /^Codice\s+fiscale\s*:\s*[A-Z0-9]{6,}\s*(?:SSN\s*:\s*\d+)?\s*$/i,
     /^Direttore\s*:\s*(?:Prof|Dott)[^\n]*$/i,
+    // ══ Referti di laboratorio: header/footer ripetuti (mantengo i valori) ══
+    // Intestazione referto: due telefoni isolati, certificazione, parentesi
+    /^\[TELEFONO\]\s*\[TELEFONO\]\s*$/,
+    /^\(\[CERTIFICAZIONE\]\s*$/,
+    /^\[CERTIFICAZIONE\]\s*$/,
+    // Righe metadato referto
+    /^Data\s+referto\s+definitivo\s*:[^\n]*$/i,
+    /^Stampa\s+referto\s+del\s*:[^\n]*$/i,
+    /^Richiesta\s+del\s*:[^\n]*Nato\/?a?\s+il\s*:[^\n]*$/i,
+    /^Richiesta\s+del\s*:\s*[\d\/]+[^\n]*$/i,
+    /^\[ID_INTERNO\]\s*C\.?F\.?\s*:\s*\[CODICE_FISCALE\]\s*$/,
+    /^\[ID_INTERNO\]\s*(?:Esterno\s*:\s*\d+)?\s*$/,
+    /^Reparto\s*:\s*CL(?:I\.?|INICA)\.?\s*NEUROLOGICA[^\n]*$/i,
+    /^Note\s*:\s*(?:n\.?\s*\d+\s+provette\s+liquor|sclerosi[^\n]*)?$/i,
+    /^Note\s+dal\s+richiedente\s*:\s*$/i,
+    // Contatore pagina referto: "[OPERATORE]: 1" / "[OPERATORE] : 2"
+    /^\[OPERATORE\]\s*:\s*\d+\s*$/,
+    /^ai\s+sensi\s+della\s+normativa\s+vigente\.?\s*$/i,
+    // "il GG/MM/AAAA HH:MM" riga isolata (dopo "ai sensi...")
+    /^il\s+\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}\s+\d{1,2}[:\.]\d{2}\s*$/i,
+    // "Al Medico Curante: [PAZIENTE] : CL.NEUROLOGICA ... Codice Fiscale : [CODICE_FISCALE]"
+    /^Al\s+Medico\s+Curante\s*:[^\n]*$/i,
+    // Righe [DATI_PRELIEVO] di header lab
+    /^\[DATI_PRELIEVO\][^\n]*$/,
+    /^\[DATI_PRELIEVO\]\s*$/,
+    // "Referto del : ... / 0024248-RIC_AO" o "Referto del : ... Data di [OPERATORE]..."
+    /^Referto\s+del\s*:[^\n]*$/i,
+    // Intestazione tabella valori lab
+    /^Costituente\s+Risultato\s+Unita['\u00e0]?[^\n]*$/i,
+    /^Esame\s+Risultato\s+(?:Proc\.?\s+esame|U\.?\s+di\s+misura|V\.?\s+di\s+riferimento)[^\n]*$/i,
+    // Linee di underscore (separatori), con o senza tag finale
+    /^_{10,}[^\n]*$/,
+    // "parte del Medico Curante nel contesto di altre informazioni cliniche. Il Direttore"
+    /^parte\s+del\s+Medico\s+Curante[^\n]*$/i,
+    // Procedure IO: "[OPERATORE] BIOLOGIA MOLECOLARE / GENOMICA[OPERATORE]: (1) IO 131 rev 4..."
+    /^\[OPERATORE\]\s+BIOLOGIA\s+MOLECOLARE[^\n]*$/i,
+    /^\(\d+\)\s+IO\s+\d+\s+rev[^\n]*$/i,
+    // "Intervallo di [DATI_PRELIEVO]..." e simili residui prelievo
+    /^Cellule\/microL\s*:[^\n]*$/i,
+    // ══ Frontespizio referto ripetuto ══
+    /^\[DATA_NASCITA\]\[PAZIENTE\]\s+NatoPaziente\s+\[NOSOLOGICO\]\[ID_EPISODIO\]\s*$/,
+    /^Episodio\s+\[ID_EPISODIO\]\s+\[PAZIENTE\]\s+nato\/?a?\s+il\s+\[DATA_NASCITA\]\s*$/i,
+    /^\[INTESTAZIONE_COLONNE\]\s*$/,
+    /^\[INTESTAZIONE_AZ\]\s*$/,
+    /^\[INTESTAZIONE_REGIONE\]\s*$/,
+    /^Data\s+ultima\s+modifica\s*$/i,
+    /^\[\[OPERATORE\]\]\s*\[\[OPERATORE\]\]\/\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+\[OPERATORE\]\s*$/,
+    /^\[METADATO\]\s*$/,
+    // "[[OPERATORE]]- RICOVERO [ID_RICOVERO][PAZIENTE]"
+    /^\[\[OPERATORE\]\]\s*-\s*RICOVERO\s+\[ID_RICOVERO\]\[PAZIENTE\]\s*$/,
+    // "1/2[PAZIENTE] - [ID_RICOVERO]" / "2/2[PAZIENTE] - [ID_RICOVERO]"
+    /^\d\/\d\[PAZIENTE\]\s*-\s*\[ID_RICOVERO\]\s*$/,
+    // Footer referto su righe isolate
+    /^\[DATI_PRELIEVO\]\.\s*\[ID_INTERNO\]\s*$/,
+    // "* DLgs 101/20 art. 161..." raccomandazioni dose
+    /^\*?\s*DLgs\s+101\/20[^\n]*$/i,
+    /^\*\s+DLgs[^\n]*$/i,
+    // Consegne referti / email residue
+    /^Consegne\s+referti\s*:\s*$/i,
+    /^\[OPERATORE\]\s+esterni\s*:\s*$/i,
+    /^[a-z]{1,4}\.it\s*$/i,
+    /^neto\.it\s*$/i,
+    // "#VERSIONE REFERTO: BOZZA"
+    /^#?\s*VERSIONE\s+REFERTO\s*:[^\n]*$/i,
+    /^\[VERSIONE\]\s*,\s*\[CONSERVAZIONE\]\s*$/,
+    /^Powered\s+by\s+TCPDF[^\n]*$/i,
+    /^\[\[OPERATORE\]\]\s*\.\s*\[VERSIONE\]\s*$/,
   ],
 }
 
@@ -2096,6 +2173,152 @@ function finalizeLetter(w){
   return letter;
 }
 
+// ── Formattazione lettera da chat AI (verbatim da standalone) ──
+function formatLetterFromChat(raw){
+  let text=raw.trim();
+
+  // ── 1. THERAPY TABLE ──
+  const terapiaHeaderRe=/(Terapia\s+(?:alla\s+dimissione|al\s+trasferimento|consigliata\s+alla\s+dimissione)\s*:\s*)/i;
+  const terapiaMatch=text.match(terapiaHeaderRe);
+  if(terapiaMatch){
+    const tStart=terapiaMatch.index+terapiaMatch[0].length;
+    const afterTherapy=text.slice(tStart);
+    const nextSectionRe=/(?:^|\n)\s*(?:Il paziente è atteso|La paziente è attesa|Si raccomanda|Rimaniamo a disposizione)/im;
+    const nextMatch=afterTherapy.match(nextSectionRe);
+    const tEnd=nextMatch?tStart+nextMatch.index:text.length;
+    const therapyBlock=text.slice(tStart,tEnd).trim();
+    if(!therapyBlock.includes('|')){
+      const table=parseTherapyTable(therapyBlock);
+      if(table){
+        text=text.slice(0,tStart)+'\n'+table+'\n'+text.slice(tEnd);
+      }
+    }
+  }
+
+  // ── 2. SECTION HEADERS — add **bold** and ensure blank lines ──
+  const headers=[
+    'In anamnesi:','Cenni anamnestici:',
+    'Terapia domiciliare:',
+    'Motivo del ricovero:','Motivo di ricovero:',
+    'Esame obiettivo neurologico[^:]*:',
+    'Esame obiettivo generale[^:]*:',
+    'Decorso [Cc]linico:',
+    'L\'obiettività alla dimissione[^:]*:',
+    'L\'obiettività al trasferimento[^:]*:',
+    'Terapia alla dimissione:','Terapia al trasferimento:','Terapia consigliata alla dimissione:',
+    'Si raccomanda:',
+  ];
+  for(const hdr of headers){
+    const re=new RegExp('(^|\\n)\\s*\\*{0,2}('+hdr+')\\*{0,2}','gm');
+    text=text.replace(re,(m,pre,h)=>'\n\n**'+h.replace(/\*\*/g,'').trim()+'**');
+  }
+
+  // Bold for PS section header
+  text=text.replace(/(^|\n)\s*\*{0,2}(Presso il Pronto Soccorso[^:]*:)\*{0,2}/gm,'$1\n**$2**');
+
+  // Bold for lab intro line
+  text=text.replace(/(^|\n)\s*\*{0,2}(Durante la degenza[^:]*:)\*{0,2}/gm,'$1\n**$2**');
+
+  // Bold for instrumental section
+  text=text.replace(/(^|\n)\s*\*{0,2}(e alle seguenti[^:]*:)\*{0,2}/gm,'$1\n**$2**');
+
+  // ── 3. DIAGNOSIS — blank line before and after ──
+  text=text.replace(/(?<!\n)\n("[^"]{10,}")/g,'\n\n$1');
+  text=text.replace(/("[^"]{10,}")\n(?!\n)/g,'$1\n\n');
+
+  // ── 4. RECOMMENDATIONS — ensure – dash list ──
+  const siRaccIdx=text.indexOf('**Si raccomanda:**');
+  if(siRaccIdx>=0){
+    const afterSR=text.slice(siRaccIdx+'**Si raccomanda:**'.length);
+    const rimIdx=afterSR.indexOf('Rimaniamo a disposizione');
+    if(rimIdx>0){
+      let recBlock=afterSR.slice(0,rimIdx).trim();
+      let recLines=recBlock.split(/\n/).map(l=>l.trim()).filter(Boolean);
+      recLines=recLines.map(l=>{
+        l=l.replace(/^[-–—•]\s*/,'').trim();
+        return '– '+l;
+      });
+      text=text.slice(0,siRaccIdx)+'**Si raccomanda:**\n'+recLines.join('\n')+'\n\n'+text.slice(siRaccIdx+'**Si raccomanda:**'.length+rimIdx);
+    }
+  }
+
+  // ── 5. LAB CATEGORIES — ensure "- **Category:**" format ──
+  const labCats=[
+    'Emocromo con formula:','Profilo coagulativo:','Pannello coagulativo:',
+    'Indici di flogosi:','Funzionalità epatica:','Funzionalità renale',
+    'Profilo metabolico:','Profilo proteico:','Enzimi muscolari:',
+    'Profilo enzimi','Albumina:','Profilo carenziale:',
+    'Funzionalità tiroidea:','ntBNP:','Esame urine:','Esame delle urine:',
+    'Microbiologia:','Esami microbiologici:','Profilo immunologico:',
+    'Pannello autoimmunità:','Marcatori tumorali:','Markers tumorali:',
+    'Profilo renale:',
+  ];
+  for(const cat of labCats){
+    const esc=cat.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    // Match the category name, optionally already bold, not already preceded by "- "
+    const re=new RegExp('(^|\\n)\\s*(?:-\\s*)?\\*{0,2}('+esc+')\\*{0,2}','gm');
+    text=text.replace(re,'$1- **$2**');
+  }
+
+  // ── 6. INSTRUMENTAL — ensure "- " prefix for each exam ──
+  // Match exam name optionally with date, add "- " prefix
+  const instrRe=/(^|\n)\s*(?:-\s*)?(?:\*{0,2}>\s*\*{0,2})?\*{0,2}((?:ECG|ECD|Rx|TC |RM |RMN|Ecocardiogramma|Holter|AngioRM|Valutazione fisiatrica|Valutazione neuropsicologica|Consulenza|Verbale|Ecocolordopplergrafia|EcocolorDoppler|EcoColorDoppler)[^:]*:)\*{0,2}/gm;
+  text=text.replace(instrRe,'$1- **$2**');
+
+  // ── 7. CLEANUP ──
+  text=text.replace(/\n{3,}/g,'\n\n').trim();
+
+  return text;
+}
+
+function parseTherapyTable(block){
+  // Remove glued header "FarmacoPosologiaOrarioNote"
+  let cleaned=block.replace(/^Farmaco\s*Posologia\s*Orario\s*Note\s*/i,'').trim();
+  if(!cleaned) return null;
+
+  // If already contains pipe separators, it's already a table
+  if(cleaned.includes('|')) return null;
+
+  // Split by posologia pattern as anchor: "1 cp/cpr/cps per os"
+  const chunks=cleaned.split(/(\d+\s+(?:cpr?s?|compressa|compresse|fiala|fiale|bustina|bustine|gtt|gocce|ml)\s*(?:per\s+(?:os|via\s+orale|im|ev|sc))?(?:\s*x\s*\d+)?)/i);
+  if(chunks.length<3) return null;
+
+  const rows=[];
+  let curDrug=chunks[0].trim();
+
+  for(let i=1;i<chunks.length;i+=2){
+    const pos=chunks[i].trim();
+    const rem=(chunks[i+1]||'').trim();
+
+    // Extract time
+    const tm=rem.match(/^(\d{1,2}[.:]\d{2}(?:\s*[-–]\s*\d{1,2}[.:]\d{2})?)/);
+    let orario='',afterTime=rem;
+    if(tm){orario=tm[1].replace(/\./g,':');afterTime=rem.substring(tm[0].length);}
+
+    // Extract note by matching known patterns
+    const nps=[/^(terapia domiciliare)/i,/^(nuova terapia fino a rivalutazione)/i,
+      /^(nuova terapia)/i,/^(dose modificata rispetto al domicilio)/i,
+      /^(dose modificata)/i,/^(sospeso)/i,
+      /^(fino al \d{2}\/\d{2}(?:\/\d{2,4})?\s+poi\s+stop)/i,/^(da rivalutare)/i];
+    let note='';
+    for(const np of nps){const nm=afterTime.match(np);if(nm){note=nm[1];afterTime=afterTime.substring(nm[0].length);break;}}
+    if(!note&&afterTime.length>0){
+      const ci=afterTime.search(/[A-ZÀ-Ü]/);
+      if(ci>0){note=afterTime.substring(0,ci).trim();afterTime=afterTime.substring(ci);}
+      else if(ci===-1){note=afterTime;afterTime='';}
+    }
+
+    if(curDrug) rows.push({farmaco:curDrug,posologia:pos,orario,note});
+    curDrug=afterTime.trim();
+  }
+
+  if(rows.length===0) return null;
+  let table='| Farmaco | Posologia | Orario | Note |\n';
+  table+='|---------|-----------|--------|------|\n';
+  for(const r of rows) table+=`| ${r.farmaco} | ${r.posologia} | ${r.orario} | ${r.note} |\n`;
+  return table;
+}
+
 function anonymizeText(rawText){
   if (!rawText || !rawText.trim()) return { text:'', substitutions:[], strippedBlocks:[], patientData:{nome:'',cognome:'',dataNascita:''} };
   loadNameDictionaryLocal();
@@ -2240,7 +2463,7 @@ function anonymizeText(rawText){
         // RIDOTTO (solo parole funzionali/strutturali), NON l'intero SWEEP_SKIP: i
         // cognomi che coincidono con termini clinici (Bianchi, Forte) sono comunque
         // protetti perché lo sweep è case-sensitive sulla maiuscola (vedi sotto).
-        const FUNC_SKIP = new Set(['del','dei','della','delle','dello','degli','con','per','tra','fra','sul','sui','non','che','più','già','ore','data','nome','firma','medico','medici','reparto','clinica','paziente']);
+        const FUNC_SKIP = new Set(['del','dei','della','delle','dello','degli','con','per','tra','fra','sul','sui','non','che','più','già','ore','data','nome','firma','medico','medici','reparto','clinica','paziente','esame','esami','obiettivo','obiettiva','generale','generali','distrettuale','anamnesi','diagnosi','terapia','quesito','referto','risposta','richiesta','consegnato','sangue','liquor','plasma','siero','urina','feci','tampone','controllo','positivo','negativo','rilevabile','presente','assente','note','nota','sesso','anni','reale','time','real','nuovo','nuova','recente','progetto','riabilitativo','sinusale','conservato','normativa','vigente','direttore','curante','costituente','risultato']);
         if (word.length >= 3 && /^[A-Za-zÀ-ü'\-]+$/.test(word) && !FUNC_SKIP.has(word.toLowerCase()))
           operatorNames.add(word);
       });
@@ -2262,6 +2485,42 @@ function anonymizeText(rawText){
     }
     // Compatta eventuali "[OPERATORE] [OPERATORE]" consecutivi nati dal sweep
     finalText = finalText.replace(/(?:\[OPERATORE\]\s*){2,}/g, '[OPERATORE] ');
+  }
+
+  // ── Stage 3 — Seconda passata boilerplate POST-anonimizzazione ──
+  // Molte righe amministrative (header/footer referti lab) diventano riconoscibili
+  // SOLO dopo l'anonimizzazione, perché contengono i tag ([OPERATORE], [DATI_PRELIEVO],
+  // [CODICE_FISCALE]...). stripBoilerplate gira sul testo grezzo, quindi non le coglie.
+  // Qui ripasso le stesse boilerplateLinePatterns sul testo già taggato.
+  {
+    const blp = ANON_CONFIG.boilerplateLinePatterns || [];
+    const kept = [];
+    finalText.split('\n').forEach(line => {
+      const t = line.trim();
+      if (t && blp.some(re => re.test(t))) {
+        strippedBlocks.push({ text: t, tag: 'Boilerplate' });
+      } else {
+        kept.push(line);
+      }
+    });
+    finalText = kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  // ── Stage 4 — Normalizzazioni cosmetiche dei tag ──
+  {
+    // "[[OPERATORE]]" doppia parentesi → "[OPERATORE]"
+    finalText = finalText.replace(/\[\[([A-Z_]+)\]\]/g, '[$1]');
+    // Tag attaccati senza spazio: "[DATA_NASCITA][PAZIENTE]" → "[DATA_NASCITA] [PAZIENTE]"
+    finalText = finalText.replace(/(\][A-Za-z]*)\[/g, (m, a) => a.endsWith(']') ? a + ' [' : m);
+    finalText = finalText.replace(/\]\[/g, '] [');
+    // Iniziale puntata residua prima del tag: "E. [OPERATORE]" / "R [OPERATORE]" → "[OPERATORE]"
+    finalText = finalText.replace(/\b[A-Z]\.?\s+(\[OPERATORE\])/g, '$1');
+    // "Prof. . [OPERATORE]" → "Prof. [OPERATORE]"
+    finalText = finalText.replace(/\bProf\.?\s*\.\s*(\[OPERATORE\])/g, 'Prof. $1');
+    // Ricompatta tag operatore consecutivi nati dalle normalizzazioni
+    finalText = finalText.replace(/(?:\[OPERATORE\][\s,:]*){2,}/g, '[OPERATORE] ');
+    // Righe rimaste vuote o di soli tag-segnaposto isolati senza contenuto
+    finalText = finalText.replace(/\n{3,}/g, '\n\n').trim();
   }
 
   return { text: finalText, substitutions: reps, strippedBlocks, patientData };
@@ -4654,9 +4913,18 @@ window.Lettere = {
   _resetSysPrompt(){ const w=ensureWiz(); w.sysPromptOverride=null; w.builtPrompt=buildCopyPrompt(w); renderGenera(); toast('Istruzioni ripristinate.','info'); },
   _setPromptTab(t){ L._promptTab=t; renderGenera(); },
   // Pulisce la formattazione della lettera incollata (righe vuote in eccesso, placeholder noti)
-  _formatPasted(){ const w=ensureWiz(); let txt=(w.outputLetter||'').replace(/\n{3,}/g,'\n\n').trim();
+  _formatPasted(){ const w=ensureWiz();
+    // Salva eventuali modifiche manuali dall'editor prima di formattare
+    const ed=document.getElementById('lt-out'); if(ed && ed.value.trim()) w.outputLetter=ed.value;
+    let txt=(w.outputLetter||'').trim();
+    if(!txt){ toast('Genera o incolla prima la lettera.','error'); return; }
+    // Formattazione completa come l'originale (tabelle terapia, header in grassetto,
+    // diagnosi, raccomandazioni, categorie lab, esami strumentali)
+    txt=formatLetterFromChat(txt);
+    // [CITTA]/[REPARTO] (i dati paziente [PAZIENTE_NOME]/[DATA_NASCITA] restano fino a finalizza/export)
     txt=txt.replace(/\[CITTA\]/g,'Padova').replace(/\[REPARTO\]/g, w.ward||'reparto');
-    w.outputLetter=txt; const ta=document.getElementById('lt-out'); if(ta) ta.value=txt; toast('Formattazione ripulita.','success'); },
+    w.outputLetter=txt; const ta=document.getElementById('lt-out'); if(ta) ta.value=txt;
+    toast('Formattazione ripulita.','success'); },
 
   async _onPdf(file){ if(!file)return; const w=ensureWiz();
     const box=document.getElementById('lt-pdf-status'); const txt=document.getElementById('lt-pdf-status-txt');
