@@ -3725,6 +3725,7 @@ async function importLibraryJson(file){
 }
 
 async function savePromptToRepo(varName, newText){
+  if (!canEdit()) throw new Error('Solo gli amministratori possono modificare i prompt di sistema');
   const path = PROMPT_PATHS[varName];
   const res = await ghHost().putFile(path, newText, L.systemPromptSha[varName]||null,
     `Aggiorna ${varName} (by ${username()})`);
@@ -4629,7 +4630,7 @@ function renderCaseEditInline(id){
       <textarea id="ce-cartella" rows="8" class="mono-input">${escapeHtml(c.cartella||'')}</textarea></div>
     <div class="field"><label>Lettera di dimissione</label>
       <textarea id="ce-letter" rows="8" class="mono-input">${escapeHtml(c.letter||'')}</textarea></div>
-    <div class="field"><label>Logica / Fingerprint (JSON, opzionale)</label>
+    <div class="field"><label>Logica decorso (JSON, opzionale)</label>
       <div class="lt-row" style="margin-bottom:6px">
         <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptEdit('${escapeHtml(id)}')">⎘ Copia prompt esterno</button></div>
       <textarea id="ce-fp-raw" rows="6" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'>${escapeHtml(c.fingerprint||'')}</textarea></div>
@@ -4669,9 +4670,10 @@ function renderAddCaseForm(){
       <textarea id="nc-cartella" rows="6" class="mono-input" placeholder="Incolla la cartella anonimizzata..."></textarea></div>
     <div class="field"><label>Lettera di dimissione corrispondente <span id="nc-letter-badge" class="lt-lib-chip on" style="display:none">✓ rilevata dal PDF</span></label>
       <textarea id="nc-letter" rows="8" class="mono-input" placeholder="Incolla la lettera già generata e revisionata..."></textarea></div>
-    <div class="field"><label>Logica / Fingerprint <span class="lt-sub">(JSON opzionale ma consigliato)</span></label>
+    <div class="field"><label>Logica decorso</label>
+      <div class="lt-sub" style="margin-bottom:6px">Cattura <em>come</em> generare il decorso clinico: il resto della lettera è stabile per il template del reparto, il decorso è ciò che varia.</div>
       <div class="lt-row" style="margin-bottom:6px">
-        <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptNuovo()">⎘ Copia prompt fingerprint</button></div>
+        <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptNuovo()">⎘ Copia prompt logica decorso</button></div>
       <textarea id="nc-fp" rows="5" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'></textarea></div>
     <div class="lt-row" style="justify-content:flex-end;gap:8px;margin-top:14px">
       <button class="btn" onclick="window.Lettere._saveNuovoCaso()">✓ Salva caso</button>
@@ -5023,6 +5025,8 @@ function renderCaseEditor(id){
    ═══════════════════════════════════════════════════════════════════════════ */
 window.Lettere = {
   loadLibrary,
+  // Funzioni riutilizzabili da altre sezioni (es. sezione Reparto): anonimizzazione + estrazione PDF/XLS
+  anonymizeText, extractPdfText, extractXlsRows, xlsToRawText,
   renderHome: renderLettereHome, renderWizard, renderLibreria, renderNuovoCaso,
   renderCarica, renderAnonimizza, renderGenera, renderVerifica, renderEsporta,
   renderCaso, renderPersonalizzazioni, renderConfig,
