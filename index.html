@@ -2955,7 +2955,18 @@ const gh = {
     if (!res.ok) throw new Error(`GET ${path}: ${res.status}`);
     const data = await res.json();
     if (data.type !== 'file') return data;
-    const content = data.content ? new TextDecoder().decode(base64ToBuffer(data.content.replace(/\n/g, ''))) : '';
+    let content = data.content ? new TextDecoder().decode(base64ToBuffer(data.content.replace(/\n/g, ''))) : '';
+    // Fallback per file > 1 MB: l'API Contents non restituisce il campo content
+    // (encoding 'none'), quindi recupero il contenuto via Blobs API (limite 100 MB).
+    if (!content && data.sha && data.encoding === 'none') {
+      const blobUrl = `${CONFIG.API_BASE}/repos/${CONFIG.REPO_OWNER}/${this._repo()}/git/blobs/${data.sha}`;
+      const blobRes = await fetch(blobUrl, { headers: this._headers(), cache: 'no-store' });
+      updateRateLimitFromHeaders(blobRes);
+      if (blobRes.ok) {
+        const blob = await blobRes.json();
+        if (blob.content) content = new TextDecoder().decode(base64ToBuffer(blob.content.replace(/\n/g, '')));
+      }
+    }
     const etag = res.headers.get('etag');
     if (etag) etagCache.set(path, { etag, sha: data.sha, content, type: 'file', lastChecked: nowIso() });
     return { content, sha: data.sha, path: data.path };
