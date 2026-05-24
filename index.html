@@ -440,8 +440,10 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 .nav-drill-overview{border-bottom:1px dashed var(--rule-soft);margin-bottom:6px;padding-bottom:8px;font-style:italic;color:var(--ink-soft)}
 
 /* Root-level sidebar rows (nuova UX drill-down) */
-.nav-tree-root-row{padding:14px 14px;font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink);border-radius:2px;justify-content:space-between;position:relative}
+.nav-tree-root-row{padding:16px 14px;font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink);border-radius:4px;justify-content:space-between;position:relative}
 .nav-tree-root-row:hover{background:var(--rule-soft)}
+/* Durante l'hover la linea divisoria sparisce così l'evidenziazione non mostra lo stacco */
+.nav-tree-node:has(> .nav-tree-root-row:hover) > .nav-tree-root-row::after{opacity:0}
 .nav-tree-root-row .nav-tree-label{font-weight:500;font-family:var(--serif)}
 .nav-tree-root-row .nav-tree-count{display:none}
 /* Linea sottile tra le categorie root: bordo inferiore con margin laterale.
@@ -623,7 +625,8 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .pin-star.pinned:hover{color:var(--ink-muted)}
 .pin-star.inline{font-size:16px;padding:0 4px;vertical-align:middle}
 .page-title .pin-star{font-size:22px;vertical-align:middle;margin-left:6px}
-.numeri-group-title .pin-star,.numero-label .pin-star{font-size:15px;vertical-align:middle}
+.numeri-group-title .pin-star{font-size:15px;vertical-align:middle}
+.numero-label .pin-star{font-size:15px;padding:0 2px;line-height:1.3;flex-shrink:0}
 
 /* Home sections for personal pins */
 .home-pins-group{margin-bottom:24px}
@@ -849,7 +852,8 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .numero-row{padding:9px 12px 9px 14px;border-bottom:1px solid var(--rule-soft);border-left:3px solid transparent}
 .numero-row:last-child{border-bottom:none}
 .numero-row-top{display:flex;gap:8px;align-items:flex-start}
-.numero-label{flex:1;min-width:0;font-family:var(--serif);font-size:14.5px;line-height:1.3;color:var(--ink);word-wrap:break-word;overflow-wrap:anywhere}
+.numero-label{flex:1;min-width:0;display:flex;align-items:flex-start;gap:2px;font-family:var(--serif);font-size:14.5px;line-height:1.3;color:var(--ink)}
+.numero-label-text{min-width:0;word-wrap:break-word;overflow-wrap:anywhere}
 .numero-num-primary{flex-shrink:0;font-family:var(--mono);font-size:13px;background:var(--bg-raised);border:1px solid var(--rule);padding:3px 9px;border-radius:3px;white-space:nowrap;color:var(--ink);margin-top:1px;font-weight:500;letter-spacing:.02em;cursor:pointer;transition:background .12s,color .12s}
 .numero-num-primary:hover{background:var(--ink);color:var(--bg-paper)}
 .numero-row-bottom{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
@@ -1226,6 +1230,7 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 [data-theme="dark"] .pinned-contatto-num-reparto{background:#101a26;color:#6ba4f5;border-color:#1e3a5f}
 [data-theme="dark"] .pinned-contatto-num-utile{background:#101a10;color:#8fc857;border-color:#1e3a1e}
 .drag-handle{cursor:grab;color:var(--ink-faint);font-size:14px;padding:2px 4px;user-select:none;letter-spacing:-2px}
+.drag-handle-spacer{width:0;padding:0;margin:0}
 .drag-handle:active{cursor:grabbing}
 .drag-handle:hover{color:var(--ink)}
 .sortable-ghost{opacity:.3;background:var(--accent-soft)}
@@ -2167,7 +2172,7 @@ const userPrefs = {
     try {
       const file = await gh.getFile(path);
       if (!file) {
-        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, _sha: null };
+        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], _sha: null };
         return;
       }
       const parsed = jsyaml.load(file.content) || {};
@@ -2187,6 +2192,7 @@ const userPrefs = {
         pin_order: (parsed.pin_order && typeof parsed.pin_order === 'object') ? parsed.pin_order : {},
         device_prefs: devicePrefs,
         calendar_filters: (parsed.calendar_filters && typeof parsed.calendar_filters === 'object') ? parsed.calendar_filters : {},
+        custom_sezioni: Array.isArray(parsed.custom_sezioni) ? parsed.custom_sezioni : [],
         _sha: file.sha
       };
       // Migrazione: i contatti pinnati nel vecchio sistema `pins` (type='contatto')
@@ -2211,7 +2217,7 @@ const userPrefs = {
       if (myPrefs.font_size) applyFontSize(myPrefs.font_size);
     } catch (e) {
       console.warn('[userPrefs] load failed:', e);
-      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, _sha: null };
+      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], _sha: null };
     }
   },
 
@@ -2235,6 +2241,7 @@ const userPrefs = {
       pin_order: state.userPrefs.pin_order || {},
       device_prefs: state.userPrefs.device_prefs || {},
       calendar_filters: state.userPrefs.calendar_filters || {},
+      custom_sezioni: state.userPrefs.custom_sezioni || [],
       ultima_modifica: nowIso(),
       modificato_da: state.session.username
     };
@@ -2341,6 +2348,41 @@ const userPrefs = {
     if (!state.userPrefs.pin_order) state.userPrefs.pin_order = {};
     state.userPrefs.pin_order[gid] = order;
     userPrefs.scheduleSave();
+  },
+
+  // --- Sezioni personalizzate dell'utente (es. "PS") ---
+  // Struttura: custom_sezioni = [{ id, nome, contatti: [contactId, ...] }]
+  getCustomSezioni() {
+    return (state.userPrefs && Array.isArray(state.userPrefs.custom_sezioni)) ? state.userPrefs.custom_sezioni : [];
+  },
+  addCustomSezione(nome) {
+    if (!state.userPrefs) return null;
+    if (!Array.isArray(state.userPrefs.custom_sezioni)) state.userPrefs.custom_sezioni = [];
+    const id = 'cs-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    const sez = { id, nome: nome.trim(), contatti: [] };
+    state.userPrefs.custom_sezioni.push(sez);
+    userPrefs.scheduleSave();
+    return sez;
+  },
+  renameCustomSezione(id, nome) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.custom_sezioni)) return;
+    const sez = state.userPrefs.custom_sezioni.find(s => s.id === id);
+    if (sez) { sez.nome = nome.trim(); userPrefs.scheduleSave(); }
+  },
+  deleteCustomSezione(id) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.custom_sezioni)) return;
+    state.userPrefs.custom_sezioni = state.userPrefs.custom_sezioni.filter(s => s.id !== id);
+    userPrefs.scheduleSave();
+  },
+  addContactToCustomSezione(sezId, contactId) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.custom_sezioni)) return;
+    const sez = state.userPrefs.custom_sezioni.find(s => s.id === sezId);
+    if (sez && !sez.contatti.includes(contactId)) { sez.contatti.push(contactId); userPrefs.scheduleSave(); }
+  },
+  removeContactFromCustomSezione(sezId, contactId) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.custom_sezioni)) return;
+    const sez = state.userPrefs.custom_sezioni.find(s => s.id === sezId);
+    if (sez) { sez.contatti = sez.contatti.filter(c => c !== contactId); userPrefs.scheduleSave(); }
   }
 };
 
@@ -7430,6 +7472,120 @@ function collapseGroup(groupId) {
   requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
 }
 
+// Rende le sezioni personalizzate dell'utente nella vista preferiti della rubrica.
+// Ogni sezione è un blocco con i suoi contatti; in edit-mode si possono creare,
+// rinominare, eliminare sezioni e aggiungere/rimuovere contatti.
+function renderCustomSezioniHtml() {
+  const sezioni = userPrefs.getCustomSezioni();
+  const editMode = navState.editMode;
+  const blocks = sezioni.map(sez => {
+    const contattiHtml = (sez.contatti || []).map(cid => {
+      const c = findContattoBySlug(cid);
+      if (!c) return '';
+      const cls = (typeof classifyContatto === 'function') ? classifyContatto(c) : { kind: '' };
+      const numCls = cls.kind === 'guardia' ? 'pinned-contatto-num-guardia'
+        : cls.kind === 'reparto' ? 'pinned-contatto-num-reparto'
+        : cls.kind === 'utile' ? 'pinned-contatto-num-utile' : '';
+      const nums = (c.numeri || []).join(' · ');
+      const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).join(' · ') : '';
+      const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).join(' · ') : '';
+      const extra = [c.breve ? `${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
+      const dispNum = [nums, extra].filter(Boolean).join(' · ');
+      return `<div class="pinned-contatto-row" data-cid="${escapeHtml(cid)}">
+        ${editMode ? `<button class="drag-handle" style="border:none;background:none;color:var(--danger);font-size:14px;cursor:pointer;" title="Rimuovi dalla sezione" onclick="event.stopPropagation();removeFromCustomSezione('${escapeJs(sez.id)}','${escapeJs(cid)}')">✕</button>` : '<span class="drag-handle-spacer"></span>'}
+        <span class="pinned-contatto-label" onclick="navigate('numeri', {filter:'${escapeJs(cid)}'})">
+          <span>${escapeHtml(c.etichetta)}</span>
+          <span class="pinned-contatto-num ${numCls}">${escapeHtml(dispNum || '—')}</span>
+        </span>
+        ${renderPinButton('contatto', cid)}
+      </div>`;
+    }).join('') || '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. In modalità modifica, usa il pulsante "⊕ Sposta in…" su un contatto.</div>';
+    return `<div class="pinned-uoc-block" data-cs-id="${escapeHtml(sez.id)}">
+      <div class="pinned-uoc-header">
+        <span class="pinned-uoc-name" style="cursor:default;">${escapeHtml(sez.nome)}</span>
+        ${editMode ? `<span style="margin-left:auto;display:inline-flex;gap:6px;">
+          <button class="btn-icon-mini" onclick="renameCustomSezionePrompt('${escapeJs(sez.id)}')" title="Rinomina sezione">✎</button>
+          <button class="btn-icon-mini" onclick="deleteCustomSezionePrompt('${escapeJs(sez.id)}')" title="Elimina sezione">🗑</button>
+        </span>` : ''}
+      </div>
+      <div class="pinned-uoc-contatti">${contattiHtml}</div>
+    </div>`;
+  }).join('');
+  const addSezBtn = editMode
+    ? `<div style="margin:8px 0 16px;"><button class="btn ghost" style="font-size:13px;" onclick="addCustomSezionePrompt()">+ Nuova sezione personalizzata</button></div>`
+    : (sezioni.length === 0 ? '' : '');
+  if (!sezioni.length && !editMode) return '';
+  return `<div class="custom-sezioni-wrap" style="margin-bottom:20px;">${blocks}${addSezBtn}</div>`;
+}
+
+// Handler globali per le sezioni personalizzate
+function addCustomSezionePrompt() {
+  const nome = prompt('Nome della nuova sezione personalizzata:\n(es. "PS", "Reperibili weekend")', '');
+  if (!nome || !nome.trim()) return;
+  userPrefs.addCustomSezione(nome);
+  renderNumeri('pinned');
+}
+function renameCustomSezionePrompt(id) {
+  const sez = userPrefs.getCustomSezioni().find(s => s.id === id);
+  if (!sez) return;
+  const nome = prompt('Rinomina sezione:', sez.nome);
+  if (!nome || !nome.trim()) return;
+  userPrefs.renameCustomSezione(id, nome);
+  renderNumeri('pinned');
+}
+function deleteCustomSezionePrompt(id) {
+  const sez = userPrefs.getCustomSezioni().find(s => s.id === id);
+  if (!sez) return;
+  if (!confirm(`Eliminare la sezione "${sez.nome}"? (i contatti restano in rubrica)`)) return;
+  userPrefs.deleteCustomSezione(id);
+  renderNumeri('pinned');
+}
+function removeFromCustomSezione(sezId, cid) {
+  userPrefs.removeContactFromCustomSezione(sezId, cid);
+  renderNumeri('pinned');
+}
+// Apre un dialog per spostare un contatto in una sezione personalizzata.
+// Il contatto, una volta in una sezione, non compare più sotto la sua UOC nei preferiti.
+function moveContactToCustomSezione(cid) {
+  const c = findContattoBySlug(cid);
+  if (!c) return;
+  const sezioni = userPrefs.getCustomSezioni();
+  const currentSez = sezioni.find(s => (s.contatti || []).includes(cid));
+  const options = sezioni.map(s => {
+    const isHere = s.id === (currentSez && currentSez.id);
+    return `<button class="btn ${isHere ? '' : 'ghost'}" style="width:100%;text-align:left;margin-bottom:6px;${isHere ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
+      onclick="confirmMoveContact('${escapeJs(cid)}','${escapeJs(s.id)}')">${escapeHtml(s.nome)}${isHere ? ' ✓' : ''}</button>`;
+  }).join('');
+  showModal({
+    title: 'Sposta in sezione',
+    subtitle: escapeHtml(c.etichetta),
+    body: `
+      ${sezioni.length ? `<div style="margin-bottom:10px;font-size:13px;color:var(--ink-muted);">Scegli la sezione personalizzata di destinazione:</div>${options}` : '<div style="font-size:13px;color:var(--ink-muted);margin-bottom:10px;">Non hai ancora sezioni personalizzate.</div>'}
+      ${currentSez ? `<button class="btn ghost" style="width:100%;text-align:left;margin-bottom:6px;color:var(--danger);" onclick="confirmMoveContact('${escapeJs(cid)}','')">↩ Rimuovi da "${escapeHtml(currentSez.nome)}" (torna sotto la UOC)</button>` : ''}
+      <div style="border-top:1px solid var(--rule-soft);margin-top:8px;padding-top:10px;">
+        <button class="btn" style="width:100%;" onclick="createSezioneAndMove('${escapeJs(cid)}')">+ Nuova sezione…</button>
+      </div>`,
+    actions: [{ label: 'Chiudi', variant: 'ghost', onClick: closeModal }]
+  });
+}
+function confirmMoveContact(cid, sezId) {
+  const sezioni = userPrefs.getCustomSezioni();
+  // Rimuovo il contatto da qualsiasi sezione in cui si trovi (un contatto sta in una sola sezione)
+  sezioni.forEach(s => {
+    if ((s.contatti || []).includes(cid)) userPrefs.removeContactFromCustomSezione(s.id, cid);
+  });
+  // Lo aggiungo alla destinazione (se sezId vuoto = solo rimozione)
+  if (sezId) userPrefs.addContactToCustomSezione(sezId, cid);
+  closeModal();
+  renderNumeri('pinned');
+}
+function createSezioneAndMove(cid) {
+  const nome = prompt('Nome della nuova sezione personalizzata:\n(es. "PS", "Reperibili weekend")', '');
+  if (!nome || !nome.trim()) return;
+  const sez = userPrefs.addCustomSezione(nome);
+  if (sez) confirmMoveContact(cid, sez.id);
+}
+
 function renderNumeri(filter, targetContainer) {
   // targetContainer: opzionale. Container DOM su cui scrivere. Se omesso, scrive su $('main-content').
   // Usato da _doRubricaSearch per re-render incrementale in un container offscreen.
@@ -7446,15 +7602,15 @@ function renderNumeri(filter, targetContainer) {
   const showExt = state.showExtendedNumeri || { osa: false, iov: false };
   const ext = state.numeriExtendedAvailable || {};
 
-  // Primo accesso alla rubrica senza filter/query: preattiva il filtro "preferiti"
-  // (se l'utente ha almeno un gruppo/contatto pinnato). Usa un flag separato.
-  if (state.rubricaFirstAccessDone === undefined && !filter && !state.rubricaSearch) {
-    state.rubricaFirstAccessDone = true;
+  // Apertura della rubrica senza filtro/ricerca: mostra i numeri preferiti
+  // (UOC pinnate + contatti in home_numeri) invece di tutti i numeri, se ce ne sono.
+  if (!filter && !state.rubricaSearch) {
     const hasAnyPin = allGroups.some(g =>
       isPinned('gruppo', g.id) ||
       (g.contatti || []).some(c => isPinned('contatto', c.id))
     );
-    if (hasAnyPin) {
+    const hasCustomSezioni = userPrefs.getCustomSezioni().length > 0;
+    if (hasAnyPin || hasCustomSezioni) {
       // Redirect al filtro preferiti
       navigate('numeri', { filter: 'pinned' });
       return;
@@ -7464,13 +7620,22 @@ function renderNumeri(filter, targetContainer) {
   let filteredGruppi = allGroups;
   let filterLabel = null;
   let activeSource = 'aopd'; // quale fonte stiamo guardando: aopd (default), osa, iov
-  if (filter === 'pinned') {
+  if (filter === 'all') {
+    // "Tutti": mostra tutti i gruppi (nessun filtro), senza redirect ai preferiti.
+    filteredGruppi = allGroups;
+  } else if (filter === 'pinned') {
+    // Contatti già assegnati a una sezione personalizzata: non vanno mostrati anche sotto la UOC.
+    const inCustomSez = new Set();
+    userPrefs.getCustomSezioni().forEach(s => (s.contatti || []).forEach(cid => inCustomSez.add(cid)));
     // Solo UOC e contatti preferiti (★)
     filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd').map(g => {
       const gPinned = isPinned('gruppo', g.id);
-      const cPinnati = (g.contatti || []).filter(c => isPinned('contatto', c.id));
-      // Se il gruppo è pinnato, mostro tutti i suoi contatti; altrimenti solo quelli pinnati
-      if (gPinned) return g;
+      const cPinnati = (g.contatti || []).filter(c => isPinned('contatto', c.id) && !inCustomSez.has(c.id));
+      // Se il gruppo è pinnato, mostro tutti i suoi contatti (tranne quelli spostati in sezioni custom)
+      if (gPinned) {
+        const visibili = (g.contatti || []).filter(c => !inCustomSez.has(c.id));
+        return { ...g, contatti: visibili };
+      }
       if (cPinnati.length) return { ...g, contatti: cPinnati };
       return null;
     }).filter(Boolean);
@@ -7711,7 +7876,7 @@ function renderNumeri(filter, targetContainer) {
       <h1 class="page-title">Rubrica</h1>
       <div class="numeri-filters" style="margin-top:20px;">
         <button class="filter-chip ${filter === 'pinned' ? 'active' : ''}" onclick="navigate('numeri', {filter:'pinned'})" title="Solo numeri e UOC preferiti">★</button>
-        <button class="filter-chip ${!filter ? 'active' : ''}" onclick="navigate('numeri')">Tutti</button>
+        <button class="filter-chip ${(filter === 'all' || !filter) ? 'active' : ''}" onclick="navigate('numeri', {filter:'all'})">Tutti</button>
         <button class="filter-chip ${filter === 'guardia' ? 'active' : ''}" onclick="navigate('numeri', {filter:'guardia'})">MdG</button>
       </div>
       ${toggleHtml}
@@ -7752,7 +7917,9 @@ function renderNumeri(filter, targetContainer) {
       </div>
     ` : ''}
 
-    ${filteredGruppi.length === 0 ? `<p style="color:var(--ink-muted);">${rubricaQuery ? `Nessun risultato per "${escapeHtml(rubricaQuery)}".` : 'Nessun contatto corrisponde al filtro.'}</p>` : ''}
+    ${(filter === 'pinned' && !rubricaQuery) ? renderCustomSezioniHtml() : ''}
+
+    ${(filteredGruppi.length === 0 && !(filter === 'pinned' && userPrefs.getCustomSezioni().length)) ? `<p style="color:var(--ink-muted);">${rubricaQuery ? `Nessun risultato per "${escapeHtml(rubricaQuery)}".` : 'Nessun contatto corrisponde al filtro.'}</p>` : ''}
 
     <div class="edit-only" style="margin: 16px 0;">
       <button class="btn ghost" onclick="nuovoGruppoNumeri()" style="font-size:13px;">+ Nuovo gruppo di numeri</button>
@@ -7762,6 +7929,12 @@ function renderNumeri(filter, targetContainer) {
       const list = bySource[src] || [];
       if (!list.length) return '';
       const showHeader = false;
+      // Vista MdG: contatti come quelli normali, raggruppati in box "UOC · Sezione"
+      if (filter === 'guardia') {
+        const items = [];
+        list.forEach(g => (g.contatti || []).forEach(c => items.push({ c, g })));
+        return renderContattiGroupedBox(items);
+      }
       // Filtro "preferiti" (chip ★): uso rendering minimale stile "pinned section"
       if (filter === 'pinned' && src === 'aopd') {
         return renderPinnedContattiSection(list);
@@ -7910,13 +8083,12 @@ function renderNumeri(filter, targetContainer) {
               // Se c'è una sola bucket senza sede (UOC senza sedi strutturate), render flat senza header
               if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
                 const suppressCtxFlat = !!state._isInsideSpecificUoc;
-                return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify, { gruppo: g, suppressContext: suppressCtxFlat })).join('');
+                const canReorderFlat = filter !== 'pinned' && filter !== 'guardia';
+                return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify, { gruppo: g, suppressContext: suppressCtxFlat, reorderable: canReorderFlat })).join('');
               }
               // Logica inversa: espansi di default quando si apre la UOC in overview.
               // Quando si fa una ricerca (rubricaQuery) o filtro guardia: collassati,
               // mostrando solo gli header sede come shortcut di navigazione.
-              const isSearchingGlobal = !!rubricaQuery;
-              const isGuardiaFilter2 = filter === 'guardia';
               // isUocOverview: vista di una UOC singola, no ricerca attiva.
               // Vale sia quando filter è un gruppoId, sia quando filter è un contattoId
               // (ora apriamo la UOC overview espandendo solo la sezione del contatto).
@@ -7927,10 +8099,10 @@ function renderNumeri(filter, targetContainer) {
               // Modalità:
               //   - overview UOC singola (gruppoId o contattoId) → "default chiuso",
               //     ma state.expandedSedi può aprire sezioni specifiche
-              //   - filtro guardia → "default chiuso", toggle apre singoli bucket
+              //   - filtro guardia (MdG) → "default aperto" (l'utente vuole vedere subito i numeri)
               //   - rubrica generale (no filter, no ricerca) → "default aperto"
               //   - ricerca → "default aperto" (l'utente vuole vedere i match)
-              const defaultOpen = !isGuardiaFilter2 && !isUocOverview;
+              const defaultOpen = !isUocOverview;
               if (!state.expandedSedi) state.expandedSedi = {};
               if (!state.collapsedSedi) state.collapsedSedi = {};
               const expanded = state.expandedSedi[g.id] || new Set();
@@ -8011,7 +8183,7 @@ function renderNumeri(filter, targetContainer) {
                           hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
                         }
                       }
-                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide });
+                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, reorderable: (filter !== 'pinned' && filter !== 'guardia') });
                     };
                     // Se il bucket ha sottosezioni: renderizzo ogni subBucket come sezione nidificata
                     if (b.subBuckets && b.subBuckets.length) {
@@ -8120,7 +8292,7 @@ function renderHomeNumeriSection() {
 
   const searchBox = editMode ? `
     <div style="margin-bottom:12px;">
-      <input type="text" id="home-numeri-search" placeholder="Cerca tra i preferiti della rubrica…"
+      <input type="text" id="home-numeri-search" placeholder="Cerca un contatto da fissare (tutti i numeri)…"
         oninput="renderHomeNumeriSearchResults(this.value)"
         style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
       <div id="home-numeri-search-results" style="margin-top:6px;"></div>
@@ -8128,35 +8300,69 @@ function renderHomeNumeriSection() {
 
   if (editMode) setTimeout(() => renderHomeNumeriSearchResults(''), 0);
 
-  const itemsHtml = items.map(({ c, g }) => {
-    const nums = (c.numeri || []).join(' · ');
-    const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).join(' · ') : '';
-    const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).join(' · ') : '';
-    const extra = [c.breve ? `${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
-    const dispNum = [nums, extra].filter(Boolean).join(' · ');
-    return `<div class="home-numero-row" data-cid="${escapeHtml(c.id)}">
-      ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
-      <div class="home-numero-text" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
-        <div class="home-numero-label">${escapeHtml(c.etichetta)}</div>
-        <div class="home-numero-uoc">${escapeHtml(stripPrefixNome(g.nome))}</div>
-      </div>
-      <div class="home-numero-num">${escapeHtml(dispNum || '—')}</div>
-      ${editMode ? `<button class="btn-icon-mini" onclick="removeHomeNumero('${escapeJs(c.id)}')" title="Rimuovi">✕</button>` : ''}
-    </div>`;
-  }).join('');
+  let listHtml;
+  if (editMode) {
+    // In modifica: lista piatta riordinabile (drag&drop) + rimozione
+    listHtml = `<div id="home-numeri-list">${items.map(({ c, g }) => {
+      const nums = (c.numeri || []).join(' · ');
+      const persPart = c.cellulare_personale ? (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).join(' · ') : '';
+      const cellPart = c.cellulare_aziendale ? (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).join(' · ') : '';
+      const extra = [c.breve ? `${c.breve}` : '', persPart, cellPart].filter(Boolean).join(' · ');
+      const dispNum = [nums, extra].filter(Boolean).join(' · ');
+      return `<div class="home-numero-row" data-cid="${escapeHtml(c.id)}">
+        <span class="drag-handle" title="Trascina">⋮⋮</span>
+        <div class="home-numero-text">
+          <div class="home-numero-label">${escapeHtml(c.etichetta)}</div>
+          <div class="home-numero-uoc">${escapeHtml(stripPrefixNome(g.nome))}${c.sezione ? ' · ' + escapeHtml(c.sezione) : ''}</div>
+        </div>
+        <div class="home-numero-num">${escapeHtml(dispNum || '—')}</div>
+        <button class="btn-icon-mini" onclick="removeHomeNumero('${escapeJs(c.id)}')" title="Rimuovi">✕</button>
+      </div>`;
+    }).join('')}</div>`;
+    setTimeout(() => initHomeNumeriSortable(), 0);
+  } else {
+    // Vista normale: contatti come quelli della rubrica, raggruppati in box "UOC · Sezione"
+    listHtml = renderContattiGroupedBox(items);
+  }
 
   const empty = !items.length && !editMode
     ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Clicca <em>Modifica</em> per aggiungerli.</div>`
     : '';
 
-  setTimeout(() => initHomeNumeriSortable(), 0);
-
   return `<div class="home-section home-pins-group">
     <div class="home-section-title"><span>Contatti fissati</span></div>
     ${searchBox}
-    <div id="home-numeri-list">${itemsHtml}</div>
+    ${listHtml}
     ${empty}
   </div>`;
+}
+
+// Raggruppa una lista di {c, g} per UOC+sezione e li rende come righe rubrica standard
+// dentro box con titolo "UOC semplificato · Sezione". Usato da home e vista MdG.
+function renderContattiGroupedBox(items) {
+  if (!items.length) return '';
+  // Raggruppo per chiave UOC + sezione, preservando l'ordine d'inserimento
+  const groups = [];
+  const byKey = {};
+  items.forEach(({ c, g }) => {
+    const sez = (c.sezione || '').trim();
+    const key = g.id + '||' + sez;
+    if (!byKey[key]) {
+      byKey[key] = { gNome: stripPrefixNome(g.nome), sezione: sez, gId: g.id, contatti: [] };
+      groups.push(byKey[key]);
+    }
+    byKey[key].contatti.push({ c, g });
+  });
+  return groups.map(grp => {
+    const title = grp.sezione ? `${escapeHtml(grp.gNome)} · ${escapeHtml(grp.sezione)}` : escapeHtml(grp.gNome);
+    const rows = grp.contatti.map(({ c, g }) =>
+      renderNumeroRow(c, g.id, c._classify, { gruppo: g, hideLuogo: true })
+    ).join('');
+    return `<div class="numeri-group" style="margin-bottom:16px;">
+      <h2 class="numeri-group-title" style="cursor:pointer;" onclick="navigate('numeri', {filter:'${escapeJs(grp.gId)}'})">${title}</h2>
+      ${rows}
+    </div>`;
+  }).join('');
 }
 
 function initHomeNumeriSortable() {
@@ -8178,40 +8384,36 @@ function renderHomeNumeriSearchResults(query) {
   const box = document.getElementById('home-numeri-search-results');
   if (!box) return;
   const q = (query || '').trim().toLowerCase();
-  // Raccolgo solo contatti pinnati nella rubrica
-  const pinnedContatti = [];
-  (state.index.numeri || []).forEach(g => {
+  const already = new Set((state.userPrefs && state.userPrefs.home_numeri) || []);
+  // Senza query non mostro nulla: la lista completa sarebbe troppo lunga.
+  // L'utente digita per cercare tra TUTTI i contatti della rubrica.
+  if (!q) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px;font-style:italic;">Digita per cercare un contatto da fissare (cerca tra tutti i numeri della rubrica).</div>';
+    return;
+  }
+  // Cerco tra TUTTI i contatti della rubrica (non solo i preferiti)
+  const matches = [];
+  getVisibleNumeriGroups().forEach(g => {
     (g.contatti || []).forEach(c => {
-      if (c.id && isPinned('contatto', c.id)) {
-        pinnedContatti.push({ c, g });
-      }
+      if (!c.id) return;
+      const cellFlat = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(' ') : (c.cellulare_personale || '');
+      const cellPubFlat = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
+      const hay = [c.etichetta, g.nome, (c.alias || []).join(' '), (c.tag || []).join(' '), c.sezione, (c.numeri || []).join(' '), cellFlat, cellPubFlat, c.breve]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (hay.includes(q)) matches.push({ c, g });
     });
   });
-  if (!pinnedContatti.length) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px;font-style:italic;">Nessun numero preferito nella rubrica. Vai in <em>Rubrica</em> e clicca ☆ accanto ai numeri che vuoi rendere disponibili qui.</div>';
+  if (!matches.length) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:6px;">Nessun contatto trovato.</div>';
     return;
   }
-  // Filtro per substring match su etichetta, gruppo, numeri (se query non vuota)
-  const filtered = q
-    ? pinnedContatti.filter(({ c, g }) => {
-        const cellFlat = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(' ') : (c.cellulare_personale || '');
-        const cellPubFlat = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
-        const hay = (c.etichetta + ' ' + g.nome + ' ' + (c.numeri || []).join(' ') + ' ' + cellFlat + ' ' + cellPubFlat + ' ' + (c.breve || '')).toLowerCase();
-        return hay.includes(q);
-      })
-    : pinnedContatti.slice(0, 12); // mostra primi 12 senza filtro
-  const already = new Set((state.userPrefs && state.userPrefs.home_numeri) || []);
-  if (!filtered.length) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:6px;">Nessun risultato tra i preferiti</div>';
-    return;
-  }
-  box.innerHTML = filtered.slice(0, 12).map(({ c, g }) => {
+  box.innerHTML = matches.slice(0, 15).map(({ c, g }) => {
     const isIn = already.has(c.id);
     const numStr = (c.numeri || []).join(' · ');
     return `<div class="home-numeri-search-item">
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;color:var(--ink);">${escapeHtml(c.etichetta)}</div>
-        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(g.nome))}${numStr ? ' · ' + escapeHtml(numStr) : ''}</div>
+        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(g.nome))}${c.sezione ? ' · ' + escapeHtml(c.sezione) : ''}${numStr ? ' · ' + escapeHtml(numStr) : ''}</div>
       </div>
       <button class="btn-icon-mini" onclick="addHomeNumero('${escapeJs(c.id)}')" ${isIn ? 'disabled title="Già in home"' : 'title="Aggiungi"'}>${isIn ? '✓' : '+'}</button>
     </div>`;
@@ -8289,7 +8491,7 @@ function renderPinnedContattiSection(allGroups) {
         : cls.kind === 'utile' ? 'pinned-contatto-num-utile'
         : '';
       return `<div class="pinned-contatto-row" data-cid="${escapeHtml(c.id)}">
-        ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : ''}
+        ${editMode ? '<span class="drag-handle" title="Trascina">⋮⋮</span>' : '<span class="drag-handle-spacer"></span>'}
         <span class="pinned-contatto-label" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
           <span>${escapeHtml(c.etichetta)}</span>
           <span class="pinned-contatto-num ${numCls}">${escapeHtml(dispNum || '—')}</span>
@@ -8692,7 +8894,59 @@ async function moveSezione(gid, sezNome, direction) {
     await buildIndex();
     if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
     if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
-    if (state.currentView === 'numeri') navigate('numeri', state.currentParams || {});
+    if (state.currentView === 'numeri') {
+      // Re-render preservando la posizione di scroll (evita il salto in cima a ogni spostamento)
+      const savedScroll = window.scrollY;
+      renderNumeri((state.currentParams || {}).filter);
+      requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+    }
+  } catch (e) {
+    toast('Errore: ' + e.message, 'error');
+  }
+}
+
+// Sposta un contatto su/giù DENTRO la sua UOC.
+// Lo spostamento avviene rispetto all'ordine VISIBILE (quello prodotto da
+// sortContattiForDisplay): trovo il contatto adiacente nella vista e scambio le
+// loro posizioni nell'array YAML grezzo. Nota: l'ordinamento per categoria
+// (guardia/reparto/utili) ha la precedenza, quindi lo spostamento manuale opera
+// dentro la stessa categoria; non si può scavalcare una categoria diversa.
+async function moveContatto(gid, cid, direction) {
+  if (!state.session || !state.session.username) {
+    return toast('Login richiesto per modificare', 'warning');
+  }
+  const src = findNumeriSource({ groupId: gid }) || 'aopd';
+  const data = { ...getNumeriDataForSource(src) };
+  const gruppi = data.gruppi || [];
+  const gIdx = gruppi.findIndex(g => g.id === gid);
+  if (gIdx < 0) return toast('Gruppo non trovato', 'error');
+  const g = gruppi[gIdx];
+  const contattiRaw = [...(g.contatti || [])];
+  // Ordine visibile (stesso usato in fase di rendering)
+  const visibili = sortContattiForDisplay(contattiRaw);
+  const visIdx = visibili.findIndex(c => c.id === cid);
+  if (visIdx < 0) return toast('Contatto non trovato', 'error');
+  const targetVisIdx = visIdx + direction;
+  if (targetVisIdx < 0 || targetVisIdx >= visibili.length) return; // bordi
+  // Il contatto con cui scambiare la posizione (adiacente nella vista)
+  const neighborId = visibili[targetVisIdx].id;
+  // Trovo i due contatti nell'array grezzo e ne scambio le posizioni
+  const rawIdxA = contattiRaw.findIndex(c => c.id === cid);
+  const rawIdxB = contattiRaw.findIndex(c => c.id === neighborId);
+  if (rawIdxA < 0 || rawIdxB < 0) return toast('Contatto non trovato', 'error');
+  [contattiRaw[rawIdxA], contattiRaw[rawIdxB]] = [contattiRaw[rawIdxB], contattiRaw[rawIdxA]];
+  const newGruppi = gruppi.map((gg, i) => i === gIdx ? { ...gg, contatti: contattiRaw } : gg);
+  try {
+    await saveNumeriForSource(src, { ...data, gruppi: newGruppi },
+      `riordina contatti in ${g.nome}: sposta ${cid} ${direction < 0 ? 'su' : 'giù'}`);
+    await buildIndex();
+    if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
+    if (state.showExtendedNumeri?.iov) await loadExtendedNumeri('iov');
+    if (state.currentView === 'numeri') {
+      const savedScroll = window.scrollY;
+      renderNumeri((state.currentParams || {}).filter);
+      requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+    }
   } catch (e) {
     toast('Errore: ' + e.message, 'error');
   }
@@ -8791,7 +9045,13 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const orari = c.orari ? ` · ore ${escapeHtml(c.orari)}` : '';
   const note = c.note ? `<div class="numero-note" style="font-size:11px;color:var(--ink-muted);margin-top:3px;font-style:italic;">${escapeHtml(c.note)}</div>` : '';
   const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
+  const canReorder = opts && opts.reorderable && gruppoId;
+  const reorderBtns = canReorder ? `
+    <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',-1)" title="Sposta su">↑</button>
+    <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',1)" title="Sposta giù">↓</button>` : '';
   const editControls = c.id ? ` <span class="edit-only" style="display:inline-flex;gap:4px;margin-left:4px;">
+    ${reorderBtns}
+    <button class="btn-icon-mini" onclick="event.stopPropagation();moveContactToCustomSezione('${escapeJs(c.id)}')" title="Sposta in una sezione personalizzata">⊕</button>
     <button class="btn-icon-mini" onclick="event.stopPropagation();editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
     <button class="btn-icon-mini" onclick="event.stopPropagation();deleteContatto('${escapeJs(c.id)}')" title="Elimina">🗑</button>
   </span>` : '';
@@ -8827,7 +9087,7 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   return `
     <div class="${rowClass}" ${dataContattoAttr} ${rowClickHandler}>
       <div class="numero-row-top">
-        <div class="numero-label">${escapeHtml(c.etichetta)}${c.id ? ' ' + renderPinButton('contatto', c.id) : ''}${editControls}</div>
+        <div class="numero-label"><span class="numero-label-text">${escapeHtml(c.etichetta)}</span>${c.id ? renderPinButton('contatto', c.id) : ''}${editControls}</div>
         ${primaryHtml}
       </div>
       ${bottomHtml}
@@ -12846,6 +13106,7 @@ function renderUtentiCards(filtered, countAll, q) {
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
             <button class="btn small ghost" onclick="cambiaPassphrase('${escapeJs(uname)}')">Cambia passphrase</button>
+            ${uname === state.session.username ? '' : `<button class="btn small ghost" onclick="cambiaStatoAdmin('${escapeJs(uname)}')">${isAdminUser ? 'Rimuovi admin' : 'Rendi admin'}</button>`}
             ${uname === state.session.username ? '' : `<button class="btn small ghost danger" onclick="rimuoviUtente('${escapeJs(uname)}')">Rimuovi</button>`}
           </div>
         </div>`;
@@ -13014,6 +13275,72 @@ function cambiaPassphrase(username) {
           renderGestioneUtenti();
         } catch (e) {
           showCpError('Errore: ' + e.message);
+        }
+      }}
+    ]
+  });
+}
+
+// Promuove ad admin o declassa un utente, chiedendo la sua passphrase per
+// ricifrare il payload con/senza il token_auth. Richiede che l'admin corrente
+// abbia un token_auth da condividere (per la promozione).
+function cambiaStatoAdmin(username) {
+  const entry = (state.tokensFile && state.tokensFile.utenti && state.tokensFile.utenti[username])
+    || (gestioneUtentiState._data && gestioneUtentiState._data.utenti && gestioneUtentiState._data.utenti[username]);
+  const giaAdmin = !!(entry && entry.is_admin);
+  const azione = giaAdmin ? 'Rimuovi admin' : 'Rendi admin';
+  if (username === state.session.username) {
+    return toast('Non puoi cambiare il tuo stato admin.', 'error');
+  }
+  if (!giaAdmin && !state.session.tokenAuth) {
+    return toast('Non hai un token admin da assegnare.', 'error');
+  }
+  showModal({
+    title: `${azione}: ${escapeHtml(username)}`,
+    subtitle: giaAdmin
+      ? 'L\'utente perderà i poteri di amministratore. Serve la sua passphrase per ricifrare i token.'
+      : 'L\'utente otterrà i poteri di amministratore. Serve la sua passphrase per ricifrare i token, e gli verrà assegnato il token admin della tua sessione.',
+    body: `
+      <div class="field" style="margin-bottom:12px;">
+        <label style="display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);margin-bottom:6px;">Passphrase di ${escapeHtml(username)} *</label>
+        <input type="password" id="ca-pass" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:2px;font-size:15px;">
+      </div>
+      <div id="ca-error" style="color:var(--err);font-size:13px;display:none;margin-top:8px;padding:8px 12px;background:#fdecec;border-left:3px solid var(--err);"></div>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: azione, onClick: async () => {
+        const pass = $('ca-pass').value;
+        function showCaError(m) { const err = $('ca-error'); err.textContent = m; err.style.display = 'block'; }
+        if (!pass) return showCaError('Passphrase obbligatoria.');
+        try {
+          const { data, sha } = await gh_auth.getTokensFile();
+          const ent = data.utenti[username];
+          if (!ent) return showCaError('Utente non trovato.');
+          let payload;
+          try {
+            payload = await decryptPayload(ent, pass);
+          } catch {
+            return showCaError('Passphrase errata.');
+          }
+          if (giaAdmin) {
+            // Declassa: rimuove il token admin dal payload
+            delete payload.token_auth;
+          } else {
+            // Promuove: assegna il token admin della sessione corrente
+            if (!state.session.tokenAuth) return showCaError('Non hai un token admin da assegnare.');
+            payload.token_auth = state.session.tokenAuth;
+          }
+          // Ricifra preservando i campi in chiaro, aggiornando is_admin
+          const newEntry = await encryptPayload(payload, pass);
+          newEntry.is_admin = !giaAdmin;
+          if (ent.ruolo) newEntry.ruolo = ent.ruolo;
+          data.utenti[username] = newEntry;
+          await gh_auth.putTokensFile(data, sha, `${giaAdmin ? 'Rimuovi' : 'Assegna'} admin a ${username} (by ${state.session.username})`);
+          closeModal();
+          toast(`${username} ${giaAdmin ? 'non è più admin' : 'è ora admin'}`, 'success');
+          renderGestioneUtenti();
+        } catch (e) {
+          showCaError('Errore: ' + e.message);
         }
       }}
     ]
@@ -14666,6 +14993,10 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         <label>Etichetta <span style="color:var(--danger);">*</span></label>
         <input type="text" id="ce-etichetta" value="${escapeHtml(c.etichetta || '')}" placeholder="es. Medico di Guardia" required>
       </div>
+      <div class="field">
+        <label>Alias <span style="font-weight:normal;color:var(--ink-muted);">(nomi alternativi per la ricerca, separati da virgola)</span></label>
+        <input type="text" id="ce-alias" value="${escapeHtml((c.alias || []).join(', '))}" placeholder="es. centralino, portineria">
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="field">
           <label>Numeri interni</label>
@@ -14795,10 +15126,6 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
       <div class="field">
         <label>Note</label>
         <textarea id="ce-note" rows="2" style="width:100%;resize:vertical;font-family:var(--sans);font-size:13px;padding:8px;">${escapeHtml(c.note || '')}</textarea>
-      </div>
-      <div class="field">
-        <label>Alias <span style="font-weight:normal;color:var(--ink-muted);">(nomi alternativi per la ricerca, separati da virgola)</span></label>
-        <input type="text" id="ce-alias" value="${escapeHtml((c.alias || []).join(', '))}" placeholder="es. centralino, portineria">
       </div>
     </form>`;
   showModal({
