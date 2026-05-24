@@ -2153,7 +2153,6 @@ function collectAllContattiSuggestions() {
 //   {type:'procedura', slug}
 //   {type:'clinica', slug}
 //   {type:'modulo', slug}
-//   {type:'capitolo', id}
 //   {type:'sottocategoria', cat, sub}     // procedure subcategory
 //   {type:'clinica-sub', sub}             // clinica subcategory
 //   {type:'categoria', cat}               // procedure macro category
@@ -2269,7 +2268,6 @@ const userPrefs = {
       case 'clinica':
       case 'modulo':
         return a.slug === b.slug;
-      case 'capitolo':
       case 'contatto':
       case 'gruppo':
         return a.id === b.id;
@@ -2371,7 +2369,6 @@ function togglePin(type, ...args) {
     case 'clinica':
     case 'modulo':
       pin = { type, slug: args[0] }; break;
-    case 'capitolo':
     case 'gruppo':
       pin = { type, id: args[0] }; break;
     case 'sottocategoria':
@@ -2451,7 +2448,7 @@ function isPinned(type, id) {
   if (!userPrefs) return false;
   // I contatti usano il sistema home_numeri dedicato
   if (type === 'contatto') return userPrefs.hasHomeNumero(id);
-  const pin = (type === 'gruppo' || type === 'capitolo')
+  const pin = (type === 'gruppo')
     ? { type, id }
     : { type, slug: id };
   return userPrefs.has(pin);
@@ -2461,7 +2458,7 @@ function pinKey(pin) {
   switch (pin.type) {
     case 'procedura': case 'clinica': case 'modulo':
       return `${pin.type}:${pin.slug}`;
-    case 'capitolo': case 'contatto': case 'gruppo':
+    case 'contatto': case 'gruppo':
       return `${pin.type}:${pin.id}`;
     case 'sottocategoria': return `sottocategoria:${pin.cat}:${pin.sub}`;
     case 'clinica-sub': return `clinica-sub:${pin.sub}`;
@@ -2481,7 +2478,7 @@ function renderPinButton(type, ...args) {
   switch (type) {
     case 'procedura': case 'clinica': case 'modulo':
       pin = { type, slug: args[0] }; break;
-    case 'capitolo': case 'gruppo':
+    case 'gruppo':
       pin = { type, id: args[0] }; break;
     case 'sottocategoria':
       pin = { type, cat: args[0], sub: args[1] }; break;
@@ -3421,12 +3418,8 @@ async function buildIndex() {
   index.numeriExtended = { osa: null, iov: null };
 
   // Capitoli.yml
-  if (capitoliFile) {
-    try {
-      const parsed = jsyaml.load(capitoliFile.content) || {};
-      index.capitoli = (parsed.capitoli || []).sort((a, b) => (a.ordine || 99) - (b.ordine || 99));
-    } catch (e) { console.warn('capitoli parse error', e); }
-  }
+  // capitoli.yml non è più usato (sezione Manuale rimossa); index.capitoli resta vuoto.
+
 
   // Calendar.yml (eventi condivisi)
   index.calendar = { eventi: [], _sha: null, _path: 'content/calendar.yml' };
@@ -4133,8 +4126,7 @@ const urlRouter = (function() {
     const p = params || {};
     switch (route) {
       case 'home':            return ['home'];
-      case 'manuale':         return ['manuale'];
-      case 'capitolo':        return ['capitolo', p.id];
+      case 'reparto':         return ['reparto'];
       case 'procedure':       return ['procedure'];
       case 'procedure-cat':   return ['procedure', p.cat, p.sub].filter(Boolean);
       case 'procedura':       return ['procedura', p.slug];
@@ -4192,8 +4184,7 @@ const urlRouter = (function() {
     const third = segments[2];
     switch (head) {
       case 'home': return { route: 'home', params: {}, blockHash };
-      case 'manuale': return { route: 'manuale', params: {}, blockHash };
-      case 'capitolo': return { route: 'capitolo', params: { id: second }, blockHash };
+      case 'reparto': return { route: 'reparto', params: {}, blockHash };
       case 'procedure':
         if (!second) return { route: 'procedure', params: {}, blockHash };
         return { route: 'procedure-cat', params: { cat: second, sub: third }, blockHash };
@@ -4360,8 +4351,7 @@ function navigate(route, params = {}) {
 
   switch (route) {
     case 'home': renderHome(); break;
-    case 'manuale': renderManuale(); break;
-    case 'capitolo': renderCapitolo(params.id); break;
+    case 'reparto': renderReparto(); break;
     case 'procedure': renderProcedureList(); break;
     case 'procedure-cat': renderProcedureByCategoria(params.cat, params.sub); break;
     case 'clinica': renderClinicaList(params.sub); break;
@@ -4429,12 +4419,12 @@ function renderHome() {
   const pins = (state.userPrefs && state.userPrefs.pins) || [];
   const pinsByType = {
     schede: [],      // procedura, clinica, modulo
-    cartelle: [],    // categoria, sottocategoria, clinica-sub, capitolo
+    cartelle: [],    // categoria, sottocategoria, clinica-sub
     gruppi: []
   };
   pins.forEach(p => {
     if (['procedura','clinica','modulo'].includes(p.type)) pinsByType.schede.push(p);
-    else if (['categoria','sottocategoria','clinica-sub','capitolo'].includes(p.type)) pinsByType.cartelle.push(p);
+    else if (['categoria','sottocategoria','clinica-sub'].includes(p.type)) pinsByType.cartelle.push(p);
     else if (p.type === 'gruppo') pinsByType.gruppi.push(p);
     // I contatti (type='contatto') non vanno più nei pins generici: usano home_numeri
   });
@@ -4564,18 +4554,6 @@ function renderPinnedCartella(pin) {
       </div>
     </div>`;
   }
-  if (pin.type === 'capitolo') {
-    const cap = (state.index.capitoli || []).find(c => c.id === pin.id);
-    if (!cap) return null;
-    const pezzi = state.index.procedure.filter(p => p.capitolo === pin.id).length;
-    return `<div class="pinned-folder" onclick="navigate('capitolo', {id:'${escapeJs(pin.id)}'})">
-      <span class="pinned-folder-icon">›</span>
-      <div class="pinned-folder-text">
-        <div class="pinned-folder-label">${escapeHtml(cap.titolo)}</div>
-        <div class="pinned-folder-sub">Manuale · Capitolo ${cap.ordine || '·'} · ${pezzi} pezzi</div>
-      </div>
-    </div>`;
-  }
   return null;
 }
 
@@ -4678,76 +4656,289 @@ function renderProcedureCard(p) {
   return renderSchedaCard(p, 'procedura');
 }
 
-function renderManuale() {
-  const capitoli = state.index.capitoli || [];
-  // Map procedure counts per capitolo
-  const countByCap = {};
-  state.index.procedure.forEach(p => {
-    if (p.capitolo) countByCap[p.capitolo] = (countByCap[p.capitolo] || 0) + 1;
-  });
+// ═══════════════════════════════════════════════════════════════════
+//  SEZIONE REPARTO — consulto AI su paziente ricoverato
+//  Carica cartella → anonimizza (regex di LetteraAI) → prompt modificabile
+//  da incollare in un'AI esterna per criticità / DD / esami / attenzioni.
+// ═══════════════════════════════════════════════════════════════════
+state.reparto = state.reparto || {
+  rawText: '',
+  anonText: '',
+  anonimizzato: false,
+  xlsText: '',          // testo della tabella esami estratta dall'XLS
+  // Cosa chiedere all'AI (preferenze): di default tutte attive
+  chiedi: { criticita: true, ddx: true, esami: true, attenzioni: true },
+  systemPrompt: null,   // istruzioni di sistema modificabili (null = usa default)
+  systemPromptSha: null,// sha del file nel repo (per evitare conflitti al salvataggio)
+  systemPromptLoaded: false, // true dopo il primo tentativo di caricamento dal repo
+  promptCustom: ''      // se l'utente edita il prompt finale, lo conserviamo
+};
 
-  $('main-content').innerHTML = `
-    <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Manuale</div>
-      <h1 class="page-title">How to Survive <em>Neuro</em></h1>
-      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">Manuale completo del reparto. Ogni capitolo aggrega le procedure che vi appartengono, in ordine di lettura.</div>
-    </div>
-    ${capitoli.length === 0 ? '<p style="color:var(--ink-muted);">Nessun capitolo definito in <code>content/capitoli.yml</code>.</p>' :
-      capitoli.map(cap => {
-        const count = countByCap[cap.id] || 0;
-        return `
-          <div class="numero-row" style="cursor:${count ? 'pointer' : 'default'};opacity:${count ? '1' : '0.55'};" ${count ? `onclick="navigate('capitolo', {id:'${escapeHtml(cap.id)}'})"` : ''}>
-            <div>
-              <div style="display:flex;align-items:baseline;gap:10px;">
-                <span style="font-family:var(--mono);font-size:12px;color:var(--ink-muted);min-width:24px;">${cap.ordine || '—'}.</span>
-                <span style="font-family:var(--serif);font-size:19px;font-weight:500;color:var(--ink);">${escapeHtml(cap.titolo)}</span>
-              </div>
-              ${cap.descrizione ? `<div style="font-size:13px;color:var(--ink-muted);margin-top:4px;margin-left:34px;">${escapeHtml(cap.descrizione)}</div>` : ''}
-            </div>
-            <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);">
-              ${count ? count + ' pezz' + (count === 1 ? 'o' : 'i') : 'vuoto'}
-            </div>
-          </div>`;
-      }).join('')
-    }`;
+// Percorso nel repo dati CollinettaAI-data dove persiste il system prompt del Reparto.
+// Stesso schema dei prompt di LetteraAI (file .md nel repo, condiviso tra tutti i login).
+const REPARTO_SYSTEM_PATH = 'content/reparto/system_prompt.md';
+
+// Istruzioni di sistema di default per il consulto Reparto (modificabili dall'utente)
+const REPARTO_SYSTEM_DEFAULT = `Sei un medico esperto. Ti fornisco la cartella clinica ANONIMIZZATA di un paziente attualmente ricoverato. Analizzala con attenzione e aiutami nella gestione clinica.
+
+Indicazioni:
+- Basati esclusivamente sui dati presenti nella cartella; se un'informazione manca, segnalalo invece di inventarla.
+- Sii concreto e clinicamente utile, con un linguaggio da collega a collega.
+- Non riportare dati identificativi (la cartella è già anonimizzata).`;
+
+// Le 4 aree di consulto. Ogni voce ha label (UI) e istruzione (testo nel prompt).
+const REPARTO_TOPICS = [
+  { id: 'criticita',  label: 'Criticità cliniche', istr: 'le principali criticità cliniche attive e i problemi da non sottovalutare' },
+  { id: 'ddx',        label: 'Diagnosi differenziali', istr: 'le diagnosi differenziali da considerare, ordinate per probabilità, con il razionale' },
+  { id: 'esami',      label: 'Esami da richiedere', istr: 'gli esami o accertamenti utili da richiedere e perché' },
+  { id: 'attenzioni', label: 'Punti di attenzione', istr: 'gli aspetti a cui prestare particolare attenzione nella gestione del paziente' }
+];
+
+// Costruisce il prompt finale in base a system prompt, preferenze, cartella ed esami.
+function buildRepartoPrompt() {
+  const r = state.reparto;
+  const sys = (r.systemPrompt !== null ? r.systemPrompt : REPARTO_SYSTEM_DEFAULT).trim();
+  const richieste = REPARTO_TOPICS.filter(t => r.chiedi[t.id]);
+  const elenco = richieste.length
+    ? richieste.map((t, i) => `${i + 1}. ${t.istr.charAt(0).toUpperCase() + t.istr.slice(1)}`).join('\n')
+    : '1. Un inquadramento clinico generale del caso';
+  const cartella = (r.anonText || '').trim() || '[INCOLLA QUI LA CARTELLA ANONIMIZZATA]';
+  const esamiBlock = (r.xlsText || '').trim()
+    ? `\n\n### Tabella esami di laboratorio\n\n${r.xlsText.trim()}`
+    : '';
+  return `${sys}
+
+Sulla base dei soli dati forniti, indica:
+${elenco}
+
+### Cartella clinica anonimizzata
+
+${cartella}${esamiBlock}`;
 }
 
-function renderCapitolo(capId) {
-  const cap = (state.index.capitoli || []).find(c => c.id === capId);
-  if (!cap) return renderError('Capitolo non trovato', capId);
-
-  const pezzi = state.index.procedure
-    .filter(p => p.capitolo === capId)
-    .sort((a, b) => (a.ordine_nel_capitolo || 99) - (b.ordine_nel_capitolo || 99));
-
-  const tocHtml = pezzi.length > 1
-    ? `<nav style="margin-bottom:32px;padding:16px 20px;background:var(--bg-sink);border-left:3px solid var(--ink-faint);border-radius:0 2px 2px 0;">
-         <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;">Indice capitolo</div>
-         ${pezzi.map((p, i) => `<div style="padding:4px 0;"><a href="#p-${escapeHtml(p.slug)}" style="font-family:var(--serif);color:var(--ink-soft);">${i+1}. ${escapeHtml(p.titolo || p.slug)}</a></div>`).join('')}
-       </nav>`
-    : '';
-
+function renderReparto() {
+  const r = state.reparto;
+  // Al primo accesso, carico il system prompt salvato nel repo (se esiste).
+  if (!r.systemPromptLoaded) {
+    r.systemPromptLoaded = true;
+    loadRepartoSystemPrompt().then(() => {
+      if (state.currentView === 'reparto') renderReparto();
+    }).catch(() => {});
+  }
+  const topicChecks = REPARTO_TOPICS.map(t =>
+    `<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;padding:4px 0;">
+      <input type="checkbox" ${r.chiedi[t.id] ? 'checked' : ''} onchange="window.setRepartoTopic('${t.id}', this.checked)">
+      <span>${escapeHtml(t.label)}</span>
+    </label>`).join('');
+  const sysVal = r.systemPrompt !== null ? r.systemPrompt : REPARTO_SYSTEM_DEFAULT;
   $('main-content').innerHTML = `
     <div class="page-head">
-      <div class="page-eyebrow">${buildBreadcrumb([{label:'Manuale', route:'manuale'}])} · Capitolo ${cap.ordine || ''}</div>
-      <h1 class="page-title">${escapeHtml(cap.titolo)} ${renderPinButton('capitolo', capId)}</h1>
-      ${cap.descrizione ? `<div style="margin-top:12px;font-size:14px;color:var(--ink-muted);font-style:italic;font-family:var(--serif);">${escapeHtml(cap.descrizione)}</div>` : ''}
-      <div class="page-actions">
-        <button class="btn edit-only" onclick="nuovaProcedura({capitolo:'${escapeHtml(capId)}'})">+ Aggiungi pezzo al capitolo</button>
+      <h1 class="page-title">Reparto</h1>
+      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);max-width:640px;line-height:1.5;">
+        Carica o incolla la cartella di un paziente ricoverato, anonimizzala con lo stesso motore di LetteraAI,
+        poi copia un prompt da incollare in un'AI esterna per ottenere criticità, diagnosi differenziali, esami da richiedere e punti di attenzione.
       </div>
     </div>
-    ${pezzi.length === 0 ? '<p style="color:var(--ink-muted);">Nessun pezzo assegnato a questo capitolo. Assegna procedure con <code>capitolo: ' + escapeHtml(capId) + '</code> nel frontmatter.</p>' : tocHtml + pezzi.map(p => {
-      const bodyHtml = renderMarkdownWithImages(p.body || '', p.path);
-      return `
-        <article id="p-${escapeHtml(p.slug)}" style="margin-bottom:56px;padding-bottom:32px;border-bottom:1px solid var(--rule);">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:16px;">
-            <h2 style="font-family:var(--serif);font-weight:500;font-size:26px;line-height:1.15;letter-spacing:-.01em;color:var(--ink);">${escapeHtml(p.titolo || p.slug)}</h2>
-            <button class="btn ghost sm edit-only" onclick="event.stopPropagation();navigate('procedura-edit', {slug:'${escapeHtml(p.slug)}'})">Modifica</button>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="ctitle">1 · Cartella clinica del paziente</div>
+      <div id="reparto-drop" onclick="document.getElementById('reparto-pdf').click()"
+        style="border:2px dashed var(--rule);border-radius:6px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px;background:var(--bg-sink);"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor='var(--rule)'"
+        ondrop="event.preventDefault();this.style.borderColor='var(--rule)';window.onRepartoPdf(event.dataTransfer.files[0])">
+        <input type="file" id="reparto-pdf" accept="application/pdf" style="display:none" onchange="window.onRepartoPdf(this.files[0])">
+        <div style="font-size:22px;">📁</div>
+        <div style="font-size:13px;color:var(--ink-muted);margin-top:4px;"><strong>Clicca o trascina un PDF</strong>, oppure incolla il testo qui sotto</div>
+        <div id="reparto-pdf-status" style="font-size:12px;color:var(--accent);margin-top:6px;"></div>
+      </div>
+      <textarea id="reparto-raw" rows="8" class="mono-input" style="width:100%;font-size:12px;" placeholder="Incolla qui il testo della cartella clinica..." oninput="window.setRepartoRaw(this.value)">${escapeHtml(r.rawText)}</textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+        <button class="btn primary" onclick="window.anonimizzaReparto()" style="background:var(--ink);color:var(--bg-paper);border-color:var(--ink);">🔒 Anonimizza</button>
+        ${r.anonimizzato ? `<span style="font-size:12px;color:#2e7d32;">✓ Cartella anonimizzata</span>` : '<span style="font-size:12px;color:var(--ink-muted);">L\'anonimizzazione rimuove nomi, date e dati identificativi.</span>'}
+      </div>
+      ${r.anonimizzato ? `
+        <div style="margin-top:12px;">
+          <label style="font-size:12px;color:var(--ink-muted);">Cartella anonimizzata (rivedi prima di usarla)</label>
+          <textarea id="reparto-anon" rows="8" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoAnon(this.value)">${escapeHtml(r.anonText)}</textarea>
+        </div>` : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="ctitle">2 · Tabella esami di laboratorio <span style="font-weight:normal;color:var(--ink-muted);font-size:12px;">(opzionale)</span></div>
+      <div id="reparto-xls-drop" onclick="document.getElementById('reparto-xls').click()"
+        style="border:2px dashed var(--rule);border-radius:6px;padding:16px;text-align:center;cursor:pointer;margin-top:8px;background:var(--bg-sink);"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor='var(--rule)'"
+        ondrop="event.preventDefault();this.style.borderColor='var(--rule)';window.onRepartoXls(event.dataTransfer.files[0])">
+        <input type="file" id="reparto-xls" accept=".xls,.xlsx,.csv" style="display:none" onchange="window.onRepartoXls(this.files[0])">
+        <div style="font-size:20px;">🧪</div>
+        <div style="font-size:13px;color:var(--ink-muted);margin-top:4px;"><strong>Clicca o trascina la tabella esami</strong> (XLS/CSV)</div>
+        <div id="reparto-xls-status" style="font-size:12px;color:var(--accent);margin-top:6px;"></div>
+      </div>
+      ${r.xlsText ? `
+        <div style="margin-top:10px;">
+          <label style="font-size:12px;color:var(--ink-muted);">Valori estratti (rivedibili)</label>
+          <textarea id="reparto-xls-text" rows="6" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoXls(this.value)">${escapeHtml(r.xlsText)}</textarea>
+          <button class="btn" style="margin-top:6px;font-size:12px;" onclick="window.clearRepartoXls()">✕ Rimuovi esami</button>
+        </div>` : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="ctitle">3 · Cosa vuoi chiedere all'AI</div>
+      <div style="margin-top:8px;">${topicChecks}</div>
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;font-size:13px;color:var(--accent);">⚙ Istruzioni di sistema (modificabili)</summary>
+        <div style="margin-top:10px;">
+          <textarea id="reparto-sys" rows="8" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoSys(this.value)">${escapeHtml(sysVal)}</textarea>
+          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+            ${isAdmin() ? `<button class="btn primary" style="font-size:12px;background:var(--ink);color:var(--bg-paper);border-color:var(--ink);" onclick="window.saveRepartoSys()">💾 Salva nel repo</button>` : ''}
+            <button class="btn" style="font-size:12px;" onclick="window.resetRepartoSys()">⟲ Ripristina istruzioni di default</button>
           </div>
-          <div class="procedura-body" style="font-size:15px;">${bodyHtml}</div>
-        </article>`;
-    }).join('')}`;
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">${isAdmin() ? `Le istruzioni salvate restano condivise tra i login (in <code>${escapeHtml(REPARTO_SYSTEM_PATH)}</code>).` : 'Solo gli amministratori possono salvare istruzioni condivise. Le tue modifiche valgono solo per questa sessione.'}</div>
+        </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">4 · Prompt per l'AI esterna</div>
+      <div style="font-size:12px;color:var(--ink-muted);margin:6px 0 10px;">Il prompt è modificabile. Copialo e incollalo in Claude, ChatGPT o altra AI.</div>
+      <textarea id="reparto-prompt" rows="14" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoPromptCustom(this.value)">${escapeHtml(r.promptCustom || buildRepartoPrompt())}</textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn primary" onclick="window.copyRepartoPrompt()" style="background:var(--ink);color:var(--bg-paper);border-color:var(--ink);">⎘ Copia prompt</button>
+        <button class="btn" onclick="window.rebuildRepartoPrompt()">↻ Rigenera dal modello</button>
+      </div>
+    </div>`;
 }
+
+// ── Handler della sezione Reparto (esposti su window per gli onclick) ──
+window.setRepartoRaw = function (v) { state.reparto.rawText = v; };
+window.setRepartoAnon = function (v) { state.reparto.anonText = v; };
+window.setRepartoXls = function (v) { state.reparto.xlsText = v; };
+window.setRepartoPromptCustom = function (v) { state.reparto.promptCustom = v; };
+window.setRepartoSys = function (v) {
+  state.reparto.systemPrompt = v;
+  if (!state.reparto.promptCustom) {
+    const ta = document.getElementById('reparto-prompt');
+    if (ta) ta.value = buildRepartoPrompt();
+  }
+};
+window.resetRepartoSys = function () {
+  state.reparto.systemPrompt = null;
+  renderReparto();
+  toast('Istruzioni di sistema ripristinate', 'info');
+};
+
+// Carica il system prompt del Reparto da CollinettaAI-data (se presente).
+async function loadRepartoSystemPrompt() {
+  try {
+    const f = await gh.getFile(REPARTO_SYSTEM_PATH);
+    if (f && f.content && f.content.trim()) {
+      state.reparto.systemPrompt = f.content;
+      state.reparto.systemPromptSha = f.sha;
+      state.reparto.promptCustom = '';
+    }
+  } catch (e) { /* file assente: si usa il default */ }
+}
+
+// Salva il system prompt del Reparto in CollinettaAI-data, persistente tra i login.
+window.saveRepartoSys = async function () {
+  if (!isAdmin()) {
+    return toast('Solo gli amministratori possono modificare le istruzioni di sistema', 'error');
+  }
+  const ta = document.getElementById('reparto-sys');
+  const text = ta ? ta.value : (state.reparto.systemPrompt !== null ? state.reparto.systemPrompt : REPARTO_SYSTEM_DEFAULT);
+  state.reparto.systemPrompt = text;
+  try {
+    const res = await gh.putFile(REPARTO_SYSTEM_PATH, text, state.reparto.systemPromptSha || null,
+      `Aggiorna system prompt Reparto (by ${state.session.username})`);
+    if (res && res.content) state.reparto.systemPromptSha = res.content.sha;
+    toast('Istruzioni di sistema salvate nel repo', 'success');
+  } catch (e) {
+    if (e && e.code === 'CONFLICT') {
+      toast('Conflitto: ricarico la versione aggiornata', 'warning');
+      await loadRepartoSystemPrompt();
+      renderReparto();
+    } else {
+      toast('Errore salvataggio: ' + e.message, 'error');
+    }
+  }
+};
+window.clearRepartoXls = function () {
+  state.reparto.xlsText = '';
+  state.reparto.promptCustom = '';
+  renderReparto();
+};
+window.onRepartoXls = async function (file) {
+  if (!file) return;
+  const status = document.getElementById('reparto-xls-status');
+  if (status) status.textContent = 'Lettura esami…';
+  try {
+    const L = await ensureLetterAI();
+    if (!L || typeof L.extractXlsRows !== 'function') throw new Error('Modulo esami non disponibile');
+    const rows = await L.extractXlsRows(file);
+    const out = L.xlsToRawText(rows, '');
+    state.reparto.xlsText = (out && out.text) ? out.text : '';
+    state.reparto.promptCustom = '';
+    renderReparto();
+    toast('Tabella esami caricata', 'success');
+  } catch (e) {
+    if (status) status.textContent = 'Errore esami: ' + e.message;
+  }
+};
+window.setRepartoTopic = function (id, checked) {
+  state.reparto.chiedi[id] = checked;
+  // Se l'utente non ha editato manualmente il prompt, lo rigenero per riflettere la scelta
+  if (!state.reparto.promptCustom) {
+    const ta = document.getElementById('reparto-prompt');
+    if (ta) ta.value = buildRepartoPrompt();
+  }
+};
+window.rebuildRepartoPrompt = function () {
+  state.reparto.promptCustom = '';
+  const ta = document.getElementById('reparto-prompt');
+  if (ta) ta.value = buildRepartoPrompt();
+  toast('Prompt rigenerato dal modello', 'info');
+};
+window.copyRepartoPrompt = async function () {
+  const ta = document.getElementById('reparto-prompt');
+  const txt = ta ? ta.value : buildRepartoPrompt();
+  try { await navigator.clipboard.writeText(txt); toast('Prompt copiato', 'success'); }
+  catch (e) { toast('Copia non riuscita', 'error'); }
+};
+window.onRepartoPdf = async function (file) {
+  if (!file) return;
+  const status = document.getElementById('reparto-pdf-status');
+  if (status) status.textContent = 'Lettura PDF…';
+  try {
+    const L = await ensureLetterAI();
+    if (!L || typeof L.extractPdfText !== 'function') throw new Error('Modulo di estrazione non disponibile');
+    const text = await L.extractPdfText(file);
+    state.reparto.rawText = text;
+    const ta = document.getElementById('reparto-raw');
+    if (ta) ta.value = text;
+    if (status) status.textContent = '✓ PDF letto: rivedi il testo e premi Anonimizza';
+  } catch (e) {
+    if (status) status.textContent = 'Errore PDF: ' + e.message;
+  }
+};
+window.anonimizzaReparto = async function () {
+  const raw = (state.reparto.rawText || '').trim();
+  if (!raw) return toast('Inserisci o carica prima la cartella', 'warning');
+  try {
+    const L = await ensureLetterAI();
+    if (!L || typeof L.anonymizeText !== 'function') throw new Error('Motore di anonimizzazione non disponibile');
+    const res = L.anonymizeText(raw);
+    state.reparto.anonText = res.text || '';
+    state.reparto.anonimizzato = true;
+    state.reparto.promptCustom = ''; // rigenero il prompt con la cartella anonimizzata
+    renderReparto();
+    toast('Cartella anonimizzata', 'success');
+  } catch (e) {
+    toast('Errore anonimizzazione: ' + e.message, 'error');
+  }
+};
 
 function renderProcedureList() {
   const procs = state.index.procedure;
@@ -5307,12 +5498,7 @@ function renderProcedura(slug) {
 
   const catLabel = proc.categoria ? CATEGORIA_LABELS[proc.categoria] || proc.categoria : 'Procedure';
   const subLabel = proc.sottocategoria ? SOTTO_LABELS[proc.sottocategoria] || proc.sottocategoria : null;
-  const breadcrumb = proc.capitolo
-    ? buildBreadcrumb([
-        { label: 'Manuale', route: 'manuale' },
-        { label: (state.index.capitoli || []).find(c => c.id === proc.capitolo)?.titolo || proc.capitolo, route: 'capitolo', params: { id: proc.capitolo } }
-      ])
-    : buildBreadcrumb([
+  const breadcrumb = buildBreadcrumb([
         { label: 'Procedure', route: 'procedure' },
         { label: catLabel, route: 'procedure-cat', params: { cat: proc.categoria } },
         ...(subLabel ? [{ label: subLabel, route: 'procedure-cat', params: { cat: proc.categoria, sub: proc.sottocategoria } }] : [])
@@ -6436,20 +6622,6 @@ function renderEditorUI(slug, frontmatter, body) {
             })}
             <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Una sola sottocategoria. Le opzioni dipendono dalla Categoria scelta.</div>
           </div>
-          ${frontmatter.capitolo ? `
-          <div class="field">
-            <label for="meta-capitolo">Capitolo del manuale</label>
-            <select id="meta-capitolo">
-              <option value="">— rimuovi dal manuale —</option>
-              ${(state.index.capitoli || []).map(c => `<option value="${escapeHtml(c.id)}" ${frontmatter.capitolo === c.id ? 'selected' : ''}>${escapeHtml(c.ordine ? c.ordine + '. ' : '')}${escapeHtml(c.titolo)}</option>`).join('')}
-            </select>
-            <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Questa scheda appartiene a un capitolo del manuale.</div>
-          </div>
-          <div class="field">
-            <label for="meta-ordine-cap">Ordine nel capitolo</label>
-            <input type="text" id="meta-ordine-cap" class="mono-input" value="${escapeHtml(frontmatter.ordine_nel_capitolo || '')}" placeholder="1, 2, 3...">
-          </div>
-          ` : ''}
           <div class="field" style="grid-column:1/-1;">
             <label>Tag</label>
             ${renderChipsField({
@@ -6555,10 +6727,6 @@ function renderEditorUI(slug, frontmatter, body) {
   $('meta-categoria').addEventListener('change', refreshSottocategorieChips);
 
   ['meta-titolo','meta-categoria','meta-note-modifica'].forEach(id => {
-    const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
-  });
-  // Conditional fields (capitolo/ordine) only if present
-  ['meta-capitolo','meta-ordine-cap'].forEach(id => {
     const el = $(id); if (el) el.addEventListener('input', () => { if (state.editingContext) state.editingContext.isDirty = true; });
   });
 
@@ -7014,16 +7182,6 @@ async function saveProcedura() {
     // Sottocategoria (chips single-value)
     const subChips = typeof chipsGet === 'function' ? chipsGet('meta-sottocategoria-chips') : [];
     if (subChips.length > 0) nf.sottocategoria = subChips[0]; else delete nf.sottocategoria;
-    // Capitolo + ordine (only present in DOM if scheda already belongs to a chapter)
-    const capEl = $('meta-capitolo');
-    if (capEl) {
-      const capSel = capEl.value;
-      if (capSel) nf.capitolo = capSel; else delete nf.capitolo;
-      const ordEl = $('meta-ordine-cap');
-      const ordCap = ordEl ? ordEl.value.trim() : '';
-      if (ordCap) { const n = parseInt(ordCap, 10); nf.ordine_nel_capitolo = isNaN(n) ? ordCap : n; }
-      else delete nf.ordine_nel_capitolo;
-    }
     // Tag / termini / relazioni from chips
     nf.tag = typeof chipsGet === 'function' ? chipsGet('meta-tag-chips') : [];
     // Remove deprecated tempo_esecuzione_min
@@ -9160,7 +9318,7 @@ function renderModuliList() {
       ${moduli.map(m => `
         <div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeHtml(m.slug)}'})">
           <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
-            <span class="card-actions">${renderPinButton('modulo', m.slug)}</span>
+            <span class="card-actions">${renderPinButton('modulo', m.slug)}<button class="btn-icon-mini edit-only" onclick="event.stopPropagation();editModuloMeta('${escapeJs(m.slug)}')" title="Modifica nome/slug">✎</button></span>
           </div>
           ${m.descrizione ? `<div class="procedure-card-desc" style="font-size:13px;color:var(--ink-muted);margin-top:6px;line-height:1.4;">${escapeHtml(m.descrizione)}</div>` : ''}
           <div class="procedure-card-meta" style="margin-top:8px;">
@@ -9170,6 +9328,98 @@ function renderModuliList() {
         </div>
       `).join('') || '<p style="color:var(--ink-muted);font-style:italic;">Nessun modulo presente. Premi "+ Nuovo modulo" per crearne uno.</p>'}
     </div>`;
+}
+
+// Modifica i metadati di un modulo: titolo, descrizione e (opzionale) slug.
+// Cambiare lo slug comporta lo spostamento dell'intera cartella content/moduli/<slug>/
+// (boxes.yml + PNG delle pagine) e l'aggiornamento di content/moduli/index.yml.
+async function editModuloMeta(slug) {
+  if (!state.session || !state.session.tokenAuth) {
+    return toast('Login richiesto per modificare moduli', 'error');
+  }
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  if (!m) return toast('Modulo non trovato', 'error');
+  const body = `
+    <form onsubmit="return false;" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field">
+        <label>Titolo</label>
+        <input type="text" id="me-titolo" class="mod-input" value="${escapeHtml(m.titolo || '')}" placeholder="es. Consenso rachicentesi">
+      </div>
+      <div class="field">
+        <label>Descrizione <span style="font-weight:normal;color:var(--ink-muted);">(opzionale)</span></label>
+        <input type="text" id="me-descrizione" class="mod-input" value="${escapeHtml(m.descrizione || '')}" placeholder="Breve descrizione">
+      </div>
+      <div class="field">
+        <label>Slug <span style="font-weight:normal;color:var(--ink-muted);">(identificativo cartella — cambiarlo sposta i file)</span></label>
+        <input type="text" id="me-slug" class="mod-input mono-input" value="${escapeHtml(m.slug)}" placeholder="es. consenso-rachicentesi">
+        <div style="font-size:11px;color:var(--warning);margin-top:3px;">⚠ Cambiare lo slug richiede di spostare l'intera cartella del modulo. Può richiedere qualche secondo.</div>
+      </div>
+    </form>`;
+  showModal({
+    title: 'Modifica modulo',
+    subtitle: escapeHtml(m.titolo || m.slug),
+    body,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+      { label: 'Salva', onClick: async () => {
+        const titolo = ($('me-titolo').value || '').trim();
+        const descrizione = ($('me-descrizione').value || '').trim();
+        const newSlug = slugifyLocal(($('me-slug').value || '').trim());
+        if (!titolo) return toast('Titolo obbligatorio', 'warning');
+        if (!newSlug) return toast('Slug obbligatorio', 'warning');
+        const slugChanged = newSlug !== slug;
+        try {
+          // 1. Carico l'index.yml dei moduli
+          const idxFile = await gh.getFile('content/moduli/index.yml');
+          if (!idxFile) throw new Error('index.yml dei moduli non trovato');
+          const idxData = jsyaml.load(idxFile.content) || {};
+          const moduliArr = idxData.moduli || [];
+          const entry = moduliArr.find(x => x.slug === slug);
+          if (!entry) throw new Error('Modulo non presente in index.yml');
+          // 2. Se cambia lo slug, controllo che non esista già e sposto la cartella
+          if (slugChanged) {
+            if (moduliArr.some(x => x.slug === newSlug)) return toast('Esiste già un modulo con questo slug', 'error');
+            closeModal();
+            toast('Spostamento cartella in corso...', 'info');
+            const oldDir = `content/moduli/${slug}`;
+            const newDir = `content/moduli/${newSlug}`;
+            const items = await gh.listDir(oldDir);
+            for (const it of items) {
+              if (it.type !== 'file') continue;
+              const isYaml = it.name.endsWith('.yml') || it.name.endsWith('.yaml');
+              if (isYaml) {
+                const f = await gh.getFile(`${oldDir}/${it.name}`);
+                if (!f) continue;
+                await gh.putFile(`${newDir}/${it.name}`, f.content, null, `Sposta modulo ${slug}→${newSlug}: ${it.name}`);
+                await gh.deleteFile(`${oldDir}/${it.name}`, f.sha, `Sposta modulo: elimina vecchio ${it.name}`);
+              } else {
+                // File binario (PNG): copio via base64 senza decodificare
+                const fb = await gh.getFileBase64(`${oldDir}/${it.name}`);
+                if (!fb) continue;
+                await gh.putFile(`${newDir}/${it.name}`, fb.base64, null, `Sposta modulo ${slug}→${newSlug}: ${it.name}`, true);
+                await gh.deleteFile(`${oldDir}/${it.name}`, fb.sha, `Sposta modulo: elimina vecchio ${it.name}`);
+              }
+            }
+          } else {
+            closeModal();
+          }
+          // 3. Aggiorno l'entry in index.yml
+          entry.titolo = titolo;
+          entry.descrizione = descrizione;
+          if (slugChanged) entry.slug = newSlug;
+          entry.aggiornato = new Date().toISOString();
+          const freshIdx = await gh.getFile('content/moduli/index.yml');
+          await gh.putFile('content/moduli/index.yml', jsyaml.dump(idxData), freshIdx ? freshIdx.sha : idxFile.sha, `Modifica modulo: ${titolo}`);
+          // 4. Pulisco la cache del modulo e ricostruisco
+          if (state.moduliCache) { delete state.moduliCache[slug]; if (slugChanged) delete state.moduliCache[newSlug]; }
+          toast('Modulo aggiornato', 'success');
+          await buildIndex();
+          renderNavTree();
+          if (state.currentView === 'moduli') renderModuliList();
+        } catch (e) { toast('Errore: ' + e.message, 'error'); }
+      } }
+    ]
+  });
 }
 
 async function renderModulo(slug) {
@@ -12123,12 +12373,9 @@ function nuovaProcedura(preset = {}) {
     subsByCat[p.categoria].add(p.sottocategoria);
   });
 
-  // If creating from a chapter context, show readonly chapter info instead of selector
-  const capInfo = preset.capitolo ? (state.index.capitoli || []).find(c => c.id === preset.capitolo) : null;
-
   showModal({
-    title: capInfo ? `Nuovo pezzo del capitolo "${capInfo.titolo}"` : 'Nuova procedura',
-    subtitle: capInfo ? 'Verrà aggiunto al capitolo del manuale.' : 'Crea un file vuoto e apre l\'editor.',
+    title: 'Nuova procedura',
+    subtitle: 'Crea un file vuoto e apre l\'editor.',
     body: `
       <div class="field">
         <label>Titolo</label>
@@ -12149,14 +12396,6 @@ function nuovaProcedura(preset = {}) {
         <datalist id="np-subs-list"></datalist>
         <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Solo minuscole, cifre, trattini. Suggerimenti in base alla categoria scelta.</div>
       </div>
-      ${capInfo ? `<div class="field">
-        <label>Capitolo</label>
-        <div style="font-family:var(--mono);font-size:13px;color:var(--ink-soft);padding:8px 12px;background:var(--bg-sink);border-radius:2px;">${escapeHtml(capInfo.ordine + '. ' + capInfo.titolo)}</div>
-      </div>
-      <div class="field">
-        <label>Ordine nel capitolo</label>
-        <input type="text" id="np-ordine-cap" class="mono-input" placeholder="1, 2, 3...">
-      </div>` : ''}
       <div id="np-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
     actions: [
       { label: 'Annulla', variant: 'ghost', onClick: closeModal },
@@ -12186,14 +12425,6 @@ function nuovaProcedura(preset = {}) {
           cronologia_recente: [{ data: nowIso(), utente: state.session.username, nota: 'creazione' }]
         };
         if (sottocat) nf.sottocategoria = sottocat;
-        if (preset.capitolo) {
-          nf.capitolo = preset.capitolo;
-          const ordEl = $('np-ordine-cap');
-          if (ordEl && ordEl.value.trim()) {
-            const n = parseInt(ordEl.value.trim(), 10);
-            nf.ordine_nel_capitolo = isNaN(n) ? ordEl.value.trim() : n;
-          }
-        }
 
         const body = '';
         const content = stringifyMarkdown(nf, body);
@@ -13347,7 +13578,7 @@ function getRootNavNodes() {
     { id: 'numeri', label: 'Rubrica', count: countNumeri(), kind: 'top', slug: 'numeri', navTarget: { route: 'numeri', params: {} } },
     { id: 'moduli', label: 'Moduli', count: state.index.moduli.length, kind: 'top', slug: 'moduli', navTarget: { route: 'moduli', params: {} }, children: () => buildModuliChildren() },
     { id: 'calendario', label: 'Calendario', count: ((state.index.calendar && state.index.calendar.eventi) || []).length, kind: 'top', slug: 'calendario', navTarget: { route: 'calendario', params: {} } },
-    { id: 'manuale', label: 'Manuale', count: (state.index.capitoli || []).length, kind: 'top', slug: 'manuale', navTarget: { route: 'manuale', params: {} }, children: () => buildManualeChildren() },
+    { id: 'reparto', label: 'Reparto', kind: 'top', slug: 'reparto', navTarget: { route: 'reparto', params: {} } },
     { id: 'lettere', label: 'LetteraAI', count: ((state.index.lettere && state.index.lettere.casi) || []).length, kind: 'top', slug: 'lettere', navTarget: { route: 'lettere', params: {} }, children: () => buildLettereChildren() },
   ];
 }
@@ -13444,7 +13675,7 @@ function renderNavRootNode(node) {
     ? `handleNavRootClick('${escapeJs(node.id)}', ${node.navTarget ? `'${escapeJs(node.navTarget.route)}'` : 'null'}, ${node.navTarget && node.navTarget.params ? JSON.stringify(node.navTarget.params).replace(/"/g, '&quot;') : 'null'})`
     : (node.navTarget ? `navigate('${escapeJs(node.navTarget.route)}', ${JSON.stringify(node.navTarget.params || {}).replace(/"/g, '&quot;')})` : '');
 
-  const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+  const folderKinds = new Set(['macro','sub','clinica-sub','gruppo','top']);
   const nodeKind = node.kind || 'top';
   const showMenuBtn = navState.editMode && (!folderKinds.has(nodeKind) || isAdmin());
   const editBtn = showMenuBtn
@@ -13680,33 +13911,6 @@ function buildLettereChildren() {
 
 
 
-function buildManualeChildren() {
-  return (state.index.capitoli || []).map(c => {
-    const pezzi = state.index.procedure.filter(p => p.capitolo === c.id);
-    return {
-      id: 'capitolo:' + c.id,
-      label: `${c.ordine || '·'}. ${c.titolo}`,
-      count: pezzi.length,
-      action: 'navigate',
-      navTarget: { route: 'capitolo', params: { id: c.id } },
-      kind: 'capitolo',
-      slug: c.id,
-      children: pezzi.length > 0 ? () => pezzi
-        .sort((a,b) => (a.ordine_nel_capitolo||99) - (b.ordine_nel_capitolo||99))
-        .map(p => ({
-          id: 'capitolo-pezzo:' + p.slug,
-          label: p.titolo || p.slug,
-          count: null,
-          action: 'navigate',
-          navTarget: { route: 'procedura', params: { slug: p.slug } },
-          kind: 'procedure',
-          slug: p.slug,
-          children: null
-        })) : null
-    };
-  });
-}
-
 function countNumeri() {
   return getVisibleNumeriGroups().reduce((acc, g) => acc + (g.contatti || []).length, 0);
 }
@@ -13726,7 +13930,7 @@ function renderNavTreeNode(node, depth) {
       ? `handleNavDrillClick('${escapeJs(node.id)}', ${node.navTarget ? `'${escapeJs(node.navTarget.route)}'` : 'null'}, ${node.navTarget && node.navTarget.params ? JSON.stringify(node.navTarget.params).replace(/"/g, '&quot;') : 'null'})`
       : (node.navTarget ? `navigate('${escapeJs(node.navTarget.route)}', ${JSON.stringify(node.navTarget.params || {}).replace(/"/g, '&quot;')})` : '');
 
-    const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+    const folderKinds = new Set(['macro','sub','clinica-sub','gruppo','top']);
     const nodeKind = node.kind || 'top';
     const showMenuBtn = navState.editMode && (!folderKinds.has(nodeKind) || isAdmin());
     const editBtn = showMenuBtn
@@ -13756,7 +13960,7 @@ function renderNavTreeNode(node, depth) {
     rowClickAction = '';
   }
 
-  const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+  const folderKinds = new Set(['macro','sub','clinica-sub','gruppo','top']);
   const nodeKind = node.kind || 'top';
   const showMenuBtn = navState.editMode && (!folderKinds.has(nodeKind) || isAdmin());
   const editBtn = showMenuBtn
@@ -13811,7 +14015,7 @@ function isAdmin() {
 
 function showNavContextMenu(triggerBtn, kind, slug) {
   // Folder/structure operations are admin-only
-  const folderKinds = new Set(['macro','sub','clinica-sub','capitolo','gruppo','top']);
+  const folderKinds = new Set(['macro','sub','clinica-sub','gruppo','top']);
   if (folderKinds.has(kind) && !isAdmin()) {
     return; // silently no-op for non-admin
   }
@@ -13839,12 +14043,6 @@ function showNavContextMenu(triggerBtn, kind, slug) {
       { label: '+ Nuova scheda qui', action: () => nuovaSchedaClinica({sottocategoria: slug}) },
       { label: 'Rinomina', action: () => renameClinicaSub(slug) },
     ];
-  } else if (kind === 'capitolo') {
-    items = [
-      { label: '+ Aggiungi pezzo al capitolo', action: () => nuovoPezzoCapitolo(slug) },
-      { label: 'Modifica capitolo', action: () => editCapitolo(slug) },
-      { label: 'Elimina capitolo (se vuoto)', danger: true, action: () => deleteCapitolo(slug) },
-    ];
   } else if (kind === 'gruppo') {
     items = [
       { label: '+ Nuovo contatto qui', action: () => nuovoContatto(slug) },
@@ -13855,7 +14053,6 @@ function showNavContextMenu(triggerBtn, kind, slug) {
     else if (slug === 'clinica') items = [{ label: '+ Nuova sottocategoria clinica', action: () => createClinicaSub() }];
     else if (slug === 'numeri') items = [{ label: '+ Nuovo gruppo di numeri', action: () => nuovoGruppoNumeri() }];
     else if (slug === 'moduli') items = [{ label: '+ Nuovo modulo', action: () => apriNuovoModuloDialog() }];
-    else if (slug === 'manuale') items = [{ label: '+ Nuovo capitolo', action: () => nuovoCapitolo() }];
   } else if (kind === 'procedure') {
     items = [
       { label: 'Apri', action: () => navigate('procedura', {slug}) },
@@ -13920,7 +14117,7 @@ function showItemContextMenu(triggerBtn, kind, slug) {
   menu.className = 'context-menu';
   let items = [];
 
-  if (kind === 'procedure' || kind === 'capitolo-pezzo') {
+  if (kind === 'procedure') {
     const proc = state.index.procedure.find(p => p.slug === slug);
     items = [
       { label: 'Apri', action: () => navigate('procedura', {slug}) },
@@ -14996,7 +15193,6 @@ async function moveMacroToClinica(macro) {
     // accanto seguono la nuova cartella in clinica.
     const newPath = `content/clinica/${targetSub}/${p.slug}/scheda.md`;
     const newFm = { ...p, categoria: 'clinica', sottocategoria: targetSub };
-    // Preserve capitolo if present (scheda still referenced in manuale)
     delete newFm.body; delete newFm.body_preview; delete newFm.path; delete newFm.sha;
     // Clean obsolete fields
     delete newFm.tempo_esecuzione_min;
@@ -15131,78 +15327,6 @@ async function createClinicaSub() {
   if (!name || !/^[a-z0-9-]+$/.test(name)) return toast('Nome non valido', 'error');
   // Trigger creating a new scheda in that subcategoria
   nuovaSchedaClinica({ sottocategoria: name });
-}
-async function nuovoCapitolo() {
-  if (!isAdmin()) return toast('Solo l\'admin può creare nuovi capitoli', 'warning');
-  const titolo = prompt('Titolo del nuovo capitolo:\n(es. "Giornata di reparto")', '');
-  if (!titolo || !titolo.trim()) return;
-  const id = titolo.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-  if (!id) return toast('Titolo non trasformabile in slug', 'error');
-  if ((state.index.capitoli || []).find(c => c.id === id)) return toast('Capitolo con questo id esiste già', 'error');
-  const ordineStr = prompt('Ordine del capitolo (numero, es. 5):', String((state.index.capitoli || []).length + 1));
-  const ordine = parseInt(ordineStr, 10);
-  if (isNaN(ordine)) return toast('Ordine non valido', 'error');
-
-  const nuovi = [...(state.index.capitoli || []), { id, titolo: titolo.trim(), ordine }];
-  nuovi.sort((a, b) => (a.ordine || 99) - (b.ordine || 99));
-
-  try {
-    await saveCapitoliFile(nuovi);
-    toast('Capitolo creato', 'success');
-    await buildIndex();
-    renderNavTree();
-  } catch (e) { toast('Errore: ' + e.message, 'error'); }
-}
-
-async function editCapitolo(id) {
-  if (!isAdmin()) return toast('Solo l\'admin può modificare i capitoli', 'warning');
-  const capitoli = state.index.capitoli || [];
-  const cap = capitoli.find(c => c.id === id);
-  if (!cap) return toast('Capitolo non trovato', 'error');
-  const newTitolo = prompt(`Modifica titolo capitolo:`, cap.titolo);
-  if (!newTitolo || !newTitolo.trim()) return;
-  const newOrdineStr = prompt(`Modifica ordine:`, String(cap.ordine || ''));
-  const newOrdine = parseInt(newOrdineStr, 10);
-  if (isNaN(newOrdine)) return toast('Ordine non valido', 'error');
-
-  const updated = capitoli.map(c => c.id === id ? { ...c, titolo: newTitolo.trim(), ordine: newOrdine } : c);
-  updated.sort((a, b) => (a.ordine || 99) - (b.ordine || 99));
-  try {
-    await saveCapitoliFile(updated);
-    toast('Capitolo aggiornato', 'success');
-    await buildIndex();
-    renderNavTree();
-  } catch (e) { toast('Errore: ' + e.message, 'error'); }
-}
-
-async function deleteCapitolo(id) {
-  if (!isAdmin()) return toast('Solo l\'admin può eliminare capitoli', 'warning');
-  const pezzi = state.index.procedure.filter(p => p.capitolo === id);
-  if (pezzi.length > 0) return toast(`Capitolo non vuoto (${pezzi.length} pezzi). Rimuovi prima l'associazione dal frontmatter delle schede.`, 'warning', 5000);
-  const capitoli = state.index.capitoli || [];
-  const cap = capitoli.find(c => c.id === id);
-  if (!cap) return toast('Capitolo non trovato', 'error');
-  if (!confirm(`Eliminare capitolo "${cap.titolo}"?`)) return;
-  const updated = capitoli.filter(c => c.id !== id);
-  try {
-    await saveCapitoliFile(updated);
-    toast('Capitolo eliminato', 'success');
-    await buildIndex();
-    renderNavTree();
-    if (state.currentView === 'capitolo' && state.currentParams?.id === id) navigate('manuale');
-  } catch (e) { toast('Errore: ' + e.message, 'error'); }
-}
-
-async function saveCapitoliFile(capitoliArray) {
-  // Load current sha
-  const file = await gh.getFile('content/capitoli.yml');
-  const content = `# Capitoli del manuale "How to Survive Neuro"\n# Gestito dall'app, non modificare a mano\n\n` +
-    jsyaml.dump({ capitoli: capitoliArray }, { lineWidth: 120, noRefs: true, sortKeys: false });
-  await gh.putFile('content/capitoli.yml', content, file ? file.sha : null, `Aggiorna capitoli.yml (by ${state.session.username})`);
-}
-async function nuovoPezzoCapitolo(capId) {
-  // Reuse nuovaProcedura with capitolo preset
-  nuovaProcedura({ capitolo: capId });
 }
 async function nuovoGruppoNumeri() {
   if (!isAdmin()) return toast("Solo l'admin può creare nuovi gruppi di numeri", 'warning');
