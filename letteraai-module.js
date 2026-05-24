@@ -4519,7 +4519,9 @@ function renderLibreria(){
     if(wardFilter==='__none__') return !w;
     return w===wardFilter;
   });
-  // Casi come CARD cliccabili (come l'originale): corpo → vista caso; pulsanti ✎ Modifica / ✕ Elimina
+  // Card cliccabili (come l'originale): click sul corpo = SELEZIONA (evidenzia), non apre nulla;
+  // pulsanti ✎ Modifica (apre pannello inline sotto) e ✕ Elimina su ogni card.
+  const sel=L._libSelectedId||null;
   const cardActions=(id)=> admin ? `
         <div class="lt-lib-actions">
           <button class="btn ghost sm" onclick="event.stopPropagation();window.Lettere._editCaso('${escapeHtml(id)}')">✎ Modifica</button>
@@ -4533,7 +4535,7 @@ function renderLibreria(){
       c.letter?`<span class="lt-lib-chip">📄 lettera</span>`:'',
       c.fingerprint?`<span class="lt-lib-chip on">🧠 fingerprint</span>`:''
     ].filter(Boolean).join('');
-    return `<div class="lt-lib-card" onclick="navigate('lettere-caso',{id:'${c.id}'})">
+    return `<div class="lt-lib-card${sel===c.id?' on':''}" onclick="window.Lettere._selCaso('${c.id}')">
       <div class="lt-lib-card-main">
         <div class="lt-lib-name">${escapeHtml(c.diagnosi||c.name||c.id)}</div>
         ${wn?`<div class="lt-lib-ward">🏥 ${escapeHtml(wn)}</div>`:''}
@@ -4543,35 +4545,36 @@ function renderLibreria(){
       ${cardActions(c.id)}
     </div>`;
   }).join('')||'<div class="lt-sub-empty">Nessun caso.</div>';
-  // Barra backup/ripristino (solo admin)
-  const backupBar = admin ? `
-    <div class="lt-row" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
-      <button class="btn ghost sm" onclick="window.Lettere._exportLib()">⬇ Esporta libreria (JSON)</button>
-      <button class="btn ghost sm" onclick="document.getElementById('lt-import-file').click()">⬆ Importa libreria (JSON)</button>
-      <input type="file" id="lt-import-file" accept="application/json,.json" style="display:none" onchange="window.Lettere._importLib(this)">
-    </div>` : '';
-  // Card gestione Reparti (solo admin), come nell'originale dentro Libreria Casi
+  // Pannello di modifica inline (compare sotto la lista quando si preme Modifica)
+  const editPanel = (admin && L._libEditId) ? renderCaseEditInline(L._libEditId) : '';
+  // Card gestione Reparti (solo admin), con form inline "+ Nuovo Reparto"
+  const wardFormOpen = L._libWardFormOpen ? '' : 'display:none';
   const repartiRows=(L.wards||[]).map(w=>{
     const n=L.casi.filter(c=>c.wardId===w.id).length;
-    return `<tr><td>${escapeHtml(w.name||'')}</td><td>${n} cas${n===1?'o':'i'}</td><td>${escapeHtml((w.createdAt||'').slice(0,10))}</td>
-      <td style="text-align:right"><button class="btn ghost sm" onclick="window.Lettere._delWard('${escapeHtml(w.id)}')">✕ Elimina</button></td></tr>`;
-  }).join('')||'<tr><td colspan="4" class="lt-sub-empty">Nessun reparto.</td></tr>';
+    return `<div class="lt-ward-row">
+      <div><div class="lt-ward-name">🏥 ${escapeHtml(w.name||'')}</div>
+        <div class="lt-ward-count">${n} cas${n===1?'o':'i'}</div></div>
+      <button class="btn ghost sm" onclick="window.Lettere._delWard('${escapeHtml(w.id)}')">✕ Elimina</button>
+    </div>`;
+  }).join('')||'<div class="lt-sub-empty">Nessun reparto.</div>';
   const repartiCard = admin ? `
     <div class="lt-card-static" style="margin-top:20px">
       <div class="lt-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="lt-side-title" style="margin:0">Reparti</div>
-        <div class="lt-row"><input type="text" id="lt-ward-name" placeholder="Nome nuovo reparto" style="width:200px">
-          <button class="btn sm" onclick="window.Lettere._addWard()">+ Nuovo Reparto</button></div>
+        <button class="btn sm" onclick="window.Lettere._toggleWardForm()">+ Nuovo Reparto</button>
       </div>
-      <table class="lt-table"><thead><tr><th>Reparto</th><th>Casi</th><th>Creato</th><th></th></tr></thead><tbody>${repartiRows}</tbody></table>
+      <div id="lt-ward-form" style="${wardFormOpen};background:var(--bg-sink);border:1px solid var(--rule);border-radius:4px;padding:12px 14px;margin-bottom:12px">
+        <div class="field" style="margin:0"><label>Nome reparto</label>
+          <input type="text" id="lt-ward-name" placeholder='Es: "Stroke Unit", "Clinica Neurologica"'></div>
+        <div class="lt-row" style="justify-content:flex-end;gap:8px;margin-top:10px">
+          <button class="btn ghost sm" onclick="window.Lettere._toggleWardForm()">Annulla</button>
+          <button class="btn sm" onclick="window.Lettere._addWard()">✓ Crea Reparto</button></div>
+      </div>
+      <div class="lt-ward-list">${repartiRows}</div>
     </div>` : '';
-  // Pulsante "Aggiungi caso" in fondo (come l'originale): apre il form di inserimento diretto
-  const addCaseBar = admin ? `
-    <div class="lt-row" style="margin-top:16px;justify-content:center">
-      <button class="btn" onclick="navigate('lettere-nuovo-caso')">＋ Aggiungi caso</button>
-    </div>` : '';
-  mc().innerHTML=pageHead('Libreria Casi','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`)+
-    backupBar + `
+  // Form "Aggiungi Caso" in fondo, integrato nella pagina (come l'originale)
+  const addCaseCard = admin ? renderAddCaseForm() : '';
+  mc().innerHTML=pageHead('Libreria Casi','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`)+`
     <div class="lt-card-static">
       <div class="lt-row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
         <span class="lt-status">${casiFiltrati.length} cas${casiFiltrati.length===1?'o':'i'}${wardFilter!=='__all__'?' (filtrati)':''} · ${(L.wards||[]).length} repart${(L.wards||[]).length===1?'o':'i'}</span>
@@ -4579,59 +4582,86 @@ function renderLibreria(){
           <select onchange="window.Lettere._setLibWardFilter(this.value)" style="min-width:160px">${filterOpts}</select></div>
       </div>
       <div class="lt-lib-grid">${cards}</div>
-      ${addCaseBar}
     </div>` +
-    repartiCard;
+    editPanel +
+    repartiCard +
+    addCaseCard;
 }
 
-// Form di inserimento diretto di un caso nella Libreria (replica la sezione
-// "Aggiungi Caso" dell'originale, snellita). Salva via saveCaso() con controllo PII.
-function renderNuovoCaso(){
-  if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderNuovoCaso); return; }
-  if(!canEdit()){ mc().innerHTML=pageHead('Aggiungi caso','LetteraAI')+'<p class="lt-status">Servono i permessi di modifica.</p>'; return; }
+// Pannello di modifica caso INLINE (compare sotto la lista nella Libreria, come l'originale)
+function renderCaseEditInline(id){
+  const c=L.casi.find(x=>x.id===id); if(!c) return '';
+  const wardOpts=`<option value="">— Nessun reparto</option>`+
+    (L.wards||[]).map(w=>`<option value="${escapeHtml(w.id)}"${c.wardId===w.id?' selected':''}>${escapeHtml(w.name)}</option>`).join('');
+  const tipoOpts=(TIPI||[]).map(t=>`<option value="${escapeHtml(t.id)}"${(c.tipo||'dimissione')===t.id?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
+  return `<div class="lt-card-static" id="lt-edit-panel" style="margin-top:20px;border-color:var(--accent)">
+    <div class="lt-row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="lt-side-title" style="margin:0">Modifica Caso · ${escapeHtml(c.diagnosi||c.name||'')}</div>
+      <button class="btn ghost sm" onclick="window.Lettere._closeEditCaso()">✕ Chiudi</button>
+    </div>
+    <div class="field"><label>Nome / Diagnosi</label>
+      <input type="text" id="ce-name" value="${escapeHtml(c.diagnosi||c.name||'')}"></div>
+    <div class="lt-row">
+      <div class="field" style="flex:1"><label>Reparto</label><select id="ce-wardid">${wardOpts}</select></div>
+      <div class="field" style="flex:1"><label>Tipo</label><select id="ce-tipo">${tipoOpts}</select></div>
+    </div>
+    <div class="field"><label>Cartella clinica anonimizzata</label>
+      <textarea id="ce-cartella" rows="8" class="mono-input">${escapeHtml(c.cartella||'')}</textarea></div>
+    <div class="field"><label>Lettera di dimissione</label>
+      <textarea id="ce-letter" rows="8" class="mono-input">${escapeHtml(c.letter||'')}</textarea></div>
+    <div class="field"><label>Logica / Fingerprint (JSON, opzionale)</label>
+      <div class="lt-row" style="margin-bottom:6px">
+        <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptEdit('${escapeHtml(id)}')">⎘ Copia prompt esterno</button></div>
+      <textarea id="ce-fp-raw" rows="6" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'>${escapeHtml(c.fingerprint||'')}</textarea></div>
+    <div class="lt-row" style="justify-content:flex-end;gap:8px;margin-top:14px">
+      <button class="btn ghost" onclick="window.Lettere._closeEditCaso()">Annulla</button>
+      <button class="btn" onclick="window.Lettere._saveEditedCaseInline('${escapeHtml(id)}')">✓ Salva Modifiche</button>
+    </div>
+  </div>`;
+}
+
+// Form "Aggiungi Caso" integrato in fondo alla Libreria (come l'originale)
+function renderAddCaseForm(){
   const wardOpts=`<option value="">— Nessun reparto</option>`+
     (L.wards||[]).map(w=>`<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)}</option>`).join('');
   const tipoOpts=(TIPI||[]).map(t=>`<option value="${escapeHtml(t.id)}"${t.id==='dimissione'?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
-  const body=`
-    <div class="lt-card-static">
-      <div class="lt-side-title" style="margin:0 0 8px">Carica PDF cartella clinica <span class="lt-sub">(opzionale — estrae e separa la lettera automaticamente)</span></div>
-      <div class="lt-dropzone" onclick="document.getElementById('nc-pdf').click()"
-        ondragover="event.preventDefault();this.classList.add('drag')"
-        ondragleave="this.classList.remove('drag')"
-        ondrop="event.preventDefault();this.classList.remove('drag');window.Lettere._onPdfNuovoCaso(event.dataTransfer.files[0])">
-        <input type="file" id="nc-pdf" accept="application/pdf" style="display:none" onchange="window.Lettere._onPdfNuovoCaso(this.files[0])">
-        <div class="lt-dz-ic">📁</div>
-        <div class="lt-dz-txt"><strong>Clicca o trascina il PDF della cartella</strong></div>
-      </div>
-      <div id="nc-pdf-status" class="lt-dz-status" style="display:none"><span id="nc-pdf-status-txt"></span></div>
+  return `<div class="lt-card-static" style="margin-top:20px">
+    <div class="lt-side-title" style="margin:0 0 10px">Aggiungi Caso</div>
+    <div class="lt-side-title" style="font-size:11px;margin:0 0 8px;color:var(--ink-muted)">Carica PDF cartella clinica <span class="lt-sub">(estrae e separa la lettera automaticamente)</span></div>
+    <div class="lt-dropzone" onclick="document.getElementById('nc-pdf').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="event.preventDefault();this.classList.remove('drag');window.Lettere._onPdfNuovoCaso(event.dataTransfer.files[0])">
+      <input type="file" id="nc-pdf" accept="application/pdf" style="display:none" onchange="window.Lettere._onPdfNuovoCaso(this.files[0])">
+      <div class="lt-dz-ic">📁</div>
+      <div class="lt-dz-txt"><strong>Clicca o trascina il PDF della cartella</strong></div>
     </div>
-    <div class="lt-card-static">
-      <div class="field"><label>Nome / Diagnosi</label>
-        <input type="text" id="nc-name" placeholder='Es: "Stroke ischemico ACM dx"'></div>
-      <div class="lt-row">
-        <div class="field" style="flex:1"><label>Reparto <span class="lt-sub">(opzionale)</span></label>
-          <select id="nc-wardid">${wardOpts}</select></div>
-        <div class="field" style="flex:1"><label>Tipo</label>
-          <select id="nc-tipo">${tipoOpts}</select></div>
-      </div>
-      <div class="field"><label>Cartella clinica anonimizzata <span class="lt-sub">(opzionale)</span></label>
-        <textarea id="nc-cartella" rows="6" class="mono-input" placeholder="Incolla la cartella anonimizzata..."></textarea></div>
-      <div class="field"><label>Lettera di dimissione corrispondente <span id="nc-letter-badge" class="lt-lib-chip on" style="display:none">✓ rilevata dal PDF</span></label>
-        <textarea id="nc-letter" rows="8" class="mono-input" placeholder="Incolla la lettera già generata e revisionata..."></textarea></div>
-      <div class="lt-collapsible" style="margin-top:6px">
-        <div class="lt-side-title" style="margin:0 0 8px">Fingerprint di stile <span class="lt-sub">(opzionale ma consigliato)</span></div>
-        <p class="lt-status" style="margin:0 0 8px">Genera il fingerprint con un'AI esterna: compila cartella e lettera qui sopra, copia il prompt, incollalo in Claude/ChatGPT e riporta qui il JSON.</p>
-        <div class="lt-row" style="margin-bottom:8px">
-          <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptNuovo()">⎘ Copia prompt fingerprint</button></div>
-        <textarea id="nc-fp" rows="5" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'></textarea>
-      </div>
-      <div class="lt-row" style="justify-content:flex-end;gap:8px;margin-top:14px">
-        <button class="btn ghost" onclick="navigate('lettere-libreria')">Annulla</button>
-        <button class="btn" onclick="window.Lettere._saveNuovoCaso()">✓ Salva caso</button>
-      </div>
-    </div>`;
-  mc().innerHTML=pageHead('Aggiungi caso','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere-libreria')">← Libreria</button>`)+body;
+    <div id="nc-pdf-status" class="lt-dz-status" style="display:none;margin-bottom:10px"><span id="nc-pdf-status-txt"></span></div>
+    <div class="field"><label>Nome / Diagnosi</label>
+      <input type="text" id="nc-name" placeholder='Es: "Stroke ischemico ACM dx"'></div>
+    <div class="lt-row">
+      <div class="field" style="flex:1"><label>Reparto <span class="lt-sub">(opzionale)</span></label>
+        <select id="nc-wardid">${wardOpts}</select></div>
+      <div class="field" style="flex:1"><label>Tipo</label>
+        <select id="nc-tipo">${tipoOpts}</select></div>
+    </div>
+    <div class="field"><label>Cartella clinica anonimizzata <span class="lt-sub">(opzionale)</span></label>
+      <textarea id="nc-cartella" rows="6" class="mono-input" placeholder="Incolla la cartella anonimizzata..."></textarea></div>
+    <div class="field"><label>Lettera di dimissione corrispondente <span id="nc-letter-badge" class="lt-lib-chip on" style="display:none">✓ rilevata dal PDF</span></label>
+      <textarea id="nc-letter" rows="8" class="mono-input" placeholder="Incolla la lettera già generata e revisionata..."></textarea></div>
+    <div class="field"><label>Logica / Fingerprint <span class="lt-sub">(JSON opzionale ma consigliato)</span></label>
+      <div class="lt-row" style="margin-bottom:6px">
+        <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptNuovo()">⎘ Copia prompt fingerprint</button></div>
+      <textarea id="nc-fp" rows="5" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'></textarea></div>
+    <div class="lt-row" style="justify-content:flex-end;gap:8px;margin-top:14px">
+      <button class="btn" onclick="window.Lettere._saveNuovoCaso()">✓ Salva caso</button>
+    </div>
+  </div>`;
 }
+
+// Il form "Aggiungi Caso" è ora integrato in fondo alla Libreria (renderAddCaseForm).
+// renderNuovoCaso resta come alias verso la Libreria per compatibilità delle rotte.
+function renderNuovoCaso(){ navigate('lettere-libreria'); }
 // renderReparti rimane come alias di Libreria (la gestione reparti è integrata lì)
 function renderReparti(){ navigate('lettere-libreria'); }
 function renderCaso(id){
@@ -4708,6 +4738,15 @@ function renderImpostazioni(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderImpostazioni); return; }
   const p = (L.userTemplateData && L.userTemplateData.prefs) ? L.userTemplateData.prefs : DEFAULT_USER_PREFS;
   const seg=(key,opts)=>opts.map(o=>`<button class="lt-seg${p[key]===o.v?' on':''}" onclick="window.Lettere._setDefPref('${key}','${o.v}')">${o.l}</button>`).join('');
+  // Link all'Editor Prompt (avanzato, solo admin) — nell'originale era nella stessa pagina Impostazioni
+  const advLink = canEdit() ? `
+    <div class="lt-card-static" style="margin-top:18px">
+      <div class="lt-row" style="justify-content:space-between;align-items:center">
+        <div><div class="lt-side-title" style="margin:0">Impostazioni avanzate</div>
+          <div class="lt-status" style="margin-top:4px">Editor dei prompt globali (sistema, decorso, verifica, esami lab) e libreria template lettera.</div></div>
+        <button class="btn ghost" onclick="navigate('lettere-config')">Apri Editor Prompt →</button>
+      </div>
+    </div>` : '';
   mc().innerHTML=pageHead('Impostazioni','LetteraAI',`<button class="btn ghost" onclick="navigate('lettere')">← LetteraAI</button>`)+`
     <div class="lt-card-static">
       <div class="lt-side-title">Preferenze generazione lettera (default)</div>
@@ -4719,9 +4758,11 @@ function renderImpostazioni(){
         <div class="lt-pref-row"><label>Raccomandazioni</label><div class="lt-segs">${seg('rac',[{v:'main',l:'Principali'},{v:'all',l:'Tutte'}])}</div></div>
         <div class="lt-pref-row"><label>Terapia dimissione</label><div class="lt-segs">${seg('ter',[{v:'last',l:'Ultima terapia'},{v:'lastPlusHome',l:'+ domiciliare'}])}</div></div>
       </div>
+      <div class="field" style="margin-top:14px"><label>Altre preferenze (testo libero)</label>
+        <textarea id="lt-def-custom" rows="4" placeholder="Aggiungi altre preferenze..." oninput="window.Lettere._setDefPref('custom', this.value)">${escapeHtml(p.custom||'')}</textarea></div>
       <div class="lt-wiz-actions"><button class="btn ghost sm" onclick="window.Lettere._resetDefPrefs()">↺ Reset</button>
         <button class="btn" onclick="window.Lettere._saveDefPrefs()">✓ Salva Preferenze</button></div>
-    </div>`;
+    </div>` + advLink;
 }
 
 /* ── Segnala errori (tutti possono inviare) — solo il form ── */
@@ -5205,7 +5246,37 @@ window.Lettere = {
   _exportCaso(id){ const c=L.casi.find(x=>x.id===id); if(!c)return; const fn=('lettera_'+(wardName(c)||'')+'_'+(c.diagnosi||c.name||'')).replace(/[^a-z0-9_]+/gi,'_').toLowerCase(); exportWordDoc(c.letter||'', fn); },
 
   // ── Edit caso esistente + fingerprint ──
-  _editCaso(id){ renderCaseEditor(id); },
+  _editCaso(id){ L._libEditId=id; L._libSelectedId=id; renderLibreria();
+    setTimeout(()=>{ const p=document.getElementById('lt-edit-panel'); if(p) p.scrollIntoView({behavior:'smooth',block:'start'}); },60); },
+  _selCaso(id){ L._libSelectedId=(L._libSelectedId===id)?null:id; renderLibreria(); },
+  _closeEditCaso(){ L._libEditId=null; renderLibreria(); },
+  _toggleWardForm(){ L._libWardFormOpen=!L._libWardFormOpen; renderLibreria();
+    setTimeout(()=>{ const i=document.getElementById('lt-ward-name'); if(i) i.focus(); },60); },
+  async _copyFpPromptEdit(id){
+    const c=L.casi.find(x=>x.id===id)||{};
+    const cartella=(document.getElementById('ce-cartella')||{}).value || c.cartella || '';
+    const lettera=(document.getElementById('ce-letter')||{}).value || c.letter || '';
+    if(!lettera.trim()){ toast('Compila prima la lettera.','error'); return; }
+    const prompt=buildFingerprintPrompt(cartella, lettera);
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt fingerprint copiato. Incollalo in un\'AI esterna.','success'); }
+    catch(e){ toast('Copia non riuscita.','error'); }
+  },
+  async _saveEditedCaseInline(id){
+    const c=L.casi.find(x=>x.id===id); if(!c){ toast('Caso non trovato','error'); return; }
+    const get=(eid)=>{ const el=document.getElementById(eid); return el?el.value:''; };
+    const name=get('ce-name').trim();
+    if(!name){ toast('Inserisci un nome/diagnosi.','error'); return; }
+    const updated={
+      id, name, diagnosi:name,
+      wardId:get('ce-wardid')||'',
+      tipo:get('ce-tipo').trim()||'dimissione',
+      cartella:get('ce-cartella'), letter:get('ce-letter'),
+      fingerprint:get('ce-fp-raw').trim(),
+      folder:c.folder||'', autore:c.autore||username(), createdAt:c.createdAt,
+    };
+    try{ await saveCaso(updated); toast('Modifiche salvate.','success'); L._libEditId=null; renderLibreria(); }
+    catch(e){ toast('Errore: '+e.message,'error'); }
+  },
   async _saveEditedCase(id){
     const c=L.casi.find(x=>x.id===id); if(!c){ toast('Caso non trovato','error'); return; }
     const get=(eid)=>{ const el=document.getElementById(eid); return el?el.value:''; };
@@ -5259,7 +5330,7 @@ window.Lettere = {
   },
   _delCaso(id){ const c=L.casi.find(x=>x.id===id); if(!c)return;
     Modals().confirm({ title:'Eliminare il caso?', subtitle:`<strong>${escapeHtml(c.diagnosi||c.name||id)}</strong> sarà rimosso dalla libreria.`,
-      confirmLabel:'Elimina', danger:true, onConfirm:async()=>{ try{ await softDeleteCaso(c); toast('Caso eliminato.','success'); navigate('lettere-libreria'); }catch(e){ toast('Errore: '+e.message,'error'); } } }); },
+      confirmLabel:'Elimina', danger:true, onConfirm:async()=>{ try{ await softDeleteCaso(c); toast('Caso eliminato.','success'); if(L._libEditId===id)L._libEditId=null; if(L._libSelectedId===id)L._libSelectedId=null; renderLibreria(); }catch(e){ toast('Errore: '+e.message,'error'); } } }); },
 
   // ── Backup/ripristino libreria JSON ──
   _exportLib(){ exportLibraryJson(); },
@@ -5298,7 +5369,7 @@ window.Lettere = {
   async _addWard(){
     const el=document.getElementById('lt-ward-name'); const name=(el&&el.value||'').trim();
     if(!name){ toast('Inserisci un nome reparto.','error'); return; }
-    try{ await createWardRepo(name); toast('Reparto aggiunto.','success'); renderLibreria(); }
+    try{ await createWardRepo(name); toast('Reparto aggiunto.','success'); L._libWardFormOpen=false; renderLibreria(); }
     catch(e){ toast('Errore: '+e.message,'error'); }
   },
   _delWard(id){
@@ -5314,7 +5385,8 @@ window.Lettere = {
   _setDefPref(key,val){
     if(!L.userTemplateData) L.userTemplateData={};
     if(!L.userTemplateData.prefs) L.userTemplateData.prefs=JSON.parse(JSON.stringify(DEFAULT_USER_PREFS));
-    L.userTemplateData.prefs[key]=val; renderImpostazioni();
+    L.userTemplateData.prefs[key]=val;
+    if(key!=='custom') renderImpostazioni(); // 'custom' è testo libero: non re-renderizzare o si perde il focus
   },
   _resetDefPrefs(){
     if(!L.userTemplateData) L.userTemplateData={};
@@ -5452,9 +5524,10 @@ window.Lettere = {
   .lt-xls-preview-h{font-family:var(--mono);font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
   .lt-xls-preview-c{background:var(--bg-sink);border:1px solid var(--rule);border-radius:3px;padding:10px 12px;font-family:var(--mono);font-size:10px;color:var(--ink-soft);max-height:200px;overflow-y:auto;white-space:pre-wrap}
   /* Libreria casi: griglia di card cliccabili (replica .tpl-card originale) */
-  .lt-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .lt-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;max-height:420px;overflow-y:auto;padding-right:4px}
   .lt-lib-card{display:flex;flex-direction:column;justify-content:space-between;gap:8px;padding:14px;background:var(--bg-paper);border:1px solid var(--rule);border-radius:4px;cursor:pointer;transition:border-color .12s,background .12s}
   .lt-lib-card:hover{border-color:var(--accent);background:var(--bg-raised)}
+  .lt-lib-card.on{border-color:var(--accent);background:var(--accent-soft)}
   .lt-lib-name{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3}
   .lt-lib-ward{font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:4px}
   .lt-lib-meta{font-family:var(--mono);font-size:10px;color:var(--ink-muted);margin-top:4px}
@@ -5462,6 +5535,10 @@ window.Lettere = {
   .lt-lib-chip{font-family:var(--mono);font-size:9px;color:var(--ink-soft);background:var(--bg-sink);border:1px solid var(--rule);border-radius:10px;padding:1px 8px}
   .lt-lib-chip.on{color:var(--accent);background:var(--accent-soft);border-color:var(--accent-soft)}
   .lt-lib-actions{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--rule)}
+  .lt-ward-list{display:flex;flex-direction:column;gap:8px}
+  .lt-ward-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--bg-sink);border:1px solid var(--rule);border-radius:4px}
+  .lt-ward-name{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink)}
+  .lt-ward-count{font-family:var(--mono);font-size:9px;color:var(--ink-muted);margin-top:2px}
   /* Sezione collassabile (replica .collapsible-section originale) */
   .lt-collapsible{border:1px solid var(--rule);border-radius:3px;margin-bottom:12px;overflow:hidden}
   .lt-collapsible-toggle{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:var(--bg-paper);border:none;cursor:pointer;font-size:13px;color:var(--ink);text-align:left}
