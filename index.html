@@ -442,8 +442,11 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 /* Root-level sidebar rows (nuova UX drill-down) */
 .nav-tree-root-row{padding:16px 14px;font-family:var(--serif);font-size:16px;font-weight:500;color:var(--ink);border-radius:4px;justify-content:space-between;position:relative}
 .nav-tree-root-row:hover{background:var(--rule-soft)}
-/* Durante l'hover la linea divisoria sparisce così l'evidenziazione non mostra lo stacco */
+/* Durante l'hover la linea divisoria sparisce così l'evidenziazione non mostra lo stacco.
+   Nascondo sia la linea SOTTO la sezione in hover, sia quella del nodo PRECEDENTE
+   (che appare sopra la sezione in hover), così non resta nessuno stacco visibile. */
 .nav-tree-node:has(> .nav-tree-root-row:hover) > .nav-tree-root-row::after{opacity:0}
+.nav-tree-node:has(+ .nav-tree-node > .nav-tree-root-row:hover) > .nav-tree-root-row::after{opacity:0}
 .nav-tree-root-row .nav-tree-label{font-weight:500;font-family:var(--serif)}
 .nav-tree-root-row .nav-tree-count{display:none}
 /* Linea sottile tra le categorie root: bordo inferiore con margin laterale.
@@ -1943,11 +1946,18 @@ function _onHistoryPush() {
   const ctx = shouldGuardBack();
   if (ctx.active) armBackGuard(ctx.silent);
 }
-function _onHistoryPop(state) {
+function _onHistoryPop(histState) {
   // Chiamato da popstate. Lo state contiene { pos } messo in pushState.
-  if (state && typeof state.pos === 'number') {
-    _historyPos = state.pos;
+  // Le entry "guardia" hanno pos uguale alla pagina che proteggono: le ignoro per il pos.
+  if (histState && typeof histState.pos === 'number' && !histState.guard) {
+    _historyPos = histState.pos;
+  } else if (histState && histState.guard && typeof histState.pos === 'number') {
+    _historyPos = histState.pos;
   }
+  // Clamp difensivo: _historyPos resta sempre nel range [0, _historyMax] così i pulsanti
+  // freccia non si bloccano mai per disallineamenti dovuti alle entry guardia.
+  if (_historyPos < 0) _historyPos = 0;
+  if (_historyPos > _historyMax) _historyMax = _historyPos;
   updateNavHistoryButtons();
 }
 function goBack() {
@@ -4401,19 +4411,9 @@ const urlRouter = (function() {
           return;
         }
       }
-      // La guardia ha lasciato passare: l'entry corrente è quella "tecnica" della guardia
-      // (stesso URL della pagina). Faccio un back aggiuntivo soppresso per arrivare alla
-      // pagina reale precedente, così i contatori restano coerenti e le frecce non si bloccano.
-      _suppress = true;
-      window.history.back();
-      setTimeout(() => {
-        _suppress = false;
-        _onHistoryPop(window.history.state);
-        const r = readUrl();
-        if (r.blockHash) state.pendingBlockHash = r.blockHash;
-        navigate(r.route, r.params);
-      }, 0);
-      return;
+      // La guardia ha lasciato passare: l'entry tecnica è già stata consumata dal popstate
+      // corrente. Procedo col routing normale qui sotto (niente back automatici aggiuntivi,
+      // che in passato causavano disallineamenti al terzo back).
     }
     // Aggiorna il tracker di posizione history (per abilitare/disabilitare frecce interne)
     _onHistoryPop(e.state);
@@ -7556,12 +7556,10 @@ function renderCustomSezioniHtml() {
       const g = (c._gruppo) ? c._gruppo : '';
       const sezName = (c.sezione || '').trim();
       const uocName = g ? stripPrefixNome(g) : '';
-      // Nelle sezioni personalizzate il sottotitolo è "UOC ridotta · Sezione"
-      const ctx = [uocName, sezName].filter(Boolean).join(' · ');
-      const removeBtn = editMode
-        ? `<button class="btn-icon-mini edit-only" style="color:var(--danger);margin-left:4px;" onclick="event.stopPropagation();removeFromCustomSezione('${escapeJs(sez.id)}','${escapeJs(cid)}')" title="Rimuovi dalla sezione">✕</button>`
-        : '';
-      return renderContattoCard(c, { contextLine: ctx, showStarInEdit: true, removeBtn });
+      // Nelle sezioni personalizzate il prefisso inline è "UOC ridotta · Sezione"
+      const prefix = [uocName, sezName].filter(Boolean).join(' · ');
+      // Niente pulsante ✕: la rimozione si fa dal menu della stella.
+      return renderContattoCard(c, { inlinePrefix: prefix || null, showStarInEdit: true });
     }).join('') || '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>';
     return `<div class="pinned-uoc-block" data-cs-id="${escapeHtml(sez.id)}">
       <div class="pinned-uoc-header">
@@ -8011,15 +8009,15 @@ function renderNumeri(filter, targetContainer) {
         list.forEach(g => (g.contatti || []).forEach(c => items.push({ c, g })));
         return renderContattiGroupedBox(items);
       }
-      // Vista preferiti (★): box "UOC · Sezione" come MdG e ricerca
+      // Vista preferiti (★): contatti inline "Sezione · etichetta", stella in edit-mode
       if (filter === 'pinned' && src === 'aopd') {
         const items = [];
         list.forEach(g => (g.contatti || []).forEach(c => items.push({ c, g })));
-        return renderContattiGroupedBox(items);
+        return renderContattiGroupedBox(items, { inline: true, starInEdit: true });
       }
       // Altre source (osa/iov) non mostrano nulla in modalità pinned
       if (filter === 'pinned') return '';
-      const compactMode = !rubricaQuery && !filter;
+      const compactMode = !rubricaQuery && (!filter || filter === 'all');
       if (compactMode) {
         const stripPrefix = stripPrefixNome;
         // Calcolo le iniziali disponibili (solo lettere A-Z, ignoro numeri/altro)
@@ -8447,9 +8445,14 @@ function renderContattoCard(c, opts = {}) {
   const star = opts.showStarInEdit && c.id ? ` <span class="edit-only" style="display:inline-flex;align-items:center;">${renderPinButton('contatto', c.id)}</span>` : '';
   // Pulsante rimuovi opzionale (sezioni custom in edit-mode)
   const removeBtn = opts.removeBtn || '';
+  // Prefisso inline nell'etichetta (es. "Sezione · " o "UOC · Sezione · ") mostrato
+  // prima del nome del contatto, in grigio, sulla stessa riga.
+  const inlinePrefix = opts.inlinePrefix
+    ? `<span style="color:var(--ink-muted);font-weight:400;">${escapeHtml(opts.inlinePrefix)} · </span>`
+    : '';
   return `<div class="${rowCls}" onclick="navigate('numeri', {filter:'${escapeJs(c.id)}'})">
     <div class="sr-contact-left">
-      <div class="sr-contact-label">${escapeHtml(c.etichetta)}${star}${removeBtn}</div>
+      <div class="sr-contact-label">${inlinePrefix}${escapeHtml(c.etichetta)}${star}${removeBtn}</div>
       ${ctxHtml}
     </div>
     <div class="sr-contact-nums">${numChipsHtml}</div>
@@ -8458,8 +8461,19 @@ function renderContattoCard(c, opts = {}) {
 
 // Raggruppa una lista di {c, g} per UOC+sezione e li rende dentro box con header
 // "UOC ridotto · Sezione" nello stile dei risultati di ricerca. Usato da home e MdG.
-function renderContattiGroupedBox(items) {
+// opts.starInEdit: mostra la stella in edit-mode su ogni contatto.
+// opts.inline: niente box-titolo; ogni contatto mostra inline "Sezione · etichetta" (preferiti).
+function renderContattiGroupedBox(items, opts = {}) {
   if (!items.length) return '';
+  if (opts.inline) {
+    // Lista piatta: ogni contatto con prefisso inline "Sezione · etichetta"
+    return `<div class="sr-sede-bucket" style="margin-bottom:10px;"><div class="sr-sede-bucket-contatti">${
+      items.map(({ c }) => renderContattoCard(c, {
+        inlinePrefix: (c.sezione || '').trim() || null,
+        showStarInEdit: !!opts.starInEdit
+      })).join('')
+    }</div></div>`;
+  }
   const groups = [];
   const byKey = {};
   items.forEach(({ c, g }) => {
@@ -8474,7 +8488,7 @@ function renderContattiGroupedBox(items) {
   return groups.map(grp => {
     const titleUoc = `<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})">${escapeHtml(grp.gNome)}</span>`;
     const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="ctx-sezione">${escapeHtml(grp.sezione)}</span>` : '';
-    const rows = grp.contatti.map(({ c }) => renderContattoCard(c)).join('');
+    const rows = grp.contatti.map(({ c }) => renderContattoCard(c, { showStarInEdit: !!opts.starInEdit })).join('');
     return `<div class="sr-sede-bucket" style="margin-bottom:10px;">
       <div class="sr-sede-bucket-header sr-sede-bucket-static">
         <span class="sede-bucket-tipo">${titleUoc}${titleSez}</span>
