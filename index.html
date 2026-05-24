@@ -1877,11 +1877,11 @@ function isPwaStandalone() {
 }
 
 function shouldGuardBack() {
-  // Cattura editor file aperto (qualsiasi tipo): protezione dall'uscita accidentale
+  // Cattura editor file aperto (qualsiasi tipo): protezione dall'uscita accidentale.
   if (state.editingContext) return { active: true, silent: false };
-  // Cattura home in PWA: doppio tasto back per uscire dall'app
-  const onHome = (state.currentView === 'home' || !state.currentView);
-  if (onHome && isPwaStandalone()) return { active: true, silent: true };
+  // NB: in passato c'era anche una guardia "home in PWA" (doppio back per uscire dall'app).
+  // È stata rimossa perché la sua entry pushState non veniva contata in _historyPos/_historyMax,
+  // disallineando i pulsanti freccia avanti/indietro (bug: dopo 2 back il sistema si bloccava).
   return { active: false, silent: false };
 }
 
@@ -4353,6 +4353,14 @@ const urlRouter = (function() {
   // Cattura back/forward del browser, gesto swipe iOS/Android, tasto back hardware su PWA.
   function _onPopState(e) {
     if (_suppress) return;
+    // Rete di sicurezza: se atterriamo su un'entry "guardia" residua senza che la logica
+    // di guardia sia attiva, la saltiamo automaticamente per non bloccare la navigazione.
+    if (e.state && e.state.guard && !_backGuardArmed) {
+      _suppress = true;
+      window.history.back();
+      setTimeout(() => { _suppress = false; }, 0);
+      return;
+    }
     // Se c'era una guardia armata, popstate l'ha appena consumata.
     // Decido se intercettare (riarmare guardia + toast) o lasciar passare.
     if (_backGuardArmed) {
@@ -4810,10 +4818,6 @@ function renderReparto() {
   $('main-content').innerHTML = `
     <div class="page-head">
       <h1 class="page-title">Reparto</h1>
-      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);max-width:640px;line-height:1.5;">
-        Carica o incolla la cartella di un paziente ricoverato, anonimizzala con lo stesso motore di LetteraAI,
-        poi copia un prompt da incollare in un'AI esterna per ottenere criticità, diagnosi differenziali, esami da richiedere e punti di attenzione.
-      </div>
     </div>
 
     <div class="card" style="margin-bottom:16px;">
@@ -7526,7 +7530,7 @@ function renderCustomSezioniHtml() {
         : '';
       // Uso renderNumeroRow per coerenza con la rubrica; il pulsante rimuovi è
       // aggiunto a parte, avvolgendo la riga.
-      return `<div style="position:relative;">${renderNumeroRow(c, c._gruppoId || null, null, { hideLuogo: true, contextLine: ctx })}${removeBtn ? `<div style="position:absolute;top:6px;right:6px;">${removeBtn}</div>` : ''}</div>`;
+      return `<div style="position:relative;">${renderNumeroRow(c, c._gruppoId || null, null, { hideLuogo: true, contextLine: ctx, pinnedView: true })}${removeBtn ? `<div style="position:absolute;top:6px;right:6px;">${removeBtn}</div>` : ''}</div>`;
     }).join('') || '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>';
     return `<div class="pinned-uoc-block" data-cs-id="${escapeHtml(sez.id)}">
       <div class="pinned-uoc-header">
@@ -8127,7 +8131,7 @@ function renderNumeri(filter, targetContainer) {
               if (buckets.length === 1 && buckets[0].sedeKey === '_all') {
                 const suppressCtxFlat = !!state._isInsideSpecificUoc;
                 const canReorderFlat = filter !== 'pinned' && filter !== 'guardia';
-                return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify, { gruppo: g, suppressContext: suppressCtxFlat, reorderable: canReorderFlat, contextLine: (filter === 'pinned' && c.sezione) ? c.sezione : '' })).join('');
+                return buckets[0].contatti.map(c => renderNumeroRow(c, g.id, c._classify, { gruppo: g, suppressContext: suppressCtxFlat, reorderable: canReorderFlat, contextLine: filter === 'pinned' ? [stripPrefixNome(g.nome), c.sezione].filter(Boolean).join(' · ') : '', pinnedView: filter === 'pinned' })).join('');
               }
               // Logica inversa: espansi di default quando si apre la UOC in overview.
               // Quando si fa una ricerca (rubricaQuery) o filtro guardia: collassati,
@@ -8226,7 +8230,7 @@ function renderNumeri(filter, targetContainer) {
                           hide = cToks.length > 0 && cToks.every(t => sToks.has(t));
                         }
                       }
-                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, reorderable: (filter !== 'pinned' && filter !== 'guardia'), contextLine: (filter === 'pinned' && c.sezione) ? c.sezione : '' });
+                      return renderNumeroRow(c, g.id, c._classify, { hideLuogo: hide, reorderable: (filter !== 'pinned' && filter !== 'guardia'), contextLine: filter === 'pinned' ? [stripPrefixNome(g.nome), c.sezione].filter(Boolean).join(' · ') : '', pinnedView: filter === 'pinned' });
                     };
                     // Se il bucket ha sottosezioni: renderizzo ogni subBucket come sezione nidificata
                     if (b.subBuckets && b.subBuckets.length) {
@@ -9092,11 +9096,14 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const reorderBtns = canReorder ? `
     <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',-1)" title="Sposta su">↑</button>
     <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',1)" title="Sposta giù">↓</button>` : '';
-  const editControls = c.id ? ` <span class="edit-only" style="display:inline-flex;gap:4px;margin-left:4px;">
+  const pinnedView = opts && opts.pinnedView;
+  const editControls = c.id ? (pinnedView
+    ? ` <span class="edit-only" style="display:inline-flex;gap:4px;margin-left:4px;">${reorderBtns}</span>`
+    : ` <span class="edit-only" style="display:inline-flex;gap:4px;margin-left:4px;">
     ${reorderBtns}
     <button class="btn-icon-mini" onclick="event.stopPropagation();editContatto('${escapeJs(c.id)}')" title="Modifica">✎</button>
     <button class="btn-icon-mini" onclick="event.stopPropagation();deleteContatto('${escapeJs(c.id)}')" title="Elimina">🗑</button>
-  </span>` : '';
+  </span>`) : '';
   // Kind selector (solo edit mode)
   const pendingKind = state.pendingTagEdits && state.pendingTagEdits.has(c.id)
     ? state.pendingTagEdits.get(c.id) : undefined;
@@ -9134,7 +9141,7 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   return `
     <div class="${rowClass}" ${dataContattoAttr} ${rowClickHandler}>
       <div class="numero-row-top">
-        <div class="numero-label"><span class="numero-label-text">${escapeHtml(c.etichetta)}</span>${c.id ? renderPinButton('contatto', c.id) : ''}${editControls}</div>
+        <div class="numero-label"><span class="numero-label-text">${escapeHtml(c.etichetta)}</span>${c.id ? (pinnedView ? `<span class="edit-only" style="display:inline-flex;">${renderPinButton('contatto', c.id)}</span>` : renderPinButton('contatto', c.id)) : ''}${editControls}</div>
         ${primaryHtml}
       </div>
       ${ctxLine}
