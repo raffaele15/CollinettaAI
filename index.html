@@ -483,6 +483,9 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 body.edit-mode .nav-tree-row:hover .nav-edit-actions,
 body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 .btn-icon-mini{background:transparent;border:none;cursor:pointer;padding:2px 4px;color:var(--ink-muted);border-radius:2px;font-size:13px;line-height:1;display:inline-flex;align-items:center}
+.btn-spinner{display:inline-block;width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:btn-spin .6s linear infinite;vertical-align:middle}
+@keyframes btn-spin{to{transform:rotate(360deg)}}
+.btn-loading{opacity:.9;cursor:progress;pointer-events:none}
 .btn-icon-mini:hover{background:var(--rule-soft);color:var(--ink)}
 
 /* Context menu (popover) */
@@ -1660,6 +1663,14 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
         <button class="user-menu-item hidden" id="user-menu-utenti" onclick="closeUserMenu(); navigate('utenti');">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Gestione utenti
+        </button>
+        <button class="user-menu-item" onclick="closeUserMenu(); openSegnalazioneModal();">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Segnala un problema
+        </button>
+        <button class="user-menu-item hidden" id="user-menu-segnalazioni" onclick="closeUserMenu(); navigate('segnalazioni');">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+          Segnalazioni ricevute
         </button>
         <button class="user-menu-item" onclick="closeUserMenu(); logout();">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -4226,6 +4237,8 @@ async function enterApp() {
   $('user-avatar').textContent = avatarSource.toUpperCase();
   const isAdminNow = !!state.session.isAdmin;
   $('nav-utenti').classList.toggle('hidden', !isAdminNow);
+  const umSegn = document.getElementById('user-menu-segnalazioni');
+  if (umSegn) umSegn.classList.toggle('hidden', !isAdminNow);
   const umUtenti = document.getElementById('user-menu-utenti');
   if (umUtenti) umUtenti.classList.toggle('hidden', !isAdminNow);
   if (isAdminNow) {
@@ -4445,6 +4458,7 @@ const urlRouter = (function() {
       case 'modulo-edit':     return ['modulo', p.slug, 'edit'];
       case 'calendario':      return ['calendario'];
       case 'cestino':         return ['cestino'];
+      case 'segnalazioni':    return ['segnalazioni'];
       case 'cestino-utenti':  return ['cestino-utenti'];
       case 'utenti':          return ['utenti'];
       case 'attivita':        return ['attivita'];
@@ -4509,6 +4523,7 @@ const urlRouter = (function() {
         return { route: 'modulo', params: { slug: second }, blockHash };
       case 'calendario': return { route: 'calendario', params: {}, blockHash };
       case 'cestino': return { route: 'cestino', params: {}, blockHash };
+      case 'segnalazioni': return { route: 'segnalazioni', params: {}, blockHash };
       case 'cestino-utenti': return { route: 'cestino-utenti', params: {}, blockHash };
       case 'utenti': return { route: 'utenti', params: {}, blockHash };
       case 'attivita': return { route: 'attivita', params: {}, blockHash };
@@ -4542,17 +4557,23 @@ const urlRouter = (function() {
   }
 
   // Aggiorna URL senza scatenare il listener (uso replaceState/hash silente)
-  function updateUrl(route, params) {
+  function updateUrl(route, params, replace) {
     const newHash = buildHash(route, params);
-    if (newHash === window.location.hash) return;
+    if (newHash === window.location.hash && !replace) return;
     _suppress = true;
     try {
-      // Uso pushState così il browser registra l'entry per il bottone indietro.
-      // Salvo nello state la posizione (pos) per sapere se siamo andati avanti/indietro
-      // a seguito di popstate (necessario per abilitare/disabilitare pulsanti freccia).
-      const newPos = (_historyPos || 0) + 1;
-      window.history.pushState({ route, params, pos: newPos }, '', newHash);
-      _onHistoryPush();
+      if (replace) {
+        // Sostituisce l'entry corrente senza aggiungerne una nuova (entrata/uscita editor):
+        // così la cronologia non accumula entry duplicate della stessa scheda.
+        window.history.replaceState({ route, params, pos: (_historyPos || 0) }, '', newHash);
+      } else {
+        // Uso pushState così il browser registra l'entry per il bottone indietro.
+        // Salvo nello state la posizione (pos) per sapere se siamo andati avanti/indietro
+        // a seguito di popstate (necessario per abilitare/disabilitare pulsanti freccia).
+        const newPos = (_historyPos || 0) + 1;
+        window.history.pushState({ route, params, pos: newPos }, '', newHash);
+        _onHistoryPush();
+      }
     } catch {
       window.location.hash = newHash;
     }
@@ -4567,12 +4588,25 @@ const urlRouter = (function() {
     return _segmentsToRoute(segments);
   }
 
+  // Editor raggiunto via cronologia (back/forward): NON riaprirlo né fermarcisi. L'editor si
+  // apre solo cliccando "Modifica"; quando la history ci porta su una route di editor saltiamo
+  // automaticamente quell'entry (continuando nella stessa direzione, all'indietro).
+  const _EDIT_ROUTES = new Set(['clinica-edit', 'procedura-edit', 'modulo-edit']);
+  function _skipEditorEntryIfNeeded(route) {
+    if (!_EDIT_ROUTES.has(route)) return false;
+    _suppress = true;
+    window.history.back();
+    setTimeout(() => { _suppress = false; }, 0);
+    return true;
+  }
+
   // Listener hashchange: viene attivato sia da pushState (in alcuni browser) sia
   // dal bottone indietro/avanti del browser. Se _suppress è true (cambio fatto da noi),
   // ignora. Altrimenti rileggi l'URL e naviga di conseguenza.
   function _onHashChange() {
     if (_suppress) return;
     const { route, params, blockHash } = readUrl();
+    if (_skipEditorEntryIfNeeded(route)) return;
     if (blockHash) state.pendingBlockHash = blockHash;
     navigate(route, params);
   }
@@ -4617,6 +4651,7 @@ const urlRouter = (function() {
     // Aggiorna il tracker di posizione history (per abilitare/disabilitare frecce interne)
     _onHistoryPop(e.state);
     const { route, params, blockHash } = readUrl();
+    if (_skipEditorEntryIfNeeded(route)) return;
     if (blockHash) state.pendingBlockHash = blockHash;
     // fromHistory=true: la navigazione è scatenata dal back/forward del browser, quindi
     // l'URL è GIÀ quello corretto. navigate NON deve fare un nuovo pushState (che
@@ -4686,7 +4721,7 @@ function navigate(route, params = {}, navOpts = {}) {
   // di posizione history per i pulsanti freccia interni.
   // Se la navigazione viene dal back/forward del browser (fromHistory), l'URL è già
   // corretto: NON faccio un nuovo pushState (eviterei di resettare _historyMax).
-  if (typeof urlRouter !== 'undefined' && !(navOpts && navOpts.fromHistory)) urlRouter.updateUrl(route, params);
+  if (typeof urlRouter !== 'undefined' && !(navOpts && navOpts.fromHistory)) urlRouter.updateUrl(route, params, navOpts && navOpts.replace);
   if (route !== 'search') $('global-search').value = '';
 
   switch (route) {
@@ -4704,6 +4739,7 @@ function navigate(route, params = {}, navOpts = {}) {
     case 'modulo': renderModulo(params.slug); break;
     case 'calendario': renderCalendario(params); break;
     case 'cestino': renderCestino(); break;
+    case 'segnalazioni': renderSegnalazioni(); break;
     case 'cestino-utenti': renderCestinoUtenti(); break;
     case 'utenti': renderGestioneUtenti(); break;
     case 'attivita': renderAttivita(); break;
@@ -5128,7 +5164,7 @@ function renderReparto() {
         <div style="margin-top:10px;">
           <textarea id="reparto-sys" rows="8" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoSys(this.value)">${escapeHtml(sysVal)}</textarea>
           <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
-            ${isAdmin() ? `<button class="btn primary" style="font-size:12px;background:var(--ink);color:var(--bg-paper);border-color:var(--ink);" onclick="window.saveRepartoSys()">💾 Salva nel repo</button>` : ''}
+            ${isAdmin() ? `<button class="btn primary" style="font-size:12px;background:var(--ink);color:var(--bg-paper);border-color:var(--ink);" onclick="runWithSpinner(this, window.saveRepartoSys)">💾 Salva nel repo</button>` : ''}
             <button class="btn" style="font-size:12px;" onclick="window.resetRepartoSys()">⟲ Ripristina istruzioni di default</button>
           </div>
           <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">${isAdmin() ? `Le istruzioni salvate restano condivise tra i login (in <code>${escapeHtml(REPARTO_SYSTEM_PATH)}</code>).` : 'Solo gli amministratori possono salvare istruzioni condivise. Le tue modifiche valgono solo per questa sessione.'}</div>
@@ -5871,7 +5907,7 @@ function renderProcedura(slug) {
       </div>
       <div class="page-actions">
         <button class="btn ghost" onclick="shareLink(buildShareUrl('procedura', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(proc.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questa scheda"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
-        <button class="btn edit-only" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
+        <button class="btn edit-only" onclick="navigate('procedura-edit', {slug:'${escapeHtml(slug)}'}, {replace:true})">Modifica</button>
         <button class="btn ghost edit-only" onclick="showHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
         <button class="btn ghost edit-only" onclick="confirmDelete('procedura', '${escapeHtml(slug)}')">Elimina</button>
       </div>
@@ -5967,7 +6003,7 @@ function renderSchedaClinica(slug) {
       </div>
       <div class="page-actions">
         <button class="btn ghost" onclick="shareLink(buildShareUrl('clinica-scheda', {slug:'${escapeHtml(slug)}'}), 'CollinettaAI · ${escapeHtml(scheda.titolo || slug).replace(/'/g, '\\\'')}')" title="Condividi link a questa scheda"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi</button>
-        <button class="btn edit-only" onclick="navigate('clinica-edit', {slug:'${escapeHtml(slug)}'})">Modifica</button>
+        <button class="btn edit-only" onclick="navigate('clinica-edit', {slug:'${escapeHtml(slug)}'}, {replace:true})">Modifica</button>
         <button class="btn ghost edit-only" onclick="showClinicaHistoryModal('${escapeHtml(slug)}')">Cronologia</button>
       </div>
     </div>
@@ -6036,7 +6072,7 @@ function renderEditorUIClinica(slug, frontmatter, body) {
   const editSubs = [...new Set([...subOpts, ...(state.index.clinica || []).map(c => c.sottocategoria).filter(Boolean)])].sort();
   const currentSub = frontmatter.sottocategoria || ((state.index.clinica || []).find(c => c.slug === slug) || {}).sottocategoria || '';
   // Extract known schema fields from frontmatter to a YAML blob for manual editing
-  const standardKeys = ['id','titolo','categoria','sottocategoria','tag','termini_equivalenti','ultima_modifica','modificato_da','cronologia_recente'];
+  const standardKeys = ['id','titolo','categoria','sottocategoria','tag','termini_equivalenti','ultima_modifica','modificato_da','cronologia_recente','contenuti','sintesi'];
   const advancedFrontmatter = {};
   Object.keys(frontmatter).forEach(k => {
     if (!standardKeys.includes(k)) advancedFrontmatter[k] = frontmatter[k];
@@ -6146,7 +6182,7 @@ function renderEditorUIClinica(slug, frontmatter, body) {
     window.removeEventListener('beforeunload', beforeUnloadHandler);
     navigate('clinica-scheda', { slug });
   };
-  $('btn-save-edit').onclick = saveSchedaClinica;
+  $('btn-save-edit').onclick = function () { runWithSpinner(this, saveSchedaClinica); };
   // AI Import workflow: bottone opzionale per popolare i blocchi a partire da
   // testo grezzo, tramite un'AI esterna.
   const btnAiClinica = $('btn-ai-import-clinica');
@@ -7096,7 +7132,7 @@ function renderEditorUI(slug, frontmatter, body) {
     window.removeEventListener('beforeunload', beforeUnloadHandler);
     navigate('procedura', { slug });
   };
-  $('btn-save-edit').onclick = saveProcedura;
+  $('btn-save-edit').onclick = function () { runWithSpinner(this, saveProcedura); };
   // AI Import workflow: bottone opzionale per popolare i blocchi a partire da
   // testo grezzo, tramite un'AI esterna.
   const btnAi = $('btn-ai-import-proc');
@@ -8759,7 +8795,7 @@ function renderContattiGroupedBox(items, opts = {}) {
   });
   return groups.map(grp => {
     const titleUoc = `<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})">${escapeHtml(grp.gNome)}</span>`;
-    const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="ctx-sezione">${escapeHtml(grp.sezione)}</span>` : '';
+    const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})" title="Apri ${escapeHtml(grp.gNome)}">${escapeHtml(grp.sezione)}</span>` : '';
     const rows = grp.contatti.map(({ c }) => renderContattoCard(c, {
       // In modalità inline (sezione UOC standard): l'UOC è nel titolo del box, la sezione
       // del contatto è l'occhiello sopra l'etichetta.
@@ -8840,6 +8876,7 @@ function renderHomeNumeriSearchResults(query) {
   const box = document.getElementById('home-numeri-search-results');
   if (!box) return;
   const q = (query || '').trim().toLowerCase();
+  const qTokens = q.split(/\s+/).filter(Boolean);
   const already = new Set((state.userPrefs && state.userPrefs.home_numeri) || []);
   // Senza query non mostro nulla: la lista completa sarebbe troppo lunga.
   // L'utente digita per cercare tra TUTTI i contatti della rubrica.
@@ -8856,7 +8893,7 @@ function renderHomeNumeriSearchResults(query) {
       const cellPubFlat = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
       const hay = [c.etichetta, g.nome, (c.alias || []).join(' '), (c.tag || []).join(' '), c.sezione, (c.numeri || []).join(' '), cellFlat, cellPubFlat, c.breve]
         .filter(Boolean).join(' ').toLowerCase();
-      if (hay.includes(q)) matches.push({ c, g });
+      if (qTokens.every(t => hay.includes(t))) matches.push({ c, g });
     });
   });
   if (!matches.length) {
@@ -10439,7 +10476,7 @@ function renderModuloCompilatore(slug, det) {
       ${editMode ? `
         <button class="btn ghost" onclick="addModuloBox('${escapeJs(slug)}')">+ Aggiungi box</button>
         ${isDirty ? `
-          <button class="btn primary" id="mod-btn-save" onclick="salvaModuloBoxes('${escapeJs(slug)}')" style="background:#185FA5;border-color:#185FA5;">Salva</button>
+          <button class="btn primary" id="mod-btn-save" onclick="runWithSpinner(this, () => salvaModuloBoxes('${escapeJs(slug)}'))" style="background:#185FA5;border-color:#185FA5;">Salva</button>
           <button class="btn ghost" onclick="scartaModuloBoxesModifiche('${escapeJs(slug)}')">Scarta</button>
           <span class="mod-toolbar-hint" style="color:#A32D2D;font-style:normal;">Modifiche non salvate</span>
         ` : `<span class="mod-toolbar-hint">Trascina i box per spostarli, usa gli angoli per ridimensionarli.</span>`}
@@ -11331,7 +11368,7 @@ function _refreshModuloToolbar(slug) {
     ${editMode ? `
       <button class="btn ghost" onclick="addModuloBox('${escapeJs(slug)}')">+ Aggiungi box</button>
       ${isDirty ? `
-        <button class="btn primary" id="mod-btn-save" onclick="salvaModuloBoxes('${escapeJs(slug)}')" style="background:#185FA5;border-color:#185FA5;">Salva</button>
+        <button class="btn primary" id="mod-btn-save" onclick="runWithSpinner(this, () => salvaModuloBoxes('${escapeJs(slug)}'))" style="background:#185FA5;border-color:#185FA5;">Salva</button>
         <button class="btn ghost" onclick="scartaModuloBoxesModifiche('${escapeJs(slug)}')">Scarta</button>
         <span class="mod-toolbar-hint" style="color:#A32D2D;font-style:normal;">Modifiche non salvate</span>
       ` : `<span class="mod-toolbar-hint">Trascina i box per spostarli, usa gli angoli per ridimensionarli.</span>`}
@@ -13171,7 +13208,7 @@ function renderCalImportPreview() {
       }).join('')}
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;">
-      <button class="btn" onclick="calImportSave()">Salva ${list.filter(e => e._enabled).length} eventi</button>
+      <button class="btn" onclick="runWithSpinner(this, calImportSave)">Salva ${list.filter(e => e._enabled).length} eventi</button>
       <button class="btn ghost" onclick="state._calImportParsed=null;renderCalImportPreview();">Reset</button>
     </div>
   `;
@@ -16590,7 +16627,7 @@ function renderSearchResults(query, targetId) {
     rawResults = state.fuse.search(filteredTerms.length > 0 ? filteredTerms.join(' ') : effectiveQuery);
   }
 
-  const nonNumeri = onlyNumeri ? [] : rawResults.filter(r => r.item.type !== 'numero').slice(0, 20);
+  let nonNumeri = onlyNumeri ? [] : rawResults.filter(r => r.item.type !== 'numero').slice(0, 20);
   const numeriRaw = rawResults.filter(r => r.item.type === 'numero');
 
   const lowerQuery = effectiveQuery.toLowerCase();
@@ -16658,6 +16695,17 @@ function renderSearchResults(query, targetId) {
   const allTokensMatch = (text, groupText) => {
     return queryTerms.every(t => tokenMatches(t, text) || tokenMatches(t, groupText));
   };
+
+  // FILTRO STRICT documenti: Fuse (fuzzy) produce falsi positivi — es. cercare "menz" che
+  // matcha il corpo di schede non pertinenti. Tengo solo i documenti dove OGNI token
+  // significativo della query compare davvero nel testo (titolo + tag + termini + corpo).
+  if (queryTerms.length >= 1 && !isNumericQuery) {
+    nonNumeri = nonNumeri.filter(r => {
+      const it = r.item;
+      const docText = [it.titolo, it.tag, it.termini, it.body].filter(Boolean).join(' ').toLowerCase();
+      return queryTerms.every(t => tokenMatches(t, docText));
+    });
+  }
 
   const matchedGroupIds = new Set();
   const byGruppo = new Map();
@@ -17237,6 +17285,133 @@ function showModal({ title, subtitle, body, actions }) {
 
 function closeModal() {
   $('modal-container').innerHTML = '';
+}
+
+// Esegue un'azione asincrona (salvataggio/modifica) mostrando uno spinner nel pulsante e
+// disabilitandolo finché non finisce, così l'utente non può cliccare più volte.
+async function runWithSpinner(btn, fn) {
+  if (btn && btn.disabled) return;
+  let orig = null;
+  if (btn) {
+    orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    btn.innerHTML = '<span class="btn-spinner"></span>';
+  }
+  try {
+    await fn();
+  } catch (e) {
+    console.warn('[runWithSpinner] azione fallita:', e);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('btn-loading');
+      // Se il pulsante è ancora nel DOM (la vista non è stata ridisegnata) ripristino l'etichetta.
+      if (btn.isConnected) btn.innerHTML = orig;
+    }
+  }
+}
+window.runWithSpinner = runWithSpinner;
+
+// ── Segnalazioni utenti (feedback errori) — storage in content/segnalazioni.yml ──
+const SEGNALAZIONI_PATH = 'content/segnalazioni.yml';
+async function _loadSegnalazioni() {
+  try {
+    const f = await gh.getFile(SEGNALAZIONI_PATH);
+    if (!f) return { lista: [], sha: null };
+    const data = jsyaml.load(f.content) || {};
+    return { lista: Array.isArray(data.segnalazioni) ? data.segnalazioni : [], sha: f.sha };
+  } catch (e) { console.warn('[segnalazioni] load fallito', e); return { lista: [], sha: null }; }
+}
+async function _saveSegnalazioni(lista, sha, msg) {
+  const content = `# Segnalazioni utenti — gestite dall'app, non modificare a mano\n\n` +
+    jsyaml.dump({ segnalazioni: lista }, { lineWidth: 120, noRefs: true });
+  return gh.putFile(SEGNALAZIONI_PATH, content, sha, msg);
+}
+
+function openSegnalazioneModal() {
+  showModal({
+    title: 'Segnala un problema',
+    subtitle: "Descrivi l'errore o il suggerimento: gli amministratori lo leggeranno.",
+    body: `<div style="min-width:min(460px,88vw);">
+      <textarea id="segn-text" rows="5" class="mono-input" style="width:100%;" placeholder="Es. Nel modulo consenso il campo data non si salva..."></textarea>
+      <div style="font-size:12px;color:var(--ink-muted);margin-top:6px;">Verranno salvati anche il tuo nome utente e la pagina corrente, per dare contesto.</div>
+    </div>`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+      { label: 'Invia segnalazione', onClick: (btn) => runWithSpinner(btn, inviaSegnalazione) }
+    ]
+  });
+  setTimeout(() => { const t = document.getElementById('segn-text'); if (t) t.focus(); }, 50);
+}
+
+async function inviaSegnalazione() {
+  const ta = document.getElementById('segn-text');
+  const testo = ta ? ta.value.trim() : '';
+  if (!testo) { toast('Scrivi una descrizione prima di inviare.', 'error'); return; }
+  const { lista, sha } = await _loadSegnalazioni();
+  lista.unshift({
+    id: 's-' + Date.now().toString(36),
+    testo,
+    utente: (state.session && state.session.username) || 'anon',
+    data: nowIso(),
+    contesto: state.currentView || '',
+    risolto: false
+  });
+  try {
+    await _saveSegnalazioni(lista, sha, `Nuova segnalazione da ${(state.session && state.session.username) || 'anon'}`);
+    closeModal();
+    toast('Segnalazione inviata. Grazie!', 'success');
+  } catch (e) {
+    toast("Errore nell'invio della segnalazione.", 'error');
+  }
+}
+
+async function renderSegnalazioni() {
+  const mc = $('main-content');
+  if (!mc) return;
+  if (typeof isAdmin === 'function' && !isAdmin()) {
+    mc.innerHTML = `<div class="page-head"><h1 class="page-title">Segnalazioni</h1></div><p style="color:var(--ink-muted);">Sezione riservata agli amministratori.</p>`;
+    return;
+  }
+  mc.innerHTML = `<div class="loading"><span class="spinner"></span> Caricamento segnalazioni...</div>`;
+  const { lista } = await _loadSegnalazioni();
+  const aperte = lista.filter(s => !s.risolto);
+  const risolte = lista.filter(s => s.risolto);
+  const card = (s) => `<div style="border:1px solid var(--rule);border-radius:6px;padding:12px 14px;margin-bottom:10px;background:var(--bg-paper);${s.risolto ? 'opacity:.6;' : ''}">
+      <div style="font-size:14px;color:var(--ink);white-space:pre-wrap;">${escapeHtml(s.testo)}</div>
+      <div style="font-size:12px;color:var(--ink-muted);font-family:var(--mono);margin-top:6px;">${escapeHtml(s.utente || '?')} · ${escapeHtml((s.data || '').slice(0, 16).replace('T', ' '))}${s.contesto ? ' · ' + escapeHtml(s.contesto) : ''}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn ghost sm" onclick="toggleSegnalazioneRisolta('${escapeJs(s.id)}', this)">${s.risolto ? '↺ Riapri' : '✓ Segna risolta'}</button>
+        <button class="btn ghost danger sm" onclick="eliminaSegnalazione('${escapeJs(s.id)}', this)">🗑 Elimina</button>
+      </div>
+    </div>`;
+  const sectTitle = (t) => `<div style="font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);margin:14px 0 8px;">${t}</div>`;
+  mc.innerHTML = `
+    <div class="page-head"><div class="page-eyebrow">Amministrazione</div><h1 class="page-title">Segnalazioni</h1></div>
+    ${lista.length === 0 ? '<p style="color:var(--ink-muted);">Nessuna segnalazione ricevuta.</p>' : ''}
+    ${aperte.length ? sectTitle(`Da gestire (${aperte.length})`) + aperte.map(card).join('') : ''}
+    ${risolte.length ? sectTitle(`Risolte (${risolte.length})`) + risolte.map(card).join('') : ''}`;
+}
+
+async function toggleSegnalazioneRisolta(id, btn) {
+  await runWithSpinner(btn, async () => {
+    const { lista, sha } = await _loadSegnalazioni();
+    const s = lista.find(x => x.id === id);
+    if (!s) return;
+    s.risolto = !s.risolto;
+    await _saveSegnalazioni(lista, sha, `Aggiorna segnalazione ${id}`);
+    renderSegnalazioni();
+  });
+}
+
+async function eliminaSegnalazione(id, btn) {
+  if (!confirm('Eliminare definitivamente questa segnalazione?')) return;
+  await runWithSpinner(btn, async () => {
+    const { lista, sha } = await _loadSegnalazioni();
+    await _saveSegnalazioni(lista.filter(x => x.id !== id), sha, `Elimina segnalazione ${id}`);
+    renderSegnalazioni();
+  });
 }
 
 // API helper sopra showModal per pattern comuni. NON sostituisce showModal (che resta
