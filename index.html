@@ -3654,10 +3654,10 @@ async function buildIndex() {
     const autoSottocategoria = categoryParts[1] || null;
     const autoSottoSotto = categoryParts[2] || null;
     index.procedure.push({
+      ...frontmatter,
       slug, path, sha: file.sha,
       categoria: frontmatter.categoria || autoCategoria,
       sottocategoria: frontmatter.sottocategoria || autoSottocategoria || autoSottoSotto,
-      ...frontmatter,
       body_preview: body.substring(0, 300),
       body
     });
@@ -3677,11 +3677,11 @@ async function buildIndex() {
     const autoSottocategoria = categoryParts[0] || null;
     const autoSottoSotto = categoryParts[1] || null;
     index.clinica.push({
+      ...frontmatter,
       slug, path, sha: file.sha,
       categoria: 'clinica',
       sottocategoria: frontmatter.sottocategoria || autoSottocategoria,
       sotto_sottocategoria: frontmatter.sotto_sottocategoria || autoSottoSotto,
-      ...frontmatter,
       body_preview: body.substring(0, 300),
       body
     });
@@ -8872,11 +8872,57 @@ function initHomeNumeriSortable() {
   }
 }
 
+// Matching contatto allineato a rubrica e ricerca globale: token significativi (≥3 char, niente
+// articoli/preposizioni), sinonimi clinici, e match sul testo del contatto OPPURE del gruppo (UOC).
+// Usato dalla ricerca "Contatti fissati" così si comporta come la rubrica.
+const _CONTATTO_SYNONYMS = {
+  'reparto': ['reparto','reparti','degenza','degenze','ricovero'],
+  'reparti': ['reparto','reparti','degenza','degenze'],
+  'degenza': ['reparto','reparti','degenza','degenze'],
+  'degenze': ['reparto','reparti','degenza','degenze'],
+  'segreteria': ['segreteria','segr'],
+  'ambulatorio': ['ambulatorio','ambulatori','amb'],
+  'ambulatori': ['ambulatorio','ambulatori','amb'],
+  'sala operatoria': ['sala operatoria','sale operatorie','s.o.','so ','operatoria'],
+  'operatoria': ['sala operatoria','sale operatorie','operatoria','so '],
+  'day hospital': ['day hospital','dh ','day-hospital'],
+  'dh': ['day hospital','dh ','day-hospital'],
+  'mdg': ['mdg','medico di guardia','medico guardia'],
+  'guardia': ['guardia','mdg','medico di guardia'],
+  'ucic': ['ucic','unità coronarica','unita coronarica','terapia intensiva cardiologica'],
+  'utic': ['utic','unità terapia intensiva'],
+  'emodinamica': ['emodinamica','cardiologia interventistica'],
+  'elettrofisiologia': ['elettrofisiologia'],
+  'rianimazione': ['rianimazione','terapia intensiva'],
+  'intramoenia': ['intramoenia','libera professione'],
+};
+const _CONTATTO_STOPWORDS = new Set(['lo','la','il','le','gli','un','di','da','in','su','al','del','dei','gl','li','ne','ci','si','se','ma','mi']);
+function _contattoMatchesQuery(query, c, g) {
+  const raw = (query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!raw.length) return false;
+  const sig = raw.filter(t => t.length >= 3 && !_CONTATTO_STOPWORDS.has(t));
+  const tokens = sig.length ? sig : raw;
+  const tmatch = (tok, text) => {
+    if (text.includes(tok)) return true;
+    const alts = _CONTATTO_SYNONYMS[tok];
+    if (alts) { for (const a of alts) if (text.includes(a)) return true; }
+    return false;
+  };
+  const cell1 = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(' ') : (c.cellulare_personale || '');
+  const cell2 = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
+  const cTxt = [
+    c.etichetta, c.sezione, c.sottosezione, c.edificio, c.piano, c.luogo,
+    cell1, cell2, c.breve,
+    ...((c.numeri || []).map(String)), ...(c.tag || []), ...(c.alias || [])
+  ].filter(Boolean).join(' ').toLowerCase();
+  const gTxt = [g && g.nome, g && (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
+  return tokens.every(tok => tmatch(tok, gTxt) || tmatch(tok, cTxt));
+}
+
 function renderHomeNumeriSearchResults(query) {
   const box = document.getElementById('home-numeri-search-results');
   if (!box) return;
   const q = (query || '').trim().toLowerCase();
-  const qTokens = q.split(/\s+/).filter(Boolean);
   const already = new Set((state.userPrefs && state.userPrefs.home_numeri) || []);
   // Senza query non mostro nulla: la lista completa sarebbe troppo lunga.
   // L'utente digita per cercare tra TUTTI i contatti della rubrica.
@@ -8884,16 +8930,12 @@ function renderHomeNumeriSearchResults(query) {
     box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px;font-style:italic;">Digita per cercare un contatto da fissare (cerca tra tutti i numeri della rubrica).</div>';
     return;
   }
-  // Cerco tra TUTTI i contatti della rubrica (non solo i preferiti)
+  // Cerco tra TUTTI i contatti della rubrica con la STESSA logica di rubrica/ricerca globale.
   const matches = [];
   getVisibleNumeriGroups().forEach(g => {
     (g.contatti || []).forEach(c => {
       if (!c.id) return;
-      const cellFlat = Array.isArray(c.cellulare_personale) ? c.cellulare_personale.join(' ') : (c.cellulare_personale || '');
-      const cellPubFlat = Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale.join(' ') : (c.cellulare_aziendale || '');
-      const hay = [c.etichetta, g.nome, (c.alias || []).join(' '), (c.tag || []).join(' '), c.sezione, (c.numeri || []).join(' '), cellFlat, cellPubFlat, c.breve]
-        .filter(Boolean).join(' ').toLowerCase();
-      if (qTokens.every(t => hay.includes(t))) matches.push({ c, g });
+      if (_contattoMatchesQuery(q, c, g)) matches.push({ c, g });
     });
   });
   if (!matches.length) {
