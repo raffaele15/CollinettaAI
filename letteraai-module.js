@@ -542,6 +542,16 @@ const DEFAULT_USER_PREFS = {
   custom: ''        // free-text additional preferences
 };
 
+/* Descrizioni per i tooltip (hover) dei pulsanti di preferenza, per chiave→valore. */
+const PREF_TITLES = {
+  lab: { all: 'Riporta tutti i valori di laboratorio, con range di normalità', altered: 'Riporta solo i valori alterati (fuori range) e i 6 obbligatori (colesterolo totale, HDL, LDL, trigliceridi, HbA1c, creatinina)' },
+  acc: { brief: 'Accertamenti strumentali: conclusioni sintetiche', extended: 'Accertamenti strumentali: conclusioni estese con tutti i dettagli clinicamente rilevanti del referto' },
+  dec: { short: 'Decorso clinico: sintesi concisa (150-250 parole), solo eventi e decisioni principali', standard: 'Decorso clinico: lunghezza standard', long: 'Decorso clinico: racconto dettagliato (400-600 parole) con eventi intermedi e ragionamento clinico' },
+  an: { essential: 'Anamnesi essenziale: riporta tutte le patologie ma in forma sintetica', complete: 'Anamnesi completa, con i dettagli rilevanti' },
+  rac: { main: 'Solo le raccomandazioni principali (terapia, follow-up clinico)', all: 'Tutte le raccomandazioni' },
+  ter: { last: 'Terapia alla dimissione: solo gli ultimi farmaci prescritti durante il ricovero', lastPlusHome: 'Terapia alla dimissione: ultimi farmaci + i domiciliari sospesi solo per esigenze organizzative del ricovero' }
+};
+
 /* ── TEMPLATE_SECTIONS_AVAILABLE ── */
 const TEMPLATE_SECTIONS_AVAILABLE = [
   { id: 'diagnosi_quotata',           label: 'Diagnosi (in apertura)' },
@@ -3228,10 +3238,8 @@ function buildPreferencesPromptBlock(){
   if(!prefs) return '';
   const blocks = [];
   // Only add preference if different from default
-  if(prefs.lab !== DEFAULT_USER_PREFS.lab){
-    if(prefs.lab === 'altered') blocks.push('- ESAMI DI LABORATORIO: riporta SOLO i valori alterati (fuori range) e i 6 obbligatori (Colesterolo totale, HDL, LDL, Trigliceridi, HbA1c, Creatinina). Per ogni categoria, se tutti nella norma scrivi solo "[Categoria]: nella norma" senza elencare i singoli esami.');
-    else blocks.push('- ESAMI DI LABORATORIO: riporta tutti i valori disponibili con range di normalità.');
-  }
+  if(prefs.lab === 'altered') blocks.push('- ESAMI DI LABORATORIO: riporta SOLO i valori alterati (fuori range) e i 6 obbligatori (Colesterolo totale, HDL, LDL, Trigliceridi, HbA1c, Creatinina). Per ogni categoria, se tutti nella norma scrivi solo "[Categoria]: nella norma" senza elencare i singoli esami.');
+  else blocks.push('- ESAMI DI LABORATORIO: riporta TUTTI i valori disponibili con il relativo range di normalità, inclusi quelli nella norma; NON limitarti ai soli valori patologici.');
   if(prefs.acc !== DEFAULT_USER_PREFS.acc){
     if(prefs.acc === 'extended') blocks.push('- ACCERTAMENTI STRUMENTALI: riporta conclusioni estese con tutti i dettagli clinicamente rilevanti del referto.');
     else blocks.push('- ACCERTAMENTI STRUMENTALI: riporta conclusioni sintetiche in 1-2 frasi per ogni accertamento.');
@@ -3902,7 +3910,14 @@ function printLetter(text){
    mantenendo font/interlinea. Robusto e senza dipendenze (no RTF della tabella). */
 function exportWordDoc(text, filename){
   if(!text || !text.trim()){ toast('Nessuna lettera da esportare.','error'); return; }
-  const escaped = (window.escapeHtml ? window.escapeHtml(text) : String(text||''));
+  // Marco grassetto e diagnosi tra virgolette PRIMA dell'escape, con sentinelle non stampabili
+  // (così sopravvivono all'escape HTML e poi le converto in <b>…</b>, senza che gli asterischi
+  // o le virgolette restino visibili nel documento Word).
+  let marked = String(text)
+    .replace(/\*\*([^*]+)\*\*/g, '\u0002B\u0001$1\u0002/B\u0001')        // **grassetto** (valori patologici)
+    .replace(/"([^"\n]+)"/g, '\u0002B\u0001"$1"\u0002/B\u0001');          // "diagnosi" tra virgolette → grassetto
+  const esc = (window.escapeHtml ? window.escapeHtml(marked) : String(marked).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  const escaped = esc.replace(/\u0002B\u0001/g, '<b>').replace(/\u0002\/B\u0001/g, '</b>');
   const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office"
     xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="UTF-8"><title>Lettera</title>
@@ -4193,7 +4208,7 @@ function wizStep3(){
   const wardOpts=WARDS.map(x=>`<option${x===w.ward?' selected':''}>${escapeHtml(x)}</option>`).join('');
   const tipoOpts=TIPI.map(t=>`<option value="${t.id}"${t.id===w.tipo?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
   const rag=(w.ragExamples||[]).map(c=>`<div class="lt-rag"><strong>${escapeHtml(c.diagnosi||c.name||c.id)}</strong><span>${escapeHtml(wardName(c))} · ${escapeHtml(c.tipo||'')}</span></div>`).join('')||'<div class="lt-sub-empty">Nessun esempio simile in libreria.</div>';
-  const seg=(key,opts)=>opts.map(o=>`<button class="lt-seg${p[key]===o.v?' on':''}" onclick="window.Lettere._setPref('${key}','${o.v}')">${o.l}</button>`).join('');
+  const seg=(key,opts)=>opts.map(o=>`<button class="lt-seg${p[key]===o.v?' on':''}" title="${escapeHtml((PREF_TITLES[key]||{})[o.v]||o.l)}" onclick="window.Lettere._setPref('${key}','${o.v}')">${o.l}</button>`).join('');
   return `<div class="lt-row">
       <div class="field" style="flex:1"><label>Reparto</label><select onchange="window.Lettere._setWard(this.value)">${wardOpts}</select></div>
       <div class="field" style="flex:1"><label>Tipo lettera</label><select onchange="window.Lettere._setTipo(this.value)">${tipoOpts}</select></div>
@@ -4262,7 +4277,7 @@ function wizStep3Combined(){
     ${autoInfo}${manualRow}${injRow}</div>`;
 
   // ── Card 3: Preferenze lettera (collassabile) ──
-  const seg=(key,opts)=>opts.map(o=>`<button class="lt-tab${p[key]===o.v?' on':''}" onclick="window.Lettere._setPref('${key}','${o.v}')">${o.l}</button>`).join('');
+  const seg=(key,opts)=>opts.map(o=>`<button class="lt-tab${p[key]===o.v?' on':''}" title="${escapeHtml((PREF_TITLES[key]||{})[o.v]||o.l)}" onclick="window.Lettere._setPref('${key}','${o.v}')">${o.l}</button>`).join('');
   const prefOpen=L._prefsOpen?' open':'';
   const cardPrefs=`<div class="lt-collapsible${prefOpen}" id="lt-prefs-coll">
     <button class="lt-collapsible-toggle" onclick="window.Lettere._togglePrefs()">
@@ -4466,15 +4481,18 @@ function _renderVerifHighlight(text, flags){
   if(!text) return '<span class="lt-status">Nessuna lettera da analizzare.</span>';
   let html = escapeHtml(text);
   const sevClass={contraddizione:'lt-hl-red',assente:'lt-hl-orange',inferenza:'lt-hl-yellow'};
+  const sevLabel={contraddizione:'Contraddice la cartella',assente:'Assente dalla cartella',inferenza:'Inferenza non esplicita'};
   // Sostituisco ogni quote con una versione evidenziata (match su testo escaped)
   flags.forEach((f,idx)=>{
     if(!f.quote) return;
     const q=escapeHtml(f.quote.trim());
     if(!q) return;
     const cls=sevClass[f.severity]||'lt-hl-yellow';
+    // Tooltip al passaggio del mouse: etichetta severità + motivo della segnalazione.
+    const tip=escapeHtml(((sevLabel[f.severity]||f.severity||'') + (f.reason? ' — '+f.reason : '')).trim());
     // sostituzione semplice della prima occorrenza
     const i=html.indexOf(q);
-    if(i>=0){ html = html.slice(0,i) + `<mark id="lt-vmark${idx}" class="${cls}">${q}</mark>` + html.slice(i+q.length); }
+    if(i>=0){ html = html.slice(0,i) + `<mark id="lt-vmark${idx}" class="${cls}" title="${tip}">${q}</mark>` + html.slice(i+q.length); }
   });
   return html;
 }
