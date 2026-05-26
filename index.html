@@ -3004,7 +3004,6 @@ function exportContentIndex() {
     if (Array.isArray(s.tag) && s.tag.length) meta.push('tag: ' + s.tag.join(', '));
     if (Array.isArray(s.termini_equivalenti) && s.termini_equivalenti.length) meta.push('anche detto: ' + s.termini_equivalenti.join(', '));
     if (meta.length) lines.push(meta.join(' — '));
-    if (s.sintesi) lines.push(s.sintesi);
     lines.push(buildShareUrl(route, { slug: s.slug }));
     lines.push('');
     (Array.isArray(s.contenuti) ? s.contenuti : []).forEach((b, i) => {
@@ -5591,7 +5590,7 @@ window.scrollToSchedaBlock = scrollToSchedaBlock;
 function renderSchedaBody(scheda) {
   const sections = [];
 
-  // Indice cliccabile delle sezioni (blocchi con titolo) in cima alla scheda; fallback alla sintesi.
+  // Indice cliccabile delle sezioni (blocchi con titolo) in cima alla scheda.
   const _schedaId = (scheda && (scheda.id || scheda.slug)) || 'x';
   const _tocItems = (Array.isArray(scheda.contenuti) ? scheda.contenuti : [])
     .map((b, idx) => ({ idx, titolo: (b && (b.titolo || b.caption) || '').toString().trim() }))
@@ -5601,8 +5600,6 @@ function renderSchedaBody(scheda) {
       `<li><a class="scheda-toc-link" onclick="scrollToSchedaBlock('bl-${escapeJs(_schedaId)}-${t.idx}')">${escapeHtml(t.titolo)}</a></li>`
     ).join('');
     sections.push(schedaSection('Indice', `<ul class="scheda-toc">${_toc}</ul>`, true));
-  } else if (scheda.sintesi) {
-    sections.push(schedaSection('Sintesi', `<p style="font-family:var(--serif);font-size:17px;line-height:1.55;font-style:italic;color:var(--ink-soft);">${escapeHtml(scheda.sintesi)}</p>`, true));
   }
 
   // Nuovo schema a blocchi tipizzati (contenuti = array di blocchi)
@@ -5984,6 +5981,10 @@ async function proceedToEditClinica(slug, forceOverride) {
 function renderEditorUIClinica(slug, frontmatter, body) {
   // Simplified editor: Metadata + Markdown body + raw YAML for advanced fields
   const subOpts = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+  // Sottocategoria a testo libero: suggerimenti = standard + quelle già esistenti nel repo.
+  // Pre-riempio con la sottocategoria derivata (dalla cartella) per non riassegnarla per sbaglio al salvataggio.
+  const editSubs = [...new Set([...subOpts, ...(state.index.clinica || []).map(c => c.sottocategoria).filter(Boolean)])].sort();
+  const currentSub = frontmatter.sottocategoria || ((state.index.clinica || []).find(c => c.slug === slug) || {}).sottocategoria || '';
   // Extract known schema fields from frontmatter to a YAML blob for manual editing
   const standardKeys = ['id','titolo','categoria','sottocategoria','tag','termini_equivalenti','ultima_modifica','modificato_da','cronologia_recente'];
   const advancedFrontmatter = {};
@@ -6016,9 +6017,8 @@ function renderEditorUIClinica(slug, frontmatter, body) {
           </div>
           <div class="field">
             <label>Sottocategoria</label>
-            <select id="meta-sottocategoria">
-              ${subOpts.map(s => `<option value="${s}" ${frontmatter.sottocategoria === s ? 'selected' : ''}>${escapeHtml(SOTTO_LABELS[s] || s)}</option>`).join('')}
-            </select>
+            <input type="text" id="meta-sottocategoria" class="mono-input" list="meta-clinica-subs" placeholder="scegli o digita (es. esame-obiettivo)" value="${escapeHtml(currentSub)}">
+            <datalist id="meta-clinica-subs">${editSubs.map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist>
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Tag</label>
@@ -6121,7 +6121,7 @@ async function saveSchedaClinica() {
       id: ctx.slug,
       titolo: $('meta-titolo').value.trim() || ctx.slug,
       categoria: 'clinica',
-      sottocategoria: $('meta-sottocategoria').value,
+      sottocategoria: $('meta-sottocategoria').value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''),
       tag: chipsGet('meta-tag-chips'),
       termini_equivalenti: chipsGet('meta-termini-chips'),
       ...advancedFm,
@@ -6163,6 +6163,7 @@ async function saveSchedaClinica() {
 function nuovaSchedaClinica(preset = {}) {
   const existingSlugs = new Set((state.index.clinica || []).map(c => c.slug));
   const subOpts = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+  const ncSubs = [...new Set([...subOpts, ...(state.index.clinica || []).map(c => c.sottocategoria).filter(Boolean)])].sort();
 
   showModal({
     title: 'Nuova scheda clinica',
@@ -6175,9 +6176,8 @@ function nuovaSchedaClinica(preset = {}) {
       </div>
       <div class="field">
         <label>Sottocategoria</label>
-        <select id="nc-sottocategoria">
-          ${subOpts.map(s => `<option value="${s}" ${preset.sottocategoria === s ? 'selected' : ''}>${escapeHtml(SOTTO_LABELS[s] || s)}</option>`).join('')}
-        </select>
+        <input type="text" id="nc-sottocategoria" class="mono-input" list="nc-subs-list" placeholder="scegli o digita (es. esame-obiettivo)" value="${escapeHtml(preset.sottocategoria || '')}">
+        <datalist id="nc-subs-list">${ncSubs.map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist>
       </div>
       <div id="nc-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;"></div>`,
     actions: [
@@ -6185,10 +6185,11 @@ function nuovaSchedaClinica(preset = {}) {
       { label: 'Crea e apri editor', onClick: async () => {
         const titolo = $('nc-titolo').value.trim();
         let slug = $('nc-slug').value.trim().toLowerCase();
-        const sottocat = $('nc-sottocategoria').value;
+        let sottocat = $('nc-sottocategoria').value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
         const err = $('nc-error');
         const show = m => { err.textContent = m; err.style.display = 'block'; };
         if (!titolo) return show('Titolo obbligatorio.');
+        if (!sottocat) return show('Sottocategoria obbligatoria.');
         if (!slug) slug = titolo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
         if (!/^[a-z0-9-]+$/.test(slug)) return show('Slug non valido.');
         if (existingSlugs.has(slug)) return show('Slug già esistente.');
