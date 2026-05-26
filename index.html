@@ -1343,6 +1343,7 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 .scheda-toc li{margin:0}
 .scheda-toc-link{display:block;padding:7px 10px;color:var(--accent);font-size:14px;border-radius:3px;cursor:pointer;text-decoration:none;border-left:2px solid transparent;transition:background .12s,border-color .12s}
 .scheda-toc-link:hover{background:var(--accent-soft);border-left-color:var(--accent)}
+.scheda-toc-num{display:inline-block;min-width:1.6em;color:var(--ink-muted);font-family:var(--mono);font-weight:600;margin-right:6px}
 
 /* text */
 .bl-text-body{font-size:15px;line-height:1.65;color:var(--ink-soft)}
@@ -2191,7 +2192,7 @@ const userPrefs = {
     try {
       const file = await gh.getFile(path);
       if (!file) {
-        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], _sha: null };
+        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], pazienti_salvati: [], _sha: null };
         return;
       }
       const parsed = jsyaml.load(file.content) || {};
@@ -2213,6 +2214,7 @@ const userPrefs = {
         calendar_filters: (parsed.calendar_filters && typeof parsed.calendar_filters === 'object') ? parsed.calendar_filters : {},
         custom_sezioni: Array.isArray(parsed.custom_sezioni) ? parsed.custom_sezioni : [],
         pref_uoc: Array.isArray(parsed.pref_uoc) ? parsed.pref_uoc : [],
+        pazienti_salvati: Array.isArray(parsed.pazienti_salvati) ? parsed.pazienti_salvati : [],
         _sha: file.sha
       };
       // Migrazione: i contatti pinnati nel vecchio sistema `pins` (type='contatto')
@@ -2237,7 +2239,7 @@ const userPrefs = {
       if (myPrefs.font_size) applyFontSize(myPrefs.font_size);
     } catch (e) {
       console.warn('[userPrefs] load failed:', e);
-      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], _sha: null };
+      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], pazienti_salvati: [], _sha: null };
     }
   },
 
@@ -2263,6 +2265,7 @@ const userPrefs = {
       calendar_filters: state.userPrefs.calendar_filters || {},
       custom_sezioni: state.userPrefs.custom_sezioni || [],
       pref_uoc: state.userPrefs.pref_uoc || [],
+      pazienti_salvati: state.userPrefs.pazienti_salvati || [],
       ultima_modifica: nowIso(),
       modificato_da: state.session.username
     };
@@ -2440,6 +2443,29 @@ const userPrefs = {
     const j = i + dir;
     if (i < 0 || j < 0 || j >= sez.contatti.length) return;
     [sez.contatti[i], sez.contatti[j]] = [sez.contatti[j], sez.contatti[i]];
+    userPrefs.scheduleSave();
+  },
+  // --- Pazienti salvati (persistenti, per-utente) ---
+  _pazienteKey(p) {
+    return (((p && p.cognome) || '') + '|' + ((p && p.nome) || '') + '|' + ((p && p.dataNascita) || '')).trim().toLowerCase();
+  },
+  getPazientiSalvati() {
+    return (state.userPrefs && Array.isArray(state.userPrefs.pazienti_salvati)) ? state.userPrefs.pazienti_salvati : [];
+  },
+  savePazienteSalvato(p) {
+    if (!state.userPrefs) return false;
+    const cognome = (p.cognome || '').trim(), nome = (p.nome || '').trim(), dataNascita = (p.dataNascita || '').trim();
+    if (!cognome || !nome || !dataNascita) return false;
+    if (!Array.isArray(state.userPrefs.pazienti_salvati)) state.userPrefs.pazienti_salvati = [];
+    const key = userPrefs._pazienteKey({ cognome, nome, dataNascita });
+    if (state.userPrefs.pazienti_salvati.some(x => userPrefs._pazienteKey(x) === key)) return false; // già salvato
+    state.userPrefs.pazienti_salvati.unshift({ cognome, nome, dataNascita });
+    userPrefs.scheduleSave();
+    return true;
+  },
+  deletePazienteSalvato(key) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.pazienti_salvati)) return;
+    state.userPrefs.pazienti_salvati = state.userPrefs.pazienti_salvati.filter(x => userPrefs._pazienteKey(x) !== key);
     userPrefs.scheduleSave();
   },
 
@@ -5620,8 +5646,8 @@ function renderSchedaBody(scheda) {
     .map((b, idx) => ({ idx, titolo: (b && (b.titolo || b.caption) || '').toString().trim() }))
     .filter(x => x.titolo);
   if (_tocItems.length >= 2) {
-    const _toc = _tocItems.map(t =>
-      `<li><a class="scheda-toc-link" onclick="scrollToSchedaBlock('bl-${escapeJs(_schedaId)}-${t.idx}')">${escapeHtml(t.titolo)}</a></li>`
+    const _toc = _tocItems.map((t, i) =>
+      `<li><a class="scheda-toc-link" onclick="scrollToSchedaBlock('bl-${escapeJs(_schedaId)}-${t.idx}')"><span class="scheda-toc-num">${i + 1}.</span>${escapeHtml(t.titolo)}</a></li>`
     ).join('');
     sections.push(schedaSection('Indice', `<ul class="scheda-toc">${_toc}</ul>`, true));
   }
@@ -8608,9 +8634,12 @@ function renderHomeNumeriSection() {
   // Box di aggiunta: sempre disponibile, a comparsa col pulsante "+", indipendente dall'edit-mode.
   const addBox = `
     <div id="home-numeri-add-box" style="display:${navState.homeAddOpen ? 'block' : 'none'};margin-bottom:12px;">
-      <input type="text" id="home-numeri-search" placeholder="Cerca un contatto da fissare (tutti i numeri)…"
-        oninput="renderHomeNumeriSearchResults(this.value)"
-        style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="text" id="home-numeri-search" placeholder="Cerca un contatto da fissare (tutti i numeri)…"
+          oninput="renderHomeNumeriSearchResults(this.value)"
+          style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
+        <button class="btn ghost" onclick="toggleHomeNumeriAdd()" title="Chiudi l'aggiunta" style="flex-shrink:0;white-space:nowrap;">✕ Chiudi</button>
+      </div>
       <div id="home-numeri-search-results" style="margin-top:6px;"></div>
     </div>`;
 
@@ -8836,13 +8865,19 @@ function renderHomeNumeriSearchResults(query) {
   }
   box.innerHTML = matches.slice(0, 15).map(({ c, g }) => {
     const isIn = already.has(c.id);
-    const numStr = (c.numeri || []).join(' · ');
+    // Tutti i numeri (interni + cellulari), mostrati ben visibili sotto l'etichetta
+    const allNums = [];
+    (c.numeri || []).forEach(n => { if (n) allNums.push(String(n)); });
+    if (c.cellulare_personale) (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).forEach(n => { if (n) allNums.push(String(n)); });
+    if (c.cellulare_aziendale) (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).forEach(n => { if (n) allNums.push(String(n)); });
+    const numStr = allNums.join(' · ');
     return `<div class="home-numeri-search-item">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;color:var(--ink);">${escapeHtml(c.etichetta)}</div>
-        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(g.nome))}${c.sezione ? ' · ' + escapeHtml(c.sezione) : ''}${numStr ? ' · ' + escapeHtml(numStr) : ''}</div>
+        <div style="font-size:14px;color:var(--ink);font-weight:500;">${escapeHtml(c.etichetta)}</div>
+        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(g.nome))}${c.sezione ? ' · ' + escapeHtml(c.sezione) : ''}</div>
+        ${numStr ? `<div style="font-size:13px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(numStr)}</div>` : ''}
       </div>
-      <button class="btn-icon-mini" onclick="addHomeNumero('${escapeJs(c.id)}')" ${isIn ? 'disabled title="Già in home"' : 'title="Aggiungi"'}>${isIn ? '✓' : '+'}</button>
+      <button class="btn" onclick="addHomeNumero('${escapeJs(c.id)}')" ${isIn ? 'disabled' : ''} title="${isIn ? 'Già fissato' : 'Aggiungi ai contatti fissati'}" style="flex-shrink:0;min-width:46px;font-size:20px;line-height:1;padding:8px 14px;">${isIn ? '✓' : '＋'}</button>
     </div>`;
   }).join('');
 }
@@ -10697,15 +10732,22 @@ function _renderCampoInput(c, value, slug) {
   const required = c.required ? ' <span style="color:#A32D2D;">*</span>' : '';
   if (c.tipo === 'paziente_completo') {
     const v = value || {};
+    const salvati = userPrefs.getPazientiSalvati();
     const recenti = _getPazientiRecenti();
-    const showSelector = recenti.length > 0;
+    const showSelector = salvati.length > 0 || recenti.length > 0;
+    const optSalvati = salvati.length
+      ? `<optgroup label="★ Salvati">${salvati.map((p, i) => `<option value="s:${i}">${escapeHtml(p.cognome)} ${escapeHtml(p.nome)}${p.dataNascita ? ' · ' + escapeHtml(p.dataNascita) : ''}</option>`).join('')}</optgroup>`
+      : '';
+    const optRecenti = recenti.length
+      ? `<optgroup label="Recenti (questa sessione)">${recenti.map((p, i) => `<option value="r:${i}">${escapeHtml(p.cognome)} ${escapeHtml(p.nome)}${p.dataNascita ? ' · ' + escapeHtml(p.dataNascita) : ''}</option>`).join('')}</optgroup>`
+      : '';
     return `
       <div class="mod-field-group">
         <label class="mod-field-label">${escapeHtml(c.label)}${required}</label>
         ${showSelector ? `
-          <select class="mod-input" style="margin-bottom:6px;" onchange="selezionaPazienteRecente('${escapeJs(slug)}','${escapeJs(c.id)}',this.value);this.value='';">
-            <option value="">— Ultimi pazienti (${recenti.length}) —</option>
-            ${recenti.map((p, i) => `<option value="${i}">${escapeHtml(p.cognome)} ${escapeHtml(p.nome)}${p.dataNascita ? ' · ' + escapeHtml(p.dataNascita) : ''}</option>`).join('')}
+          <select class="mod-input" style="margin-bottom:6px;" onchange="selezionaPaziente('${escapeJs(slug)}','${escapeJs(c.id)}',this.value);this.value='';">
+            <option value="">— Carica un paziente —</option>
+            ${optSalvati}${optRecenti}
           </select>
         ` : ''}
         <div class="mod-field-grid-2">
@@ -10723,6 +10765,10 @@ function _renderCampoInput(c, value, slug) {
                data-paziente-field="dataNascita" data-paziente-fid="${escapeHtml(c.id)}"
                oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','dataNascita',this.value)"
                onblur="_salvaPazienteSeCompleto('${escapeJs(slug)}','${escapeJs(c.id)}')">
+        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn ghost sm" onclick="salvaPazienteCorrente('${escapeJs(slug)}','${escapeJs(c.id)}')" title="Salva questo paziente per le prossime volte">💾 Salva paziente</button>
+          ${salvati.length ? `<button class="btn ghost sm" onclick="gestisciPazientiSalvati('${escapeJs(slug)}','${escapeJs(c.id)}')" title="Gestisci ed elimina i pazienti salvati">🗂 Gestisci salvati (${salvati.length})</button>` : ''}
+        </div>
       </div>`;
   }
   if (c.tipo === 'medico_nome') {
@@ -10860,6 +10906,74 @@ function selezionaPazienteRecente(slug, fieldId, idx) {
   const filtered = recenti.filter((_, j) => j !== i);
   filtered.unshift(p);
   _setPazientiRecenti(filtered);
+}
+
+// Selezione da dropdown unificato: "s:i" = salvato persistente, "r:i" = recente di sessione.
+function selezionaPaziente(slug, fieldId, val) {
+  if (!val) return;
+  const m = String(val).match(/^([sr]):(\d+)$/);
+  if (!m) return;
+  const idx = parseInt(m[2], 10);
+  const p = m[1] === 's' ? userPrefs.getPazientiSalvati()[idx] : _getPazientiRecenti()[idx];
+  if (!p) return;
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  if (typeof c.formValues[fieldId] !== 'object') c.formValues[fieldId] = {};
+  c.formValues[fieldId].cognome = p.cognome;
+  c.formValues[fieldId].nome = p.nome;
+  c.formValues[fieldId].dataNascita = p.dataNascita;
+  _persistModulo(slug);
+  const ci = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="cognome"]`);
+  const ni = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="nome"]`);
+  const di = document.querySelector(`input[data-paziente-fid="${fieldId}"][data-paziente-field="dataNascita"]`);
+  if (ci) ci.value = p.cognome;
+  if (ni) ni.value = p.nome;
+  if (di) di.value = p.dataNascita;
+  refreshModuloOverlays(slug);
+}
+
+// Salva esplicitamente il paziente corrente nei salvati persistenti (per-utente).
+function salvaPazienteCorrente(slug, fieldId) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  const v = c.formValues[fieldId];
+  if (!v || typeof v !== 'object' || !(v.cognome || '').trim() || !(v.nome || '').trim() || !(v.dataNascita || '').trim()) {
+    toast('Compila cognome, nome e data di nascita prima di salvare.', 'error');
+    return;
+  }
+  const ok = userPrefs.savePazienteSalvato({ cognome: v.cognome, nome: v.nome, dataNascita: v.dataNascita });
+  toast(ok ? 'Paziente salvato.' : 'Paziente già presente tra i salvati.', ok ? 'success' : 'info');
+  renderModuloCompilatore(slug, c);
+}
+
+// Modal di gestione: elenco dei pazienti salvati con eliminazione.
+function gestisciPazientiSalvati(slug, fieldId) {
+  const list = userPrefs.getPazientiSalvati();
+  const rows = list.length
+    ? list.map(p => {
+        const key = userPrefs._pazienteKey(p);
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--rule-soft);">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;color:var(--ink);">${escapeHtml(p.cognome)} ${escapeHtml(p.nome)}</div>
+            <div style="font-size:12px;color:var(--ink-muted);font-family:var(--mono);">${escapeHtml(p.dataNascita || '')}</div>
+          </div>
+          <button class="btn ghost danger sm" onclick="eliminaPazienteSalvato('${escapeJs(key)}','${escapeJs(slug)}','${escapeJs(fieldId)}')" title="Elimina dai salvati">🗑</button>
+        </div>`;
+      }).join('')
+    : '<div style="padding:12px 0;color:var(--ink-muted);font-style:italic;">Nessun paziente salvato.</div>';
+  showModal({
+    title: 'Pazienti salvati',
+    subtitle: 'Dati memorizzati solo nelle tue preferenze personali.',
+    body: `<div style="min-width:min(420px,86vw);">${rows}</div>`,
+    actions: [{ label: 'Chiudi', variant: 'ghost', onClick: () => closeModal() }]
+  });
+}
+
+function eliminaPazienteSalvato(key, slug, fieldId) {
+  userPrefs.deletePazienteSalvato(key);
+  gestisciPazientiSalvati(slug, fieldId); // re-render del modal (showModal richiama closeModal)
+  const c = state.moduliCache[slug];
+  if (c) renderModuloCompilatore(slug, c);
 }
 
 function setModuloMedicoMode(slug, fieldId, modalita) {
