@@ -3,7 +3,7 @@
 <head>
 <script>
 // === ANTI-FOUC ===
-// Script blocking inline: applica subito tema/font da sessionStorage cache primaaa
+// Script blocking inline: applica subito tema/font da sessionStorage cache prima
 // che il browser renderizzi anything. Evita il flash dark→light durante refresh
 // o login (perché userPrefs.load() fa una fetch GitHub e impiega centinaia di ms).
 // La cache viene popolata da applyTheme/applyFontSize ed è solo per-sessione.
@@ -99,7 +99,8 @@ html[data-font-size="md"] main.content{zoom:1}
 html[data-font-size="lg"] main.content{zoom:1.12}
 html[data-font-size="xl"] main.content{zoom:1.25}
 body{font-family:var(--sans);font-size:1rem;line-height:1.55;color:var(--ink);background:var(--bg);min-height:100vh;overflow-x:clip;max-width:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior-y:none;overflow-anchor:none}
-html{overscroll-behavior-y:none;overflow-anchor:none}
+html{overscroll-behavior-y:none;overflow-anchor:none;color-scheme:light}
+html[data-theme="dark"] option,html[data-theme="dark"] select,html[data-theme="dark"] input{background:var(--bg-raised);color:var(--ink)}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(43,74,111,0.035),transparent 70%),radial-gradient(ellipse 70% 50% at 100% 100%,rgba(138,90,31,0.03),transparent 70%)}
 .hidden{display:none!important}
 a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
@@ -325,6 +326,7 @@ header.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:grid;grid-t
 
 /* Dark theme */
 html[data-theme="dark"]{
+  color-scheme:dark;
   --bg:#121212;
   --bg-paper:#1a1a1a;
   --bg-sink:#252525;
@@ -2419,6 +2421,27 @@ const userPrefs = {
     const sez = state.userPrefs.custom_sezioni.find(s => s.id === sezId);
     if (sez) { sez.contatti = sez.contatti.filter(c => c !== contactId); userPrefs.scheduleSave(); }
   },
+  // Riordino sezioni preferiti (dir = -1 su, +1 giù).
+  moveCustomSezione(id, dir) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.custom_sezioni)) return;
+    const arr = state.userPrefs.custom_sezioni;
+    const i = arr.findIndex(s => s.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    userPrefs.scheduleSave();
+  },
+  // Riordino di un contatto dentro una sezione preferiti (dir = -1 su, +1 giù).
+  moveContactInCustomSezione(sezId, contactId, dir) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.custom_sezioni)) return;
+    const sez = state.userPrefs.custom_sezioni.find(s => s.id === sezId);
+    if (!sez || !Array.isArray(sez.contatti)) return;
+    const i = sez.contatti.indexOf(contactId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= sez.contatti.length) return;
+    [sez.contatti[i], sez.contatti[j]] = [sez.contatti[j], sez.contatti[i]];
+    userPrefs.scheduleSave();
+  },
 
   // --- Modello unificato preferiti ---
   // Un contatto è "preferito" se sta nella sezione UOC standard (home_numeri)
@@ -3864,7 +3887,8 @@ function rebuildSearchIndex() {
   state.index.moduli.forEach(m => docs.push({
     type: 'modulo', slug: m.slug,
     titolo: m.titolo || m.slug,
-    tag: (m.tag || []).join(' '),
+    tag: ((m.tag || []).join(' ') + ' modulo moduli modulistica').trim(),
+    termini: 'modulo moduli modulistica',
     body: m.descrizione || ''  // descrizione compilabile come body searchable
   }));
   getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd').forEach(g => {
@@ -7745,8 +7769,9 @@ function collapseGroup(groupId) {
 function renderCustomSezioniHtml() {
   const sezioni = userPrefs.getCustomSezioni();
   const editMode = navState.editMode;
-  const blocks = sezioni.map(sez => {
-    const contattiHtml = (sez.contatti || []).map(cid => {
+  const blocks = sezioni.map((sez, si) => {
+    const cids = (sez.contatti || []);
+    const contattiHtml = cids.map((cid, ci) => {
       const c = findContattoBySlug(cid);
       if (!c) return '';
       const g = (c._gruppo) ? c._gruppo : '';
@@ -7755,12 +7780,22 @@ function renderCustomSezioniHtml() {
       // Opzione C: occhiello "UOC ridotta · Sezione" sopra, nome del contatto sotto.
       const eyebrow = [uocName, sezName].filter(Boolean).join(' · ');
       // Niente pulsante ✕: la rimozione si fa dal menu della stella.
-      return renderContattoCard(c, { eyebrow: eyebrow || null, showStarInEdit: true, preferBreve: true });
+      const card = renderContattoCard(c, { eyebrow: eyebrow || null, showStarInEdit: true, preferBreve: true });
+      if (!editMode) return card;
+      return `<div class="cs-contatto-reorder-row" style="display:flex;align-items:center;gap:6px;">
+        <span class="ssp-reorder">
+          <button class="btn-icon-mini" onclick="event.stopPropagation();moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',-1)" title="Sposta contatto su" ${ci === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn-icon-mini" onclick="event.stopPropagation();moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',1)" title="Sposta contatto giù" ${ci === cids.length - 1 ? 'disabled' : ''}>↓</button>
+        </span>
+        <span style="flex:1;min-width:0;">${card}</span>
+      </div>`;
     }).join('') || '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>';
     return `<div class="pinned-uoc-block" data-cs-id="${escapeHtml(sez.id)}">
       <div class="pinned-uoc-header">
         <span class="pinned-uoc-name" style="cursor:default;">${escapeHtml(sez.nome)}</span>
         ${editMode ? `<span style="margin-left:auto;display:inline-flex;gap:6px;">
+          <button class="btn-icon-mini" onclick="moveCsSezione('${escapeJs(sez.id)}',-1)" title="Sposta sezione su" ${si === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn-icon-mini" onclick="moveCsSezione('${escapeJs(sez.id)}',1)" title="Sposta sezione giù" ${si === sezioni.length - 1 ? 'disabled' : ''}>↓</button>
           <button class="btn-icon-mini" onclick="renameCustomSezionePrompt('${escapeJs(sez.id)}')" title="Rinomina sezione">✎</button>
           <button class="btn-icon-mini" onclick="deleteCustomSezionePrompt('${escapeJs(sez.id)}')" title="Elimina sezione">🗑</button>
         </span>` : ''}
@@ -7776,6 +7811,14 @@ function renderCustomSezioniHtml() {
 }
 
 // Handler globali per le sezioni personalizzate
+function moveCsSezione(id, dir) {
+  userPrefs.moveCustomSezione(id, dir);
+  renderNumeri('pinned');
+}
+function moveCsContatto(sezId, cid, dir) {
+  userPrefs.moveContactInCustomSezione(sezId, cid, dir);
+  renderNumeri('pinned');
+}
 function addCustomSezionePrompt() {
   const nome = prompt('Nome della nuova sezione personalizzata:\n(es. "PS", "Reperibili weekend")', '');
   if (!nome || !nome.trim()) return;
@@ -8562,15 +8605,16 @@ function renderHomeNumeriSection() {
     }
   });
 
-  const searchBox = editMode ? `
-    <div style="margin-bottom:12px;">
+  // Box di aggiunta: sempre disponibile, a comparsa col pulsante "+", indipendente dall'edit-mode.
+  const addBox = `
+    <div id="home-numeri-add-box" style="display:${navState.homeAddOpen ? 'block' : 'none'};margin-bottom:12px;">
       <input type="text" id="home-numeri-search" placeholder="Cerca un contatto da fissare (tutti i numeri)…"
         oninput="renderHomeNumeriSearchResults(this.value)"
         style="width:100%;padding:8px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
       <div id="home-numeri-search-results" style="margin-top:6px;"></div>
-    </div>` : '';
+    </div>`;
 
-  if (editMode) setTimeout(() => renderHomeNumeriSearchResults(''), 0);
+  if (navState.homeAddOpen) setTimeout(() => { const i = document.getElementById('home-numeri-search'); if (i) i.focus(); renderHomeNumeriSearchResults(''); }, 0);
 
   let listHtml;
   if (editMode) {
@@ -8593,17 +8637,17 @@ function renderHomeNumeriSection() {
     }).join('')}</div>`;
     setTimeout(() => initHomeNumeriSortable(), 0);
   } else {
-    // Vista normale: contatti come quelli della rubrica, raggruppati in box "UOC · Sezione"
-    listHtml = renderContattiGroupedBox(items);
+    // Vista normale: contatti raggruppati in box "UOC · Sezione", con "−" per toglierli al volo.
+    listHtml = renderContattiGroupedBox(items, { showRemoveHome: true });
   }
 
-  const empty = !items.length && !editMode
-    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Clicca <em>Modifica</em> per aggiungerli.</div>`
+  const empty = !items.length
+    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Usa <strong>＋</strong> per aggiungere i numeri utili della giornata.</div>`
     : '';
 
   return `<div class="home-section home-pins-group">
-    <div class="home-section-title"><span>Contatti fissati</span></div>
-    ${searchBox}
+    <div class="home-section-title" style="display:flex;align-items:center;gap:8px;"><span>Contatti fissati</span><button class="btn-icon-mini home-pins-add-btn" onclick="toggleHomeNumeriAdd()" title="Aggiungi un contatto ai fissati" style="font-size:18px;line-height:1;color:var(--accent);">＋</button></div>
+    ${addBox}
     ${listHtml}
     ${empty}
   </div>`;
@@ -8692,7 +8736,11 @@ function renderContattiGroupedBox(items, opts = {}) {
       // del contatto è l'occhiello sopra l'etichetta.
       eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
       showStarInEdit: !!opts.starInEdit,
-      preferBreve: !!opts.inline
+      preferBreve: !!opts.inline,
+      // "−" per togliere al volo dai Contatti fissati (sempre disponibile, senza edit-mode)
+      removeBtn: (opts.showRemoveHome && c.id)
+        ? `<button class="btn-icon-mini home-pin-remove" onclick="event.stopPropagation();removeHomeNumero('${escapeJs(c.id)}')" title="Togli dai contatti fissati" style="margin-left:6px;color:var(--danger);font-size:16px;line-height:1;">−</button>`
+        : ''
     })).join('');
     return `<div class="sr-sede-bucket" style="margin-bottom:10px;">
       <div class="sr-sede-bucket-header sr-sede-bucket-static">
@@ -8809,6 +8857,18 @@ function removeHomeNumero(cid) {
   if (userPrefs.hasHomeNumero(cid)) {
     userPrefs.toggleHomeNumero(cid);
     renderHome();
+  }
+}
+
+// Mostra/nasconde il box di ricerca per aggiungere un contatto ai "Contatti fissati".
+function toggleHomeNumeriAdd() {
+  navState.homeAddOpen = !navState.homeAddOpen;
+  const b = document.getElementById('home-numeri-add-box');
+  if (b) b.style.display = navState.homeAddOpen ? 'block' : 'none';
+  if (navState.homeAddOpen) {
+    const i = document.getElementById('home-numeri-search');
+    if (i) { i.value = ''; i.focus(); }
+    if (typeof renderHomeNumeriSearchResults === 'function') renderHomeNumeriSearchResults('');
   }
 }
 
@@ -9677,6 +9737,11 @@ async function _fetchBoxesYml(slug) {
     const f = await gh.getFile(boxesPath);
     if (f) {
       boxesData = jsyaml.load(f.content) || boxesData;
+      // Assicura il campo "Sede / Reparto" tra i campi disponibili (anche per i moduli già esistenti):
+      // l'admin potrà assegnarlo a un box dall'editor; in compilazione si pre-compila con la sede di default.
+      if (Array.isArray(boxesData.campi_richiesti) && !boxesData.campi_richiesti.some(c => c && c.id === 'sede')) {
+        boxesData.campi_richiesti.push({ id: 'sede', label: 'Sede / Reparto', tipo: 'testo', default: 'Clinica Neurologica' });
+      }
       boxesSha = f.sha;  // necessario per il PUT con check conflitti
     }
   } catch (e) {
@@ -9787,6 +9852,9 @@ function _placeholderForBox(box, campiDefs) {
     if (f === 'cognome') return 'Cognome';
     if (f === 'nome') return 'Nome';
     if (f === 'nome_cognome') return 'Nome Cognome';
+    if (f === 'n_cognome') return 'N. Cognome';
+    if (f === 'cognome_n') return 'Cognome N.';
+    if (f === 'iniziali') return 'N.C.';
     return 'Cognome Nome';  // default
   }
   if (def.tipo === 'data') {
@@ -9827,6 +9895,9 @@ function _formatoOptionsPerTipo(tipo) {
       { value: '',             label: 'Cognome Nome' },
       { value: 'cognome_nome', label: 'Cognome Nome' },
       { value: 'nome_cognome', label: 'Nome Cognome' },
+      { value: 'n_cognome',    label: 'N. Cognome (nome puntato)' },
+      { value: 'cognome_n',    label: 'Cognome N. (nome puntato)' },
+      { value: 'iniziali',     label: 'Iniziali puntate (N.C.)' },
       { value: 'cognome',      label: 'Solo cognome' },
       { value: 'nome',         label: 'Solo nome' }
     ];
@@ -9915,9 +9986,13 @@ function _formatBoxValue(box, campiDefs, valoriCampi) {
   // Formati: cognome_nome (default), nome_cognome, cognome, nome
   if (def.tipo === 'medico_nome' && typeof v === 'object') {
     const f = box.formato || '';
+    const ini = s => (s || '').trim().charAt(0).toUpperCase();
     if (f === 'cognome') return v.cognome || '';
     if (f === 'nome') return v.nome || '';
     if (f === 'nome_cognome') return [v.nome, v.cognome].filter(Boolean).join(' ');
+    if (f === 'n_cognome') return [ini(v.nome) ? ini(v.nome) + '.' : '', v.cognome].filter(Boolean).join(' ');   // N. Cognome
+    if (f === 'cognome_n') return [v.cognome, ini(v.nome) ? ini(v.nome) + '.' : ''].filter(Boolean).join(' ');   // Cognome N.
+    if (f === 'iniziali') return [ini(v.nome), ini(v.cognome)].filter(Boolean).map(x => x + '.').join('');        // N.C.
     // default: cognome_nome
     return [v.cognome, v.nome].filter(Boolean).join(' ');
   }
@@ -11644,7 +11719,14 @@ async function salvaModuloBoxes(slug) {
       jsyaml.dump(toWrite, { lineWidth: 120, noRefs: true, sortKeys: false });
 
     const commitMsg = `chore(moduli): aggiorna box ${slug} (${nBoxes} box, by ${state.session.username})`;
-    const res = await gh.putFile(boxesPath, yamlStr, c.boxesSha, commitMsg);
+    // Lo sha potrebbe non essere in memoria (box creati da import o altra sessione, o cache senza sha):
+    // in quel caso lo recupero dal repo, altrimenti GitHub rifiuta l'update con 422 "sha wasn't supplied".
+    // Se il file non esiste (modulo nuovo) getFile torna null e lo sha resta assente → creazione corretta.
+    let boxesSha = c.boxesSha;
+    if (!boxesSha) {
+      try { const existing = await gh.getFile(boxesPath); if (existing && existing.sha) boxesSha = existing.sha; } catch (e) {}
+    }
+    const res = await gh.putFile(boxesPath, yamlStr, boxesSha, commitMsg);
     if (res && res.content && res.content.sha) {
       c.boxesSha = res.content.sha;
     }
@@ -11968,6 +12050,7 @@ function _nuovoModuloDefaultBoxesData() {
     campi_richiesti: [
       { id: 'paziente', label: 'Paziente', tipo: 'paziente_completo', required: true },
       { id: 'medico', label: 'Medico', tipo: 'medico_nome', required: true },
+      { id: 'sede', label: 'Sede / Reparto', tipo: 'testo', default: 'Clinica Neurologica' },
       { id: 'data', label: 'Data', tipo: 'data', default: 'oggi' }
     ],
     box: []
@@ -12895,7 +12978,9 @@ function parseGuardieText(text, defaultYear, defaultMonth /* 0-11 */) {
       }
     } else if (section === 'coguardie') {
       // Nomi separati da " - " o " – " (con spazi): preserva cognomi multi-parola (es. "Dal Santo").
-      const names = rest.split(/\s+[-–]\s+/).map(s => s.trim()).filter(Boolean);
+      // Title Case: maiuscola a inizio di ogni parola anche dopo apostrofo/trattino (DAL SANTO → Dal Santo, D'ANGELO → D'Angelo).
+      const titleCase = s => s.toLowerCase().replace(/(^|[\s'’\-])([a-zà-ÿ])/g, (mm, sep, ch) => sep + ch.toUpperCase());
+      const names = rest.split(/\s+[-–]\s+/).map(s => titleCase(s.trim())).filter(Boolean);
       if (names.length) {
         results.push({ data, categoria: 'coguardie', titolo: 'Coguardia: ' + names.join(', '), descrizione: '' });
       }
@@ -13584,7 +13669,7 @@ function aggiungiUtenteModal() {
         <input type="password" id="au-pass2" placeholder="Ripeti passphrase" autocomplete="new-password" style="margin-top:6px;width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:2px;font-size:15px;">
         <div style="font-size:12px;color:var(--warn);margin-top:8px;">Salva la passphrase in locale. Ti servirà per cambiarla in futuro.</div>
       </div>
-      <div id="au-error" style="color:var(--err);font-size:13px;display:none;margin-top:8px;padding:8px 12px;background:#fdecec;border-left:3px solid var(--err);"></div>`,
+      <div id="au-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;padding:8px 12px;background:var(--danger-soft);border-left:3px solid var(--danger);"></div>`,
     actions: [
       { label: 'Annulla', variant: 'ghost', onClick: closeModal },
       { label: 'Crea utente', onClick: async () => {
@@ -13660,7 +13745,7 @@ function cambiaPassphrase(username) {
         <input type="password" id="cp-new1" autocomplete="new-password" style="width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:2px;font-size:15px;">
         <input type="password" id="cp-new2" placeholder="Ripeti nuova passphrase" autocomplete="new-password" style="margin-top:6px;width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:2px;font-size:15px;">
       </div>
-      <div id="cp-error" style="color:var(--err);font-size:13px;display:none;margin-top:8px;padding:8px 12px;background:#fdecec;border-left:3px solid var(--err);"></div>`,
+      <div id="cp-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;padding:8px 12px;background:var(--danger-soft);border-left:3px solid var(--danger);"></div>`,
     actions: [
       { label: 'Annulla', variant: 'ghost', onClick: closeModal },
       { label: 'Cambia', onClick: async () => {
@@ -13729,7 +13814,7 @@ function cambiaStatoAdmin(username) {
         <label style="display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);margin-bottom:6px;">Passphrase di ${escapeHtml(username)} *</label>
         <input type="password" id="ca-pass" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:2px;font-size:15px;">
       </div>
-      <div id="ca-error" style="color:var(--err);font-size:13px;display:none;margin-top:8px;padding:8px 12px;background:#fdecec;border-left:3px solid var(--err);"></div>`,
+      <div id="ca-error" style="color:var(--danger);font-size:13px;display:none;margin-top:8px;padding:8px 12px;background:var(--danger-soft);border-left:3px solid var(--danger);"></div>`,
     actions: [
       { label: 'Annulla', variant: 'ghost', onClick: closeModal },
       { label: azione, onClick: async () => {
@@ -16284,8 +16369,9 @@ function openSearchOverlay(query) {
       const active = document.activeElement;
       if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
       const wrap = PROTECTED_SELECTORS.map(s => active.closest(s)).find(Boolean);
-      if (wrap && wrap.contains(e.target)) return;
-      active.blur();
+      if (!wrap) return;                    // input non di ricerca (es. textbox di un modulo): non toccare
+      if (wrap.contains(e.target)) return;  // tocco dentro la stessa barra di ricerca: mantieni la tastiera
+      active.blur();                        // tocco fuori dalla barra di ricerca: chiudi la tastiera
     }, { passive: true });
   }
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
@@ -17311,15 +17397,15 @@ function initMobileDrawer() {
     if (touchStart && touchStart.shouldFocusSearch) {
       const input = document.getElementById('global-search');
       if (input) {
-        requestAnimationFrame(() => {
-          input.focus();
-          try {
-            input.scrollIntoView({ block: 'center', behavior: 'instant' });
-          } catch (e) {
-            input.scrollIntoView(false);
-          }
-          input.select();
-        });
+        // iOS apre la tastiera SOLO se focus() è chiamato in modo sincrono dentro il gesto utente
+        // (qui touchend). Dentro requestAnimationFrame il focus è deferito e iOS ignora la tastiera.
+        input.focus();
+        try {
+          input.scrollIntoView({ block: 'center', behavior: 'instant' });
+        } catch (e) {
+          input.scrollIntoView(false);
+        }
+        input.select();
       }
     }
     touchStart = null;
@@ -17521,8 +17607,9 @@ async function init() {
       const active = document.activeElement;
       if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
       const wrap = PROTECTED_SELECTORS.map(s => active.closest(s)).find(Boolean);
-      if (wrap && wrap.contains(e.target)) return;
-      active.blur();
+      if (!wrap) return;                    // input non di ricerca (es. textbox di un modulo): non toccare
+      if (wrap.contains(e.target)) return;  // tocco dentro la stessa barra di ricerca: mantieni la tastiera
+      active.blur();                        // tocco fuori dalla barra di ricerca: chiudi la tastiera
     }, { passive: true });
   }
 
