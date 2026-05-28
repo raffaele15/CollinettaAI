@@ -636,6 +636,19 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .numeri-group-title .pin-star{font-size:15px;vertical-align:middle}
 .numero-label .pin-star{font-size:15px;padding:0 2px;line-height:1.3;flex-shrink:0}
 
+/* Note del giorno (todos in home) */
+.ndg-list{display:flex;flex-direction:column;gap:4px}
+.ndg-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--bg-paper);transition:background .12s}
+.ndg-row:hover{background:var(--bg-sink)}
+.ndg-check{background:transparent;border:none;cursor:pointer;font-size:18px;line-height:1.2;padding:0;color:var(--ink-muted);flex-shrink:0}
+.ndg-check:hover{color:var(--accent)}
+.ndg-text{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.4;word-break:break-word;padding-top:1px}
+.ndg-done .ndg-text{text-decoration:line-through;color:var(--ink-faint)}
+.ndg-done .ndg-check{color:var(--accent)}
+.ndg-del{flex-shrink:0;color:var(--ink-faint);opacity:.6}
+.ndg-del:hover{color:var(--danger);opacity:1}
+
+
 /* Home sections for personal pins */
 .home-pins-group{margin-bottom:24px}
 .home-pins-group:empty{display:none}
@@ -1219,8 +1232,6 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 .home-numero-label{font-size:14px;color:var(--ink);font-weight:500}
 .home-numero-uoc{font-size:11px;color:var(--ink-muted);font-style:italic;margin-top:2px}
 .home-numero-num{font-family:var(--mono);font-size:13px;color:var(--accent)}
-.home-numeri-search-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--rule-soft);background:var(--bg-paper)}
-.home-numeri-search-item:last-child{border-bottom:none}
 .pinned-uoc-block{margin-bottom:16px;border:1px solid var(--rule);border-radius:3px;background:var(--bg-paper);overflow:hidden}
 .pinned-uoc-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-sink);border-bottom:1px solid var(--rule-soft)}
 .pinned-uoc-name{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);text-decoration:none;flex:1;border-bottom:1px dotted var(--rule-strong)}
@@ -2203,7 +2214,7 @@ const userPrefs = {
     try {
       const file = await gh.getFile(path);
       if (!file) {
-        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], pazienti_salvati: [], _sha: null };
+        state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], pazienti_salvati: [], note_giorno: [], _sha: null };
         return;
       }
       const parsed = jsyaml.load(file.content) || {};
@@ -2226,6 +2237,7 @@ const userPrefs = {
         custom_sezioni: Array.isArray(parsed.custom_sezioni) ? parsed.custom_sezioni : [],
         pref_uoc: Array.isArray(parsed.pref_uoc) ? parsed.pref_uoc : [],
         pazienti_salvati: Array.isArray(parsed.pazienti_salvati) ? parsed.pazienti_salvati : [],
+        note_giorno: Array.isArray(parsed.note_giorno) ? parsed.note_giorno : [],
         _sha: file.sha
       };
       // Migrazione: i contatti pinnati nel vecchio sistema `pins` (type='contatto')
@@ -2250,7 +2262,7 @@ const userPrefs = {
       if (myPrefs.font_size) applyFontSize(myPrefs.font_size);
     } catch (e) {
       console.warn('[userPrefs] load failed:', e);
-      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], pazienti_salvati: [], _sha: null };
+      state.userPrefs = { pins: [], home_numeri: [], pin_order: {}, device_prefs: {}, calendar_filters: {}, custom_sezioni: [], pref_uoc: [], pazienti_salvati: [], note_giorno: [], _sha: null };
     }
   },
 
@@ -2277,6 +2289,7 @@ const userPrefs = {
       custom_sezioni: state.userPrefs.custom_sezioni || [],
       pref_uoc: state.userPrefs.pref_uoc || [],
       pazienti_salvati: state.userPrefs.pazienti_salvati || [],
+      note_giorno: state.userPrefs.note_giorno || [],
       ultima_modifica: nowIso(),
       modificato_da: state.session.username
     };
@@ -2361,6 +2374,36 @@ const userPrefs = {
   reorderHomeNumeri(newOrder) {
     if (!state.userPrefs) return;
     state.userPrefs.home_numeri = newOrder;
+    userPrefs.scheduleSave();
+  },
+
+  // --- Note del giorno (todos personali mostrati in home) ---
+  // Ogni nota = { id, testo, fatto:bool }. Persistite come le altre prefs.
+  getNoteGiorno() {
+    if (!state.userPrefs) return [];
+    return state.userPrefs.note_giorno || [];
+  },
+  addNotaGiorno(testo) {
+    if (!state.userPrefs) return;
+    if (!state.userPrefs.note_giorno) state.userPrefs.note_giorno = [];
+    const t = (testo || '').trim();
+    if (!t) return;
+    state.userPrefs.note_giorno.push({ id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), testo: t, fatto: false });
+    userPrefs.scheduleSave();
+  },
+  toggleNotaGiorno(id) {
+    if (!state.userPrefs || !state.userPrefs.note_giorno) return;
+    const n = state.userPrefs.note_giorno.find(x => x.id === id);
+    if (n) { n.fatto = !n.fatto; userPrefs.scheduleSave(); }
+  },
+  removeNotaGiorno(id) {
+    if (!state.userPrefs || !state.userPrefs.note_giorno) return;
+    state.userPrefs.note_giorno = state.userPrefs.note_giorno.filter(x => x.id !== id);
+    userPrefs.scheduleSave();
+  },
+  clearNoteGiornoFatte() {
+    if (!state.userPrefs || !state.userPrefs.note_giorno) return;
+    state.userPrefs.note_giorno = state.userPrefs.note_giorno.filter(x => !x.fatto);
     userPrefs.scheduleSave();
   },
 
@@ -2487,6 +2530,11 @@ const userPrefs = {
   isContattoPreferito(cid) {
     if (userPrefs.hasPrefUoc(cid)) return true;
     return userPrefs.getCustomSezioni().some(s => (s.contatti || []).includes(cid));
+  },
+  // Stato visivo della stella: piena se il contatto è in QUALSIASI lista preferiti
+  // oppure nei "Contatti fissati" della home. Distinto da isContattoPreferito (solo liste).
+  isContattoStarred(cid) {
+    return userPrefs.isContattoPreferito(cid) || userPrefs.hasHomeNumero(cid);
   },
   // Ritorna gli id delle sezioni dei preferiti in cui si trova il contatto
   // ('_uoc' per la sezione UOC standard, oppure l'id della sezione custom).
@@ -2619,7 +2667,7 @@ function bucketSezioneLabel(b) {
 function isPinned(type, id) {
   if (!userPrefs) return false;
   // I contatti usano il sistema home_numeri dedicato
-  if (type === 'contatto') return userPrefs.isContattoPreferito(id);
+  if (type === 'contatto') return userPrefs.isContattoStarred(id);
   const pin = (type === 'gruppo')
     ? { type, id }
     : { type, slug: id };
@@ -2644,8 +2692,8 @@ function renderPinButton(type, ...args) {
   // preferiti includere il numero. Piena se il contatto è in almeno una sezione.
   if (type === 'contatto') {
     const cid = args[0];
-    const pinned = userPrefs.isContattoPreferito(cid);
-    return `<button class="pin-star ${pinned ? 'pinned' : ''}" data-pin-key="contatto:${escapeHtml(cid)}" onclick="event.stopPropagation();openPinSezioniPopup('${escapeJs(cid)}')" title="${pinned ? 'Gestisci sezioni preferiti' : 'Aggiungi ai preferiti'}" aria-label="Preferiti">${pinned ? '★' : '☆'}</button>`;
+    const pinned = userPrefs.isContattoStarred(cid);
+    return `<button class="pin-star ${pinned ? 'pinned' : ''}" data-pin-key="contatto:${escapeHtml(cid)}" onclick="event.stopPropagation();openPinSezioniPopup('${escapeJs(cid)}')" title="${pinned ? 'Gestisci fissati e preferiti' : 'Fissa in home o aggiungi ai preferiti'}" aria-label="Fissati e preferiti">${pinned ? '★' : '☆'}</button>`;
   }
   let pin;
   switch (type) {
@@ -4839,6 +4887,8 @@ function renderHome() {
 
     ${renderHomeNumeriSection()}
 
+    ${renderNoteGiornoSection()}
+
     ${pinsByType.schede.length > 0 ? `
       <div class="home-section home-pins-group">
         <div class="home-section-title"><span>Schede fissate</span></div>
@@ -5167,10 +5217,10 @@ function renderReparto() {
         <div style="margin-top:10px;">
           <textarea id="reparto-sys" rows="8" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoSys(this.value)">${escapeHtml(sysVal)}</textarea>
           <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
-            ${isAdmin() ? `<button class="btn primary" style="font-size:12px;background:var(--ink);color:var(--bg-paper);border-color:var(--ink);" onclick="runWithSpinner(this, window.saveRepartoSys)">💾 Salva nel repo</button>` : ''}
+            ${isAdmin() ? `<button class="btn primary" style="font-size:12px;background:var(--ink);color:var(--bg-paper);border-color:var(--ink);" onclick="runWithSpinner(this, window.saveRepartoSys)">💾 Salva</button>` : ''}
             <button class="btn" style="font-size:12px;" onclick="window.resetRepartoSys()">⟲ Ripristina istruzioni di default</button>
           </div>
-          <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">${isAdmin() ? `Le istruzioni salvate restano condivise tra i login (in <code>${escapeHtml(REPARTO_SYSTEM_PATH)}</code>).` : 'Solo gli amministratori possono salvare istruzioni condivise. Le tue modifiche valgono solo per questa sessione.'}</div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">${isAdmin() ? '' : 'Solo gli amministratori possono salvare istruzioni condivise. Le tue modifiche valgono solo per questa sessione.'}</div>
         </div>
         </div>
       </details>
@@ -5360,7 +5410,7 @@ function renderCategoriaBlock(cat, items, openByDefault) {
         <span class="categoria-count">${items.length}</span>
       </summary>
       <div class="categoria-content">
-        ${subs.length > 1 || (subs.length === 1 && subs[0] !== '_senza')
+        ${!HIDE_SUBCATEGORIES && (subs.length > 1 || (subs.length === 1 && subs[0] !== '_senza'))
           ? subs.map(s => `
               <div class="sottocategoria-block">
                 <div class="sottocategoria-title" onclick="navigate('procedure-cat', {cat:'${escapeHtml(cat)}', sub:'${escapeHtml(s)}'})">
@@ -5393,6 +5443,9 @@ function renderProcedureByCategoria(cat, subFilter) {
     bySub[s].push(p);
   });
   const subs = Object.keys(bySub).sort();
+  // Con il livello sottocategoria nascosto, ignoro l'eventuale subFilter (es. da pin/link salvati)
+  // e mostro tutte le procedure della categoria.
+  if (HIDE_SUBCATEGORIES) subFilter = null;
   const filtered = subFilter ? bySub[subFilter] || [] : procs;
 
   // Auto-expand procedure + macro + (sub) in sidebar
@@ -5421,7 +5474,7 @@ function renderProcedureByCategoria(cat, subFilter) {
         <button class="btn edit-only" onclick="nuovaProcedura({categoria:'${escapeHtml(cat)}'${subFilter && subFilter !== '_senza' ? `, sottocategoria:'${escapeHtml(subFilter)}'` : ''}})">+ Nuova procedura</button>
       </div>
     </div>
-    ${subFilter || (subs.length === 1 && subs[0] === '_senza')
+    ${HIDE_SUBCATEGORIES || subFilter || (subs.length === 1 && subs[0] === '_senza')
       ? `<div class="procedure-grid">${filtered.map(p => renderProcedureCard(p)).join('')}</div>`
       : subs.map(s => `
           <details class="categoria-block sottocategoria-standalone">
@@ -5949,7 +6002,7 @@ function renderClinicaList(subFilter) {
     : buildBreadcrumb([{ label: 'Home', route: 'home' }]);
   const subtitle = subFilter
     ? `${filtered.length} schede`
-    : 'Prognosi, gestione post-acuta, scale cliniche. Materiale di riferimento consultabile al letto.';
+    : 'Materiale di riferimento consultabile al letto.';
 
   $('main-content').innerHTML = `
     <div class="page-head">
@@ -6069,7 +6122,9 @@ async function proceedToEditClinica(slug, forceOverride) {
 
 function renderEditorUIClinica(slug, frontmatter, body) {
   // Simplified editor: Metadata + Markdown body + raw YAML for advanced fields
-  const subOpts = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+  // Sottocategorie predefinite rimosse: i suggerimenti derivano solo dalle schede esistenti.
+  // (Reintrodurre qui un elenco di default quando si vorranno riproporre sottocategorie fisse.)
+  const subOpts = [];
   // Sottocategoria a testo libero: suggerimenti = standard + quelle già esistenti nel repo.
   // Pre-riempio con la sottocategoria derivata (dalla cartella) per non riassegnarla per sbaglio al salvataggio.
   const editSubs = [...new Set([...subOpts, ...(state.index.clinica || []).map(c => c.sottocategoria).filter(Boolean)])].sort();
@@ -6251,7 +6306,8 @@ async function saveSchedaClinica() {
 
 function nuovaSchedaClinica(preset = {}) {
   const existingSlugs = new Set((state.index.clinica || []).map(c => c.slug));
-  const subOpts = ['prognosi', 'gestione-post-acuta', 'scale-cliniche'];
+  // Sottocategorie predefinite rimosse: i suggerimenti derivano solo dalle schede esistenti.
+  const subOpts = [];
   const ncSubs = [...new Set([...subOpts, ...(state.index.clinica || []).map(c => c.sottocategoria).filter(Boolean)])].sort();
 
   showModal({
@@ -6354,6 +6410,12 @@ const CATEGORIA_LABELS = {
   workflow: 'Workflow',
   educational: 'Educational'
 };
+
+// Nasconde temporaneamente il livello "sottocategoria" sotto le categorie di procedure
+// (es. procedure/bedside/...): le schede vengono mostrate direttamente sotto la categoria,
+// sia nella sidebar sia nella pagina categoria. La logica di raggruppamento resta intatta:
+// rimettere a false per riattivare il livello sottocategoria.
+const HIDE_SUBCATEGORIES = true;
 
 const SOTTO_LABELS = {
   'liquorali': 'Liquorali',
@@ -7920,8 +7982,12 @@ function openPinSezioniPopup(cid) {
   if (!c) return;
   const sezioni = userPrefs.getCustomSezioni();
   const inUoc = userPrefs.hasPrefUoc(cid);
+  const inHome = userPrefs.hasHomeNumero(cid);
   // Nome UOC del contatto per l'etichetta della sezione standard
   const gNome = c._gruppo ? stripPrefixNome(c._gruppo) : 'UOC';
+  // Riga in evidenza: "Contatti fissati" della home (sistema home_numeri, separato dalle liste).
+  const homeRow = `<button class="btn ${inHome ? '' : 'ghost'}" style="width:100%;text-align:left;margin-bottom:6px;${inHome ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
+    onclick="toggleHomeNumeroFromPopup('${escapeJs(cid)}')">${inHome ? '📌' : '📍'} Contatti fissati <span style="color:var(--ink-muted);font-weight:normal;">· in home</span></button>`;
   const uocRow = `<button class="btn ${inUoc ? '' : 'ghost'}" style="width:100%;text-align:left;margin-bottom:6px;${inUoc ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
     onclick="togglePinSezione('${escapeJs(cid)}','_uoc')">${inUoc ? '★' : '☆'} Sezione UOC <span style="color:var(--ink-muted);font-weight:normal;">· ${escapeHtml(gNome)}</span></button>`;
   const customRows = sezioni.map(s => {
@@ -7933,7 +7999,9 @@ function openPinSezioniPopup(cid) {
     title: 'Preferiti',
     subtitle: escapeHtml(c.etichetta),
     body: `
-      <div style="margin-bottom:10px;font-size:13px;color:var(--ink-muted);">Scegli in quali sezioni dei preferiti includere questo numero:</div>
+      <div style="margin-bottom:10px;font-size:13px;color:var(--ink-muted);">Scegli dove salvare questo numero:</div>
+      ${homeRow}
+      <div style="border-top:1px solid var(--rule-soft);margin:8px 0;padding-top:10px;font-size:12px;color:var(--ink-muted);">Oppure aggiungilo a una lista dei preferiti:</div>
       ${uocRow}
       ${customRows}
       <div style="border-top:1px solid var(--rule-soft);margin-top:8px;padding-top:10px;">
@@ -7946,7 +8014,7 @@ function openPinSezioniPopup(cid) {
 function togglePinSezione(cid, sezId) {
   userPrefs.toggleContattoInSezione(cid, sezId);
   // Aggiorno le stelle visibili nel DOM senza chiudere il popup
-  const pinned = userPrefs.isContattoPreferito(cid);
+  const pinned = userPrefs.isContattoStarred(cid);
   document.querySelectorAll(`[data-pin-key="contatto:${cid}"]`).forEach(btn => {
     btn.classList.toggle('pinned', pinned);
     btn.innerHTML = pinned ? '★' : '☆';
@@ -7962,6 +8030,25 @@ function togglePinSezione(cid, sezId) {
     renderHome();
   }
 }
+// Toggle dell'appartenenza ai "Contatti fissati" (home) dal popup preferiti.
+// Aggiorna le stelle visibili, riapre il popup e ricostruisce home/preferiti se necessario.
+function toggleHomeNumeroFromPopup(cid) {
+  userPrefs.toggleHomeNumero(cid);
+  const pinned = userPrefs.isContattoStarred(cid);
+  document.querySelectorAll(`[data-pin-key="contatto:${cid}"]`).forEach(btn => {
+    btn.classList.toggle('pinned', pinned);
+    btn.innerHTML = pinned ? '★' : '☆';
+  });
+  openPinSezioniPopup(cid);
+  if (state.currentView === 'numeri' && (state.currentParams || {}).filter === 'pinned') {
+    const savedScroll = window.scrollY;
+    renderNumeri('pinned');
+    requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+  } else if (state.currentView === 'home') {
+    renderHome();
+  }
+}
+
 function createSezioneEPin(cid) {
   const nome = prompt('Nome della nuova sezione personalizzata:\n(es. "PS", "Reperibili weekend")', '');
   if (!nome || !nome.trim()) return;
@@ -8670,20 +8757,6 @@ function renderHomeNumeriSection() {
     }
   });
 
-  // Box di aggiunta: sempre disponibile, a comparsa col pulsante "+", indipendente dall'edit-mode.
-  const addBox = `
-    <div id="home-numeri-add-box" style="display:${navState.homeAddOpen ? 'block' : 'none'};margin-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <input type="text" id="home-numeri-search" placeholder="Cerca un contatto da fissare (tutti i numeri)…"
-          oninput="renderHomeNumeriSearchResults(this.value)"
-          style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
-        <button class="btn ghost" onclick="toggleHomeNumeriAdd()" title="Chiudi l'aggiunta" style="flex-shrink:0;white-space:nowrap;">✕ Chiudi</button>
-      </div>
-      <div id="home-numeri-search-results" style="margin-top:6px;"></div>
-    </div>`;
-
-  if (navState.homeAddOpen) setTimeout(() => { const i = document.getElementById('home-numeri-search'); if (i) i.focus(); renderHomeNumeriSearchResults(''); }, 0);
-
   let listHtml;
   if (editMode) {
     // In modifica: lista piatta riordinabile (drag&drop) + rimozione
@@ -8705,20 +8778,74 @@ function renderHomeNumeriSection() {
     }).join('')}</div>`;
     setTimeout(() => initHomeNumeriSortable(), 0);
   } else {
-    // Vista normale: contatti raggruppati in box "UOC · Sezione", con "−" per toglierli al volo.
-    listHtml = renderContattiGroupedBox(items, { showRemoveHome: true });
+    // Vista normale: rendering ricco come in rubrica (etichetta, luogo, orari, note),
+    // raggruppato per UOC/sezione. Il pin 📌 accanto ai numeri è qui sempre "pieno":
+    // ricliccandolo si toglie il contatto dai fissati.
+    listHtml = renderUocSezioniBox(items, { rich: true });
   }
 
   const empty = !items.length
-    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Usa <strong>＋</strong> per aggiungere i numeri utili della giornata.</div>`
+    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Apri la rubrica e premi l'icona 📌 accanto a un numero per fissarlo qui.</div>`
     : '';
 
   return `<div class="home-section home-pins-group">
-    <div class="home-section-title" style="display:flex;align-items:center;gap:8px;"><span>Contatti fissati</span><button class="btn-icon-mini home-pins-add-btn" onclick="toggleHomeNumeriAdd()" title="Aggiungi un contatto ai fissati" style="font-size:18px;line-height:1;color:var(--accent);">＋</button></div>
-    ${addBox}
+    <div class="home-section-title"><span>Contatti fissati</span></div>
     ${listHtml}
     ${empty}
   </div>`;
+}
+
+// Sezione "Note del giorno": todos personali rapidi, mostrati in home dopo i contatti fissati.
+// Persistiti in userPrefs.note_giorno. Ogni nota = { id, testo, fatto }.
+function renderNoteGiornoSection() {
+  const note = userPrefs.getNoteGiorno();
+  const fatte = note.filter(n => n.fatto).length;
+  const rows = note.length
+    ? note.map(n => `
+        <div class="ndg-row ${n.fatto ? 'ndg-done' : ''}" data-id="${escapeHtml(n.id)}">
+          <button class="ndg-check" onclick="toggleNotaGiorno('${escapeJs(n.id)}')" title="${n.fatto ? 'Segna da fare' : 'Segna fatto'}" aria-label="Completa">${n.fatto ? '☑' : '☐'}</button>
+          <span class="ndg-text">${escapeHtml(n.testo)}</span>
+          <button class="ndg-del btn-icon-mini" onclick="removeNotaGiorno('${escapeJs(n.id)}')" title="Elimina" aria-label="Elimina">✕</button>
+        </div>`).join('')
+    : `<div class="empty-pins" style="padding:14px 16px;font-size:13px;">Nessuna nota. Scrivi qui i promemoria della giornata (es. controlli, chiamate, consegne).</div>`;
+  const clearBtn = fatte > 0
+    ? `<button class="btn ghost" style="font-size:12px;" onclick="clearNoteGiornoFatte()" title="Rimuovi le note completate">Pulisci fatte (${fatte})</button>`
+    : '';
+  return `<div class="home-section home-pins-group">
+    <div class="home-section-title"><span>Note del giorno</span></div>
+    <div class="ndg-add" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <input type="text" id="ndg-input" placeholder="Aggiungi una nota o un promemoria…" maxlength="240"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();submitNotaGiorno();}"
+        style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
+      <button class="btn primary" onclick="submitNotaGiorno()" title="Aggiungi" style="flex-shrink:0;">+ Aggiungi</button>
+    </div>
+    <div class="ndg-list">${rows}</div>
+    ${clearBtn ? `<div style="margin-top:8px;text-align:right;">${clearBtn}</div>` : ''}
+  </div>`;
+}
+
+function submitNotaGiorno() {
+  const input = document.getElementById('ndg-input');
+  if (!input) return;
+  const t = input.value.trim();
+  if (!t) { input.focus(); return; }
+  userPrefs.addNotaGiorno(t);
+  input.value = '';
+  renderHome();
+  // Riporto il focus sull'input per inserimenti rapidi consecutivi
+  setTimeout(() => { const i = document.getElementById('ndg-input'); if (i) i.focus(); }, 0);
+}
+function toggleNotaGiorno(id) {
+  userPrefs.toggleNotaGiorno(id);
+  renderHome();
+}
+function removeNotaGiorno(id) {
+  userPrefs.removeNotaGiorno(id);
+  renderHome();
+}
+function clearNoteGiornoFatte() {
+  userPrefs.clearNoteGiornoFatte();
+  renderHome();
 }
 
 // Rende un singolo contatto nello STESSO stile dei risultati di ricerca globale
@@ -8804,11 +8931,7 @@ function renderContattiGroupedBox(items, opts = {}) {
       // del contatto è l'occhiello sopra l'etichetta.
       eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
       showStarInEdit: !!opts.starInEdit,
-      preferBreve: !!opts.inline,
-      // "−" per togliere al volo dai Contatti fissati (sempre disponibile, senza edit-mode)
-      removeBtn: (opts.showRemoveHome && c.id)
-        ? `<button class="btn-icon-mini home-pin-remove" onclick="event.stopPropagation();removeHomeNumero('${escapeJs(c.id)}')" title="Togli dai contatti fissati" style="margin-left:6px;color:var(--danger);font-size:16px;line-height:1;">−</button>`
-        : ''
+      preferBreve: !!opts.inline
     })).join('');
     return `<div class="sr-sede-bucket" style="margin-bottom:10px;">
       <div class="sr-sede-bucket-header sr-sede-bucket-static">
@@ -8845,7 +8968,9 @@ function renderUocSezioniBox(items, opts = {}) {
       const sezLabel = s.sezione
         ? `<span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gId)}'})">${escapeHtml(s.sezione)}</span>`
         : `<span class="ctx-sezione">Numeri</span>`;
-      const rows = s.contatti.map(c => renderContattoCard(c, { showStarInEdit: !!opts.starInEdit })).join('');
+      const rows = s.contatti.map(c => opts.rich
+        ? renderNumeroRow(c, u.gId, classifyContatto(c), { hideLuogo: false })
+        : renderContattoCard(c, { showStarInEdit: !!opts.starInEdit })).join('');
       return `<div class="sr-sede-bucket">
         <div class="sr-sede-bucket-header sr-sede-bucket-static">
           <span class="sede-bucket-tipo">${sezLabel}</span>
@@ -8922,70 +9047,10 @@ function _contattoMatchesQuery(query, c, g) {
   return tokens.every(tok => tmatch(tok, gTxt) || tmatch(tok, cTxt));
 }
 
-function renderHomeNumeriSearchResults(query) {
-  const box = document.getElementById('home-numeri-search-results');
-  if (!box) return;
-  const q = (query || '').trim().toLowerCase();
-  const already = new Set((state.userPrefs && state.userPrefs.home_numeri) || []);
-  // Senza query non mostro nulla: la lista completa sarebbe troppo lunga.
-  // L'utente digita per cercare tra TUTTI i contatti della rubrica.
-  if (!q) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px;font-style:italic;">Digita per cercare un contatto da fissare (cerca tra tutti i numeri della rubrica).</div>';
-    return;
-  }
-  // Cerco tra TUTTI i contatti della rubrica con la STESSA logica di rubrica/ricerca globale.
-  const matches = [];
-  getVisibleNumeriGroups().forEach(g => {
-    (g.contatti || []).forEach(c => {
-      if (!c.id) return;
-      if (_contattoMatchesQuery(q, c, g)) matches.push({ c, g });
-    });
-  });
-  if (!matches.length) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:6px;">Nessun contatto trovato.</div>';
-    return;
-  }
-  box.innerHTML = matches.slice(0, 15).map(({ c, g }) => {
-    const isIn = already.has(c.id);
-    // Tutti i numeri (interni + cellulari), mostrati ben visibili sotto l'etichetta
-    const allNums = [];
-    (c.numeri || []).forEach(n => { if (n) allNums.push(String(n)); });
-    if (c.cellulare_personale) (Array.isArray(c.cellulare_personale) ? c.cellulare_personale : [c.cellulare_personale]).forEach(n => { if (n) allNums.push(String(n)); });
-    if (c.cellulare_aziendale) (Array.isArray(c.cellulare_aziendale) ? c.cellulare_aziendale : [c.cellulare_aziendale]).forEach(n => { if (n) allNums.push(String(n)); });
-    const numStr = allNums.join(' · ');
-    return `<div class="home-numeri-search-item">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;color:var(--ink);font-weight:500;">${escapeHtml(c.etichetta)}</div>
-        <div style="font-size:11px;color:var(--ink-muted);">${escapeHtml(stripPrefixNome(g.nome))}${c.sezione ? ' · ' + escapeHtml(c.sezione) : ''}</div>
-        ${numStr ? `<div style="font-size:13px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(numStr)}</div>` : ''}
-      </div>
-      <button class="btn" onclick="addHomeNumero('${escapeJs(c.id)}')" ${isIn ? 'disabled' : ''} title="${isIn ? 'Già fissato' : 'Aggiungi ai contatti fissati'}" style="flex-shrink:0;min-width:46px;font-size:20px;line-height:1;padding:8px 14px;">${isIn ? '✓' : '＋'}</button>
-    </div>`;
-  }).join('');
-}
-
-function addHomeNumero(cid) {
-  if (!userPrefs.hasHomeNumero(cid)) {
-    userPrefs.toggleHomeNumero(cid);
-    renderHome();
-  }
-}
 function removeHomeNumero(cid) {
   if (userPrefs.hasHomeNumero(cid)) {
     userPrefs.toggleHomeNumero(cid);
     renderHome();
-  }
-}
-
-// Mostra/nasconde il box di ricerca per aggiungere un contatto ai "Contatti fissati".
-function toggleHomeNumeriAdd() {
-  navState.homeAddOpen = !navState.homeAddOpen;
-  const b = document.getElementById('home-numeri-add-box');
-  if (b) b.style.display = navState.homeAddOpen ? 'block' : 'none';
-  if (navState.homeAddOpen) {
-    const i = document.getElementById('home-numeri-search');
-    if (i) { i.value = ''; i.focus(); }
-    if (typeof renderHomeNumeriSearchResults === 'function') renderHomeNumeriSearchResults('');
   }
 }
 
@@ -14749,8 +14814,10 @@ function buildProcedureChildren() {
       subs[s].push(p);
     });
     const subKeys = Object.keys(subs).sort();
-    // If only "_senza" sub: list procedures directly under macro
-    if (subKeys.length === 1 && subKeys[0] === '_senza') {
+    // If only "_senza" sub: list procedures directly under macro.
+    // Con HIDE_SUBCATEGORIES attivo, comportamento esteso a tutte le categorie:
+    // le procedure compaiono direttamente sotto la macro, senza il livello sottocategoria.
+    if (HIDE_SUBCATEGORIES || (subKeys.length === 1 && subKeys[0] === '_senza')) {
       return {
         id: 'macro:' + cat,
         label: CATEGORIA_LABELS[cat] || cat,
@@ -17226,12 +17293,15 @@ function renderSearchResults(query, targetId) {
   const totalContatti = uocResults.reduce((s, u) => s + u.matchedCount, 0);
   const totalResults = uocResults.length + nonNumeri.length;
 
-  // Conteggio per categoria (per filter chips)
+  // Conteggio per categoria (per filter chips). Deve riflettere i risultati EFFETTIVAMENTE
+  // mostrati dopo il filtro stretto, non i raw di Fuse (che includono falsi positivi fuzzy).
+  // - numeri: i contatti realmente in uocResults (totalContatti), non numeriRaw.length;
+  // - documenti: i nonNumeri già filtrati strict, non rawResults grezzi.
   const countByType = {
-    numeri: numeriRaw.length,
+    numeri: totalContatti,
     procedura: 0, clinica: 0, modulo: 0
   };
-  rawResults.forEach(r => {
+  nonNumeri.forEach(r => {
     if (r.item.type !== 'numero' && countByType[r.item.type] !== undefined) countByType[r.item.type]++;
   });
   // Set-based filter: multi-select con toggle
@@ -17619,6 +17689,23 @@ function initMobileDrawer() {
   //                sulla sidebar aperta verso sinistra = chiude
   //                dalla cima verso il basso = focus sulla barra di ricerca
   let touchStart = null;
+  // Ritorna il container scrollabile orizzontalmente più vicino al touch (o null), risalendo gli
+  // antenati (es. tabelle in overflow .bl-table-wrap / .bk-table-wrap, .mod-page-scroll). Non
+  // hardcoda i selettori, così copre anche container futuri. La decisione se bloccare l'apertura
+  // della sidebar è presa al primo movimento, in base alla direzione e a quanto resta da scorrere:
+  // se il container è già tutto a sinistra (scrollLeft<=0) lo swipe verso destra può aprire la sidebar.
+  const _horizScrollableAncestor = (el) => {
+    let node = el;
+    while (node && node !== document.body && node.nodeType === 1) {
+      // scrollWidth > clientWidth → c'è contenuto extra in orizzontale
+      if (node.scrollWidth - node.clientWidth > 2) {
+        const ox = getComputedStyle(node).overflowX;
+        if (ox === 'auto' || ox === 'scroll') return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
+  };
   const OPEN_THRESHOLD = 60;       // px di swipe orizzontale per aprire sidebar
   const VERT_TOLERANCE = 40;       // px max verticale tollerato per swipe orizz.
   const PULL_DOWN_THRESHOLD = 90;  // px di pull-down per attivare focus search
@@ -17646,10 +17733,14 @@ function initMobileDrawer() {
                            state.currentParams && state.currentParams.slug &&
                            state.moduliCache && state.moduliCache[state.currentParams.slug] &&
                            state.moduliCache[state.currentParams.slug].editMode;
+    // Container scrollabile orizzontalmente in cui parte il touch (o null). La decisione di
+    // bloccare l'apertura sidebar è rimandata al touchmove, quando conosco la direzione.
+    const scrollableX = _horizScrollableAncestor(e.target);
     // Memorizzo lo startY e tutti i mode potenzialmente validi; il mode effettivo viene deciso al primo movimento
     touchStart = {
       x: t.clientX, y: t.clientY,
       sidebarOpen,
+      scrollableX,
       canOpen: !sidebarOpen && !searchOverlayOpen && !modalOpen && !moduloEditMode && t.clientX <= edgeZone,
       canClose: sidebarOpen,
       canPulldown: !sidebarOpen && !modalOpen && !moduloEditMode && (pageAtTop || overlayAtTop),
@@ -17700,6 +17791,12 @@ function initMobileDrawer() {
         touchStart.mode = 'pulldown';
       }
       else if (absDx > absDy) {
+        // Swipe verso destra: se parte dentro un container scrollabile orizzontalmente che
+        // NON è già tutto a sinistra (scrollLeft>0), il gesto serve a scorrere quel contenuto,
+        // non ad aprire la sidebar. Se è già al margine sinistro, lascio aprire la sidebar.
+        if (dx > 0 && touchStart.scrollableX && touchStart.scrollableX.scrollLeft > 0) {
+          touchStart = null; return;
+        }
         if (dx > 0 && touchStart.canOpen) touchStart.mode = 'open';
         else if (dx < 0 && touchStart.canClose) touchStart.mode = 'close';
         else { touchStart = null; return; }
