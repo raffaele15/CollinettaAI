@@ -8778,14 +8778,14 @@ function renderHomeNumeriSection() {
     }).join('')}</div>`;
     setTimeout(() => initHomeNumeriSortable(), 0);
   } else {
-    // Vista normale: rendering ricco come in rubrica (etichetta, luogo, orari, note),
-    // raggruppato per UOC/sezione. Il pin 📌 accanto ai numeri è qui sempre "pieno":
-    // ricliccandolo si toglie il contatto dai fissati.
-    listHtml = renderUocSezioniBox(items, { rich: true });
+    // Vista normale: box compatto con "UOC · Sezione" inline nel titolo (risparmia spazio),
+    // ma con il rendering ricco delle righe (etichetta, luogo, orari, note) come in rubrica.
+    // La stella su ogni riga apre il popup fissati/preferiti.
+    listHtml = renderContattiGroupedBox(items, { rich: true });
   }
 
   const empty = !items.length
-    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Apri la rubrica e premi l'icona 📌 accanto a un numero per fissarlo qui.</div>`
+    ? `<div class="empty-pins" style="padding:16px;font-size:13px;">Nessun contatto fissato. Apri la rubrica, premi la stella ☆ accanto a un contatto e scegli "Contatti fissati".</div>`
     : '';
 
   return `<div class="home-section home-pins-group">
@@ -8926,13 +8926,15 @@ function renderContattiGroupedBox(items, opts = {}) {
   return groups.map(grp => {
     const titleUoc = `<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})">${escapeHtml(grp.gNome)}</span>`;
     const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})" title="Apri ${escapeHtml(grp.gNome)}">${escapeHtml(grp.sezione)}</span>` : '';
-    const rows = grp.contatti.map(({ c }) => renderContattoCard(c, {
-      // In modalità inline (sezione UOC standard): l'UOC è nel titolo del box, la sezione
-      // del contatto è l'occhiello sopra l'etichetta.
-      eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
-      showStarInEdit: !!opts.starInEdit,
-      preferBreve: !!opts.inline
-    })).join('');
+    const rows = grp.contatti.map(({ c }) => opts.rich
+      ? renderNumeroRow(c, grp.gId, classifyContatto(c), { hideLuogo: false })
+      : renderContattoCard(c, {
+          // In modalità inline (sezione UOC standard): l'UOC è nel titolo del box, la sezione
+          // del contatto è l'occhiello sopra l'etichetta.
+          eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
+          showStarInEdit: !!opts.starInEdit,
+          preferBreve: !!opts.inline
+        })).join('');
     return `<div class="sr-sede-bucket" style="margin-bottom:10px;">
       <div class="sr-sede-bucket-header sr-sede-bucket-static">
         <span class="sede-bucket-tipo">${titleUoc}${titleSez}</span>
@@ -8968,9 +8970,7 @@ function renderUocSezioniBox(items, opts = {}) {
       const sezLabel = s.sezione
         ? `<span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gId)}'})">${escapeHtml(s.sezione)}</span>`
         : `<span class="ctx-sezione">Numeri</span>`;
-      const rows = s.contatti.map(c => opts.rich
-        ? renderNumeroRow(c, u.gId, classifyContatto(c), { hideLuogo: false })
-        : renderContattoCard(c, { showStarInEdit: !!opts.starInEdit })).join('');
+      const rows = s.contatti.map(c => renderContattoCard(c, { showStarInEdit: !!opts.starInEdit })).join('');
       return `<div class="sr-sede-bucket">
         <div class="sr-sede-bucket-header sr-sede-bucket-static">
           <span class="sede-bucket-tipo">${sezLabel}</span>
