@@ -280,6 +280,12 @@ REGOLA — RISULTATO PRECEDENTE AOUP:
 Nel formato "[Esame] [Risultato attuale] [Unità] [Range] [Risultato precedente] [Data precedente]" (esempio: "B-PIASTRINE *139 10^9/L 150-450 155 22/02/26"), il valore "155 22/02/26" è di un PRECEDENTE ricovero/prelievo. USA SEMPRE il valore attuale (139), IGNORA il precedente.
 Se in una serie temporale il primo valore ha una data lontana dal periodo di ricovero corrente, trattalo come "risultato precedente" e usa solo l'ultimo valore.
 
+REGOLA — MICROBIOLOGIA E SIEROLOGIA (ELENCO COMPLETO):
+- Riporta TUTTI gli esami microbiologici e sierologici presenti nell'input, includendo OGNI singolo microrganismo cercato e OGNI singolo anticorpo cercato, anche quando il risultato è negativo, assente o non rilevato. Non comprimere in un generico "nella norma" e non omettere i risultati negativi.
+- Per la microbiologia (emocolture, urinocolture, tamponi, ricerche antigeniche/colturali) indica per ciascun microrganismo o test l'esito (es. "negativo", "non rilevato", oppure il germe isolato con eventuale antibiogramma).
+- Per la sierologia indica per ciascun anticorpo cercato l'esito (es. "anti-HBs negativo", "anti-HCV negativo", "IgG positive").
+- Mantieni il raggruppamento per categoria (Esami microbiologici, Sierologia) con il trattino lungo come bullet.
+
 
 ─── SEZIONE: INDAGINI DIAGNOSTICO-STRUMENTALI E VALUTAZIONI SPECIALISTICHE ───
 
@@ -526,6 +532,11 @@ SEPARATORI: usa ";" per separare esami con valori specifici dagli esami "nella n
 CATEGORIE: usa le categorie del file. Se la tabella contiene categorie aggiuntive non elencate nei titoli di sezione standard, includile comunque (es. "Marcatori tumorali", "Sierologia", "Profilo immunologico").
 
 "CAMPIONE NON PERVENUTO" / "ESAME ANNULLATO": riportalo come "nome esame: campione non pervenuto".
+
+MICROBIOLOGIA E SIEROLOGIA — ELENCO COMPLETO (eccezione alla COMPRESSIONE):
+- Per le categorie microbiologiche e sierologiche elenca SEMPRE ogni singolo microrganismo cercato e ogni singolo anticorpo cercato, riportandone l'esito anche se negativo / non rilevato / assente. NON comprimere questi esiti in "nella norma" e non ometterli.
+- Microbiologia: per ciascuna emocoltura, urinocoltura, tampone o ricerca antigenica/colturale indica l'esito (es. "negativo", "non rilevato", oppure il germe isolato).
+- Sierologia: per ciascun anticorpo cercato indica l'esito (es. "anti-HBs negativo", "anti-HCV negativo").
 
 DISCORSO: italiano clinico formale. MAI inventare valori non presenti nella tabella.`;
 let FINGERPRINT_PROMPT_V2 = FINGERPRINT_PROMPT_V3;
@@ -3888,42 +3899,105 @@ ${t3}`;
 
 /* ── Export/Print lettera ──
    renderLetterPrintHtml: testo → HTML stampabile (paragrafi + interlinea).
-   Versione semplificata rispetto allo standalone (niente parsing firma complesso):
-   preserva il testo con <pre> per mantenere allineamenti e tabelle testuali. */
+   Le tabelle Markdown (| col | col |) vengono convertite in vere <table> HTML;
+   il resto del testo è preservato in <pre> per mantenere allineamenti. */
+
+// Converte il grassetto markdown **...** in <b>…</b> dopo l'escape, usando sentinelle
+// non stampabili così gli asterischi non restano visibili. Gestisce anche "diagnosi"
+// tra virgolette (→ grassetto), opzionale.
+function letteraMarkInline(s, boldQuotes){
+  let marked = String(s).replace(/\*\*([^*]+)\*\*/g, '\u0002B\u0001$1\u0002/B\u0001');
+  if (boldQuotes) marked = marked.replace(/"([^"\n]+)"/g, '\u0002B\u0001"$1"\u0002/B\u0001');
+  const esc = (window.escapeHtml ? window.escapeHtml(marked) : String(marked).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  return esc.replace(/\u0002B\u0001/g, '<b>').replace(/\u0002\/B\u0001/g, '</b>');
+}
+
+// È una riga di tabella markdown? (inizia e finisce con |, dopo trim)
+function isMdTableRow(line){
+  const t = line.trim();
+  return t.startsWith('|') && t.endsWith('|') && t.length > 1;
+}
+// È la riga separatrice di una tabella markdown? (es. |---|:--:|---|)
+function isMdTableSeparator(line){
+  const t = line.trim();
+  if (!isMdTableRow(t)) return false;
+  return t.slice(1, -1).split('|').every(c => /^\s*:?-{1,}:?\s*$/.test(c));
+}
+// Spezza una riga "| a | b | c |" nelle celle ['a','b','c']
+function splitMdRow(line){
+  let t = line.trim();
+  t = t.replace(/^\|/, '').replace(/\|$/, '');
+  return t.split('|').map(c => c.trim());
+}
+
+// Converte un testo (con eventuali tabelle markdown) in HTML per export/stampa.
+// boldQuotes: se true, mette in grassetto anche le "diagnosi" tra virgolette (export Word).
+function letteraTextToExportHtml(text, boldQuotes){
+  const lines = String(text || '').split('\n');
+  let out = '';
+  let para = [];            // accumulo righe non-tabella
+  const flushPara = () => {
+    if (!para.length) return;
+    const html = letteraMarkInline(para.join('\n'), boldQuotes);
+    out += `<pre style="white-space:pre-wrap;font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:0;">${html}</pre>`;
+    para = [];
+  };
+  for (let i = 0; i < lines.length; i++) {
+    // Inizio tabella: riga | … | seguita da riga separatrice | --- |
+    if (isMdTableRow(lines[i]) && i + 1 < lines.length && isMdTableSeparator(lines[i + 1])) {
+      flushPara();
+      const header = splitMdRow(lines[i]);
+      i += 2; // salto header e separatore
+      const bodyRows = [];
+      while (i < lines.length && isMdTableRow(lines[i]) && !isMdTableSeparator(lines[i])) {
+        bodyRows.push(splitMdRow(lines[i]));
+        i++;
+      }
+      i--; // compenso l'incremento del for
+      const thead = `<tr>${header.map(c => `<th style="border:1px solid #000;padding:3px 6px;text-align:left;font-weight:bold;">${letteraMarkInline(c, boldQuotes)}</th>`).join('')}</tr>`;
+      const tbody = bodyRows.map(r => {
+        // normalizzo il numero di celle a quello dell'header
+        const cells = header.map((_, idx) => r[idx] !== undefined ? r[idx] : '');
+        return `<tr>${cells.map(c => `<td style="border:1px solid #000;padding:3px 6px;vertical-align:top;">${letteraMarkInline(c, boldQuotes)}</td>`).join('')}</tr>`;
+      }).join('');
+      out += `<table style="border-collapse:collapse;width:100%;font-family:'Times New Roman',serif;font-size:10.5pt;margin:6pt 0;">${thead}${tbody}</table>`;
+    } else {
+      para.push(lines[i]);
+    }
+  }
+  flushPara();
+  return out;
+}
+
 function renderLetterPrintHtml(text){
-  const escaped = (window.escapeHtml ? window.escapeHtml(text) : String(text||''));
-  return `<pre style="white-space:pre-wrap;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7;margin:0;">${escaped}</pre>`;
+  return letteraTextToExportHtml(text, false);
 }
 function printLetter(text){
   if(!text || !text.trim()){ toast('Nessuna lettera da stampare.','error'); return; }
   const w = window.open('', '_blank');
   if(!w){ toast('Popup bloccato dal browser.','error'); return; }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lettera di dimissione</title>
-    <style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7;margin:2.5cm;color:#000}
-    pre{white-space:pre-wrap;font-family:inherit;margin:0}</style></head>
+    <style>body{font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:2.5cm;color:#000}
+    pre{white-space:pre-wrap;font-family:inherit;margin:0}
+    table{border-collapse:collapse}</style></head>
     <body>${renderLetterPrintHtml(text)}</body></html>`);
   w.document.close();
   w.focus();
   setTimeout(()=>{ try{ w.print(); }catch(e){} }, 250);
 }
 /* Export Word via HTML-.doc: genera un file .doc (HTML con MIME Word) che Word apre
-   mantenendo font/interlinea. Robusto e senza dipendenze (no RTF della tabella). */
+   mantenendo font/interlinea. Le tabelle markdown diventano vere tabelle Word. */
 function exportWordDoc(text, filename){
   if(!text || !text.trim()){ toast('Nessuna lettera da esportare.','error'); return; }
-  // Marco grassetto e diagnosi tra virgolette PRIMA dell'escape, con sentinelle non stampabili
-  // (così sopravvivono all'escape HTML e poi le converto in <b>…</b>, senza che gli asterischi
-  // o le virgolette restino visibili nel documento Word).
-  let marked = String(text)
-    .replace(/\*\*([^*]+)\*\*/g, '\u0002B\u0001$1\u0002/B\u0001')        // **grassetto** (valori patologici)
-    .replace(/"([^"\n]+)"/g, '\u0002B\u0001"$1"\u0002/B\u0001');          // "diagnosi" tra virgolette → grassetto
-  const esc = (window.escapeHtml ? window.escapeHtml(marked) : String(marked).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
-  const escaped = esc.replace(/\u0002B\u0001/g, '<b>').replace(/\u0002\/B\u0001/g, '</b>');
+  const bodyHtml = letteraTextToExportHtml(text, true);
   const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office"
     xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="UTF-8"><title>Lettera</title>
-    <style>@page{margin:2.5cm}body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7}
-    pre{white-space:pre-wrap;font-family:inherit;margin:0}</style></head>
-    <body><pre>${escaped}</pre></body></html>`;
+    <style>@page{margin:2.5cm}body{font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7}
+    pre{white-space:pre-wrap;font-family:inherit;margin:0}
+    table{border-collapse:collapse}
+    td,th{border:1px solid #000;padding:3px 6px}</style></head>
+    <body>${bodyHtml}</body></html>`;
   const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -4329,16 +4403,22 @@ function wizStep3Combined(){
       <button class="btn ghost sm" onclick="window.Lettere._rebuildPrompt()">↻ Ricostruisci</button></div></div>`;
 
   // ── Card lettera generata (incolla risposta AI) ──
-  const cardOut=`<div class="lt-card-static">
+  // Flusso a due fasi: prima si vede solo il prompt + "Copia". Dopo aver copiato (o se c'è
+  // già del testo incollato), compaiono il box per incollare la risposta e l'Avanti → Verifica.
+  const showOutput = L._promptCopied || (w.outputLetter && w.outputLetter.trim());
+  const cardOut = showOutput ? `<div class="lt-card-static">
     <div class="lt-side-title">Lettera generata (incolla la risposta dell'AI)</div>
     <textarea id="lt-out" rows="12" placeholder="Incolla qui la lettera prodotta..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea>
-    <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-out')">📋 Incolla dagli appunti</button></div></div>`;
+    <div class="lt-row" style="margin-top:6px"><button class="btn ghost sm" onclick="window.Lettere._pasteInto('lt-out')">📋 Incolla dagli appunti</button></div></div>` : '';
+
+  const nav = showOutput
+    ? flowNav('lettere-anonimizza','lettere-verifica','Avanti → Verifica')
+    : flowNav('lettere-anonimizza', null);
 
   return cardModello + (isLab
       ? cardELab
       : (cardDiag + cardRef + cardPrefs + cardSys))
-    + cardPrompt + cardOut +
-    flowNav('lettere-anonimizza','lettere-verifica','Avanti → Verifica');
+    + cardPrompt + cardOut + nav;
 }
 function wizStep4(){
   const w=L.wiz;
@@ -4392,6 +4472,9 @@ function flowPageShell(activeRoute, title, bodyHtml){
 function renderCarica(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderCarica); return; }
   const w=ensureWiz();
+  // Inizio flusso: il box "incolla risposta" nella pagina Genera riparte nascosto finché
+  // non si copia il prompt (flusso a due fasi).
+  L._promptCopied = false;
   flowPageShell('lettere-carica','Carica cartella', wizStep1());
   const t=document.getElementById('lt-raw'); if(t) t.value=w.rawText||'';
 }
@@ -4518,12 +4601,6 @@ function renderEsporta(){
       <button class="btn ghost" onclick="window.Lettere._printLetter()">⎙ Stampa / PDF</button>
       <button class="btn ghost" onclick="navigate('lettere-verifica')">← Indietro</button>
       <button class="btn ghost" onclick="window.Lettere._newLetter()">↺ Nuova lettera</button>
-    </div>
-    <div class="lt-card-static" style="margin-top:20px">
-      <div class="lt-side-title">Salva in libreria</div>
-      <div class="field"><label>Fingerprint stilistico (JSON opzionale)</label>
-        <textarea id="lt-fp" rows="3" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}' oninput="window.Lettere._set('fingerprint', this.value)">${escapeHtml(w.fingerprint||'')}</textarea></div>
-      <div class="lt-row" style="justify-content:flex-end"><button class="btn" onclick="window.Lettere._addToLibrary()">✓ Aggiungi a libreria</button></div>
     </div>`;
   flowPageShell('lettere-esporta','Esporta', body);
 }
@@ -5158,7 +5235,10 @@ window.Lettere = {
   _copyPrompt(){ const ta=document.getElementById('lt-prompt'); if(ta){ ta.select();
     const txt=ta.value||(L.wiz&&L.wiz.builtPrompt)||'';
     try{document.execCommand('copy');}catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(txt).catch(()=>{});
-    toast('Prompt copiato.','success'); } },
+    toast('Prompt copiato.','success');
+    // Flusso a due fasi: dopo la copia rivelo il box per incollare la risposta e l'Avanti.
+    if(state.currentView==='lettere-genera' && !L._promptCopied){ L._promptCopied=true; renderGenera(); }
+  } },
   async _addToLibrary(){ if(!L.wiz.outputLetter.trim()){ toast('Incolla prima la lettera generata.','error'); return; }
     // Privacy: la libreria è un modello per il RAG e non deve contenere dati reali.
     // Se la lettera è stata finalizzata (nome/cognome/data reali reinseriti),
