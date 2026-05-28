@@ -5151,8 +5151,10 @@ window.Lettere = {
     // Rimuovo il blocco esami dal testo grezzo
     if(w.xlsText && w.rawText) w.rawText=w.rawText.replace(w.xlsText,'').trim();
     w.xlsText=''; w.xlsRows=null;
-    const t=document.getElementById('lt-raw'); if(t) t.value=w.rawText||'';
-    const st=document.getElementById('lt-parse-status'); if(st) st.textContent='Esami rimossi.';
+    // Rifaccio la pagina: così il blocco "Anteprima valori estratti" (renderizzato solo se
+    // xlsText è presente) sparisce visivamente, non solo dallo stato. renderCarica ripristina
+    // anche il valore della textarea grezza.
+    renderCarica();
     toast('Esami rimossi.','success'); },
   _newLetter(){ Modals().confirm({ title:'Nuova lettera?', message:'I dati correnti andranno persi.', confirmLabel:'Nuova lettera', danger:true,
     onConfirm:()=>{ L.wiz=newWizard(); navigate('lettere-carica'); toast('Nuova lettera avviata.','success'); } }); },
