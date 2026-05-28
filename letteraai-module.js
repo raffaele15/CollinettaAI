@@ -220,71 +220,66 @@ Descrizione fisica generale: cute, polsi, torace, cuore, addome, arti inferiori.
 
 ─── SEZIONE: ESAMI EMATOCHIMICI ───
 
-Frase di apertura: "Durante la degenza il/la paziente è stato/a sottoposto/a ai seguenti esami ematochimici e microbiologici:"
+Frase di apertura: "Durante la degenza il/la paziente è stato/a sottoposto/a ai seguenti esami ematochimici:"
+(NON citare qui la microbiologia: gli esami microbiologici vanno in una sezione separata, descritta più sotto.)
 
-FORMATO — una riga per categoria, con trattino lungo come bullet:
+FORMATO OBBLIGATORIO — una riga per categoria, con trattino lungo come bullet. Ogni riga ha DUE parti, in quest'ordine:
+1. PRIMA gli esami nella norma: elencali separati da virgola e chiudi con "nella norma".
+2. POI, solo se ci sono valori alterati, la dicitura "; si segnala" seguita dagli esami alterati con il loro VALORE NUMERICO ESATTO e il range tra parentesi.
 
-[Nome categoria]: [esame1], [esame2], [esame3] nella norma; [EsameAnomalo] VALORE unità (v.n. range).
+Struttura della riga:
+– [Categoria]: [esame1], [esame2], [esame3] nella norma; si segnala **[EsameAlterato] VALORE unità** (v.n. range), **[Altro] VALORE unità** (v.n. range).
 
 Esempi:
-– Emocromo: nella norma tranne **WBC 11,07 x 10^9/L** (4,40-11,00), **Hb 128 g/L** (140-175).
-– Formula leucocitaria: nella norma.
-– Indici di flogosi: **PCR 16,95 mg/L** (0,00-4,99).
-– Profilo coagulativo: nella norma tranne **INR 1,27**.
-– Profilo metabolico: glucosio, colesterolo totale 196 mg/dL, LDL 125 mg/dL, HDL 64 mg/dL, trigliceridi 49 mg/dL, omocisteina nella norma.
-– Funzionalità renale e ionemia: nella norma tranne **Cl 109 mmol/L** (96-108).
-– Funzionalità epatica: nella norma tranne **ALP 40 U/L** (43-115).
-– Enzimi muscolari: LAD e TnI nella norma.
+– Emocromo con formula: piastrine, MCV, MCHC, RDW nella norma; si segnala **Eritrociti 3,65 x10^12/L** (4,31-5,10), **Emoglobina 122 g/L** (123-153), **Linfociti 0,61 x10^9/L** (1,10-4,80).
+– Profilo coagulativo: INR, APTT ratio nella norma.
+– Indici di flogosi: PCT nella norma; si segnala **PCR 16,89 → 3,87 mg/L** (<5,00).
+– Funzionalità renale con ionemia: urea, acido urico, cloro, calcio nella norma; si segnala **Creatinina 0,55 mg/dL** (0,60-1,10), **Sodio 131 → 128 mmol/L** (136-145), **Potassio 3,3 mmol/L** (3,5-5,1).
 
 REGOLE GENERALI:
-- Prima gli esami nella norma (ultimo valore se serie temporali) separati da virgola + "nella norma".
-- Poi, separati da punto e virgola, gli esami alterati con valore esatto e range di normalità se presente.
-- I valori alterati (fuori range) vanno in grassetto: usare **...** attorno al SOLO nome esame e al valore, NON attorno al range tra parentesi. Esempio: "**Emoglobina 102 g/L** (v.n. 140-175)".
-- Se tutti nella norma: "[Nome categoria]: nella norma."
+- Se tutti gli esami della categoria sono nella norma: "[Categoria]: nella norma." (senza la parte "si segnala").
 - Se categoria non eseguita: ometti la riga.
+- INCLUSIONE CONDIZIONALE DELLE CATEGORIE: includi una categoria SOLO se nell'input sono presenti esami che vi appartengono. Se una categoria (anche tra quelle elencate nel modello di lettera, es. "Esame chimico-fisico liquorale", "ntBNP", "Profilo carenziale") non ha alcun dato nell'input, OMETTI completamente la sua riga: non scrivere la categoria con "nella norma" né con un segnaposto. Questa regola vale anche per eventuali categorie aggiuntive future definite nel modello.
 - Tutte le categorie presenti nell'input vanno incluse, anche se non elencate negli esempi.
 - NESSUNA riga vuota tra le categorie.
+- I valori alterati (fuori range) vanno in grassetto: **...** attorno al SOLO nome esame e al valore, NON attorno al range tra parentesi.
 
-ESAMI SEMPRE RIPORTATI CON VALORE ESATTO (anche se nella norma — non scrivere "nella norma"):
+REGOLA — VALORI ALTERATI SEMPRE NUMERICI (MAI A PAROLE):
+Ogni valore alterato DEVE essere riportato con il numero esatto e l'unità. È VIETATO descrivere un valore a parole al posto del numero. Esempi di cosa NON fare e la correzione:
+- NO: "PCR successivamente negativizzata" → SÌ: "**PCR 16,89 → 3,87 mg/L** (<5,00)".
+- NO: "iponatriemia ricorrente con valori minimi" → SÌ: "**Sodio 131 → 128 mmol/L** (136-145)".
+- NO: "potassio ai limiti inferiori" → SÌ: "**Potassio 3,3 mmol/L** (3,5-5,1)".
+Puoi aggiungere una breve nota clinica a parole DOPO il valore numerico, ma il numero deve sempre esserci.
+
+REGOLA — ESAMI SEMPRE CON VALORE ESATTO (anche se nella norma — vanno comunque nell'elenco "nella norma" ma scritti con il numero, non come "nella norma"):
 Colesterolo totale, HDL, LDL, Trigliceridi, Emoglobina glicata (HbA1c), Creatinina.
 
 REGOLA — VALORI MULTIPLI IN SERIE TEMPORALE (TREND CON FRECCE):
+Mostra il trend (con frecce →) SOLO se la serie è iniziata nei range e poi un valore intermedio o finale è diventato patologico (alterazione insorta DURANTE la degenza), OPPURE se un valore patologico si è modificato in modo clinicamente rilevante nel corso della degenza (es. PCR che si negativizza). In tutti gli altri casi mostra solo l'ultimo valore.
 
-Mostra il trend (con frecce) SOLO se la serie è iniziata nei range e poi un valore intermedio o finale è diventato patologico (cioè l'alterazione è insorta DURANTE la degenza). In tutti gli altri casi, mostra solo l'ultimo valore.
-
-CASO A — Serie sempre nei range:
-L'esame va elencato tra quelli nella norma (non nel "tranne").
-Esempio input: Hb 142 → 145 → 138 g/L (range 140-175)
-Output: incluso negli esami "nella norma" della categoria.
-
-CASO B — Serie iniziata patologica (valore patologico fin dal primo prelievo):
-Mostra solo l'ultimo valore con sottolineatura.
-Esempio input: PCR 16,95 → 38,42 → 8,86 mg/L (range 0-4,99) — tutti patologici
-Output: "**PCR 8,86 mg/L** (0,00-4,99)"
-
-CASO C — Serie iniziata nei range, peggiorata durante la degenza (alterazione INSORTA):
-Mostra il trend completo: primo, peak (se distinto), ultimo.
-Esempio input: WBC 8,2 → 14,5 → 11,0 x10^9/L (range 4,4-11,0) — peggiora poi recupera parzialmente
-Output: "**WBC 8,2 → 14,5 → 11,0 x10^9/L** (4,4-11,0)"
-
-CASO D — Serie iniziata nei range, peggiorata monotonicamente:
-Mostra solo primo e ultimo (peak coincide con ultimo).
-Esempio input: Hb 145 → 110 g/L (range 140-175)
-Output: "**Hb 145 → 110 g/L** (140-175)"
-
-CASO E — Valore singolo:
-Mostra il valore.
-Esempio: "INR 1,27"
+CASO A — Serie sempre nei range: l'esame va tra quelli "nella norma" (solo ultimo valore o "nella norma").
+CASO B — Serie sempre patologica ma stabile: mostra solo l'ultimo valore. Es: "**PCR 8,86 mg/L** (0,00-4,99)".
+CASO C — Serie iniziata nei range, peggiorata durante la degenza: mostra primo → peak → ultimo. Es: "**WBC 8,2 → 14,5 → 11,0 x10^9/L** (4,4-11,0)".
+CASO D — Serie patologica che evolve (peggiora o migliora) durante la degenza: mostra primo → ultimo (o primo → peak → ultimo). Es: "**Sodio 131 → 128 → 134 mmol/L** (136-145)".
+CASO E — Valore singolo: mostra il valore. Es: "**INR 1,27**".
 
 REGOLA — RISULTATO PRECEDENTE AOUP:
 Nel formato "[Esame] [Risultato attuale] [Unità] [Range] [Risultato precedente] [Data precedente]" (esempio: "B-PIASTRINE *139 10^9/L 150-450 155 22/02/26"), il valore "155 22/02/26" è di un PRECEDENTE ricovero/prelievo. USA SEMPRE il valore attuale (139), IGNORA il precedente.
 Se in una serie temporale il primo valore ha una data lontana dal periodo di ricovero corrente, trattalo come "risultato precedente" e usa solo l'ultimo valore.
 
-REGOLA — MICROBIOLOGIA E SIEROLOGIA (ELENCO COMPLETO):
+
+─── SEZIONE: ESAMI MICROBIOLOGICI E SIEROLOGICI ───
+
+Questa è una sezione SEPARATA e DISTINTA dagli esami ematochimici: va dopo gli ematochimici, con una propria riga di apertura.
+
+Frase di apertura: "Sono stati inoltre eseguiti i seguenti esami microbiologici e sierologici:"
+
+REGOLE:
 - Riporta TUTTI gli esami microbiologici e sierologici presenti nell'input, includendo OGNI singolo microrganismo cercato e OGNI singolo anticorpo cercato, anche quando il risultato è negativo, assente o non rilevato. Non comprimere in un generico "nella norma" e non omettere i risultati negativi.
-- Per la microbiologia (emocolture, urinocolture, tamponi, ricerche antigeniche/colturali) indica per ciascun microrganismo o test l'esito (es. "negativo", "non rilevato", oppure il germe isolato con eventuale antibiogramma).
-- Per la sierologia indica per ciascun anticorpo cercato l'esito (es. "anti-HBs negativo", "anti-HCV negativo", "IgG positive").
-- Mantieni il raggruppamento per categoria (Esami microbiologici, Sierologia) con il trattino lungo come bullet.
+- DATA OBBLIGATORIA per colture e campioni: per ogni emocoltura, urinocoltura, coprocoltura, tampone o esame su liquor indica SEMPRE la data di esecuzione tra parentesi (DD/MM). Esempio: "emocolture seriate (12/05, 13/05) negative", "urinocoltura (14/05) positiva per Enterococcus faecalis (100.000 ufc/mL)". Se la data non è nell'input, scrivi "(data non riportata)".
+- Per la sierologia indica per ciascun anticorpo/marcatore cercato l'esito (es. "anti-HBs positivo da vaccinazione", "anti-HCV negativo", "HIV 1-2 negativo").
+- Per le ricerche su DNA/antigeni indica l'esito (es. "CMV-DNA non rilevabile", "HHV-7 DNA positivo su sangue").
+- Raggruppa per tipo con il trattino lungo come bullet (es. "– Sierologie:", "– Colture:", "– Ricerche virali:", "– Autoimmunità:").
 
 
 ─── SEZIONE: INDAGINI DIAGNOSTICO-STRUMENTALI E VALUTAZIONI SPECIALISTICHE ───
@@ -303,7 +298,7 @@ Esempi:
 
 REGOLE:
 - Nessuna riga vuota tra accertamenti.
-- Per esami ripetuti (controlli seriati): un'unica voce con i controlli concatenati. Esempio: "**TC encefalo (17/02):** [esito iniziale]. Controllo (18/02): [esito]. Controllo (23/02): [esito]."
+- Per esami ripetuti (controlli seriati): un'unica voce con i controlli concatenati. Sia l'esame iniziale sia ogni controllo successivo hanno il nome/etichetta e la data in grassetto. Per i controlli successivi al primo usa l'etichetta "**Controllo (DD/MM):**" in grassetto. Esempio: "**TC encefalo (17/02):** [esito iniziale]. **Controllo (18/02):** [esito]. **Controllo (23/02):** [esito]."
 - Riporta sempre le conclusioni; per stenosi significative o reperti patologici, includi dettaglio (sede, grado, caratteristiche).
 - NON sottolineare reperti strumentali patologici (la sottolineatura è riservata ai valori ematochimici).
 
@@ -500,13 +495,17 @@ FORMATO OUTPUT OBBLIGATORIO
 ═══════════════════════════════════════════════════════════════
 
 Inizia con la frase:
-"Durante la degenza il/la paziente è stato/a sottoposto/a ai seguenti esami ematochimici e microbiologici:"
+"Durante la degenza il/la paziente è stato/a sottoposto/a ai seguenti esami ematochimici:"
+(La microbiologia NON va qui: mettila in fondo sotto la sua riga di apertura separata.)
 
-Poi elenca gli esami raggruppati per categoria, con trattino lungo "–" come bullet, tutti gli esami di ogni categoria su UNA SOLA RIGA separati da virgola:
+Poi elenca gli esami raggruppati per categoria, con trattino lungo "–" come bullet, ogni categoria su UNA SOLA RIGA. Su ciascuna riga: PRIMA i valori nella norma (separati da virgola + "nella norma"), POI "; si segnala" con gli alterati (valore numerico esatto + range):
 
-– Emocromo: Hb 132 g/L (140-175), MCV nella norma, MCH nella norma, piastrine nella norma, WBC nella norma.
-– Indici di flogosi: **PCR 1,01 → 47,90 → 29,65 mg/L** (0,00-4,99), procalcitonina nella norma.
-– Coagulazione: **INR 1,40** RATIO (0,90-1,20), **D-dimero 643 → 1885 µg/L FEU** (190-600), fibrinogeno nella norma, APTT ratio nella norma.
+– Emocromo: MCV, MCH, piastrine, WBC nella norma; si segnala **Hb 122 g/L** (140-175).
+– Indici di flogosi: procalcitonina nella norma; si segnala **PCR 47,90 → 29,65 mg/L** (0,00-4,99).
+– Coagulazione: fibrinogeno, APTT ratio nella norma; si segnala **INR 1,40** (0,90-1,20), **D-dimero 1885 µg/L FEU** (190-600).
+
+Dopo gli ematochimici, se presenti, aggiungi la sezione microbiologica con riga di apertura propria:
+"Sono stati inoltre eseguiti i seguenti esami microbiologici e sierologici:"
 
 ═══════════════════════════════════════════════════════════════
 REGOLE
@@ -519,24 +518,28 @@ NOMI ESAMI: riporta il nome come nel file (es. "MCV", "Hb in PEC", "gGT"), rimuo
 ESAMI CON VALORE SEMPRE ESPLICITO (anche se nella norma):
 Colesterolo totale, HDL, LDL, trigliceridi, HbA1c, creatinina, TSH, urea.
 
+FORMATO DELLA RIGA — prima i normali, poi gli alterati:
+Ogni riga categoria ha due parti in quest'ordine: 1) gli esami nella norma elencati separati da virgola e chiusi con "nella norma"; 2) se ci sono alterati, "; si segnala" seguito dagli esami alterati con valore numerico esatto e range.
+Es: "– Emocromo con formula: piastrine, MCV, MCHC, RDW nella norma; si segnala **Emoglobina 122 g/L** (123-153), **Linfociti 0,61 x10^9/L** (1,10-4,80)."
+Se tutti nella norma: "– [Categoria]: nella norma."
+
+VALORI ALTERATI SEMPRE NUMERICI (MAI A PAROLE): ogni valore alterato deve avere il numero esatto e l'unità. VIETATO sostituirlo con una descrizione (NO "PCR negativizzata", NO "iponatriemia ricorrente", NO "potassio ai limiti"). Una nota a parole può seguire il numero, mai sostituirlo.
+
 TREND (valori in progressione temporale — ordine cronologico, dal più vecchio al più recente):
-- Mostra il trend SOLO se la serie è iniziata nei range e poi è diventata patologica.
+- Mostra il trend (→) se la serie è iniziata nei range e poi è diventata patologica, oppure se un valore patologico si è modificato in modo rilevante durante la degenza (es. PCR che si negativizza, sodio che si corregge).
   Formato: primo_valore → **picco** → ultimo_valore (con → tra i valori).
-- Se sempre patologica dall'inizio: mostra solo l'ultimo valore.
+- Se sempre patologica e stabile: mostra solo l'ultimo valore.
 - Se sempre nella norma: "nella norma" (eccetto esami con valore sempre esplicito).
 
-COMPRESSIONE: gli esami tutti nella norma nella stessa categoria si elencano al fondo della riga separati da virgola seguiti da "nella norma". Es: "Hb **132** g/L (140-175); MCV, MCH, MCHC, RDW, WBC nella norma."
-
-SEPARATORI: usa ";" per separare esami con valori specifici dagli esami "nella norma" nella stessa categoria.
-
-CATEGORIE: usa le categorie del file. Se la tabella contiene categorie aggiuntive non elencate nei titoli di sezione standard, includile comunque (es. "Marcatori tumorali", "Sierologia", "Profilo immunologico").
+CATEGORIE: usa le categorie del file. Se la tabella contiene categorie aggiuntive non elencate nei titoli di sezione standard, includile comunque (es. "Marcatori tumorali", "Profilo immunologico").
 
 "CAMPIONE NON PERVENUTO" / "ESAME ANNULLATO": riportalo come "nome esame: campione non pervenuto".
 
-MICROBIOLOGIA E SIEROLOGIA — ELENCO COMPLETO (eccezione alla COMPRESSIONE):
-- Per le categorie microbiologiche e sierologiche elenca SEMPRE ogni singolo microrganismo cercato e ogni singolo anticorpo cercato, riportandone l'esito anche se negativo / non rilevato / assente. NON comprimere questi esiti in "nella norma" e non ometterli.
-- Microbiologia: per ciascuna emocoltura, urinocoltura, tampone o ricerca antigenica/colturale indica l'esito (es. "negativo", "non rilevato", oppure il germe isolato).
-- Sierologia: per ciascun anticorpo cercato indica l'esito (es. "anti-HBs negativo", "anti-HCV negativo").
+MICROBIOLOGIA E SIEROLOGIA — SEZIONE SEPARATA, ELENCO COMPLETO:
+- Gli esami microbiologici e sierologici NON vanno mescolati con gli ematochimici: mettili in fondo, sotto una riga di apertura propria ("Sono stati inoltre eseguiti i seguenti esami microbiologici e sierologici:").
+- Elenca SEMPRE ogni singolo microrganismo cercato e ogni singolo anticorpo cercato, riportandone l'esito anche se negativo / non rilevato / assente. NON comprimere in "nella norma" e non ometterli.
+- DATA OBBLIGATORIA per colture e campioni: per ogni emocoltura, urinocoltura, coprocoltura, tampone o esame su liquor indica la data di esecuzione tra parentesi (DD/MM); se assente nell'input scrivi "(data non riportata)". Es: "urinocoltura (14/05) positiva per Enterococcus faecalis (100.000 ufc/mL)".
+- Sierologia/virali: per ciascun marcatore indica l'esito (es. "anti-HBs positivo", "CMV-DNA non rilevabile").
 
 DISCORSO: italiano clinico formale. MAI inventare valori non presenti nella tabella.`;
 let FINGERPRINT_PROMPT_V2 = FINGERPRINT_PROMPT_V3;
@@ -3331,7 +3334,10 @@ Durante la degenza il paziente è stato sottoposto ai seguenti **esami ematochim
 - **Funzionalità tiroidea:** [dall'input]
 - **ntBNP:** [dall'input]
 - **Esame urine:** [dall'input]
-- **Microbiologia:** [dall'input]
+- **Esame chimico-fisico liquorale (DD/MM):** [SOLO se presente esame del liquor/rachicentesi nell'input; aspetto, cellule, proteine, glucosio, ecc.]
+
+Sono stati inoltre eseguiti i seguenti **esami microbiologici e sierologici:**
+- **Microbiologia:** [dall'input — ogni microrganismo/anticorpo cercato con esito; colture con data (DD/MM)]
 
 e alle seguenti **indagini diagnostico-strumentali e valutazioni specialistiche:**
 - **ECG (DD/MM):** [dall'input]
@@ -3415,7 +3421,10 @@ Durante la degenza il paziente è stato sottoposto ai seguenti **esami ematochim
 - **Funzionalità tiroidea:** [dall'input]
 - **ntBNP:** [dall'input]
 - **Esame urine:** [dall'input]
-- **Microbiologia:** [dall'input]
+- **Esame chimico-fisico liquorale (DD/MM):** [SOLO se presente esame del liquor/rachicentesi nell'input; aspetto, cellule, proteine, glucosio, ecc.]
+
+Sono stati inoltre eseguiti i seguenti **esami microbiologici e sierologici:**
+- **Microbiologia:** [dall'input — ogni microrganismo/anticorpo cercato con esito; colture con data (DD/MM)]
 
 e alle seguenti **indagini diagnostico-strumentali e valutazioni specialistiche:**
 - **ECG (DD/MM):** [dall'input]
@@ -3930,6 +3939,23 @@ function splitMdRow(line){
   return t.split('|').map(c => c.trim());
 }
 
+// Firma a due colonne: la riga-ruoli contiene sia il ruolo di sinistra ("formazione
+// specialistica") sia quello di destra ("dirigente medico/i"). Le righe-nomi sopra hanno
+// due gruppi separati da 2+ spazi. Rende la colonna sinistra allineata a sinistra e la
+// destra allineata a destra.
+function isFirmaRuoliLine(line){
+  const t = (line || '').toLowerCase();
+  return /formazione specialistica/.test(t) && /dirigent[ei]\s+medic[oi]/.test(t);
+}
+// Una riga del blocco firma con due colonne (nomi o ruoli): due gruppi separati da 2+ spazi.
+function splitFirmaColumns(line){
+  const t = String(line).replace(/\s+$/,'');
+  const m = t.match(/^(.*?\S)\s{2,}(\S.*)$/);
+  if (m) return [m[1].trim(), m[2].trim()];
+  // fallback: tutto a sinistra
+  return [t.trim(), ''];
+}
+
 // Converte un testo (con eventuali tabelle markdown) in HTML per export/stampa.
 // boldQuotes: se true, mette in grassetto anche le "diagnosi" tra virgolette (export Word).
 function letteraTextToExportHtml(text, boldQuotes){
@@ -3941,6 +3967,15 @@ function letteraTextToExportHtml(text, boldQuotes){
     const html = letteraMarkInline(para.join('\n'), boldQuotes);
     out += `<pre style="white-space:pre-wrap;font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:0;">${html}</pre>`;
     para = [];
+  };
+  // Blocco firma a due colonne (sx a sinistra, dx a destra). leftLines/rightLines: array di righe.
+  const flushFirma = (rows) => {
+    const left = rows.map(r => letteraMarkInline(r[0], false)).join('<br>');
+    const right = rows.map(r => letteraMarkInline(r[1], false)).join('<br>');
+    out += `<table style="border-collapse:collapse;width:100%;font-family:'Times New Roman',serif;font-size:10.5pt;margin:10pt 0 0;"><tr>`
+      + `<td style="text-align:left;vertical-align:top;padding:0;">${left}</td>`
+      + `<td style="text-align:right;vertical-align:top;padding:0;">${right}</td>`
+      + `</tr></table>`;
   };
   for (let i = 0; i < lines.length; i++) {
     // Inizio tabella: riga | … | seguita da riga separatrice | --- |
@@ -3961,6 +3996,15 @@ function letteraTextToExportHtml(text, boldQuotes){
         return `<tr>${cells.map(c => `<td style="border:1px solid #000;padding:3px 6px;vertical-align:top;">${letteraMarkInline(c, boldQuotes)}</td>`).join('')}</tr>`;
       }).join('');
       out += `<table style="border-collapse:collapse;width:100%;font-family:'Times New Roman',serif;font-size:10.5pt;margin:6pt 0;">${thead}${tbody}</table>`;
+    } else if (isFirmaRuoliLine(lines[i])) {
+      // Risalgo per includere le righe-nomi sopra (non vuote) appena accumulate in para.
+      const firmaRows = [];
+      while (para.length && para[para.length - 1].trim()) {
+        firmaRows.unshift(splitFirmaColumns(para.pop()));
+      }
+      flushPara(); // svuota il resto (testo prima della firma)
+      firmaRows.push(splitFirmaColumns(lines[i])); // riga dei ruoli
+      flushFirma(firmaRows);
     } else {
       para.push(lines[i]);
     }
