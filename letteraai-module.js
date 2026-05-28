@@ -4175,21 +4175,9 @@ function renderLettereHome(){
 }
 
 /* ── Wizard ── */
-function renderWizard(){
-  if (!L.wiz) L.wiz = newWizard();
-  const w = L.wiz;
-  const steps = ['Input','Anonimizza','Opzioni','Prompt'];
-  const stepNav = steps.map((s,i)=>{const n=i+1;const cls=n===w.step?'active':(n<w.step?'done':'');
-    return `<div class="lt-step ${cls}" onclick="window.Lettere.goStep(${n})"><span class="lt-step-n">${n}</span><span class="lt-step-l">${s}</span></div>`;
-  }).join('<span class="lt-step-sep"></span>');
-  let body = w.step===1?wizStep1():w.step===2?wizStep2():w.step===3?wizStep3():wizStep4();
-  mc().innerHTML = pageHead('Nuova lettera','Generatore lettere',
-    `<button class="btn ghost" onclick="navigate('lettere')">Chiudi</button>`) +
-    `<div class="lt-steps">${stepNav}</div><div class="lt-wizbody">${body}</div>`;
-  if (w.step===1){ const t=document.getElementById('lt-raw'); if(t) t.value=w.rawText; }
-  if (w.step===2){ const t=document.getElementById('lt-anon'); if(t) t.value=w.anonText; }
-  if (w.step===4){ const t=document.getElementById('lt-out'); if(t) t.value=w.outputLetter; }
-}
+// NOTA: la vecchia interfaccia "wizard a step" (renderWizard + wizStep3/wizStep4 + goStep)
+// è stata rimossa. Il flusso attuale usa pagine/route separate (renderCarica, renderAnonimizza,
+// renderGenera, renderEsporta). wizStep1 e wizStep2 sono ancora usate da renderCarica/renderAnonimizza.
 
 function wizStep1(){
   const w=L.wiz||{};
@@ -4275,29 +4263,6 @@ function wizStep2(){
     <div class="lt-note" style="border-left-color:var(--danger);color:var(--danger)">⚠ Verifica il testo a destra. Correggi manualmente qualsiasi dato rimasto prima di procedere.</div>
     <div class="lt-wiz-actions"><button class="btn ghost" onclick="navigate('lettere-carica')">← Indietro</button>
       <button class="btn" onclick="navigate('lettere-genera')">Avanti → Genera</button></div>`;
-}
-function wizStep3(){
-  const w=L.wiz, p=w.prefs;
-  const wardOpts=WARDS.map(x=>`<option${x===w.ward?' selected':''}>${escapeHtml(x)}</option>`).join('');
-  const tipoOpts=TIPI.map(t=>`<option value="${t.id}"${t.id===w.tipo?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
-  const rag=(w.ragExamples||[]).map(c=>`<div class="lt-rag"><strong>${escapeHtml(c.diagnosi||c.name||c.id)}</strong><span>${escapeHtml(wardName(c))} · ${escapeHtml(c.tipo||'')}</span></div>`).join('')||'<div class="lt-sub-empty">Nessun esempio simile in libreria.</div>';
-  const seg=(key,opts)=>opts.map(o=>`<button class="lt-seg${p[key]===o.v?' on':''}" title="${escapeHtml((PREF_TITLES[key]||{})[o.v]||o.l)}" onclick="window.Lettere._setPref('${key}','${o.v}')">${o.l}</button>`).join('');
-  return `<div class="lt-row">
-      <div class="field" style="flex:1"><label>Reparto</label><select onchange="window.Lettere._setWard(this.value)">${wardOpts}</select></div>
-      <div class="field" style="flex:1"><label>Tipo lettera</label><select onchange="window.Lettere._setTipo(this.value)">${tipoOpts}</select></div>
-    </div>
-    <div class="field"><label>Diagnosi principale</label><input type="text" value="${escapeHtml(w.diagnosi)}" oninput="window.Lettere._setDiag(this.value)" placeholder="es. ictus ischemico territorio MCA dx"></div>
-    <div class="lt-prefs">
-      <div class="lt-pref-row"><label>Esami laboratorio</label><div class="lt-segs">${seg('lab',[{v:'all',l:'Tutti'},{v:'altered',l:'Solo patologici'}])}</div></div>
-      <div class="lt-pref-row"><label>Accertamenti strumentali</label><div class="lt-segs">${seg('acc',[{v:'brief',l:'Sintetici'},{v:'extended',l:'Estesi'}])}</div></div>
-      <div class="lt-pref-row"><label>Decorso clinico</label><div class="lt-segs">${seg('dec',[{v:'short',l:'Breve'},{v:'standard',l:'Standard'},{v:'long',l:'Esteso'}])}</div></div>
-      <div class="lt-pref-row"><label>Anamnesi</label><div class="lt-segs">${seg('an',[{v:'essential',l:'Essenziale'},{v:'complete',l:'Completa'}])}</div></div>
-      <div class="lt-pref-row"><label>Raccomandazioni</label><div class="lt-segs">${seg('rac',[{v:'main',l:'Principali'},{v:'all',l:'Tutte'}])}</div></div>
-      <div class="lt-pref-row"><label>Terapia dimissione</label><div class="lt-segs">${seg('ter',[{v:'last',l:'Ultima'},{v:'lastPlusHome',l:'+ domiciliare'}])}</div></div>
-      <div class="field"><label>Altre preferenze (testo libero)</label><textarea rows="2" oninput="window.Lettere._setPref('custom', this.value)">${escapeHtml(p.custom||'')}</textarea></div>
-      <div class="lt-row" style="justify-content:flex-end"><button class="btn ghost sm" onclick="window.Lettere._resetPrefs()" title="Ripristina le preferenze salvate">↺ Ripristina preferenze</button></div>
-    </div>
-    <div class="lt-side-title">Esempi simili (fingerprint usato come riferimento)</div><div class="lt-rags">${rag}</div>`;
 }
 // wizStep3Combined: pagina "Genera" con disposizione a card identica all'originale (panel2).
 function wizStep3Combined(){
@@ -4419,27 +4384,6 @@ function wizStep3Combined(){
       ? cardELab
       : (cardDiag + cardRef + cardPrefs + cardSys))
     + cardPrompt + cardOut + nav;
-}
-function wizStep4(){
-  const w=L.wiz;
-  return `<div class="field"><label>Prompt da copiare nell'AI esterna</label>
-      <textarea id="lt-prompt" rows="10" class="mono-input" readonly>${escapeHtml(w.builtPrompt)}</textarea>
-      <div class="lt-row" style="margin-top:8px"><button class="btn sm" onclick="window.Lettere._copyPrompt()">Copia prompt</button>
-        <span class="lt-status">Incolla in Claude/ChatGPT, poi riporta sotto la lettera.</span></div></div>
-    <div class="field"><label>Lettera generata (incolla la risposta dell'AI)</label>
-      <textarea id="lt-out" rows="14" placeholder="Incolla qui la lettera prodotta..." oninput="window.Lettere._set('outputLetter', this.value)">${escapeHtml(w.outputLetter||'')}</textarea></div>
-    <div class="lt-row" style="margin-bottom:6px;flex-wrap:wrap;gap:8px">
-      <button class="btn ghost sm" onclick="window.Lettere._copyVerifica()">Verifica anti-allucinazioni</button>
-      <button class="btn ghost sm" onclick="window.Lettere._printLetter()">Stampa</button>
-      <button class="btn ghost sm" onclick="window.Lettere._exportWord()">Esporta Word</button>
-    </div>
-    <div id="lt-verifica-box"></div>
-    <div class="field"><label>Fingerprint stilistico (JSON opzionale, per la libreria)</label>
-      <div class="lt-row" style="margin-bottom:6px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPromptWiz()">Copia prompt per estrarre fingerprint</button>
-        <span class="lt-status">Estrai il "fingerprint" di stile dalla lettera per arricchire la libreria.</span></div>
-      <textarea id="lt-fp" rows="3" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}' oninput="window.Lettere._set('fingerprint', this.value)">${escapeHtml(w.fingerprint||'')}</textarea></div>
-    <div class="lt-wiz-actions"><button class="btn ghost" onclick="window.Lettere.goStep(3)">← Indietro</button>
-      <div class="lt-row"><button class="btn" onclick="window.Lettere._addToLibrary()">Aggiungi a libreria</button></div></div>`;
 }
 
 /* ── Pagine separate del flusso (navigabili da sidebar/home come l'originale) ──
@@ -5121,7 +5065,7 @@ window.Lettere = {
   loadLibrary,
   // Funzioni riutilizzabili da altre sezioni (es. sezione Reparto): anonimizzazione + estrazione PDF/XLS
   anonymizeText, extractPdfText, extractXlsRows, xlsToRawText,
-  renderHome: renderLettereHome, renderWizard, renderLibreria, renderNuovoCaso,
+  renderHome: renderLettereHome, renderLibreria, renderNuovoCaso,
   renderCarica, renderAnonimizza, renderGenera, renderVerifica, renderEsporta,
   renderCaso, renderPersonalizzazioni, renderConfig,
   renderSegnalazioni, renderReparti,
@@ -5129,7 +5073,6 @@ window.Lettere = {
   isReady: () => L.loaded,
 
   nuova(){ L.wiz = newWizard(); navigate('lettere-carica'); },
-  goStep(n){ if(L.wiz){ L.wiz.step=n; renderWizard(); } },
   _set(k,v){ if(L.wiz) L.wiz[k]=v; },
   _setPref(k,v){ const w=ensureWiz(); if(!w.prefs) w.prefs={}; w.prefs[k]=v; w.builtPrompt=buildCopyPrompt(w); renderGenera(); },
   _setWard(v){ const w=ensureWiz(); w.ward=v; w.ragExamples=selectRAGExamples(v,w.diagnosi,w.tipo); _autoSelectRefCase(); },
@@ -5184,15 +5127,6 @@ window.Lettere = {
       toast('Esami aggiunti.','success'); }
     catch(e){ if(txt) txt.textContent='Errore XLS: '+e.message; } },
 
-  _step1Next(){ if(!L.wiz.rawText.trim()){ toast('Inserisci il testo clinico.','error'); return; }
-    const r=anonymizeText(L.wiz.rawText); L.wiz.anonText=r.text; L.wiz.substitutions=r.substitutions; L.wiz.patientData=r.patientData; L.wiz.strippedBlocks=r.strippedBlocks; L.wiz.step=2; renderWizard(); },
-  _step2Next(){ const flags=detectResidualPII(L.wiz.anonText);
-    const go=()=>{ L.wiz.step=3; L.wiz.ragExamples=selectRAGExamples(L.wiz.ward,L.wiz.diagnosi,L.wiz.tipo); renderWizard(); };
-    if(flags.length){ Modals().confirm({ title:'Possibili dati residui',
-      message:'Rilevati pattern che potrebbero essere dati personali ('+flags.map(f=>f.label).join(', ')+'). Procedere?',
-      confirmLabel:'Procedi', danger:true, onConfirm:go }); return; }
-    go(); },
-  _buildPrompt(){ L.wiz.builtPrompt=buildCopyPrompt(L.wiz); L.wiz.step=4; renderWizard(); },
   // Flusso a pagine separate: anonimizza il testo grezzo e naviga alla pagina Anonimizza
   _caricaNext(){ const w=ensureWiz(); if(!w.rawText||!w.rawText.trim()){ toast('Inserisci il testo clinico.','error'); return; }
     try{ const r=anonymizeText(w.rawText); w.anonText=r.text; w.substitutions=r.substitutions; w.patientData=r.patientData; w.strippedBlocks=r.strippedBlocks; }catch(e){ toast('Errore anonimizzazione: '+e.message,'error'); return; }
@@ -5239,28 +5173,6 @@ window.Lettere = {
     // Flusso a due fasi: dopo la copia rivelo il box per incollare la risposta e l'Avanti.
     if(state.currentView==='lettere-genera' && !L._promptCopied){ L._promptCopied=true; renderGenera(); }
   } },
-  async _addToLibrary(){ if(!L.wiz.outputLetter.trim()){ toast('Incolla prima la lettera generata.','error'); return; }
-    // Privacy: la libreria è un modello per il RAG e non deve contenere dati reali.
-    // Se la lettera è stata finalizzata (nome/cognome/data reali reinseriti),
-    // li riconverto in placeholder prima di salvare.
-    let letteraDaSalvare = L.wiz.outputLetter;
-    const pd = L.wiz.patientData;
-    if(pd && (pd.nome || pd.cognome)){
-      const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const full = [pd.cognome, pd.nome].filter(Boolean).join(' ');
-      if(full){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp(esc(full),'g'),'[PAZIENTE_NOME]'); }catch(e){} }
-      if(pd.cognome && pd.cognome.length>=3){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp('\\b'+esc(pd.cognome)+'\\b','g'),'[PAZIENTE_NOME]'); }catch(e){} }
-      if(pd.nome && pd.nome.length>=3){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp('\\b'+esc(pd.nome)+'\\b','g'),'[PAZIENTE_NOME]'); }catch(e){} }
-      if(pd.dataNascita){ try{ letteraDaSalvare = letteraDaSalvare.replace(new RegExp(esc(pd.dataNascita),'g'),'[DATA_NASCITA]'); }catch(e){} }
-    }
-    const flags=detectResidualPII(letteraDaSalvare);
-    const doSave=async()=>{ try{ await saveCaso({ ward:L.wiz.ward, diagnosi:L.wiz.diagnosi, tipo:L.wiz.tipo,
-        cartella:L.wiz.anonText, lettera:letteraDaSalvare, fingerprint:(L.wiz.fingerprint||'').trim() });
-      toast('Caso aggiunto.','success'); navigate('lettere-libreria'); }catch(e){ toast('Errore: '+e.message,'error'); } };
-    if(flags.length){ Modals().confirm({ title:'Possibili dati residui nella lettera',
-      message:'La lettera contiene pattern che potrebbero essere dati personali ('+flags.map(f=>f.label).join(', ')+'). Salvare comunque?',
-      confirmLabel:'Salva', danger:true, onConfirm:doSave }); } else doSave(); },
-
   // Carica un PDF nel form di inserimento diretto: estrae il testo, anonimizza,
   // riconosce automaticamente la lettera di dimissione (se più d'una, l'ultima per
   // data di firma) e separa cartella e lettera nei rispettivi campi.
@@ -5349,14 +5261,6 @@ window.Lettere = {
   },
   _printLetter(){ printLetter((L.wiz&&L.wiz.outputLetter)||''); },
   _exportWord(){ const w=L.wiz||{}; const fn=('lettera_'+(w.ward||'dimissione')+'_'+(w.diagnosi||'')).replace(/[^a-z0-9_]+/gi,'_').toLowerCase(); exportWordDoc(w.outputLetter||'', fn); },
-  async _copyFpPromptWiz(){
-    const cartella=(L.wiz&&L.wiz.anonText||'').trim();
-    const lettera=(L.wiz&&L.wiz.outputLetter||'').trim();
-    if(!lettera){ toast('Incolla prima la lettera generata.','error'); return; }
-    const prompt=buildFingerprintPrompt(cartella, lettera);
-    try{ await navigator.clipboard.writeText(prompt); toast('Prompt fingerprint copiato. Incollalo in un\'AI esterna.','success'); }
-    catch(e){ toast('Copia non riuscita.','error'); }
-  },
   _printCaso(id){ const c=L.casi.find(x=>x.id===id); if(c) printLetter(c.letter||''); },
   _exportCaso(id){ const c=L.casi.find(x=>x.id===id); if(!c)return; const fn=('lettera_'+(wardName(c)||'')+'_'+(c.diagnosi||c.name||'')).replace(/[^a-z0-9_]+/gi,'_').toLowerCase(); exportWordDoc(c.letter||'', fn); },
 
