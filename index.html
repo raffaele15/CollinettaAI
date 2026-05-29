@@ -13247,6 +13247,11 @@ async function persistCalendar(eventi) {
 function parseGuardieText(text, defaultYear, defaultMonth /* 0-11 */) {
   // Pulizia
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  // Title Case: maiuscola a inizio di ogni parola, anche dopo apostrofo/trattino.
+  // Preserva le iniziali disambiguanti già maiuscole (es. "Fabris E"). DALLA → Dalla, D'ANGELO → D'Angelo.
+  const titleCase = s => String(s).toLowerCase().replace(/(^|[\s'’-])([a-zà-ÿ])/g, (mm, sep, ch) => sep + ch.toUpperCase())
+    // ripristina iniziale singola finale in maiuscolo (es. "fabris e" → "Fabris E")
+    .replace(/(\s)([a-z])\b/g, (mm, sp, ch) => sp + ch.toUpperCase());
   const months = {
     gen:0, gennaio:0, feb:1, febbraio:1, mar:2, marzo:2, apr:3, aprile:3,
     mag:4, maggio:4, giu:5, giugno:5, lug:6, luglio:6, ago:7, agosto:7,
@@ -13295,16 +13300,21 @@ function parseGuardieText(text, defaultYear, defaultMonth /* 0-11 */) {
     rest = rest.replace(/[·•|]/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
     if (section === 'giorno-notte') {
-      // Unisci prefissi cognome ("Di Mauro", "Del Monte"...) e iniziali disambiguanti
+      // Regola del formato (colonne GIORNO | NOTTE): l'ULTIMO nome della riga è la guardia di
+      // NOTTE; tutto ciò che precede è la guardia di GIORNO. Più persone di giorno sono separate
+      // da trattino (es. "Pauro-Rozzi Mazzucco") oppure semplicemente elencate.
+      // I prefissi di cognome ("Di Mare", "Del Monte") e le iniziali disambiguanti ("Fabris E")
+      // NON vanno spezzati.
       const prefixes = new Set(['di','de','del','della','dello','da','la','lo','le','san','santa']);
+      // Unisce prefissi cognome e iniziali disambiguanti in un unico "nome".
       const mergeTokens = (arr) => {
         const out = [];
         for (let i = 0; i < arr.length; i++) {
           const t = arr[i];
           if (prefixes.has(t.toLowerCase()) && i + 1 < arr.length) {
-            out.push(t + ' ' + arr[i + 1]);
-            i++;
+            out.push(t + ' ' + arr[i + 1]); i++;
           } else if (/^[A-Z]\.?$/.test(t) && out.length > 0) {
+            // iniziale disambiguante (es. "E") → si attacca al cognome precedente
             out[out.length - 1] += ' ' + t.replace('.', '');
           } else {
             out.push(t);
@@ -13312,20 +13322,30 @@ function parseGuardieText(text, defaultYear, defaultMonth /* 0-11 */) {
         }
         return out;
       };
-      // Es: "Rossi-Bianchi Verdi"  o  "Rossi-Bianchi E Verdi"  o  "Rossi Verdi" (1+1)
-      const tokens = rest.split(/\s+/).filter(Boolean);
-      let giorno = [], notte = [];
-      if (tokens.some(t => t.includes('-'))) {
-        const hyphenIdx = tokens.findIndex(t => t.includes('-'));
-        giorno = mergeTokens(tokens[hyphenIdx].split('-').map(s => s.trim()).filter(Boolean));
-        const restTokens = [...tokens.slice(0, hyphenIdx), ...tokens.slice(hyphenIdx + 1)];
-        notte = mergeTokens(restTokens);
-      } else {
-        const merged = mergeTokens(tokens);
-        if (merged.length === 1) { giorno = []; notte = merged; }
-        else if (merged.length === 2) { giorno = [merged[0]]; notte = [merged[1]]; }
-        else { giorno = merged.slice(0, -1); notte = [merged[merged.length - 1]]; }
+      // 1) Sostituisco i trattini fra nomi con uno spazio, MA solo quando separano nomi
+      //    (non quando un'iniziale precede il trattino, es. "Fabris E-Benedetti": qui "E-Benedetti"
+      //    significa "E" (di Fabris) e poi "Benedetti"). Tratto il trattino come separatore di nomi.
+      const flat = rest.replace(/\s*-\s*/g, ' - ').split(/\s+/).filter(Boolean);
+      // 2) Ricostruisco la lista di "nomi" rispettando i separatori "-" come confini di persona,
+      //    ma unendo prima prefissi/iniziali all'interno di ogni segmento.
+      const segments = [];
+      let cur = [];
+      for (const tok of flat) {
+        if (tok === '-') { if (cur.length) { segments.push(cur); cur = []; } }
+        else cur.push(tok);
       }
+      if (cur.length) segments.push(cur);
+      // Ogni segmento può contenere più nomi (token multipli separati da spazio): li unisco coi
+      // prefissi/iniziali. Un segmento normalmente è UNA persona, ma "Mazzonetto Fabris E" è due
+      // (Mazzonetto + Fabris E): mergeTokens li separa correttamente.
+      let allNames = [];
+      segments.forEach(seg => { allNames = allNames.concat(mergeTokens(seg)); });
+      allNames = allNames.map(n => titleCase(n.trim())).filter(Boolean);
+
+      let giorno = [], notte = [];
+      if (allNames.length === 1) { giorno = []; notte = allNames; }
+      else { notte = [allNames[allNames.length - 1]]; giorno = allNames.slice(0, -1); }
+
       if (giorno.length) {
         results.push({ data, categoria: 'guardie', titolo: 'Guardia giorno: ' + giorno.join(', '), descrizione: '' });
       }
@@ -13350,12 +13370,12 @@ function parseGuardieText(text, defaultYear, defaultMonth /* 0-11 */) {
         }
       }
       if (merged.length) {
-        results.push({ data, categoria: 'amb_divisionale', titolo: 'Ambulatorio divisionale: ' + merged.join(', '), descrizione: '' });
+        results.push({ data, categoria: 'amb_divisionale', titolo: 'Ambulatorio divisionale: ' + merged.map(n => titleCase(n.trim())).join(', '), descrizione: '' });
       }
     } else if (section === 'guardie_osa') {
       const tokens = rest.split(/\s+/).filter(Boolean);
       if (tokens.length) {
-        results.push({ data, categoria: 'guardie', titolo: 'Guardia notte OSA: ' + tokens.join(', '), descrizione: 'Sede: Ospedale Sant\'Antonio' });
+        results.push({ data, categoria: 'guardie', titolo: 'Guardia notte OSA: ' + tokens.map(n => titleCase(n.trim())).join(', '), descrizione: 'Sede: Ospedale Sant\'Antonio' });
       }
     } else if (section === 'coguardie') {
       // Nomi separati da " - " o " – " (con spazi): preserva cognomi multi-parola (es. "Dal Santo").
@@ -13379,9 +13399,13 @@ function openCalImportModal() {
     body: `
       <div style="min-width:min(560px,90vw);">
         <textarea id="cal-import-text" rows="10" style="width:100%;font-family:var(--mono);font-size:12px;" placeholder="CL. NEUROLOGICA – GUARDIE SPECIALIZZANDI – MESE DI MAGGIO 2026&#10;&#10;GIORNO  NOTTE&#10;Venerdi 01-mag Rossi-Bianchi Verdi&#10;..."></textarea>
-        <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+        <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <button class="btn" onclick="calImportParse()">Analizza</button>
-          <span style="font-size:12px;color:var(--ink-muted);">Default: ${CAL_MONTHS[c.month]} ${c.year}</span>
+          <label class="btn ghost" style="cursor:pointer;margin:0;">📄 Carica PDF
+            <input type="file" id="cal-import-pdf" accept="application/pdf,.pdf" style="display:none;" onchange="calImportPdf(this.files[0])">
+          </label>
+          <span id="cal-import-pdf-status" style="font-size:12px;color:var(--ink-muted);"></span>
+          <span style="font-size:12px;color:var(--ink-muted);margin-left:auto;">Default: ${CAL_MONTHS[c.month]} ${c.year}</span>
         </div>
         <div id="cal-import-preview" style="margin-top:14px;"></div>
       </div>
@@ -13399,6 +13423,26 @@ function calImportParse() {
   const parsed = parseGuardieText(txt, c.year, c.month);
   state._calImportParsed = parsed.events.map((e, i) => ({ ...e, _idx: i, _enabled: true }));
   renderCalImportPreview();
+}
+
+// Carica direttamente un PDF: estrae il testo (riusa il modulo LetteraAI), lo mette nella
+// textarea e lancia subito l'analisi.
+async function calImportPdf(file) {
+  if (!file) return;
+  const status = document.getElementById('cal-import-pdf-status');
+  if (status) status.textContent = 'Lettura PDF…';
+  try {
+    const L = await ensureLetterAI();
+    if (!L || typeof L.extractPdfText !== 'function') throw new Error('Modulo di estrazione non disponibile');
+    const text = await L.extractPdfText(file);
+    const ta = document.getElementById('cal-import-text');
+    if (ta) ta.value = text || '';
+    if (status) status.textContent = text ? 'PDF caricato.' : 'Nessun testo estratto.';
+    if (text && text.trim()) calImportParse();
+  } catch (e) {
+    if (status) status.textContent = 'Errore PDF: ' + e.message;
+    toast('Errore lettura PDF: ' + e.message, 'error');
+  }
 }
 
 function renderCalImportPreview() {
