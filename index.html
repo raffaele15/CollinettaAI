@@ -8103,15 +8103,17 @@ function openPinSezioniPopup(cid) {
   const inHome = userPrefs.hasHomeNumero(cid);
   // Nome UOC del contatto per l'etichetta della sezione standard
   const gNome = c._gruppo ? stripPrefixNome(c._gruppo) : 'UOC';
+  // Stile comune dei pulsanti-riga: testo a sinistra che va a capo (no overflow fuori dal rettangolo)
+  const rowStyle = 'width:100%;text-align:left;margin-bottom:6px;white-space:normal;word-break:break-word;line-height:1.3;height:auto;';
   // Riga in evidenza: "Contatti fissati" della home (sistema home_numeri, separato dalle liste).
-  const homeRow = `<button class="btn ${inHome ? '' : 'ghost'}" style="width:100%;text-align:left;margin-bottom:6px;${inHome ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
-    onclick="toggleHomeNumeroFromPopup('${escapeJs(cid)}')">${inHome ? '📌' : '📍'} Contatti fissati <span style="color:var(--ink-muted);font-weight:normal;">· in home</span></button>`;
-  const uocRow = `<button class="btn ${inUoc ? '' : 'ghost'}" style="width:100%;text-align:left;margin-bottom:6px;${inUoc ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
-    onclick="togglePinSezione('${escapeJs(cid)}','_uoc')">${inUoc ? '★' : '☆'} Sezione UOC <span style="color:var(--ink-muted);font-weight:normal;">· ${escapeHtml(gNome)}</span></button>`;
+  const homeRow = `<button class="btn ${inHome ? '' : 'ghost'}" data-pop-home="1" style="${rowStyle}${inHome ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
+    onclick="toggleHomeNumeroFromPopup('${escapeJs(cid)}')"><span class="pop-ic">${inHome ? '📌' : '📍'}</span> Contatti fissati <span style="color:var(--ink-muted);font-weight:normal;">· in home</span></button>`;
+  const uocRow = `<button class="btn ${inUoc ? '' : 'ghost'}" data-pop-sez="_uoc" style="${rowStyle}${inUoc ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
+    onclick="togglePinSezione('${escapeJs(cid)}','_uoc')"><span class="pop-ic">${inUoc ? '★' : '☆'}</span> Sezione UOC <span style="color:var(--ink-muted);font-weight:normal;">· ${escapeHtml(gNome)}</span></button>`;
   const customRows = sezioni.map(s => {
     const isIn = (s.contatti || []).includes(cid);
-    return `<button class="btn ${isIn ? '' : 'ghost'}" style="width:100%;text-align:left;margin-bottom:6px;${isIn ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
-      onclick="togglePinSezione('${escapeJs(cid)}','${escapeJs(s.id)}')">${isIn ? '★' : '☆'} ${escapeHtml(s.nome)}</button>`;
+    return `<button class="btn ${isIn ? '' : 'ghost'}" data-pop-sez="${escapeHtml(s.id)}" style="${rowStyle}${isIn ? 'background:var(--accent-soft);border-color:var(--accent);' : ''}"
+      onclick="togglePinSezione('${escapeJs(cid)}','${escapeJs(s.id)}')"><span class="pop-ic">${isIn ? '★' : '☆'}</span> ${escapeHtml(s.nome)}</button>`;
   }).join('');
   showModal({
     title: 'Preferiti',
@@ -8128,18 +8130,24 @@ function openPinSezioniPopup(cid) {
     actions: [{ label: 'Chiudi', variant: 'ghost', onClick: closeModal }]
   });
 }
-// Toggle in-place dell'appartenenza a una sezione, riaggiornando popup e UI.
+// Toggle in-place dell'appartenenza a una sezione, aggiornando il pulsante senza riaprire la modale.
 function togglePinSezione(cid, sezId) {
-  userPrefs.toggleContattoInSezione(cid, sezId);
-  // Aggiorno le stelle visibili nel DOM senza chiudere il popup
+  const isIn = userPrefs.toggleContattoInSezione(cid, sezId);
+  // Aggiorno il pulsante della sezione nel popup, in-place (niente re-render della modale → niente scatto)
+  const btn = document.querySelector(`[data-pop-sez="${CSS && CSS.escape ? CSS.escape(sezId) : sezId}"]`);
+  if (btn) {
+    btn.classList.toggle('ghost', !isIn);
+    const ic = btn.querySelector('.pop-ic'); if (ic) ic.textContent = isIn ? '★' : '☆';
+    if (isIn) { btn.style.background = 'var(--accent-soft)'; btn.style.borderColor = 'var(--accent)'; }
+    else { btn.style.background = ''; btn.style.borderColor = ''; }
+  }
+  // Aggiorno le stelle dei contatti visibili in pagina
   const pinned = userPrefs.isContattoStarred(cid);
-  document.querySelectorAll(`[data-pin-key="contatto:${cid}"]`).forEach(btn => {
-    btn.classList.toggle('pinned', pinned);
-    btn.innerHTML = pinned ? '★' : '☆';
+  document.querySelectorAll(`[data-pin-key="contatto:${cid}"]`).forEach(b => {
+    b.classList.toggle('pinned', pinned);
+    b.innerHTML = pinned ? '★' : '☆';
   });
-  // Riapro il popup aggiornato (riflette lo stato corrente delle sezioni)
-  openPinSezioniPopup(cid);
-  // Se siamo nella vista preferiti o in home, le sezioni vanno ricostruite
+  // Ricostruisco la vista sottostante (preferiti/home) senza toccare la modale
   if (state.currentView === 'numeri' && (state.currentParams || {}).filter === 'pinned') {
     const savedScroll = window.scrollY;
     renderNumeri('pinned');
@@ -8148,16 +8156,21 @@ function togglePinSezione(cid, sezId) {
     renderHome();
   }
 }
-// Toggle dell'appartenenza ai "Contatti fissati" (home) dal popup preferiti.
-// Aggiorna le stelle visibili, riapre il popup e ricostruisce home/preferiti se necessario.
+// Toggle dei "Contatti fissati" (home) dal popup, aggiornando il pulsante in-place.
 function toggleHomeNumeroFromPopup(cid) {
-  userPrefs.toggleHomeNumero(cid);
+  const inHome = userPrefs.toggleHomeNumero(cid);
+  const btn = document.querySelector('[data-pop-home="1"]');
+  if (btn) {
+    btn.classList.toggle('ghost', !inHome);
+    const ic = btn.querySelector('.pop-ic'); if (ic) ic.textContent = inHome ? '📌' : '📍';
+    if (inHome) { btn.style.background = 'var(--accent-soft)'; btn.style.borderColor = 'var(--accent)'; }
+    else { btn.style.background = ''; btn.style.borderColor = ''; }
+  }
   const pinned = userPrefs.isContattoStarred(cid);
-  document.querySelectorAll(`[data-pin-key="contatto:${cid}"]`).forEach(btn => {
-    btn.classList.toggle('pinned', pinned);
-    btn.innerHTML = pinned ? '★' : '☆';
+  document.querySelectorAll(`[data-pin-key="contatto:${cid}"]`).forEach(b => {
+    b.classList.toggle('pinned', pinned);
+    b.innerHTML = pinned ? '★' : '☆';
   });
-  openPinSezioniPopup(cid);
   if (state.currentView === 'numeri' && (state.currentParams || {}).filter === 'pinned') {
     const savedScroll = window.scrollY;
     renderNumeri('pinned');
