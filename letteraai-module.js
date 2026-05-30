@@ -78,13 +78,24 @@ LINGUA: italiano clinico formale.
 
 DISCORSO INDIRETTO: il motivo del ricovero, gli accessi pregressi, le valutazioni esterne e ogni evento storico vanno SEMPRE in discorso indiretto ("la moglie riferiva", "veniva sottoposto a", "alla rivalutazione presentava...", "i sanitari documentavano..."). Mai discorso diretto.
 
-ELENCHI: usa il trattino lungo "–" come bullet per TUTTI gli elenchi (esami del Pronto Soccorso, esami di laboratorio, accertamenti strumentali, consulenze, raccomandazioni). MAI il simbolo ">" in nessun punto della lettera.
+ELENCHI: usa il trattino breve "-" seguito da uno spazio come bullet per TUTTI gli elenchi (esami del Pronto Soccorso, esami di laboratorio, accertamenti strumentali, consulenze, raccomandazioni). Le righe che iniziano con "- " vengono renderizzate come elenco puntato vero nel documento esportato.
 
 DATI MANCANTI: scrivi "Non documentato." Non inventare valori, dosaggi, tempistiche o reperti.
 
+ADERENZA STRETTA — NON AGGIUNGERE INTERPRETAZIONI O QUALIFICAZIONI NON DOCUMENTATE:
+Riporta i fatti come sono nella cartella, senza arricchirli con giudizi, terminologia o dettagli che la cartella non contiene. In particolare:
+1. NON qualificare l'entità di un dato con aggettivi tuoi ("lieve", "lievemente", "marcato", "modesto", "severo", "importante") se la cartella non usa quel giudizio. Se un valore è fuori range, dillo senza graduarlo: il numero e il range parlano da soli.
+   - NO: "lievemente aumentati i leucociti urinari (65 el/uL, v.n. 0-20)" → SÌ: "aumentati i leucociti urinari (65 el/uL, v.n. 0-20)".
+2. NON inventare nomi di protocolli, percorsi o iter clinici non menzionati nella cartella.
+   - NO: "avviati gli accertamenti eziologici secondo protocollo per giovane stroke" → SÌ: "avviati gli accertamenti eziologici" (se la cartella non nomina alcun protocollo).
+3. NON aggiungere localizzazioni anatomiche, lateralità o precisazioni diagnostiche più specifiche di quanto la cartella documenti.
+   - NO: "Minor stroke ischemico in territorio sottocorticale sinistro" se la cartella non localizza così la lesione acuta → SÌ: riporta la diagnosi come documentata, senza aggiungere la sede.
+4. NON ricombinare né reinterpretare i numeri. Se la cartella riporta "P.A. 91/187 mmHg" come intervallo min/max dei valori registrati, NON trasformarlo in un singolo valore pressorio "187/91". Riporta il dato come è ("valori pressori fino a 187 mmHg di sistolica").
+In sintesi: se un'informazione (un aggettivo di entità, un protocollo, una sede, una combinazione di numeri) non è scritta esplicitamente nella cartella, NON inserirla.
+
 PLACEHOLDERS: usa [PAZIENTE_NOME] al posto del nome del paziente, [DATA_NASCITA] al posto della data di nascita, [REPARTO] al posto del reparto, [CITTA] al posto della città. Verranno sostituiti automaticamente in fase di esportazione.
 
-VALORI PATOLOGICI: usa **...** (grassetto) per i valori ematochimici patologici (nome esame + valore, NON il range tra parentesi). Esempio: "**Emoglobina 102 g/L** (v.n. 140-175)". MAI formattare i reperti di indagini strumentali.
+VALORI PATOLOGICI: marca con **...** i valori ematochimici patologici (nome esame + valore, NON il range tra parentesi); nel documento esportato verranno resi SOTTOLINEATI. Esempio: "**Emoglobina 102 g/L** (v.n. 140-175)". MAI formattare i reperti di indagini strumentali.
 
 SOSPENSIONI FARMACI: documenta SEMPRE la motivazione della sospensione di un farmaco nel decorso clinico ("è stata sospesa la [farmaco] per [motivo]").
 
@@ -147,7 +158,7 @@ dimettiamo [oppure: trasferiamo presso il Vostro Reparto] in data odierna il/la 
 
 ─── SEZIONE: ANAMNESI PATOLOGICA REMOTA ───
 
-Apertura: "In anamnesi:" seguita dalle comorbilità storiche e dai pregressi rilevanti, in elenco con trattino lungo. Una voce per riga.
+Apertura: "In anamnesi:" seguita dalle comorbilità storiche e dai pregressi rilevanti, in elenco con trattino breve "-". Una voce per riga.
 
 Se nessuna condizione di rilievo: "In anamnesi: nulla da segnalare."
 Se la cartella riporta una sezione "Raccordo anamnestico" o "Storia recente" che descrive eventi prossimi al ricovero (giorni/settimane prima): NON metterla qui — andrà nel Motivo del ricovero.
@@ -178,9 +189,9 @@ REGOLA — SEZIONE PRONTO SOCCORSO:
 Quando descrivi gli accertamenti del PS, usa la struttura:
 
 "Presso il Pronto Soccorso [NOME_OSPEDALE] è stato sottoposto a:
-– [ESAME 1]: [descrizione/conclusione]
-– [ESAME 2]: [descrizione/conclusione]
-– Valutazione [TIPO]: [...] In conclusione: [...]"
+- [ESAME 1]: [descrizione/conclusione]
+- [ESAME 2]: [descrizione/conclusione]
+- Valutazione [TIPO]: [...] In conclusione: [...]"
 
 Concludi sempre la sezione con: "Il/La paziente veniva ricoverato/a presso il nostro Reparto per la prosecuzione dell'iter diagnostico-terapeutico."
 
@@ -223,18 +234,18 @@ Descrizione fisica generale: cute, polsi, torace, cuore, addome, arti inferiori.
 Frase di apertura: "Durante la degenza il/la paziente è stato/a sottoposto/a ai seguenti esami ematochimici:"
 (NON citare qui la microbiologia: gli esami microbiologici vanno in una sezione separata, descritta più sotto.)
 
-FORMATO OBBLIGATORIO — una riga per categoria, con trattino lungo come bullet. Ogni riga ha DUE parti, in quest'ordine:
+FORMATO OBBLIGATORIO — una riga per categoria, con trattino breve "-" come bullet. Ogni riga ha DUE parti, in quest'ordine:
 1. PRIMA la dicitura "nella norma" seguita dall'elenco degli esami risultati nella norma (separati da virgola). La parola "nella norma" va all'INIZIO, come etichetta, NON in fondo all'elenco.
 2. POI, solo se ci sono valori alterati, la dicitura "; si segnala" seguita dagli esami alterati con il loro VALORE NUMERICO ESATTO e il range tra parentesi.
 
 Struttura della riga:
-– [Categoria]: nella norma [esame1], [esame2], [esame3]; si segnala **[EsameAlterato] VALORE unità** (v.n. range), **[Altro] VALORE unità** (v.n. range).
+- [Categoria]: nella norma [esame1], [esame2], [esame3]; si segnala **[EsameAlterato] VALORE unità** (v.n. range), **[Altro] VALORE unità** (v.n. range).
 
 Esempi:
-– Emocromo con formula: nella norma piastrine, MCV, MCHC, RDW; si segnala **Eritrociti 3,65 x10^12/L** (4,31-5,10), **Emoglobina 122 g/L** (123-153), **Linfociti 0,61 x10^9/L** (1,10-4,80).
-– Profilo coagulativo: nella norma INR, APTT ratio.
-– Indici di flogosi: nella norma PCT; si segnala **PCR 16,89 → 3,87 mg/L** (<5,00).
-– Funzionalità renale con ionemia: nella norma urea, acido urico, cloro, calcio, Creatinina 0,82 mg/dL; si segnala **Sodio 131 → 128 mmol/L** (136-145), **Potassio 3,3 mmol/L** (3,5-5,1).
+- Emocromo con formula: nella norma piastrine, MCV, MCHC, RDW; si segnala **Eritrociti 3,65 x10^12/L** (4,31-5,10), **Emoglobina 122 g/L** (123-153), **Linfociti 0,61 x10^9/L** (1,10-4,80).
+- Profilo coagulativo: nella norma INR, APTT ratio.
+- Indici di flogosi: nella norma PCT; si segnala **PCR 16,89 → 3,87 mg/L** (<5,00).
+- Funzionalità renale con ionemia: nella norma urea, acido urico, cloro, calcio, Creatinina 0,82 mg/dL; si segnala **Sodio 131 → 128 mmol/L** (136-145), **Potassio 3,3 mmol/L** (3,5-5,1).
 
 REGOLE GENERALI:
 - Se tutti gli esami della categoria sono nella norma: "[Categoria]: nella norma." (senza la parte "si segnala").
@@ -287,22 +298,22 @@ REGOLE:
 - DATA OBBLIGATORIA per colture e campioni: per ogni emocoltura, urinocoltura, coprocoltura, tampone o esame su liquor indica SEMPRE la data di esecuzione tra parentesi (DD/MM). Esempio: "emocolture seriate (12/05, 13/05) negative", "urinocoltura (14/05) positiva per Enterococcus faecalis (100.000 ufc/mL)". Se la data non è nell'input, scrivi "(data non riportata)".
 - Per la sierologia indica per ciascun anticorpo/marcatore cercato l'esito (es. "anti-HBs positivo da vaccinazione", "anti-HCV negativo", "HIV 1-2 negativo").
 - Per le ricerche su DNA/antigeni indica l'esito (es. "CMV-DNA non rilevabile", "HHV-7 DNA positivo su sangue").
-- Raggruppa per tipo con il trattino lungo come bullet (es. "– Sierologie:", "– Colture:", "– Ricerche virali:", "– Autoimmunità:").
+- Raggruppa per tipo con il trattino breve "-" come bullet (es. "- Sierologie:", "- Colture:", "- Ricerche virali:", "- Autoimmunità:").
 
 
 ─── SEZIONE: INDAGINI DIAGNOSTICO-STRUMENTALI E VALUTAZIONI SPECIALISTICHE ───
 
 Frase di apertura: "e alle seguenti indagini diagnostico-strumentali e le seguenti valutazioni specialistiche:"
 
-FORMATO — bullet con trattino lungo, nome esame in grassetto seguito da data tra parentesi:
+FORMATO — bullet con trattino breve "-", nome esame in grassetto seguito da data tra parentesi:
 
-– **[Nome Esame] (DD/MM):** [conclusione/descrizione]
+- **[Nome Esame] (DD/MM):** [conclusione/descrizione]
 
 Esempi:
-– **TC encefalo (17/02):** Non lesioni emorragiche. ASPECTs 9. Sostanzialmente sovrapponibile al precedente.
-– **ECG (17/02):** Ritmo sinusale, FC 66 bpm, BBDx con alterazioni secondarie della RV.
-– **Valutazione Fisiatrica (17/02):** Progetto riabilitativo: [...]
-– **EcocolorDoppler dei tronchi sovraortici e transcranico (18/02):** [conclusioni dettagliate]
+- **TC encefalo (17/02):** Non lesioni emorragiche. ASPECTs 9. Sostanzialmente sovrapponibile al precedente.
+- **ECG (17/02):** Ritmo sinusale, FC 66 bpm, BBDx con alterazioni secondarie della RV.
+- **Valutazione Fisiatrica (17/02):** Progetto riabilitativo: [...]
+- **EcocolorDoppler dei tronchi sovraortici e transcranico (18/02):** [conclusioni dettagliate]
 
 REGOLE:
 - Nessuna riga vuota tra accertamenti.
@@ -345,27 +356,29 @@ Tabella markdown obbligatoria a 4 colonne:
 | Farmaco | Posologia | Orario | Note |
 |---------|-----------|--------|------|
 
-Note possibili: "Nuova terapia", "Terapia domiciliare", "Da sospendere il [data]", "Fino a [evento/data]".
+CONTENUTO DELLA TABELLA: includi TUTTI i farmaci che il paziente dovrà assumere dopo la dimissione, cioè la terapia completa con cui viene dimesso. Questo comprende sia i farmaci avviati, modificati o confermati durante il ricovero, sia i farmaci della terapia domiciliare che vengono proseguiti. NON limitarti ai soli farmaci domiciliari e NON limitarti ai soli farmaci nuovi: la tabella deve rappresentare l'intero schema terapeutico alla dimissione. Nella colonna "Note" indica per ciascun farmaco se è "Nuova terapia", "Terapia domiciliare" (proseguita), "Modificata in reparto", "Da sospendere il [data]" o "Fino a [evento/data]".
+
+Note possibili: "Nuova terapia", "Terapia domiciliare", "Modificata in reparto", "Da sospendere il [data]", "Fino a [evento/data]".
 
 
 ─── SEZIONE: VISITE DI CONTROLLO ───
 
-Frase di apertura obbligatoria: "Il/La paziente è atteso/a in regime di post-degenza per eseguire:" seguita da elenco con trattino lungo.
+Frase di apertura obbligatoria: "Il/La paziente è atteso/a in regime di post-degenza per eseguire:" seguita da elenco con trattino breve "-".
 
 Formato: "– [tipo di valutazione] in data DD/MM/AAAA alle ore HH:MM presso [sede/ambulatorio]."
 
 Esempio:
-– Visita neurologica di controllo con ecocolordoppler dei tronchi sovraortici e transcranico in data 26/03/2026 alle ore 11:30 presso l'Ambulatorio Malattie Cerebrovascolari della Clinica Neurologica.
+- Visita neurologica di controllo con ecocolordoppler dei tronchi sovraortici e transcranico in data 26/03/2026 alle ore 11:30 presso l'Ambulatorio Malattie Cerebrovascolari della Clinica Neurologica.
 
 
 ─── SEZIONE: RACCOMANDAZIONI ───
 
-Frase di apertura: "Si raccomanda:" seguita da elenco con trattino lungo.
+Frase di apertura: "Si raccomanda:" seguita da elenco con trattino breve "-".
 
 Esempio:
-– riposo a domicilio fino alla visita di controllo.
-– stretto controllo dei fattori di rischio vascolare.
-– dieta ipolipidica.
+- riposo a domicilio fino alla visita di controllo.
+- stretto controllo dei fattori di rischio vascolare.
+- dieta ipolipidica.
 
 
 ─── CHIUSURA E FIRME ───
@@ -509,11 +522,11 @@ Inizia con la frase:
 "Durante la degenza il/la paziente è stato/a sottoposto/a ai seguenti esami ematochimici:"
 (La microbiologia NON va qui: mettila in fondo sotto la sua riga di apertura separata.)
 
-Poi elenca gli esami raggruppati per categoria, con trattino lungo "–" come bullet, ogni categoria su UNA SOLA RIGA. Su ciascuna riga la dicitura "nella norma" va all'INIZIO come etichetta, seguita dall'elenco dei valori nella norma (separati da virgola); POI, se presenti, "; si segnala" con gli alterati (valore numerico esatto + range):
+Poi elenca gli esami raggruppati per categoria, con trattino breve "-" come bullet, ogni categoria su UNA SOLA RIGA. Su ciascuna riga la dicitura "nella norma" va all'INIZIO come etichetta, seguita dall'elenco dei valori nella norma (separati da virgola); POI, se presenti, "; si segnala" con gli alterati (valore numerico esatto + range):
 
-– Emocromo: nella norma MCV, MCH, piastrine, WBC; si segnala **Hb 122 g/L** (140-175).
-– Indici di flogosi: nella norma procalcitonina; si segnala **PCR 47,90 → 29,65 mg/L** (0,00-4,99).
-– Coagulazione: nella norma fibrinogeno, APTT ratio; si segnala **INR 1,40** (0,90-1,20), **D-dimero 1885 µg/L FEU** (190-600).
+- Emocromo: nella norma MCV, MCH, piastrine, WBC; si segnala **Hb 122 g/L** (140-175).
+- Indici di flogosi: nella norma procalcitonina; si segnala **PCR 47,90 → 29,65 mg/L** (0,00-4,99).
+- Coagulazione: nella norma fibrinogeno, APTT ratio; si segnala **INR 1,40** (0,90-1,20), **D-dimero 1885 µg/L FEU** (190-600).
 
 Dopo gli ematochimici, se presenti, aggiungi la sezione microbiologica con riga di apertura propria:
 "Sono stati inoltre eseguiti i seguenti esami microbiologici e sierologici:"
@@ -3324,10 +3337,10 @@ mRS pre-evento = [valore se presente — solo per stroke/TIA, altrimenti ometti]
 [esordio sintomatologico dall'input — passato prossimo — MAI passato remoto]
 
 Presso il Pronto Soccorso AOUP è stato sottoposto a:
-– **Esami ematochimici:** [dall'input]
-– **TC encefalo:** [dall'input]
-– **AngioTC dei vasi intracranici:** [se eseguita — altrimenti ometti]
-– **Valutazione neurologica:** [EON verbatim — NIHSS — dall'input]
+- **Esami ematochimici:** [dall'input]
+- **TC encefalo:** [dall'input]
+- **AngioTC dei vasi intracranici:** [se eseguita — altrimenti ometti]
+- **Valutazione neurologica:** [EON verbatim — NIHSS — dall'input]
 
 **Esame obiettivo neurologico all'ingresso in [REPARTO]:**
 [EON verbatim dall'input — NIHSS X]
@@ -3374,9 +3387,9 @@ e alle seguenti **indagini diagnostico-strumentali e valutazioni specialistiche:
 [Una riga per farmaco — nome+dosaggio | n cp per os | 8.00 o 8.00-20.00 | terapia domiciliare / nuova terapia / nuova terapia fino a rivalutazione]
 
 Si raccomanda:
-– [raccomandazione 1]
-– [raccomandazione 2]
-– [raccomandazione N — una per riga, con trattino lungo (–), basate sull'input]
+- [raccomandazione 1]
+- [raccomandazione 2]
+- [raccomandazione N — una per riga, con trattino breve (-), basate sull'input]
 
 Rimaniamo a disposizione e porgiamo cordiali saluti.
 
@@ -3411,10 +3424,10 @@ mRS pre-evento = [valore se presente — solo per stroke/TIA, altrimenti ometti]
 [esordio sintomatologico dall'input — passato prossimo — MAI passato remoto]
 
 Presso il Pronto Soccorso AOUP è stato sottoposto a:
-– **Esami ematochimici:** [dall'input]
-– **TC encefalo:** [dall'input]
-– **AngioTC dei vasi intracranici:** [se eseguita — altrimenti ometti]
-– **Valutazione neurologica:** [EON verbatim — NIHSS — dall'input]
+- **Esami ematochimici:** [dall'input]
+- **TC encefalo:** [dall'input]
+- **AngioTC dei vasi intracranici:** [se eseguita — altrimenti ometti]
+- **Valutazione neurologica:** [EON verbatim — NIHSS — dall'input]
 
 **Esame obiettivo neurologico all'ingresso in [REPARTO]:**
 [EON verbatim dall'input — NIHSS X]
@@ -3463,9 +3476,9 @@ e alle seguenti **indagini diagnostico-strumentali e valutazioni specialistiche:
 Il paziente è atteso in regime di post-degenza per eseguire **visita neurologica ed ecocolordoppler dei tronchi sovraortici e transcranico** di controllo in data **[DD/MM/YYYY]** alle ore **[HH:MM]** per l'Ambulatorio di Malattie Cerebrovascolari, al piano terra della Palazzina di Neuroscienze.
 
 Si raccomanda:
-– [raccomandazione 1]
-– [raccomandazione 2]
-– [raccomandazione N — una per riga, con trattino lungo (–), basate sull'input]
+- [raccomandazione 1]
+- [raccomandazione 2]
+- [raccomandazione N — una per riga, con trattino breve (-), basate sull'input]
 
 Rimaniamo a disposizione e porgiamo cordiali saluti.
 
@@ -3962,10 +3975,14 @@ ${t3}`;
 // non stampabili così gli asterischi non restano visibili. Gestisce anche "diagnosi"
 // tra virgolette (→ grassetto), opzionale.
 function letteraMarkInline(s, boldQuotes){
-  let marked = String(s).replace(/\*\*([^*]+)\*\*/g, '\u0002B\u0001$1\u0002/B\u0001');
+  // I valori patologici **...** vengono resi SOTTOLINEATI (<u>); le diagnosi tra virgolette
+  // (solo export Word, boldQuotes=true) restano in GRASSETTO (<b>). Uso due sentinelle distinte.
+  let marked = String(s).replace(/\*\*([^*]+)\*\*/g, '\u0002U\u0001$1\u0002/U\u0001');
   if (boldQuotes) marked = marked.replace(/"([^"\n]+)"/g, '\u0002B\u0001"$1"\u0002/B\u0001');
   const esc = (window.escapeHtml ? window.escapeHtml(marked) : String(marked).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
-  return esc.replace(/\u0002B\u0001/g, '<b>').replace(/\u0002\/B\u0001/g, '</b>');
+  return esc
+    .replace(/\u0002U\u0001/g, '<u>').replace(/\u0002\/U\u0001/g, '</u>')
+    .replace(/\u0002B\u0001/g, '<b>').replace(/\u0002\/B\u0001/g, '</b>');
 }
 
 // È una riga di tabella markdown? (inizia e finisce con |, dopo trim)
@@ -4014,6 +4031,13 @@ function isLuogoDataLine(line){
   return /^[A-Za-zÀ-ÿ'.\s]{2,30},\s*(?:\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{1,2}\s+\p{L}+\s+\d{4})\s*$/u.test(t);
 }
 
+// Riga di elenco puntato: inizia con trattino breve "-" o lungo "–"/"—" seguito da spazio.
+// Ritorna il testo dopo il bullet, oppure null se non è una riga di elenco.
+function listItemText(line){
+  const m = String(line).match(/^\s*[-–—]\s+(.*\S.*)$/);
+  return m ? m[1] : null;
+}
+
 // Converte un testo (con eventuali tabelle markdown) in HTML per export/stampa.
 // boldQuotes: se true, mette in grassetto anche le "diagnosi" tra virgolette (export Word).
 function letteraTextToExportHtml(text, boldQuotes){
@@ -4026,14 +4050,15 @@ function letteraTextToExportHtml(text, boldQuotes){
     out += `<pre style="white-space:pre-wrap;font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:0;">${html}</pre>`;
     para = [];
   };
-  // Blocco firma a due colonne (sx a sinistra, dx a destra). leftLines/rightLines: array di righe.
+  // Blocco firma: NON una tabella, ma le due colonne separate da una tabulazione (come l'originale).
+  // Uso un <pre> con un carattere TAB tra sinistra e destra; tab-size ampio per separarle.
   const flushFirma = (rows) => {
-    const left = rows.map(r => letteraMarkInline(r[0], false)).join('<br>');
-    const right = rows.map(r => letteraMarkInline(r[1], false)).join('<br>');
-    out += `<table style="border-collapse:collapse;width:100%;font-family:'Times New Roman',serif;font-size:10.5pt;margin:10pt 0 0;"><tr>`
-      + `<td style="text-align:left;vertical-align:top;padding:0;">${left}</td>`
-      + `<td style="text-align:right;vertical-align:top;padding:0;">${right}</td>`
-      + `</tr></table>`;
+    const lines = rows.map(r => {
+      const l = letteraMarkInline(r[0], false);
+      const rt = letteraMarkInline(r[1], false);
+      return rt ? (l + '\t' + rt) : l;
+    }).join('\n');
+    out += `<pre style="white-space:pre;tab-size:24;-moz-tab-size:24;font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:10pt 0 0;">${lines}</pre>`;
   };
   let seenNonEmpty = 0; // per riconoscere la riga luogo/data solo all'inizio del documento
   for (let i = 0; i < lines.length; i++) {
@@ -4055,13 +4080,15 @@ function letteraTextToExportHtml(text, boldQuotes){
         i++;
       }
       i--; // compenso l'incremento del for
-      const thead = `<tr>${header.map(c => `<th style="border:1px solid #000;padding:3px 6px;text-align:left;font-weight:bold;">${letteraMarkInline(c, boldQuotes)}</th>`).join('')}</tr>`;
+      const ncol = header.length || 1;
+      const colW = Math.floor(100 / ncol);
+      const thead = `<tr>${header.map(c => `<th width="${colW}%" style="border:1px solid #000;padding:3px 6px;text-align:left;font-weight:bold;width:${colW}%;">${letteraMarkInline(c, boldQuotes)}</th>`).join('')}</tr>`;
       const tbody = bodyRows.map(r => {
         // normalizzo il numero di celle a quello dell'header
         const cells = header.map((_, idx) => r[idx] !== undefined ? r[idx] : '');
         return `<tr>${cells.map(c => `<td style="border:1px solid #000;padding:3px 6px;vertical-align:top;">${letteraMarkInline(c, boldQuotes)}</td>`).join('')}</tr>`;
       }).join('');
-      out += `<table style="border-collapse:collapse;width:100%;font-family:'Times New Roman',serif;font-size:10.5pt;margin:6pt 0;">${thead}${tbody}</table>`;
+      out += `<table width="100%" style="border-collapse:collapse;width:100%;table-layout:fixed;font-family:'Times New Roman',serif;font-size:10.5pt;margin:6pt 0;">${thead}${tbody}</table>`;
     } else if (isFirmaRuoliLine(lines[i])) {
       // Risalgo per includere le righe-nomi sopra (non vuote) appena accumulate in para.
       const firmaRows = [];
@@ -4071,6 +4098,18 @@ function letteraTextToExportHtml(text, boldQuotes){
       flushPara(); // svuota il resto (testo prima della firma)
       firmaRows.push(splitFirmaColumns(lines[i])); // riga dei ruoli
       flushFirma(firmaRows);
+    } else if (listItemText(lines[i]) !== null) {
+      // Blocco di elenco: raggruppo le righe di lista consecutive in <ul> con <li> renderizzati.
+      flushPara();
+      const items = [];
+      while (i < lines.length && listItemText(lines[i]) !== null) {
+        items.push(listItemText(lines[i]));
+        i++;
+      }
+      i--; // compenso l'incremento del for
+      out += `<ul style="font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:4pt 0;padding-left:22px;">`
+        + items.map(it => `<li style="margin:0;">${letteraMarkInline(it, boldQuotes)}</li>`).join('')
+        + `</ul>`;
     } else {
       para.push(lines[i]);
     }
@@ -4563,6 +4602,7 @@ function renderGenera(){
 }
 function renderVerifica(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderVerifica); return; }
+  if(window.Lettere && window.Lettere._closeFixPopup) window.Lettere._closeFixPopup();
   const w=ensureWiz();
   const flags=L._verifFlags||[];
   // Vista evidenziata a destra
@@ -4644,7 +4684,7 @@ function _renderVerifHighlight(text, flags){
     const tip=escapeHtml(((sevLabel[f.severity]||f.severity||'') + (f.reason? ' — '+f.reason : '')).trim());
     // sostituzione semplice della prima occorrenza
     const i=html.indexOf(q);
-    if(i>=0){ html = html.slice(0,i) + `<mark id="lt-vmark${idx}" class="${cls}" title="${tip}" style="cursor:pointer" onclick="window.Lettere._activateFlag(${idx})">${q}</mark>` + html.slice(i+q.length); }
+    if(i>=0){ html = html.slice(0,i) + `<mark id="lt-vmark${idx}" class="${cls}" title="${tip}" style="cursor:pointer" onclick="window.Lettere._showFixPopup(${idx}, event)">${q}</mark>` + html.slice(i+q.length); }
   });
   return html;
 }
@@ -4879,7 +4919,8 @@ function renderPersonalizzazioni(){ navigate('lettere-impostazioni'); }
 function renderImpostazioni(){
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderImpostazioni); return; }
   const p = (L.userTemplateData && L.userTemplateData.prefs) ? L.userTemplateData.prefs : DEFAULT_USER_PREFS;
-  const seg=(key,opts)=>opts.map(o=>`<button class="lt-seg${p[key]===o.v?' on':''}" onclick="window.Lettere._setDefPref('${key}','${o.v}')">${o.l}</button>`).join('');
+  // Stesso stile e tooltip della sezione "Genera lettera": pulsanti lt-tab con title da PREF_TITLES.
+  const seg=(key,opts)=>opts.map(o=>`<button class="lt-tab${p[key]===o.v?' on':''}" title="${escapeHtml((PREF_TITLES[key]||{})[o.v]||o.l)}" onclick="window.Lettere._setDefPref('${key}','${o.v}')">${o.l}</button>`).join('');
   // Dati per il template personale (base + overrides)
   const tplOpts=_templates.map(t=>`<option value="${escapeHtml(t.id)}"${(_userTemplateData&&_userTemplateData.base_template_id===t.id)?' selected':''}>${escapeHtml(t.name||t.id)}</option>`).join('');
   const ov = (_userTemplateData && _userTemplateData.overrides) || {};
@@ -4890,12 +4931,12 @@ function renderImpostazioni(){
     <div class="lt-card-static">
       <div class="lt-side-title">Preferenze generazione lettera (default)</div>
       <div class="lt-prefs">
-        <div class="lt-pref-row"><label>Esami laboratorio</label><div class="lt-segs">${seg('lab',[{v:'all',l:'Tutti i valori'},{v:'altered',l:'Solo patologici'}])}</div></div>
-        <div class="lt-pref-row"><label>Accertamenti strumentali</label><div class="lt-segs">${seg('acc',[{v:'brief',l:'Sintetici'},{v:'extended',l:'Estesi'}])}</div></div>
-        <div class="lt-pref-row"><label>Decorso clinico</label><div class="lt-segs">${seg('dec',[{v:'short',l:'Conciso'},{v:'standard',l:'Standard'},{v:'long',l:'Dettagliato'}])}</div></div>
-        <div class="lt-pref-row"><label>Anamnesi</label><div class="lt-segs">${seg('an',[{v:'essential',l:'Essenziale'},{v:'complete',l:'Completa'}])}</div></div>
-        <div class="lt-pref-row"><label>Raccomandazioni</label><div class="lt-segs">${seg('rac',[{v:'main',l:'Principali'},{v:'all',l:'Tutte'}])}</div></div>
-        <div class="lt-pref-row"><label>Terapia dimissione</label><div class="lt-segs">${seg('ter',[{v:'last',l:'Ultima terapia'},{v:'lastPlusHome',l:'+ domiciliare'}])}</div></div>
+        <div class="lt-prefblock"><label>Esami di laboratorio</label><div class="lt-tabs">${seg('lab',[{v:'all',l:'Tutti i valori'},{v:'altered',l:'Solo patologici'}])}</div></div>
+        <div class="lt-prefblock"><label>Accertamenti strumentali</label><div class="lt-tabs">${seg('acc',[{v:'brief',l:'Sintetici'},{v:'extended',l:'Estesi'}])}</div></div>
+        <div class="lt-prefblock"><label>Decorso clinico</label><div class="lt-tabs">${seg('dec',[{v:'short',l:'Conciso'},{v:'standard',l:'Standard'},{v:'long',l:'Dettagliato'}])}</div></div>
+        <div class="lt-prefblock"><label>Anamnesi</label><div class="lt-tabs">${seg('an',[{v:'essential',l:'Essenziale'},{v:'complete',l:'Completa'}])}</div></div>
+        <div class="lt-prefblock"><label>Raccomandazioni</label><div class="lt-tabs">${seg('rac',[{v:'main',l:'Principali'},{v:'all',l:'Tutte'}])}</div></div>
+        <div class="lt-prefblock"><label>Terapia alla dimissione</label><div class="lt-tabs">${seg('ter',[{v:'last',l:'Ultima terapia'},{v:'lastPlusHome',l:'+ domiciliare'}])}</div></div>
       </div>
       <div class="field" style="margin-top:14px"><label>Altre preferenze (testo libero)</label>
         <textarea id="lt-def-custom" rows="4" placeholder="Aggiungi altre preferenze..." oninput="window.Lettere._setDefPref('custom', this.value)">${escapeHtml(p.custom||'')}</textarea></div>
@@ -5401,8 +5442,58 @@ window.Lettere = {
     w.outputLetter = txt.replace(q, f.suggestion);
     // Rimuovo il flag accettato e riallineo gli indici
     L._verifFlags = flags.filter((_,i)=>i!==idx);
+    window.Lettere._closeFixPopup();
     toast('Correzione applicata.','success');
     renderVerifica();
+  },
+  // Popup ancorato alla frase evidenziata a destra: mostra prima/dopo e permette di accettare.
+  _showFixPopup(idx, ev){
+    if(ev){ try{ ev.stopPropagation(); }catch(e){} }
+    // Allinea comunque il testo a sinistra (comportamento precedente)
+    window.Lettere._activateFlag(idx);
+    const flags = L._verifFlags || [];
+    const f = flags[idx]; if(!f) return;
+    window.Lettere._closeFixPopup();
+    const sevLabel={contraddizione:'Contraddice la cartella',assente:'Assente dalla cartella',inferenza:'Inferenza non esplicita'};
+    const pop=document.createElement('div');
+    pop.id='lt-fix-popup';
+    pop.className='lt-fix-popup';
+    const hasFix=!!(f.suggestion && f.suggestion.trim());
+    pop.innerHTML=`
+      <div class="lt-fix-pop-head">${escapeHtml(sevLabel[f.severity]||f.severity||'Segnalazione')}</div>
+      ${f.reason?`<div class="lt-fix-pop-reason">${escapeHtml(f.reason)}</div>`:''}
+      ${hasFix?`
+        <div class="lt-fix-ba"><span class="lt-fix-label">Prima</span> <span class="lt-fix-before">${escapeHtml(f.quote||'')}</span></div>
+        <div class="lt-fix-ba"><span class="lt-fix-label">Dopo</span> <span class="lt-fix-after">${escapeHtml(f.suggestion)}</span></div>`:`
+        <div class="lt-fix-pop-reason" style="font-style:italic">Nessuna correzione automatica proposta. Modifica il testo a sinistra.</div>`}
+      <div class="lt-fix-pop-actions">
+        ${hasFix?`<button class="btn sm" onclick="window.Lettere._acceptFix(${idx})">✓ Accetta</button>`:''}
+        <button class="btn ghost sm" onclick="window.Lettere._closeFixPopup()">Chiudi</button>
+      </div>`;
+    document.body.appendChild(pop);
+    // Posiziono il popup vicino alla mark cliccata, mantenendolo nel viewport
+    const mark=document.getElementById('lt-vmark'+idx);
+    const r = mark ? mark.getBoundingClientRect() : (ev && ev.target ? ev.target.getBoundingClientRect() : null);
+    const pr = pop.getBoundingClientRect();
+    let top = (r ? r.bottom : 100) + window.scrollY + 6;
+    let left = (r ? r.left : 100) + window.scrollX;
+    // Mantieni dentro i bordi orizzontali
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - pr.width - 12;
+    if(left > maxLeft) left = Math.max(window.scrollX + 12, maxLeft);
+    // Se sfora in basso, mostralo sopra la mark
+    if(r && (r.bottom + pr.height + 12 > window.innerHeight)) top = r.top + window.scrollY - pr.height - 6;
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+    // Chiusura al click fuori (registro un listener una sola volta)
+    setTimeout(()=>{
+      const onDoc=(e)=>{ if(!pop.contains(e.target) && e.target!==mark){ window.Lettere._closeFixPopup(); document.removeEventListener('mousedown', onDoc); } };
+      document.addEventListener('mousedown', onDoc);
+      pop._onDoc=onDoc;
+    },0);
+  },
+  _closeFixPopup(){
+    const ex=document.getElementById('lt-fix-popup');
+    if(ex){ if(ex._onDoc) document.removeEventListener('mousedown', ex._onDoc); ex.remove(); }
   },
   _applyVerif(){
     const ta=document.getElementById('lt-verif-json'); if(!ta) return;
@@ -5787,6 +5878,11 @@ window.Lettere = {
   .lt-fix-before{text-decoration:line-through;color:var(--danger);opacity:.85}
   .lt-fix-after{color:#1a7a3a;font-weight:500}
   [data-theme="dark"] .lt-fix-after{color:#5fd07f}
+  .lt-fix-popup{position:absolute;z-index:9999;max-width:min(420px,92vw);background:var(--bg-paper);border:1px solid var(--rule);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:12px 14px;font-family:var(--sans,inherit)}
+  [data-theme="dark"] .lt-fix-popup{box-shadow:0 6px 24px rgba(0,0,0,.5)}
+  .lt-fix-pop-head{font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);margin-bottom:6px}
+  .lt-fix-pop-reason{font-size:12px;color:var(--ink-soft);margin-bottom:8px}
+  .lt-fix-pop-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
   @media (max-width:760px){ .lt-verif-grid{grid-template-columns:1fr} }
   /* Home a lista (sezioni una sotto l'altra come categorie Procedure) */
   .lt-home-group{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:18px 0 8px}
