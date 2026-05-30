@@ -633,6 +633,9 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .pin-star.pinned:hover{color:var(--ink-muted)}
 .pin-star.inline{font-size:16px;padding:0 4px;vertical-align:middle}
 .page-title .pin-star{font-size:22px;vertical-align:middle;margin-left:6px}
+.reorder-btn{background:transparent;border:1px solid var(--rule);border-radius:4px;cursor:pointer;font-size:13px;line-height:1;padding:2px 5px;color:var(--ink-muted);min-width:24px}
+.reorder-btn:hover{color:var(--ink);border-color:var(--accent)}
+.reorder-btn:active{transform:scale(.94)}
 .numeri-group-title .pin-star{font-size:15px;vertical-align:middle}
 .numero-label .pin-star{font-size:15px;padding:0 2px;line-height:1.3;flex-shrink:0}
 
@@ -2443,6 +2446,19 @@ const userPrefs = {
     else { state.userPrefs.pref_uoc.push(cid); added = true; }
     userPrefs.scheduleSave();
     return added;
+  },
+  // Sposta un contatto preferito UOC su (-1) o giù (+1) nell'ordine di pref_uoc.
+  // Ritorna true se l'ordine è cambiato.
+  reorderPrefUoc(cid, dir) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.pref_uoc)) return false;
+    const arr = state.userPrefs.pref_uoc;
+    const i = arr.indexOf(cid);
+    if (i < 0) return false;
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return false;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    userPrefs.scheduleSave();
+    return true;
   },
 
   // --- Rubrica preferiti: ordinamento per UOC + contatti dentro UOC ---
@@ -8025,7 +8041,7 @@ function renderCustomSezioniHtml() {
       // Opzione C: occhiello "UOC ridotta · Sezione" sopra, nome del contatto sotto.
       const eyebrow = [uocName, sezName].filter(Boolean).join(' · ');
       // Niente pulsante ✕: la rimozione si fa dal menu della stella.
-      const card = renderContattoCard(c, { eyebrow: eyebrow || null, showStarInEdit: true, preferBreve: true });
+      const card = renderContattoCard(c, { eyebrow: eyebrow || null, showStar: true, preferBreve: true });
       if (!editMode) return card;
       return `<div class="cs-contatto-reorder-row" style="display:flex;align-items:center;gap:6px;">
         <span class="ssp-reorder">
@@ -8187,6 +8203,14 @@ function createSezioneEPin(cid) {
   if (sez) { userPrefs.addContactToCustomSezione(sez.id, cid); openPinSezioniPopup(cid); }
 }
 
+// Riordina un contatto nella lista preferiti UOC (su = -1, giù = +1), preservando lo scroll.
+function movePrefUoc(cid, dir) {
+  if (!userPrefs.reorderPrefUoc(cid, dir)) return;
+  const savedScroll = window.scrollY;
+  renderNumeri('pinned');
+  requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+}
+
 function renderNumeri(filter, targetContainer) {
   // targetContainer: opzionale. Container DOM su cui scrivere. Se omesso, scrive su $('main-content').
   // Usato da _doRubricaSearch per re-render incrementale in un container offscreen.
@@ -8230,7 +8254,13 @@ function renderNumeri(filter, targetContainer) {
     // sono rese separatamente da renderCustomSezioniHtml.
     filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd').map(g => {
       const gPinned = isPinned('gruppo', g.id);
-      const cInUoc = (g.contatti || []).filter(c => userPrefs.hasPrefUoc(c.id));
+      let cInUoc = (g.contatti || []).filter(c => userPrefs.hasPrefUoc(c.id));
+      // Ordino i preferiti UOC secondo l'ordine salvato in pref_uoc (riordinabile con ↑↓).
+      const order = (state.userPrefs && state.userPrefs.pref_uoc) || [];
+      cInUoc = cInUoc.slice().sort((a, b) => {
+        const ia = order.indexOf(a.id), ib = order.indexOf(b.id);
+        return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib);
+      });
       if (gPinned) return { ...g };
       if (cInUoc.length) return { ...g, contatti: cInUoc };
       return null;
@@ -8529,13 +8559,14 @@ function renderNumeri(filter, targetContainer) {
       if (filter === 'guardia') {
         const items = [];
         list.forEach(g => (g.contatti || []).forEach(c => items.push({ c, g })));
-        return renderUocSezioniBox(items);
+        return renderUocSezioniBox(items, { starAlways: true });
       }
-      // Vista preferiti (★): contatti inline "Sezione · etichetta", stella in edit-mode
+      // Vista preferiti (★): contatti inline "Sezione · etichetta", stella sempre visibile,
+      // riordino dei preferiti UOC con maniglie (in edit-mode).
       if (filter === 'pinned' && src === 'aopd') {
         const items = [];
         list.forEach(g => (g.contatti || []).forEach(c => items.push({ c, g })));
-        return renderContattiGroupedBox(items, { inline: true, starInEdit: true });
+        return renderContattiGroupedBox(items, { inline: true, starAlways: true, reorderPrefUoc: true });
       }
       // Altre source (osa/iov) non mostrano nulla in modalità pinned
       if (filter === 'pinned') return '';
@@ -9009,8 +9040,10 @@ function renderContattoCard(c, opts = {}) {
     : `<span class="sr-num-chip ${numChipClass}">—</span>`;
   const ctxHtml = opts.contextLine ? `<div class="sr-contact-luogo">${escapeHtml(opts.contextLine)}</div>` : '';
   const rowCls = isGuardia ? 'sr-contact sr-contact-guardia' : isReparto ? 'sr-contact sr-contact-reparto' : isUtile ? 'sr-contact sr-contact-utile' : 'sr-contact';
-  // Stella opzionale solo in edit-mode (gestione preferiti)
-  const star = opts.showStarInEdit && c.id ? ` <span class="edit-only" style="display:inline-flex;align-items:center;">${renderPinButton('contatto', c.id)}</span>` : '';
+  // Stella: showStar = sempre visibile; showStarInEdit = solo in edit-mode (avvolta in .edit-only)
+  const star = (opts.showStar && c.id)
+    ? ` <span style="display:inline-flex;align-items:center;">${renderPinButton('contatto', c.id)}</span>`
+    : (opts.showStarInEdit && c.id ? ` <span class="edit-only" style="display:inline-flex;align-items:center;">${renderPinButton('contatto', c.id)}</span>` : '');
   // Pulsante rimuovi opzionale (sezioni custom in edit-mode)
   const removeBtn = opts.removeBtn || '';
   // Prefisso inline nell'etichetta (in grigio, sulla stessa riga del nome).
@@ -9027,11 +9060,22 @@ function renderContattoCard(c, opts = {}) {
   const nomeBreve = (c.alias && c.alias.length && c.alias[0]) ? String(c.alias[0]).trim() : '';
   const displayName = (opts.preferBreve && nomeBreve) ? nomeBreve : c.etichetta;
   const displayTitle = (opts.preferBreve && nomeBreve) ? ` title="${escapeHtml(c.etichetta)}"` : '';
+  // Maniglie di riordino opzionali (solo edit-mode), per la lista preferiti UOC.
+  // opts.reorder: { onUp, onDown } stringhe di handler onclick.
+  const reorderHandles = opts.reorder
+    ? `<span class="edit-only" style="display:inline-flex;gap:2px;margin-right:4px;">
+         <button class="reorder-btn" onclick="event.stopPropagation();${opts.reorder.onUp}" title="Sposta su" aria-label="Sposta su">↑</button>
+         <button class="reorder-btn" onclick="event.stopPropagation();${opts.reorder.onDown}" title="Sposta giù" aria-label="Sposta giù">↓</button>
+       </span>`
+    : '';
   return `<div class="${rowCls}" onclick="goToContatto('${escapeJs(c.id)}')">
-    <div class="sr-contact-left">
-      ${eyebrowHtml}
-      <div class="sr-contact-label"${displayTitle}>${inlinePrefix}${escapeHtml(displayName)}${star}${removeBtn}</div>
-      ${ctxHtml}
+    <div class="sr-contact-left" style="display:flex;align-items:center;gap:2px;">
+      ${reorderHandles}
+      <div style="flex:1;min-width:0;">
+        ${eyebrowHtml}
+        <div class="sr-contact-label"${displayTitle}>${inlinePrefix}${escapeHtml(displayName)}${star}${removeBtn}</div>
+        ${ctxHtml}
+      </div>
     </div>
     <div class="sr-contact-nums">${numChipsHtml}</div>
   </div>`;
@@ -9065,8 +9109,14 @@ function renderContattiGroupedBox(items, opts = {}) {
           // In modalità inline (sezione UOC standard): l'UOC è nel titolo del box, la sezione
           // del contatto è l'occhiello sopra l'etichetta.
           eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
-          showStarInEdit: !!opts.starInEdit,
-          preferBreve: !!opts.inline
+          showStarInEdit: !!opts.starInEdit && !opts.starAlways,
+          showStar: !!opts.starAlways,
+          preferBreve: !!opts.inline,
+          // Riordino della lista preferiti UOC (solo se richiesto): muove dentro pref_uoc.
+          reorder: opts.reorderPrefUoc ? {
+            onUp: `movePrefUoc('${escapeJs(c.id)}',-1)`,
+            onDown: `movePrefUoc('${escapeJs(c.id)}',1)`
+          } : null
         })).join('');
     return `<div class="sr-sede-bucket" style="margin-bottom:10px;">
       <div class="sr-sede-bucket-header sr-sede-bucket-static">
@@ -9103,7 +9153,7 @@ function renderUocSezioniBox(items, opts = {}) {
       const sezLabel = s.sezione
         ? `<span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gId)}'})">${escapeHtml(s.sezione)}</span>`
         : `<span class="ctx-sezione">Numeri</span>`;
-      const rows = s.contatti.map(c => renderContattoCard(c, { showStarInEdit: !!opts.starInEdit })).join('');
+      const rows = s.contatti.map(c => renderContattoCard(c, { showStarInEdit: !!opts.starInEdit && !opts.starAlways, showStar: !!opts.starAlways })).join('');
       return `<div class="sr-sede-bucket">
         <div class="sr-sede-bucket-header sr-sede-bucket-static">
           <span class="sede-bucket-tipo">${sezLabel}</span>
