@@ -250,6 +250,7 @@ header.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:grid;grid-t
   .search-wrap input{font-size:16px;padding:8px 12px 8px 34px;max-width:100%;box-sizing:border-box}
   header.topbar > .topbar-actions{grid-area:actions;justify-self:end;min-width:0;flex-shrink:0}
   .brand-divider,.brand-sub{display:none}
+  .brand-mark{font-weight:600;font-optical-sizing:none;font-variation-settings:"opsz" 40,"wght" 600}
   /* Su mobile, riduci lo spazio tra logo e titolo */
   .brand-home-link{gap:4px}
   .search-kbd{display:none}
@@ -276,7 +277,7 @@ header.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:grid;grid-t
 }
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .brand-home-link{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0}
-.brand-logo{width:32px;height:32px;object-fit:contain;flex-shrink:0}
+.brand-logo{width:auto;height:clamp(18px,5.2vw,32px);object-fit:contain;flex-shrink:0}
 .brand-logo-dark{display:none}
 [data-theme="dark"] .brand-logo-light{display:none}
 [data-theme="dark"] .brand-logo-dark{display:block}
@@ -284,7 +285,7 @@ header.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:grid;grid-t
 [data-theme="dark"] .login-logo-dark{display:block!important}
 /* Titolo CollinettaAI: scaling automatico tra 13px (schermi minuscoli) e 22px (desktop).
    Il valore preferito 4.5vw fa scalare in modo proporzionale alla larghezza viewport. */
-.brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(13px,4.5vw,22px);letter-spacing:-.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:.15em}
+.brand-mark{font-family:var(--serif);font-weight:500;font-style:italic;font-size:clamp(15px,4.5vw,22px);letter-spacing:-.02em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:.15em}
 .brand-divider{width:1px;height:16px;background:var(--rule-strong)}
 .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
 .search-wrap{position:relative;flex:1;min-width:0}
@@ -19130,6 +19131,36 @@ setTimeout(() => {
 
   if(reduce){ place(CX,CX,40,-40,SF,1,0); }
   else { place(FX,HX,0,0,SS,0,0); raf=requestAnimationFrame(frame); }
+})();
+</script>
+
+
+<script>
+/* Mobile: quando la tastiera si chiude (es. con la gesture indietro) rimuove anche
+   il focus dal campo di testo attivo, invece di lasciarlo selezionato.
+   Rileva la chiusura tastiera via VisualViewport; non tocca la cronologia. */
+(function(){
+  var vv = window.visualViewport;
+  if(!vv) return;
+  var kbOpen = false;
+  function isText(el){
+    if(!el) return false;
+    if(el.tagName==='TEXTAREA' || el.isContentEditable) return true;
+    if(el.tagName==='INPUT'){
+      var t=(el.getAttribute('type')||'text').toLowerCase();
+      return ['button','submit','reset','checkbox','radio','range','color','file','image','hidden'].indexOf(t)===-1;
+    }
+    return false;
+  }
+  vv.addEventListener('resize', function(){
+    var gap = window.innerHeight - vv.height; // ~ altezza tastiera quando aperta
+    if(gap > 150){ kbOpen = true; return; }
+    if(kbOpen){
+      kbOpen = false;
+      var ae = document.activeElement;
+      if(isText(ae)){ try{ ae.blur(); }catch(e){} }
+    }
+  });
 })();
 </script>
 
