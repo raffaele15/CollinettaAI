@@ -8528,6 +8528,7 @@ function renderCustomSezioniHtml() {
         eyebrow: eyebrow || null,
         alwaysStar: true,
         pinnedView: true,
+        preferBreve: true,
         reorderCustom: {
           onUp: `moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',-1)`,
           onDown: `moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',1)`
@@ -9630,6 +9631,7 @@ function renderContattiGroupedBox(items, opts = {}) {
           eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
           alwaysStar: !!opts.starAlways,
           pinnedView: !!opts.inline,
+          preferBreve: !!opts.inline,
           reorderPrefUoc: !!opts.reorderPrefUoc,
           reorderFirst: ci === 0,
           reorderLast: ci === grp.contatti.length - 1
@@ -10441,6 +10443,11 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const ctxLine = (opts && opts.contextLine)
     ? `<div class="numero-context" style="font-size:11px;color:var(--ink-muted);margin-top:1px;">${escapeHtml(opts.contextLine)}</div>`
     : '';
+  // Nome breve: nei preferiti (preferBreve) mostro il primo alias al posto dell'etichetta
+  // completa, con l'etichetta intera nel tooltip. Coerente con renderContattoCard.
+  const nomeBreve = (c.alias && c.alias.length && c.alias[0]) ? String(c.alias[0]).trim() : '';
+  const displayName = (opts && opts.preferBreve && nomeBreve) ? nomeBreve : c.etichetta;
+  const displayTitle = (opts && opts.preferBreve && nomeBreve) ? ` title="${escapeHtml(c.etichetta)}"` : '';
   // Riga inferiore: solo se c'è qualcosa da mostrare (sede, extras, note, email, kindSelector)
   const hasBottom = luogoText || extrasHtml;
   const bottomHtml = hasBottom
@@ -10453,7 +10460,7 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     <div class="${rowClass}" ${dataContattoAttr} ${rowClickHandler}>
       ${eyebrowHtml}
       <div class="numero-row-top">
-        <div class="numero-label"><span class="numero-label-text">${escapeHtml(c.etichetta)}</span>${starHtml}${editControls}</div>
+        <div class="numero-label"${displayTitle}><span class="numero-label-text">${escapeHtml(displayName)}</span>${starHtml}${editControls}</div>
         ${primaryHtml}
       </div>
       ${ctxLine}
@@ -16845,24 +16852,35 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         const note = $('ce-note').value.trim();
         const aliasEl = document.getElementById('ce-alias');
         const alias = aliasEl ? aliasEl.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-        const newC = { id: c.id || (slugifyLocal(`${gruppoId}-${etichetta}`).slice(0, 60) + '-' + Date.now().toString(36).slice(-4)), etichetta };
-        if (numeri.length) newC.numeri = numeri;
+        // Parto dai campi esistenti del contatto (in modifica) così NON perdo le proprietà
+        // non gestite da questo form — in particolare `kind` (chip guardia/reparto/utile),
+        // impostato altrove. Poi sovrascrivo/ripulisco solo i campi del form.
+        const newC = isNew
+          ? { id: (slugifyLocal(`${gruppoId}-${etichetta}`).slice(0, 60) + '-' + Date.now().toString(36).slice(-4)), etichetta }
+          : { ...c, etichetta };
+        // Campi gestiti dal form: li ricostruisco da zero (set se valorizzati, delete se vuoti),
+        // così svuotare un campo nel form lo rimuove davvero.
+        if (numeri.length) newC.numeri = numeri; else delete newC.numeri;
         if (cellularePersonaleList.length === 1) newC.cellulare_personale = cellularePersonaleList[0];
         else if (cellularePersonaleList.length > 1) newC.cellulare_personale = cellularePersonaleList;
+        else delete newC.cellulare_personale;
         if (cellulareAziendaleList.length === 1) newC.cellulare_aziendale = cellulareAziendaleList[0];
         else if (cellulareAziendaleList.length > 1) newC.cellulare_aziendale = cellulareAziendaleList;
-        if (breveStr) { const n = parseInt(breveStr, 10); newC.breve = isNaN(n) ? breveStr : n; }
-        if (email) newC.email = email;
-        if (sezione) newC.sezione = sezione;
+        else delete newC.cellulare_aziendale;
+        if (breveStr) { const n = parseInt(breveStr, 10); newC.breve = isNaN(n) ? breveStr : n; } else delete newC.breve;
+        if (email) newC.email = email; else delete newC.email;
+        if (sezione) newC.sezione = sezione; else delete newC.sezione;
         const sottosezioneEl = document.getElementById('ce-sottosezione');
         const sottosezione = sottosezioneEl ? sottosezioneEl.value.trim() : '';
-        if (sottosezione) newC.sottosezione = sottosezione;
-        if (edificio) newC.edificio = edificio;
-        if (piano) newC.piano = piano;
-        if (orari) newC.orari = orari;
-        if (tag.length) newC.tag = tag;
-        if (note) newC.note = note;
-        if (alias.length) newC.alias = alias;
+        if (sottosezione) newC.sottosezione = sottosezione; else delete newC.sottosezione;
+        if (edificio) newC.edificio = edificio; else delete newC.edificio;
+        if (piano) newC.piano = piano; else delete newC.piano;
+        if (orari) newC.orari = orari; else delete newC.orari;
+        if (tag.length) newC.tag = tag; else delete newC.tag;
+        if (note) newC.note = note; else delete newC.note;
+        if (alias.length) newC.alias = alias; else delete newC.alias;
+        // Rimuovo eventuali proprietà interne di runtime che non vanno persistite.
+        delete newC._gruppo; delete newC._source; delete newC._classify;
         if (!newC.numeri && !newC.cellulare_personale && !newC.cellulare_aziendale && !newC.breve) {
           return toast('Inserire almeno un numero (interno, cellulare o breve)', 'warning');
         }
