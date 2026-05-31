@@ -1988,6 +1988,10 @@ function nowIso() { return new Date().toISOString(); }
 // anche in standalone mode su iOS/Android).
 let _historyPos = 0;       // posizione corrente nella history del browser
 let _historyMax = 0;       // entry massima raggiunta (per sapere se "forward" è disponibile)
+// True quando il prossimo popstate è stato scatenato dalle frecce interne (goBack/goForward),
+// non dal back nativo/gesture del browser. In quel caso NON consumiamo il back per chiudere
+// la tastiera: l'utente ha esplicitamente chiesto di navigare.
+let _navByArrowButton = false;
 
 // === GUARDIA BACK (anti-uscita accidentale) ===
 // Quando l'utente è in un editor file o sulla home in PWA standalone, intercettiamo
@@ -2090,11 +2094,17 @@ function _onHistoryPop(histState) {
 }
 function goBack() {
   if (_historyPos <= 0) return;
+  _navByArrowButton = true;
+  // Sfoco subito un eventuale campo a fuoco (es. ricerca rubrica): così il popstate
+  // non lo interpreta come "chiudi tastiera" consumando il back.
+  try { const ae = document.activeElement; if (ae && ae.blur) ae.blur(); } catch {}
   // Usa la history del browser. popstate aggiornerà _historyPos e routerà la pagina.
   window.history.back();
 }
 function goForward() {
   if (_historyPos >= _historyMax) return;
+  _navByArrowButton = true;
+  try { const ae = document.activeElement; if (ae && ae.blur) ae.blur(); } catch {}
   window.history.forward();
 }
 function updateNavHistoryButtons() {
@@ -5048,10 +5058,14 @@ const urlRouter = (function() {
     // invariata e il prossimo back funziona normalmente.
     const ae = document.activeElement;
     const isEditable = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
+    // Se questo popstate è stato scatenato dalle frecce interne, l'utente ha chiesto
+    // esplicitamente di navigare: NON consumo il back per chiudere la tastiera.
+    const _wasArrow = _navByArrowButton;
+    _navByArrowButton = false;
     // Su back con un campo a fuoco: sfoca sempre (chiude la tastiera, come un tap fuori dal campo),
     // ANCHE quando la guardia è armata (es. home PWA), così il campo non resta selezionato.
     if (isEditable) ae.blur();
-    if (isEditable && !_backGuardArmed) {
+    if (isEditable && !_backGuardArmed && !_wasArrow) {
       // Nessuna guardia attiva: consumo questo back solo per chiudere la tastiera (resto sulla
       // pagina) re-inserendo l'entry, così il prossimo back naviga normalmente.
       _suppress = true;
@@ -14724,9 +14738,6 @@ function renderGestioneUtentiView() {
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}Amministrazione</div>
       <h1 class="page-title">Gestione <em>utenti</em></h1>
-      <div style="margin-top:12px;font-size:13px;color:var(--ink-muted);">
-        ${countAll} utenti registrati. I nuovi utenti ereditano il <code>token_data</code> dalla tua sessione; se promossi ad admin ereditano anche <code>token_auth</code>.
-      </div>
       <div class="page-actions" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" id="btn-add-user">+ Aggiungi utente</button>
         <button class="btn ghost" onclick="navigate('cestino-utenti')">Cestino utenti</button>
