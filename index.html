@@ -5116,6 +5116,10 @@ const urlRouter = (function() {
   }
 
   function init() {
+    // Disattivo il ripristino scroll automatico del browser: lo gestiamo noi (mappa per-pos).
+    // Lasciandolo 'auto', su back/forward il browser ripristina la SUA posizione (spesso 0
+    // per una hash route) e la dipinge PRIMA del nostro scrollTo → flash visibile per un attimo.
+    try { if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'; } catch {}
     // All'avvio (o dopo un reload/riapertura PWA) il browser può aver conservato uno
     // history.state di una sessione precedente con un `pos` alto (es. 5), mentre le
     // variabili JS _historyPos/_historyMax ripartono da 0. Questo disallineamento rompe
