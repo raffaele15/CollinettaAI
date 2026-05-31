@@ -5191,6 +5191,15 @@ function navigate(route, params = {}, navOpts = {}) {
   if (typeof urlRouter !== 'undefined' && !(navOpts && navOpts.fromHistory)) urlRouter.updateUrl(route, params, navOpts && navOpts.replace);
   if (route !== 'search') $('global-search').value = '';
 
+  // Restore di scroll su back/forward: calcolo il target PRIMA del render e, se serve
+  // riposizionare, nascondo il contenuto (visibility:hidden, mantiene il layout/altezza)
+  // così l'utente non vede mai il frame intermedio a scroll 0. Lo rivelo dopo lo scrollTo.
+  const _restoreY = (navOpts && navOpts.fromHistory && typeof navOpts.restoreScrollY === 'number')
+    ? navOpts.restoreScrollY : 0;
+  const _mc = document.getElementById('main-content');
+  if (_restoreY > 0 && _mc) _mc.style.visibility = 'hidden';
+  const _reveal = () => { if (_mc) _mc.style.visibility = ''; };
+
   switch (route) {
     case 'home': renderHome(); break;
     case 'reparto': renderReparto(); break;
@@ -5230,17 +5239,15 @@ function navigate(route, params = {}, navOpts = {}) {
     default: renderHome();
   }
   // Scroll: su navigazione nuova vai in cima; su back/forward ripristina il punto salvato.
-  const _restoreY = (navOpts && navOpts.fromHistory && typeof navOpts.restoreScrollY === 'number')
-    ? navOpts.restoreScrollY : 0;
   if (_restoreY > 0) {
     const tryRestore = () => window.scrollTo({ top: _restoreY, behavior: 'instant' });
-    // Ripristino SINCRONO, subito dopo il render: per le viste sincrone (innerHTML già
-    // scritto) il layout è pronto adesso, quindi posizioniamo prima che il browser dipinga
-    // anche solo un frame a scroll 0 (era questo a causare il flash "vista in cima → salto").
+    // Ripristino SINCRONO, subito dopo il render (viste sincrone: layout già pronto).
     tryRestore();
-    // Fallback per viste async (procedura/modulo/clinica) il cui contenuto/altezza arriva
-    // dopo: ritento al prossimo frame e a brevi intervalli finché la pagina è abbastanza alta.
-    requestAnimationFrame(() => requestAnimationFrame(tryRestore));
+    // Rivelo il contenuto al prossimo frame, quando lo scroll è già applicato.
+    requestAnimationFrame(() => { tryRestore(); _reveal(); });
+    // Rete di sicurezza: rivela comunque entro breve.
+    setTimeout(_reveal, 120);
+    // Fallback per viste async (procedura/modulo/clinica) il cui contenuto/altezza arriva dopo.
     [80, 200, 450].forEach(ms => setTimeout(() => {
       const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       if (Math.abs((window.scrollY || 0) - _restoreY) > 4 && maxY >= _restoreY - 4) tryRestore();
