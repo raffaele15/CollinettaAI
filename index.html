@@ -3445,6 +3445,83 @@ function exportContentIndex() {
 }
 window.exportContentIndex = exportContentIndex;
 
+// Esporta un "file tree": mostra come sono organizzate le cartelle (categoria →
+// sottocategoria → scheda) per procedure, schede cliniche e moduli. Pensato per essere
+// dato in pasto a un AI: niente icone, indentazione semplice, ogni scheda riporta slug
+// e titolo. Niente contenuto dei blocchi, niente rubrica.
+function exportFileTree() {
+  if (typeof isAdmin === 'function' && !isAdmin()) { if (typeof toast === 'function') toast('Solo admin', 'error'); return; }
+  if (!state || !state.index) { if (typeof toast === 'function') toast('Indice non ancora caricato', 'error'); return; }
+  const idx = state.index;
+  const now = new Date().toISOString().slice(0, 10);
+  const lines = [];
+
+  const catLabel = (c) => (typeof CATEGORIA_LABELS !== 'undefined' && CATEGORIA_LABELS[c]) || c || 'senza-categoria';
+  const subLabel = (s) => (typeof SOTTO_LABELS !== 'undefined' && SOTTO_LABELS[s]) || (s === '_senza' ? 'senza-sottocategoria' : (s || 'senza-sottocategoria'));
+  const schedaLine = (s) => (s.slug || '?') + ' — ' + (s.titolo || s.slug || '?');
+
+  // Raggruppa una lista di schede per categoria → sottocategoria e la stampa come albero
+  // con indentazione a 2 spazi per livello.
+  const emitTree = (schede, opts) => {
+    opts = opts || {};
+    const useSub = opts.useSub !== false;
+    const byCat = {};
+    (schede || []).forEach((s) => {
+      const cat = s.categoria || '_senza';
+      const sub = useSub ? (s.sottocategoria || '_senza') : '__flat';
+      (byCat[cat] = byCat[cat] || {});
+      (byCat[cat][sub] = byCat[cat][sub] || []).push(s);
+    });
+    const cats = Object.keys(byCat).sort((a, b) => catLabel(a).localeCompare(catLabel(b), 'it'));
+    cats.forEach((cat) => {
+      const subsObj = byCat[cat];
+      const nCat = Object.values(subsObj).reduce((n, arr) => n + arr.length, 0);
+      lines.push('  ' + catLabel(cat) + '/  (' + nCat + ')');
+      const subs = Object.keys(subsObj).sort((a, b) => subLabel(a).localeCompare(subLabel(b), 'it'));
+      subs.forEach((sub) => {
+        const arr = subsObj[sub].slice().sort((a, b) => (a.titolo || a.slug || '').localeCompare(b.titolo || b.slug || '', 'it'));
+        if (sub === '__flat') {
+          arr.forEach((s) => lines.push('    ' + schedaLine(s)));
+        } else {
+          lines.push('    ' + subLabel(sub) + '/  (' + arr.length + ')');
+          arr.forEach((s) => lines.push('      ' + schedaLine(s)));
+        }
+      });
+    });
+  };
+
+  lines.push('# Struttura cartelle CollinettaAI');
+  lines.push('Generato il ' + now + '. Mostra solo l\\u2019organizzazione delle cartelle (categoria/sottocategoria), senza contenuto. Ogni scheda: slug — titolo.');
+  lines.push('');
+
+  lines.push('Procedure/  (' + (idx.procedure || []).length + ')');
+  emitTree(idx.procedure || [], { useSub: true });
+  lines.push('');
+
+  lines.push('Schede cliniche/  (' + (idx.clinica || []).length + ')');
+  emitTree(idx.clinica || [], { useSub: true });
+  lines.push('');
+
+  lines.push('Moduli compilabili/  (' + (idx.moduli || []).length + ')');
+  (idx.moduli || []).slice().sort((a, b) => (a.titolo || a.slug || '').localeCompare(b.titolo || b.slug || '', 'it'))
+    .forEach((m) => lines.push('  ' + ((m.slug || '?') + ' — ' + (m.titolo || m.slug || '?'))));
+
+  const txt = lines.join('\\n');
+  try {
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'collinetta-struttura-' + now + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    if (typeof toast === 'function') toast('Struttura esportata', 'success', 3000);
+  } catch (e) {
+    if (typeof toast === 'function') toast('Export fallito: ' + e.message, 'error');
+  }
+}
+window.exportFileTree = exportFileTree;
+
 /* ============================ CRYPTO ============================ */
 function base64ToBuffer(base64) {
   const binary = atob(base64);
@@ -4878,6 +4955,13 @@ const urlRouter = (function() {
         // così la cronologia non accumula entry duplicate della stessa scheda.
         window.history.replaceState({ route, params, pos: (_historyPos || 0) }, '', newHash);
       } else {
+        // Prima di aggiungere la nuova entry, salvo la posizione di scroll CORRENTE
+        // nell'entry corrente (via replaceState), così quando l'utente torna indietro
+        // qui possiamo ripristinare il punto esatto in cui si trovava.
+        try {
+          const curState = window.history.state || {};
+          window.history.replaceState({ ...curState, scrollY: window.scrollY || window.pageYOffset || 0 }, '', window.location.href);
+        } catch {}
         // Uso pushState così il browser registra l'entry per il bottone indietro.
         // Salvo nello state la posizione (pos) per sapere se siamo andati avanti/indietro
         // a seguito di popstate (necessario per abilitare/disabilitare pulsanti freccia).
@@ -4988,7 +5072,10 @@ const urlRouter = (function() {
     // l'URL è GIÀ quello corretto. navigate NON deve fare un nuovo pushState (che
     // resetterebbe _historyMax e romperebbe la freccia avanti, specie tornando alla
     // prima pagina con hash vuoto).
-    navigate(route, params, { fromHistory: true });
+    // restoreScrollY: ripristina la posizione di scroll salvata nell'entry quando
+    // ci eravamo allontanati, così back/forward riportano al punto esatto della pagina.
+    const _rsY = (e.state && typeof e.state.scrollY === 'number') ? e.state.scrollY : 0;
+    navigate(route, params, { fromHistory: true, restoreScrollY: _rsY });
     // navigate(fromHistory) non passa per _onHistoryPush, quindi la guardia non si è
     // riarmata. Se siamo atterrati in zona protetta (es. home in PWA), riarmo qui.
     if (!_backGuardArmed) {
@@ -5012,6 +5099,22 @@ const urlRouter = (function() {
     updateNavHistoryButtons();
     window.addEventListener('hashchange', _onHashChange);
     window.addEventListener('popstate', _onPopState);
+    // Persisto in modo continuo (throttled) la posizione di scroll nell'entry corrente
+    // della history. Così back E forward riportano sempre al punto esatto della pagina,
+    // anche quando la navigazione non passa da updateUrl (es. back nativo del browser).
+    let _scrollSaveRaf = 0;
+    const _persistScroll = () => {
+      if (_suppress) return;
+      _scrollSaveRaf = 0;
+      try {
+        const curState = window.history.state || {};
+        window.history.replaceState({ ...curState, scrollY: window.scrollY || window.pageYOffset || 0 }, '', window.location.href);
+      } catch {}
+    };
+    window.addEventListener('scroll', () => {
+      if (_scrollSaveRaf) return;
+      _scrollSaveRaf = requestAnimationFrame(() => setTimeout(_persistScroll, 120));
+    }, { passive: true });
   }
 
   return { buildHash, updateUrl, readUrl, init };
@@ -5093,7 +5196,22 @@ function navigate(route, params = {}, navOpts = {}) {
     case 'lettere-config':           _openLetterAI('renderConfig'); break;
     default: renderHome();
   }
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  // Scroll: su navigazione nuova vai in cima; su back/forward ripristina il punto salvato.
+  const _restoreY = (navOpts && navOpts.fromHistory && typeof navOpts.restoreScrollY === 'number')
+    ? navOpts.restoreScrollY : 0;
+  if (_restoreY > 0) {
+    // Doppio rAF: aspetta che il layout post-render sia stabile prima di riposizionare.
+    // Le viste async (procedura/modulo/clinica) potrebbero non aver finito: ritento dopo
+    // brevi intervalli finché l'altezza pagina è sufficiente a raggiungere _restoreY.
+    const tryRestore = () => window.scrollTo({ top: _restoreY, behavior: 'instant' });
+    requestAnimationFrame(() => requestAnimationFrame(tryRestore));
+    [80, 200, 450].forEach(ms => setTimeout(() => {
+      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (Math.abs((window.scrollY || 0) - _restoreY) > 4 && maxY >= _restoreY - 4) tryRestore();
+    }, ms));
+  } else {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
 }
 
 /* ============================ VIEW HELPERS ============================ */
@@ -5238,7 +5356,7 @@ function renderPinnedCartella(pin) {
       <span class="pinned-folder-icon">›</span>
       <div class="pinned-folder-text">
         <div class="pinned-folder-label">${escapeHtml(CATEGORIA_LABELS[pin.cat] || pin.cat)}</div>
-        <div class="pinned-folder-sub">${count} procedur${count === 1 ? 'a' : 'e'} · categoria</div>
+        <div class="pinned-folder-sub">${count} procedur${count === 1 ? 'a' : 'e'}</div>
       </div>
     </div>`;
   }
@@ -14571,6 +14689,7 @@ function renderGestioneUtentiView() {
         <button class="btn ghost" onclick="navigate('cestino-utenti')">Cestino utenti</button>
         <button class="btn ghost" onclick="navigate('attivita')">Attività recente</button>
         <button class="btn ghost" onclick="exportContentIndex()">Esporta contenuto (NotebookLM)</button>
+        <button class="btn ghost" onclick="exportFileTree()">Esporta file tree</button>
       </div>
     </div>
 
@@ -18294,9 +18413,14 @@ function renderSearchResults(query, targetId) {
       </div>`
     : '';
 
-  // Filtra nonNumeri secondo i filtri attivi
+  // Filtra nonNumeri secondo i filtri attivi.
+  // IMPORTANTE: filtrare da `nonNumeri` (già filtrato strict), NON da `rawResults`
+  // (i match fuzzy grezzi di Fuse, che includono falsi positivi). Usando rawResults
+  // il chip diceva "Procedure · 1" ma cliccandolo comparivano procedure extra
+  // (es. "Richiesta ECG", "Trasfusione di emoderivati") che il conteggio — basato
+  // su nonNumeri — non includeva.
   const filteredNonNumeri = isFiltering
-    ? rawResults.filter(r => r.item.type !== 'numero' && activeFilters.has(r.item.type)).slice(0, 20)
+    ? nonNumeri.filter(r => r.item.type !== 'numero' && activeFilters.has(r.item.type)).slice(0, 20)
     : nonNumeri;
 
   target.innerHTML = `
@@ -18838,11 +18962,16 @@ function initMobileDrawer() {
 // Le breakpoint statiche (60/68px) non sono affidabili perché la topbar wrap
 // su mobile può crescere a 2 righe quando ci sono molti elementi.
 function initTopbarMeasure() {
+  let _lastTopbarH = 0;
   const measureTopbar = () => {
     const tb = document.querySelector('header.topbar');
     if (!tb) return;
-    const h = Math.round(tb.getBoundingClientRect().height);
-    if (h > 30 && h < 200) {
+    // Math.ceil (NON round): se l'altezza reale è 63.4px, round darebbe 63px →
+    // mancano 0.4px di padding-top e il contenuto viene tagliato di qualche pixel
+    // in alto. Arrotondando per eccesso il padding copre sempre tutta la topbar.
+    const h = Math.ceil(tb.getBoundingClientRect().height);
+    if (h > 30 && h < 200 && h !== _lastTopbarH) {
+      _lastTopbarH = h;
       document.documentElement.style.setProperty('--topbar-height', h + 'px');
     }
   };
@@ -18851,11 +18980,20 @@ function initTopbarMeasure() {
   window.addEventListener('orientationchange', () => setTimeout(measureTopbar, 100));
   // Doppio rAF per essere certi che fonts/layout siano stabili
   requestAnimationFrame(() => requestAnimationFrame(measureTopbar));
-  // Mobile: al primo avvio l'altezza reale della topbar può cambiare DOPO il primo render
-  // (safe-area del notch applicata in ritardo, font non ancora caricati, barra indirizzi
-  // del browser che si ritrae). Senza ri-misurare, l'app-body resta con padding-top errato
-  // e il contenuto appare coperto di ~20px sotto la topbar. Rimisuro a più riprese.
-  [120, 350, 700, 1500].forEach(ms => setTimeout(measureTopbar, ms));
+  // ResizeObserver: rimisura AUTOMATICAMENTE ogni volta che l'altezza reale della
+  // topbar cambia, qualunque sia la causa (safe-area del notch applicata in ritardo,
+  // font non ancora caricati al primo render, barra indirizzi del browser che si
+  // ritrae, wrap su 2 righe su mobile). È più affidabile dei timer fissi: il taglio
+  // di qualche pixel compariva anche ad aperture successive proprio perché i timer
+  // [120,350,700,1500]ms non sempre coincidono col momento in cui il layout stabilizza.
+  const tb0 = document.querySelector('header.topbar');
+  if (tb0 && 'ResizeObserver' in window) {
+    const ro = new ResizeObserver(() => measureTopbar());
+    ro.observe(tb0);
+  } else {
+    // Fallback browser senza ResizeObserver: ri-misure temporizzate.
+    [120, 350, 700, 1500].forEach(ms => setTimeout(measureTopbar, ms));
+  }
   // Ri-misuro al caricamento completo (immagini/risorse) e quando i font sono pronti.
   window.addEventListener('load', () => setTimeout(measureTopbar, 50));
   if (document.fonts && document.fonts.ready) {
