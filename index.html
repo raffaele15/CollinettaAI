@@ -5229,10 +5229,13 @@ function navigate(route, params = {}, navOpts = {}) {
   const _restoreY = (navOpts && navOpts.fromHistory && typeof navOpts.restoreScrollY === 'number')
     ? navOpts.restoreScrollY : 0;
   if (_restoreY > 0) {
-    // Doppio rAF: aspetta che il layout post-render sia stabile prima di riposizionare.
-    // Le viste async (procedura/modulo/clinica) potrebbero non aver finito: ritento dopo
-    // brevi intervalli finché l'altezza pagina è sufficiente a raggiungere _restoreY.
     const tryRestore = () => window.scrollTo({ top: _restoreY, behavior: 'instant' });
+    // Ripristino SINCRONO, subito dopo il render: per le viste sincrone (innerHTML già
+    // scritto) il layout è pronto adesso, quindi posizioniamo prima che il browser dipinga
+    // anche solo un frame a scroll 0 (era questo a causare il flash "vista in cima → salto").
+    tryRestore();
+    // Fallback per viste async (procedura/modulo/clinica) il cui contenuto/altezza arriva
+    // dopo: ritento al prossimo frame e a brevi intervalli finché la pagina è abbastanza alta.
     requestAnimationFrame(() => requestAnimationFrame(tryRestore));
     [80, 200, 450].forEach(ms => setTimeout(() => {
       const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
