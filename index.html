@@ -4349,11 +4349,17 @@ async function enterApp() {
     navigate(initial.route, initial.params);
     // Se atterriamo sulla home in PWA standalone, arma la guardia anti-uscita
     // (silenziosa, senza toast). Necessario qui perché updateUrl non riapplica
-    // pushState se l'URL è già quello atteso.
-    if (!_backGuardArmed) {
+    // pushState se l'URL è già quello atteso. Riprovo dopo un tick perché il match
+    // di display-mode:standalone può non essere ancora pronto subito dopo il launch
+    // della PWA (specie su iOS): senza questo retry, all'apertura diretta sulla home
+    // la guardia non si armava e un singolo back usciva subito dall'app.
+    const _armGuardIfNeeded = () => {
+      if (_backGuardArmed) return;
       const ctx = shouldGuardBack();
       if (ctx.active) armBackGuard(ctx.silent);
-    }
+    };
+    _armGuardIfNeeded();
+    setTimeout(_armGuardIfNeeded, 300);
   } catch (e) {
     renderError('Errore caricamento indice', e.message);
   }
@@ -9103,8 +9109,16 @@ function renderContattiGroupedBox(items, opts = {}) {
   return groups.map(grp => {
     const titleUoc = `<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})">${escapeHtml(grp.gNome)}</span>`;
     const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})" title="Apri ${escapeHtml(grp.gNome)}">${escapeHtml(grp.sezione)}</span>` : '';
-    const rows = grp.contatti.map(({ c }) => opts.rich
-      ? renderNumeroRow(c, grp.gId, classifyContatto(c), { hideLuogo: false })
+    const rows = grp.contatti.map(({ c }) => (opts.rich || opts.inline)
+      ? renderNumeroRow(c, grp.gId, classifyContatto(c), {
+          hideLuogo: false,
+          // Vista preferiti: stessa resa dei contatti standard (etichetta + numeri + stella),
+          // con la sezione come occhiello, stella sempre visibile e riordino pref_uoc.
+          eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
+          alwaysStar: !!opts.starAlways,
+          pinnedView: !!opts.inline,
+          reorderPrefUoc: !!opts.reorderPrefUoc
+        })
       : renderContattoCard(c, {
           // In modalità inline (sezione UOC standard): l'UOC è nel titolo del box, la sezione
           // del contatto è l'occhiello sopra l'etichetta.
@@ -9153,7 +9167,13 @@ function renderUocSezioniBox(items, opts = {}) {
       const sezLabel = s.sezione
         ? `<span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(u.gId)}'})">${escapeHtml(s.sezione)}</span>`
         : `<span class="ctx-sezione">Numeri</span>`;
-      const rows = s.contatti.map(c => renderContattoCard(c, { showStarInEdit: !!opts.starInEdit && !opts.starAlways, showStar: !!opts.starAlways })).join('');
+      const rows = s.contatti.map(c => renderNumeroRow(c, u.gId, classifyContatto(c), {
+        // MdG: stessa resa dei contatti standard (etichetta + numeri + stella).
+        // La sezione è già nel titolo del box, quindi niente occhiello qui.
+        hideLuogo: false,
+        alwaysStar: !!opts.starAlways,
+        pinnedView: !opts.starAlways && !!opts.starInEdit
+      })).join('');
       return `<div class="sr-sede-bucket">
         <div class="sr-sede-bucket-header sr-sede-bucket-static">
           <span class="sede-bucket-tipo">${sezLabel}</span>
@@ -9850,9 +9870,13 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const note = c.note ? `<div class="numero-note" style="font-size:11px;color:var(--ink-muted);margin-top:3px;font-style:italic;">${escapeHtml(c.note)}</div>` : '';
   const email = c.email ? `<div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-top:2px;">${escapeHtml(c.email)}</div>` : '';
   const canReorder = opts && opts.reorderable && gruppoId;
-  const reorderBtns = canReorder ? `
+  // Riordino "preferiti UOC" (pref_uoc): usa movePrefUoc invece di moveContatto.
+  const prefReorderBtns = (opts && opts.reorderPrefUoc) ? `
+    <button class="btn-icon-mini" onclick="event.stopPropagation();movePrefUoc('${escapeJs(c.id)}',-1)" title="Sposta su">↑</button>
+    <button class="btn-icon-mini" onclick="event.stopPropagation();movePrefUoc('${escapeJs(c.id)}',1)" title="Sposta giù">↓</button>` : '';
+  const reorderBtns = (prefReorderBtns || (canReorder ? `
     <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',-1)" title="Sposta su">↑</button>
-    <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',1)" title="Sposta giù">↓</button>` : '';
+    <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',1)" title="Sposta giù">↓</button>` : ''));
   const pinnedView = opts && opts.pinnedView;
   const editControls = c.id ? (pinnedView
     ? ` <span class="edit-only" style="display:inline-flex;gap:4px;margin-left:4px;">${reorderBtns}</span>`
@@ -9882,6 +9906,17 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     ? `onclick="handleContattoRowClick('${escapeJs(c.id)}', event)" style="cursor:pointer;"`
     : '';
   const dataContattoAttr = c.id ? `data-contatto-id="${escapeHtml(c.id)}"` : '';
+  // Occhiello: riga piccola SOPRA l'etichetta (es. "Sezione"). Usato nei preferiti.
+  const eyebrowHtml = (opts && opts.eyebrow)
+    ? `<div style="font-size:11px;color:var(--ink-muted);line-height:1.2;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(opts.eyebrow)}</div>`
+    : '';
+  // Stella: in vista preferiti (alwaysStar) è sempre visibile come nei contatti standard;
+  // in pinnedView (home) resta solo in edit-mode; altrimenti sempre.
+  const starHtml = c.id
+    ? ((pinnedView && !(opts && opts.alwaysStar))
+        ? `<span class="edit-only" style="display:inline-flex;">${renderPinButton('contatto', c.id)}</span>`
+        : renderPinButton('contatto', c.id))
+    : '';
   // Sottotitolo contestuale opzionale (es. "Sezione" o "Sezione · UOC"), mostrato
   // sotto l'etichetta. Usato in vista preferiti e sezioni personalizzate.
   const ctxLine = (opts && opts.contextLine)
@@ -9897,8 +9932,9 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     : (orari ? `<div class="numero-row-bottom"><span class="numero-luogo">${orari.replace(/^ · /, '')}</span></div>` : '');
   return `
     <div class="${rowClass}" ${dataContattoAttr} ${rowClickHandler}>
+      ${eyebrowHtml}
       <div class="numero-row-top">
-        <div class="numero-label"><span class="numero-label-text">${escapeHtml(c.etichetta)}</span>${c.id ? (pinnedView ? `<span class="edit-only" style="display:inline-flex;">${renderPinButton('contatto', c.id)}</span>` : renderPinButton('contatto', c.id)) : ''}${editControls}</div>
+        <div class="numero-label"><span class="numero-label-text">${escapeHtml(c.etichetta)}</span>${starHtml}${editControls}</div>
         ${primaryHtml}
       </div>
       ${ctxLine}
