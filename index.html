@@ -1017,17 +1017,15 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .codici-banner-value{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--ink);letter-spacing:.02em}
 
 /* EDITOR */
-.editor-head{position:sticky;top:calc(var(--topbar-height, 64px));z-index:30;background:var(--accent-soft);border-bottom:1px solid var(--accent);padding:10px 48px;margin:-40px -48px 24px;display:flex;flex-direction:column;align-items:stretch;gap:8px}
-.editor-head-main{min-width:0}
-.editor-head-title{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.25;letter-spacing:-.01em;margin-bottom:2px;color:var(--accent)}
-.editor-head-sub{font-size:12px;color:var(--accent);opacity:.8;font-family:var(--mono);letter-spacing:.02em}
-.editor-head-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.editor-head{position:sticky;top:calc(var(--topbar-height, 64px));z-index:30;background:var(--accent-soft);border-bottom:1px solid var(--accent);padding:8px 48px;margin:-40px -48px 24px;display:flex;flex-direction:row;align-items:center;gap:12px;flex-wrap:wrap}
+.editor-head-main{min-width:0;flex:1}
+.editor-head-sub{font-size:12px;color:var(--accent);opacity:.8;font-family:var(--mono);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.editor-head-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;flex-shrink:0}
 .editor-head-undo{display:inline-flex;gap:4px;margin-right:4px;padding-right:8px;border-right:1px solid var(--accent)}
 .editor-head-undo .btn{padding:6px 10px;min-width:36px}
 .editor-head-undo .btn:disabled{opacity:.4;cursor:default}
 @media (max-width:600px){
-  .editor-head{position:sticky;top:var(--topbar-height, 56px);padding:8px 16px;margin:-14px -16px 16px;gap:6px}
-  .editor-head-title{font-size:15px}
+  .editor-head{position:sticky;top:var(--topbar-height, 56px);padding:8px 16px;margin:-14px -16px 16px;gap:8px}
   .editor-head-sub{display:none}
   .editor-head-actions{gap:6px}
   .editor-head-actions .btn{padding:6px 10px;font-size:13px}
@@ -1408,9 +1406,10 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 .bl-title-warn{color:var(--danger)}
 .scheda-toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
 .scheda-toc li{margin:0}
-.scheda-toc-link{display:block;padding:3px 10px;color:var(--accent);font-size:14px;line-height:1.35;border-radius:3px;cursor:pointer;text-decoration:none;border-left:2px solid transparent;transition:background .12s,border-color .12s}
+.scheda-toc-link{display:flex;align-items:baseline;gap:6px;padding:3px 10px;color:var(--accent);font-size:14px;line-height:1.35;border-radius:3px;cursor:pointer;text-decoration:none;border-left:2px solid transparent;transition:background .12s,border-color .12s}
 .scheda-toc-link:hover{background:var(--accent-soft);border-left-color:var(--accent)}
-.scheda-toc-num{display:inline-block;min-width:1.6em;color:var(--ink-muted);font-family:var(--mono);font-weight:600;margin-right:6px}
+.scheda-toc-num{flex-shrink:0;min-width:1.6em;color:var(--ink-muted);font-family:var(--mono);font-weight:600}
+.scheda-toc-text{flex:1;min-width:0;overflow-wrap:anywhere}
 
 /* text */
 .bl-text-body{font-size:15px;line-height:1.65;color:var(--ink-soft)}
@@ -1429,10 +1428,10 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 /* checklist */
 .bl-checklist ul{list-style:none;margin:0;padding:0}
 .bl-checklist-item{padding:4px 0;line-height:1.5}
-.bl-checklist-item label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:15px;color:var(--ink-soft)}
+.bl-checklist-item label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:15px;color:var(--ink-soft);min-width:0}
 .bl-checklist-cb{margin-top:4px;flex-shrink:0;width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
 .bl-checklist-cb:checked + .bl-checklist-text{text-decoration:line-through;color:var(--ink-muted)}
-.bl-checklist-text{transition:color .15s}
+.bl-checklist-text{transition:color .15s;flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word}
 .bl-checklist-actions{margin-top:10px;display:flex;justify-content:flex-end}
 .bl-mini-btn{background:none;border:1px solid var(--rule);color:var(--ink-muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .15s}
 .bl-mini-btn:hover{background:var(--bg-sink);color:var(--ink)}
@@ -1550,21 +1549,24 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 .bk-table-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .bk-table-toggle{white-space:nowrap}
 .bk-table-editor .bk-table-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:2px;background:var(--bg-raised)}
-.bk-table-editor table{width:100%;border-collapse:collapse;font-size:13px}
+.bk-table-editor table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .bk-table-editor th,.bk-table-editor td{padding:2px;border:1px solid var(--rule-soft);vertical-align:top}
 .bk-table-editor th{background:var(--bg-sink)}
-.bk-table-editor .bk-input{border:none;background:transparent;padding:6px 8px;font-size:13px;min-width:80px;width:100%;box-sizing:border-box;color:var(--ink)}
+.bk-table-editor .bk-input{border:none;background:transparent;padding:6px 8px;font-size:13px;min-width:60px;width:100%;box-sizing:border-box;color:var(--ink)}
 .bk-table-editor .bk-input:focus{background:var(--bg-raised);box-shadow:inset 0 0 0 2px var(--accent);outline:none}
 .bk-table-editor .bk-th{font-weight:500;color:var(--ink)}
-.bk-table-editor .bk-th-wrap{display:flex;flex-direction:column;gap:2px}
-/* Barra controlli colonna (sotto l'intestazione): sposta ◂ ▸ + elimina × */
-.bk-col-ctrls{display:flex;gap:2px;justify-content:center;padding:0 2px 2px}
-.bk-col-btn{flex:1;background:transparent;border:1px solid var(--rule);border-radius:2px;cursor:pointer;font-size:11px;line-height:1;padding:2px 0;color:var(--ink-muted);transition:all .12s}
+/* Riga dedicata ai controlli colonna: tutti i pulsanti allineati sulla stessa riga,
+   indipendentemente dalla lunghezza del testo nell'intestazione/celle. */
+.bk-col-ctrl-row th{background:var(--bg-sink);border-bottom:none;padding:2px 2px 0}
+.bk-col-ctrls{display:flex;gap:2px;justify-content:center;flex-wrap:nowrap}
+.bk-col-btn{flex:1;min-width:18px;background:transparent;border:1px solid var(--rule);border-radius:2px;cursor:pointer;font-size:11px;line-height:1;padding:3px 0;color:var(--ink-muted);transition:all .12s}
 .bk-col-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
 .bk-col-btn:disabled{opacity:.3;cursor:default}
 .bk-col-btn-del:hover:not(:disabled){border-color:var(--danger);color:var(--danger);background:var(--danger-soft)}
+.bk-col-ctrl-row + tr th{border-top:none}
 /* Barra controlli riga (colonna azioni a destra): sposta ↑ ↓ + elimina × */
 .bk-table-editor .bk-row-actions{background:var(--bg-sink);width:38px;text-align:center}
+.bk-table-editor col.bk-col-actions-col{width:38px}
 .bk-row-ctrls{display:flex;flex-direction:column;gap:2px;align-items:center}
 .bk-row-btn{width:26px;background:transparent;border:1px solid var(--rule);border-radius:2px;cursor:pointer;font-size:11px;line-height:1;padding:2px 0;color:var(--ink-muted);transition:all .12s}
 .bk-row-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
@@ -2641,8 +2643,28 @@ const userPrefs = {
     return true;
   },
 
-  // --- Rubrica preferiti: ordinamento per UOC + contatti dentro UOC ---
-  // Struttura: pin_order = { _uoc: ['gid1','gid2',...], 'gid1': ['cid1','cid2',...] }
+  // Sposta un box-UOC dei preferiti su/giù nell'ordine pin_order._uoc.
+  // displayedOrder = lista degli id UOC attualmente mostrati (per inizializzare l'ordine
+  // se mancante o incompleto). Ritorna true se l'ordine è cambiato.
+  reorderUocBox(gid, dir, displayedOrder) {
+    if (!state.userPrefs) return false;
+    if (!state.userPrefs.pin_order) state.userPrefs.pin_order = {};
+    // Parto dall'ordine salvato, completato con eventuali UOC mostrate ma non ancora ordinate.
+    let order = Array.isArray(state.userPrefs.pin_order._uoc) ? state.userPrefs.pin_order._uoc.slice() : [];
+    (displayedOrder || []).forEach(id => { if (!order.includes(id)) order.push(id); });
+    // Tengo solo le UOC effettivamente mostrate, preservando l'ordine.
+    if (Array.isArray(displayedOrder) && displayedOrder.length) {
+      order = order.filter(id => displayedOrder.includes(id));
+    }
+    const i = order.indexOf(gid);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= order.length) return false;
+    [order[i], order[j]] = [order[j], order[i]];
+    state.userPrefs.pin_order._uoc = order;
+    userPrefs.scheduleSave();
+    return true;
+  },
+
   getUocOrder() {
     return (state.userPrefs && state.userPrefs.pin_order && state.userPrefs.pin_order._uoc) || [];
   },
@@ -4889,6 +4911,20 @@ const urlRouter = (function() {
   // Cattura back/forward del browser, gesto swipe iOS/Android, tasto back hardware su PWA.
   function _onPopState(e) {
     if (_suppress) return;
+    // Tastiera aperta + gesture "indietro": il primo back deve solo chiudere la tastiera
+    // (togliere il focus dall'input, come un tap fuori dal campo), SENZA svuotare il testo
+    // digitato né navigare. Vale per input/textarea editabili (es. "Note del giorno", ricerca
+    // globale, ricerca rubrica). Reinserisco un'entry nella history così la posizione resta
+    // invariata e il prossimo back funziona normalmente.
+    const ae = document.activeElement;
+    const isEditable = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
+    if (isEditable && !_backGuardArmed) {
+      ae.blur();
+      _suppress = true;
+      try { window.history.pushState({ route: readUrl().route, params: readUrl().params, pos: _historyPos }, '', window.location.href); } catch {}
+      setTimeout(() => { _suppress = false; }, 0);
+      return;
+    }
     // Rete di sicurezza: se atterriamo su un'entry "guardia" residua senza che la logica
     // di guardia sia attiva, la saltiamo automaticamente per non bloccare la navigazione.
     if (e.state && e.state.guard && !_backGuardArmed) {
@@ -5896,6 +5932,7 @@ function renderBloccoChecklist(b, idx, scheda) {
   </div>`;
 }
 
+
 function renderBloccoCallout(b) {
   const variante = ['warning', 'info', 'tip', 'danger'].includes(b.variante) ? b.variante : 'info';
   const title = b.titolo ? `<div class="bl-callout-title">${escapeHtml(b.titolo)}</div>` : '';
@@ -5906,12 +5943,20 @@ function renderBloccoCallout(b) {
 function renderBloccoTable(b) {
   if (!Array.isArray(b.headers) || !Array.isArray(b.rows)) return '';
   const title = b.titolo ? `<div class="bl-title">${escapeHtml(b.titolo)}</div>` : '';
+  // Larghezze colonna scelte nell'editor (px); 0/assente = automatica.
+  const colWidths = Array.isArray(b.colWidths) ? b.colWidths : [];
+  const colGroup = colWidths.some(w => parseInt(w, 10) > 0)
+    ? `<colgroup>${b.headers.map((_, ci) => {
+        const w = parseInt(colWidths[ci], 10);
+        return `<col${w > 0 ? ` style="width:${w}px"` : ''}>`;
+      }).join('')}</colgroup>`
+    : '';
   const th = b.headers.map(h => `<th>${escapeHtml(String(h))}</th>`).join('');
   const tr = b.rows.map(row => {
     const cells = Array.isArray(row) ? row : [row];
     return `<tr>${cells.map(c => `<td>${escapeHtml(String(c == null ? '' : c))}</td>`).join('')}</tr>`;
   }).join('');
-  return `<div class="bl bl-table">${title}<div class="bl-table-wrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div></div>`;
+  return `<div class="bl bl-table">${title}<div class="bl-table-wrap"><table>${colGroup}<thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div></div>`;
 }
 
 // Restituisce la directory della cartella scheda (senza '/scheda.md' finale).
@@ -6059,7 +6104,7 @@ function renderSchedaBody(scheda) {
     .filter(x => x.titolo);
   if (_tocItems.length >= 2) {
     const _toc = _tocItems.map((t, i) =>
-      `<li><a class="scheda-toc-link" onclick="scrollToSchedaBlock('bl-${escapeJs(_schedaId)}-${t.idx}')"><span class="scheda-toc-num">${i + 1}.</span>${escapeHtml(t.titolo)}</a></li>`
+      `<li><a class="scheda-toc-link" onclick="scrollToSchedaBlock('bl-${escapeJs(_schedaId)}-${t.idx}')"><span class="scheda-toc-num">${i + 1}.</span><span class="scheda-toc-text">${escapeHtml(t.titolo)}</span></a></li>`
     ).join('');
     sections.push(schedaSection('Indice', `<ul class="scheda-toc">${_toc}</ul>`, true));
   }
@@ -6462,7 +6507,6 @@ function renderEditorUIClinica(slug, frontmatter, body) {
   $('main-content').innerHTML = `
     <div class="editor-head">
       <div class="editor-head-main">
-        <div class="editor-head-title">${escapeHtml(frontmatter.titolo || slug)}</div>
         <div class="editor-head-sub">Clinica · Modifica — ${escapeHtml(slug)}.md</div>
       </div>
       <div class="editor-head-actions">
@@ -7157,6 +7201,8 @@ const blockEditor = (function() {
     const headers = Array.isArray(ctx.headers) ? ctx.headers : ['Colonna 1'];
     const rows = Array.isArray(ctx.rows) ? ctx.rows : [];
     const nCols = headers.length;
+    // Larghezze colonna scelte dall'utente (px). Array parallelo a headers; valore 0/assente = auto.
+    const colWidths = Array.isArray(ctx.colWidths) ? ctx.colWidths : [];
     // Stato espanso/collassato per-blocco (transitorio, non salvato). Espanso = celle
     // a tutta altezza con il testo completo (textarea auto-size); collassato = compatto.
     const expanded = !!ctx._tblExpanded;
@@ -7164,20 +7210,32 @@ const blockEditor = (function() {
       ? `<textarea class="bk-input ${cls} bk-cell-area" ${attrs} rows="1" placeholder="">${escapeHtml(String(val != null ? val : ''))}</textarea>`
       : `<input type="text" class="bk-input ${cls}" ${attrs} value="${escapeHtml(String(val != null ? val : ''))}">`;
 
-    // Header: per ogni colonna, il campo intestazione + barra controlli (sposta ◂ ▸, elimina ×).
-    const thCells = headers.map((h, ci) => {
-      const colCtrls = `<div class="bk-col-ctrls">
-        <button type="button" class="bk-col-btn" data-col-left="${ci}" title="Sposta colonna a sinistra" ${ci === 0 ? 'disabled' : ''}>◂</button>
-        <button type="button" class="bk-col-btn bk-col-btn-del" data-col-del-at="${ci}" title="Elimina questa colonna" ${nCols <= 1 ? 'disabled' : ''}>×</button>
-        <button type="button" class="bk-col-btn" data-col-right="${ci}" title="Sposta colonna a destra" ${ci === nCols - 1 ? 'disabled' : ''}>▸</button>
-      </div>`;
-      return `<th>
-        <div class="bk-th-wrap">
-          ${cellTag('bk-th', `data-col="${ci}" placeholder="Intestazione"`, h)}
-          ${colCtrls}
+    // <colgroup>: applica le larghezze scelte (le colonne senza larghezza restano auto).
+    const colGroup = `<colgroup>${headers.map((_, ci) => {
+      const w = parseInt(colWidths[ci], 10);
+      return `<col${w > 0 ? ` style="width:${w}px"` : ''}>`;
+    }).join('')}<col class="bk-col-actions-col"></colgroup>`;
+
+    // Riga 1 dell'header: SOLO i controlli colonna, così sono tutti allineati sulla stessa
+    // riga indipendentemente dalla lunghezza del testo nell'intestazione o nelle celle.
+    const ctrlCells = headers.map((h, ci) => {
+      const w = parseInt(colWidths[ci], 10) || 0;
+      return `<th class="bk-col-ctrl-cell">
+        <div class="bk-col-ctrls">
+          <button type="button" class="bk-col-btn" data-col-left="${ci}" title="Sposta colonna a sinistra" ${ci === 0 ? 'disabled' : ''}>◂</button>
+          <button type="button" class="bk-col-btn" data-col-narrow="${ci}" title="Restringi colonna">−</button>
+          <button type="button" class="bk-col-btn" data-col-wider="${ci}" title="Allarga colonna">+</button>
+          <button type="button" class="bk-col-btn" data-col-auto="${ci}" title="Larghezza automatica" ${w ? '' : 'disabled'}>⇋</button>
+          <button type="button" class="bk-col-btn bk-col-btn-del" data-col-del-at="${ci}" title="Elimina questa colonna" ${nCols <= 1 ? 'disabled' : ''}>×</button>
+          <button type="button" class="bk-col-btn" data-col-right="${ci}" title="Sposta colonna a destra" ${ci === nCols - 1 ? 'disabled' : ''}>▸</button>
         </div>
       </th>`;
     }).join('');
+
+    // Riga 2 dell'header: i campi intestazione.
+    const thCells = headers.map((h, ci) =>
+      `<th>${cellTag('bk-th', `data-col="${ci}" placeholder="Intestazione"`, h)}</th>`
+    ).join('');
 
     const trRows = rows.map((row, ri) => {
       const cells = headers.map((_, ci) =>
@@ -7202,7 +7260,11 @@ const blockEditor = (function() {
       </div>
       <div class="bk-table-wrap">
         <table>
-          <thead><tr>${thCells}<th class="bk-col-actions-head"></th></tr></thead>
+          ${colGroup}
+          <thead>
+            <tr class="bk-col-ctrl-row">${ctrlCells}<th class="bk-col-actions-head"></th></tr>
+            <tr>${thCells}<th class="bk-col-actions-head"></th></tr>
+          </thead>
           <tbody>${trRows}</tbody>
         </table>
       </div>
@@ -7364,6 +7426,7 @@ const blockEditor = (function() {
         if (!Array.isArray(b.headers)) b.headers = [];
         b.headers.push(`Colonna ${b.headers.length + 1}`);
         (b.rows || []).forEach(r => r.push(''));
+        if (Array.isArray(b.colWidths)) b.colWidths.push(0);
         _markDirty(); _pushHistory(); _fullRender();
       };
 
@@ -7376,6 +7439,7 @@ const blockEditor = (function() {
           if (!confirm(`Eliminare la colonna${nome ? ' "' + nome + '"' : ''}?`)) return;
           b.headers.splice(ci, 1);
           (b.rows || []).forEach(r => { if (Array.isArray(r)) r.splice(ci, 1); });
+          if (Array.isArray(b.colWidths)) b.colWidths.splice(ci, 1);
           _markDirty(); _pushHistory(); _fullRender();
         };
       });
@@ -7384,9 +7448,10 @@ const blockEditor = (function() {
       const moveCol = (ci, dir) => {
         const cj = ci + dir;
         if (!Array.isArray(b.headers) || cj < 0 || cj >= b.headers.length) return;
-        const swap = (arr) => { const t = arr[ci]; arr[ci] = arr[cj]; arr[cj] = t; };
+        const swap = (arr) => { if (!Array.isArray(arr)) return; const t = arr[ci]; arr[ci] = arr[cj]; arr[cj] = t; };
         swap(b.headers);
         (b.rows || []).forEach(r => { if (Array.isArray(r)) swap(r); });
+        swap(b.colWidths); // mantengo le larghezze allineate alle colonne
         _markDirty(); _pushHistory(); _fullRender();
       };
       tblEl.querySelectorAll('[data-col-left]').forEach(btn => {
@@ -7394,6 +7459,33 @@ const blockEditor = (function() {
       });
       tblEl.querySelectorAll('[data-col-right]').forEach(btn => {
         btn.onclick = () => moveCol(parseInt(btn.dataset.colRight, 10), 1);
+      });
+
+      // Larghezza colonna: restringi / allarga (step 40px, range 60–600) / auto.
+      const STEP = 40, MINW = 60, MAXW = 600, DEFW = 160;
+      const setColWidth = (ci, val) => {
+        if (!Array.isArray(b.colWidths)) b.colWidths = [];
+        // Assicuro la lunghezza dell'array fino a ci
+        while (b.colWidths.length < b.headers.length) b.colWidths.push(0);
+        b.colWidths[ci] = val;
+        _markDirty(); _pushHistory(); _fullRender();
+      };
+      tblEl.querySelectorAll('[data-col-wider]').forEach(btn => {
+        btn.onclick = () => {
+          const ci = parseInt(btn.dataset.colWider, 10);
+          const cur = parseInt((b.colWidths || [])[ci], 10) || DEFW;
+          setColWidth(ci, Math.min(MAXW, cur + STEP));
+        };
+      });
+      tblEl.querySelectorAll('[data-col-narrow]').forEach(btn => {
+        btn.onclick = () => {
+          const ci = parseInt(btn.dataset.colNarrow, 10);
+          const cur = parseInt((b.colWidths || [])[ci], 10) || DEFW;
+          setColWidth(ci, Math.max(MINW, cur - STEP));
+        };
+      });
+      tblEl.querySelectorAll('[data-col-auto]').forEach(btn => {
+        btn.onclick = () => setColWidth(parseInt(btn.dataset.colAuto, 10), 0);
       });
 
       // Sposta riga su / giù (scambio con l'adiacente)
@@ -7543,7 +7635,6 @@ function renderEditorUI(slug, frontmatter, body) {
   $('main-content').innerHTML = `
     <div class="editor-head">
       <div class="editor-head-main">
-        <div class="editor-head-title">${escapeHtml(frontmatter.titolo || slug)}</div>
         <div class="editor-head-sub">Modifica — ${escapeHtml(slug)}.md</div>
       </div>
       <div class="editor-head-actions">
@@ -8400,18 +8491,21 @@ function renderCustomSezioniHtml() {
       const g = (c._gruppo) ? c._gruppo : '';
       const sezName = (c.sezione || '').trim();
       const uocName = g ? stripPrefixNome(g) : '';
-      // Opzione C: occhiello "UOC ridotta · Sezione" sopra, nome del contatto sotto.
+      // Stessa resa della sezione UOC standard (renderNumeroRow): etichetta + numeri + stella,
+      // con occhiello "UOC · Sezione" e riordino dentro la sezione personalizzata.
       const eyebrow = [uocName, sezName].filter(Boolean).join(' · ');
-      // Niente pulsante ✕: la rimozione si fa dal menu della stella.
-      const card = renderContattoCard(c, { eyebrow: eyebrow || null, showStar: true, preferBreve: true });
-      if (!editMode) return card;
-      return `<div class="cs-contatto-reorder-row" style="display:flex;align-items:center;gap:6px;">
-        <span class="ssp-reorder">
-          <button class="btn-icon-mini" onclick="event.stopPropagation();moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',-1)" title="Sposta contatto su" ${ci === 0 ? 'disabled' : ''}>↑</button>
-          <button class="btn-icon-mini" onclick="event.stopPropagation();moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',1)" title="Sposta contatto giù" ${ci === cids.length - 1 ? 'disabled' : ''}>↓</button>
-        </span>
-        <span style="flex:1;min-width:0;">${card}</span>
-      </div>`;
+      return renderNumeroRow(c, g || '', classifyContatto(c), {
+        hideLuogo: false,
+        eyebrow: eyebrow || null,
+        alwaysStar: true,
+        pinnedView: true,
+        reorderCustom: {
+          onUp: `moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',-1)`,
+          onDown: `moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',1)`
+        },
+        reorderFirst: ci === 0,
+        reorderLast: ci === cids.length - 1
+      });
     }).join('') || '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>';
     return `<div class="pinned-uoc-block" data-cs-id="${escapeHtml(sez.id)}">
       <div class="pinned-uoc-header">
@@ -8568,6 +8662,17 @@ function createSezioneEPin(cid) {
 // Riordina un contatto nella lista preferiti UOC (su = -1, giù = +1), preservando lo scroll.
 function movePrefUoc(cid, dir) {
   if (!userPrefs.reorderPrefUoc(cid, dir)) return;
+  const savedScroll = window.scrollY;
+  renderNumeri('pinned');
+  requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
+}
+
+// Sposta un intero box-UOC dei preferiti su/giù. Legge dal DOM l'ordine attualmente mostrato
+// (i box con data-uoc-id) per inizializzare/mantenere coerente pin_order._uoc.
+function moveUocBox(gid, dir) {
+  const displayed = Array.from(document.querySelectorAll('#rubrica-results .sr-sede-bucket[data-uoc-id]'))
+    .map(el => el.getAttribute('data-uoc-id'));
+  if (!userPrefs.reorderUocBox(gid, dir, displayed)) return;
   const savedScroll = window.scrollY;
   renderNumeri('pinned');
   requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'instant' }));
@@ -8928,7 +9033,7 @@ function renderNumeri(filter, targetContainer) {
       if (filter === 'pinned' && src === 'aopd') {
         const items = [];
         list.forEach(g => (g.contatti || []).forEach(c => items.push({ c, g })));
-        return renderContattiGroupedBox(items, { inline: true, starAlways: true, reorderPrefUoc: true });
+        return renderContattiGroupedBox(items, { inline: true, starAlways: true, reorderPrefUoc: true, reorderUocBoxes: true });
       }
       // Altre source (osa/iov) non mostrano nulla in modalità pinned
       if (filter === 'pinned') return '';
@@ -9465,10 +9570,30 @@ function renderContattiGroupedBox(items, opts = {}) {
     }
     byKey[key].contatti.push({ c, g });
   });
-  return groups.map(grp => {
+  // Riordino dei box-UOC nei preferiti: applico l'ordine salvato (pin_order._uoc) e, in
+  // edit-mode, mostro le frecce ↑↓ sull'intestazione di ciascun box (come le sezioni custom).
+  if (opts.reorderUocBoxes) {
+    const order = userPrefs.getUocOrder();
+    groups.sort((a, b) => {
+      const ia = order.indexOf(a.gId), ib = order.indexOf(b.gId);
+      if (ia === -1 && ib === -1) return a.gNome.localeCompare(b.gNome, 'it');
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+  }
+  const nGroups = groups.length;
+  return groups.map((grp, gi) => {
     const titleUoc = `<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})">${escapeHtml(grp.gNome)}</span>`;
     const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})" title="Apri ${escapeHtml(grp.gNome)}">${escapeHtml(grp.sezione)}</span>` : '';
-    const rows = grp.contatti.map(({ c }) => (opts.rich || opts.inline)
+    // Frecce di riordino del box-UOC (solo in edit-mode, solo se richiesto)
+    const uocReorder = (opts.reorderUocBoxes && navState.editMode)
+      ? `<span class="edit-only" style="margin-left:auto;display:inline-flex;gap:6px;">
+          <button class="btn-icon-mini" onclick="event.stopPropagation();moveUocBox('${escapeJs(grp.gId)}',-1)" title="Sposta UOC su" ${gi === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn-icon-mini" onclick="event.stopPropagation();moveUocBox('${escapeJs(grp.gId)}',1)" title="Sposta UOC giù" ${gi === nGroups - 1 ? 'disabled' : ''}>↓</button>
+        </span>`
+      : '';
+    const rows = grp.contatti.map(({ c }, ci) => (opts.rich || opts.inline)
       ? renderNumeroRow(c, grp.gId, classifyContatto(c), {
           hideLuogo: false,
           // Vista preferiti: stessa resa dei contatti standard (etichetta + numeri + stella),
@@ -9476,7 +9601,9 @@ function renderContattiGroupedBox(items, opts = {}) {
           eyebrow: opts.inline ? ((c.sezione || '').trim() || null) : null,
           alwaysStar: !!opts.starAlways,
           pinnedView: !!opts.inline,
-          reorderPrefUoc: !!opts.reorderPrefUoc
+          reorderPrefUoc: !!opts.reorderPrefUoc,
+          reorderFirst: ci === 0,
+          reorderLast: ci === grp.contatti.length - 1
         })
       : renderContattoCard(c, {
           // In modalità inline (sezione UOC standard): l'UOC è nel titolo del box, la sezione
@@ -9491,9 +9618,9 @@ function renderContattiGroupedBox(items, opts = {}) {
             onDown: `movePrefUoc('${escapeJs(c.id)}',1)`
           } : null
         })).join('');
-    return `<div class="sr-sede-bucket" style="margin-bottom:10px;">
-      <div class="sr-sede-bucket-header sr-sede-bucket-static">
-        <span class="sede-bucket-tipo">${titleUoc}${titleSez}</span>
+    return `<div class="sr-sede-bucket" data-uoc-id="${escapeHtml(grp.gId)}" style="margin-bottom:10px;">
+      <div class="sr-sede-bucket-header sr-sede-bucket-static" style="display:flex;align-items:center;">
+        <span class="sede-bucket-tipo">${titleUoc}${titleSez}</span>${uocReorder}
       </div>
       <div class="sr-sede-bucket-contatti">${rows}</div>
     </div>`;
@@ -10231,9 +10358,13 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
   const canReorder = opts && opts.reorderable && gruppoId;
   // Riordino "preferiti UOC" (pref_uoc): usa movePrefUoc invece di moveContatto.
   const prefReorderBtns = (opts && opts.reorderPrefUoc) ? `
-    <button class="btn-icon-mini" onclick="event.stopPropagation();movePrefUoc('${escapeJs(c.id)}',-1)" title="Sposta su">↑</button>
-    <button class="btn-icon-mini" onclick="event.stopPropagation();movePrefUoc('${escapeJs(c.id)}',1)" title="Sposta giù">↓</button>` : '';
-  const reorderBtns = (prefReorderBtns || (canReorder ? `
+    <button class="btn-icon-mini" onclick="event.stopPropagation();movePrefUoc('${escapeJs(c.id)}',-1)" title="Sposta su" ${opts.reorderFirst ? 'disabled' : ''}>↑</button>
+    <button class="btn-icon-mini" onclick="event.stopPropagation();movePrefUoc('${escapeJs(c.id)}',1)" title="Sposta giù" ${opts.reorderLast ? 'disabled' : ''}>↓</button>` : '';
+  // Riordino generico (sezioni personalizzate): handler onclick passati esplicitamente.
+  const customReorderBtns = (opts && opts.reorderCustom) ? `
+    <button class="btn-icon-mini" onclick="event.stopPropagation();${opts.reorderCustom.onUp}" title="Sposta su" ${opts.reorderFirst ? 'disabled' : ''}>↑</button>
+    <button class="btn-icon-mini" onclick="event.stopPropagation();${opts.reorderCustom.onDown}" title="Sposta giù" ${opts.reorderLast ? 'disabled' : ''}>↓</button>` : '';
+  const reorderBtns = (prefReorderBtns || customReorderBtns || (canReorder ? `
     <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',-1)" title="Sposta su">↑</button>
     <button class="btn-icon-mini" onclick="event.stopPropagation();moveContatto('${escapeJs(gruppoId)}','${escapeJs(c.id)}',1)" title="Sposta giù">↓</button>` : ''));
   const pinnedView = opts && opts.pinnedView;
