@@ -17568,7 +17568,7 @@ function openSearchOverlay(query) {
   // Tap/swipe fuori dall'input attivo → chiudi tastiera mobile (blur input).
   if (!document._blurInputOnTouchBound) {
     document._blurInputOnTouchBound = true;
-    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap'];
+    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap', '#ndg-input'];
     document.addEventListener('touchstart', (e) => {
       const active = document.activeElement;
       if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
@@ -18983,7 +18983,7 @@ async function init() {
   // Idempotente: se openSearchOverlay lo bindasse di nuovo, il flag previene duplicati.
   if (!document._blurInputOnTouchBound) {
     document._blurInputOnTouchBound = true;
-    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap'];
+    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap', '#ndg-input'];
     document.addEventListener('touchstart', (e) => {
       const active = document.activeElement;
       if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
@@ -19136,13 +19136,13 @@ setTimeout(() => {
 
 
 <script>
-/* Mobile: quando la tastiera si chiude (es. con la gesture indietro) rimuove anche
-   il focus dal campo di testo attivo, invece di lasciarlo selezionato.
-   Rileva la chiusura tastiera via VisualViewport; non tocca la cronologia. */
+/* Mobile: alla chiusura della tastiera (es. gesture indietro) toglie anche il focus dal
+   campo di testo attivo. Rilevazione via VisualViewport con baseline sull'altezza, perche'
+   con interactive-widget=resizes-content anche window.innerHeight si riduce con la tastiera. */
 (function(){
   var vv = window.visualViewport;
   if(!vv) return;
-  var kbOpen = false;
+  var baseH = vv.height, kbOpen = false;
   function isText(el){
     if(!el) return false;
     if(el.tagName==='TEXTAREA' || el.isContentEditable) return true;
@@ -19152,15 +19152,18 @@ setTimeout(() => {
     }
     return false;
   }
-  vv.addEventListener('resize', function(){
-    var gap = window.innerHeight - vv.height; // ~ altezza tastiera quando aperta
-    if(gap > 150){ kbOpen = true; return; }
-    if(kbOpen){
+  function onChange(){
+    var h = vv.height;
+    if(h > baseH) baseH = h;                  // baseline = altezza senza tastiera
+    if(baseH - h > 120){ kbOpen = true; }     // tastiera aperta
+    else if(kbOpen && h >= baseH - 60){       // tornata a baseline => tastiera chiusa
       kbOpen = false;
       var ae = document.activeElement;
       if(isText(ae)){ try{ ae.blur(); }catch(e){} }
     }
-  });
+  }
+  vv.addEventListener('resize', onChange);
+  window.addEventListener('orientationchange', function(){ setTimeout(function(){ baseH = vv.height; kbOpen = false; }, 350); });
 })();
 </script>
 
