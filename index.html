@@ -29,11 +29,11 @@
 <meta property="og:description" content="CollinettaAI">
 <meta name="twitter:title" content="CollinettaAI">
 <meta name="twitter:description" content="CollinettaAI">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-light.png?v=3" media="(prefers-color-scheme: light)">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-dark.png?v=3" media="(prefers-color-scheme: dark)">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16-light.png?v=3" media="(prefers-color-scheme: light)">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16-dark.png?v=3" media="(prefers-color-scheme: dark)">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-light.png?v=4" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32-dark.png?v=4" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16-light.png?v=4" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16-dark.png?v=4" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=4">
 <link rel="manifest" href="manifest.json">
 <!-- Theme color: cambia con il prefers-color-scheme -->
 <meta name="theme-color" content="#fbf8f2" media="(prefers-color-scheme: light)">
@@ -155,8 +155,11 @@ html.splash-removed #boot-splash{
 .login-card{max-width:440px;width:100%;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:48px 40px;box-shadow:var(--shadow-raised);position:relative}
 .login-card::before{content:'';position:absolute;top:-1px;left:-1px;right:-1px;height:3px;background:var(--ink)}
 .login-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:14px}
-.login-title{font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.05;letter-spacing:-.02em;margin-bottom:36px}
-.login-title em{font-style:italic;font-weight:300}
+.login-title{font-family:var(--serif);font-weight:500;font-style:italic;font-size:34px;line-height:1.05;letter-spacing:-.02em;margin:0}
+.login-title em{font-style:italic;font-weight:500}
+.login-brand{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:36px}
+.login-logo{height:46px;width:auto;object-fit:contain;flex-shrink:0}
+.login-logo-dark{display:none}
 .login-subtitle{font-family:var(--serif);font-style:italic;font-weight:300;font-size:16px;color:var(--ink-muted);margin-bottom:36px}
 .field{margin-bottom:20px}
 label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:6px}
@@ -1672,9 +1675,11 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 
 <div id="login-view">
   <div class="login-card">
-    <img src="icons/logo-light.png?v=3" alt="" class="login-logo login-logo-light" style="width:96px;height:96px;display:block;margin:0 auto 16px;object-fit:contain;">
-    <img src="icons/logo-dark.png?v=3" alt="" class="login-logo login-logo-dark" style="width:96px;height:96px;display:none;margin:0 auto 16px;object-fit:contain;">
-    <h1 class="login-title" style="text-align:center;">CollinettaAI</h1>
+    <div class="login-brand">
+      <img src="icons/logo-light.png?v=4" alt="" class="login-logo login-logo-light">
+      <img src="icons/logo-dark.png?v=4" alt="" class="login-logo login-logo-dark">
+      <h1 class="login-title">Collinetta<em style="font-style:italic;">AI</em></h1>
+    </div>
     <div id="login-error" class="login-error"></div>
     <form id="login-form">
       <div class="field">
@@ -1697,8 +1702,8 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
     </button>
     <div class="brand">
       <span id="brand-home" class="brand-home-link" title="Torna alla home">
-        <img src="icons/logo-light-small.png?v=3" alt="" class="brand-logo brand-logo-light">
-        <img src="icons/logo-dark-small.png?v=3" alt="" class="brand-logo brand-logo-dark">
+        <img src="icons/logo-light-small.png?v=4" alt="" class="brand-logo brand-logo-light">
+        <img src="icons/logo-dark-small.png?v=4" alt="" class="brand-logo brand-logo-dark">
         <span class="brand-mark">Collinetta<em style="font-style:italic;">AI</em></span>
       </span>
       <span class="brand-divider"></span>
@@ -4929,13 +4934,19 @@ const urlRouter = (function() {
     // invariata e il prossimo back funziona normalmente.
     const ae = document.activeElement;
     const isEditable = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
+    // Su back con un campo a fuoco: sfoca sempre (chiude la tastiera, come un tap fuori dal campo),
+    // ANCHE quando la guardia è armata (es. home PWA), così il campo non resta selezionato.
+    if (isEditable) ae.blur();
     if (isEditable && !_backGuardArmed) {
-      ae.blur();
+      // Nessuna guardia attiva: consumo questo back solo per chiudere la tastiera (resto sulla
+      // pagina) re-inserendo l'entry, così il prossimo back naviga normalmente.
       _suppress = true;
       try { window.history.pushState({ route: readUrl().route, params: readUrl().params, pos: _historyPos }, '', window.location.href); } catch {}
       setTimeout(() => { _suppress = false; }, 0);
       return;
     }
+    // Se la guardia è armata ho già sfocato qui sopra: lascio che la logica di guardia gestisca
+    // questo stesso back, senza aggiungere un passo dovuto al focus.
     // Rete di sicurezza: se atterriamo su un'entry "guardia" residua senza che la logica
     // di guardia sia attiva, la saltiamo automaticamente per non bloccare la navigazione.
     if (e.state && e.state.guard && !_backGuardArmed) {
@@ -8512,19 +8523,31 @@ function collapseGroup(groupId) {
 // Rende le sezioni personalizzate dell'utente nella vista preferiti della rubrica.
 // Ogni sezione è un blocco con i suoi contatti; in edit-mode si possono creare,
 // rinominare, eliminare sezioni e aggiungere/rimuovere contatti.
-function renderCustomSezioniHtml() {
+function renderCustomSezioniHtml(query) {
+  const q = (query || '').trim();
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const qn = norm(q);
   const sezioni = userPrefs.getCustomSezioni();
-  const editMode = navState.editMode;
+  const editMode = navState.editMode && !q;   // durante la ricerca niente controlli di modifica
   const blocks = sezioni.map((sez, si) => {
-    const cids = (sez.contatti || []);
+    const nameMatches = !!q && norm(sez.nome).includes(qn);
+    let cids = (sez.contatti || []);
+    // In ricerca: se il NOME della sezione combacia mostro tutti i contatti; altrimenti
+    // mostro solo quelli che combaciano con la query. Sezione senza match → nascosta.
+    if (q && !nameMatches) {
+      cids = cids.filter(cid => {
+        const c = findContattoBySlug(cid);
+        if (!c) return false;
+        return _contattoMatchesQuery(q, c, c._gruppo ? { nome: c._gruppo } : null);
+      });
+      if (!cids.length) return '';
+    }
     const contattiHtml = cids.map((cid, ci) => {
       const c = findContattoBySlug(cid);
       if (!c) return '';
       const g = (c._gruppo) ? c._gruppo : '';
       const sezName = (c.sezione || '').trim();
       const uocName = g ? stripPrefixNome(g) : '';
-      // Stessa resa della sezione UOC standard (renderNumeroRow): etichetta + numeri + stella,
-      // con occhiello "UOC · Sezione" e riordino dentro la sezione personalizzata.
       const eyebrow = [uocName, sezName].filter(Boolean).join(' · ');
       return renderNumeroRow(c, g || '', classifyContatto(c), {
         hideLuogo: false,
@@ -8532,14 +8555,15 @@ function renderCustomSezioniHtml() {
         alwaysStar: true,
         pinnedView: true,
         preferBreve: true,
-        reorderCustom: {
+        reorderCustom: editMode ? {
           onUp: `moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',-1)`,
           onDown: `moveCsContatto('${escapeJs(sez.id)}','${escapeJs(cid)}',1)`
-        },
+        } : null,
         reorderFirst: ci === 0,
         reorderLast: ci === cids.length - 1
       });
-    }).join('') || '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>';
+    }).join('') || (q ? '' : '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>');
+    if (q && !contattiHtml) return '';
     return `<div class="pinned-uoc-block" data-cs-id="${escapeHtml(sez.id)}">
       <div class="pinned-uoc-header">
         <span class="pinned-uoc-name" style="cursor:default;">${escapeHtml(sez.nome)}</span>
@@ -8552,11 +8576,11 @@ function renderCustomSezioniHtml() {
       </div>
       <div class="pinned-uoc-contatti">${contattiHtml}</div>
     </div>`;
-  }).join('');
+  }).filter(Boolean).join('');
   const addSezBtn = editMode
     ? `<div style="margin:8px 0 16px;"><button class="btn ghost" style="font-size:13px;" onclick="addCustomSezionePrompt()">+ Nuova sezione personalizzata</button></div>`
-    : (sezioni.length === 0 ? '' : '');
-  if (!sezioni.length && !editMode) return '';
+    : '';
+  if (!blocks && !addSezBtn) return '';
   return `<div class="custom-sezioni-wrap" style="margin-bottom:20px;">${blocks}${addSezBtn}</div>`;
 }
 
@@ -9043,7 +9067,7 @@ function renderNumeri(filter, targetContainer) {
       </div>
     ` : ''}
 
-    ${(filter === 'pinned' && !rubricaQuery) ? renderCustomSezioniHtml() : ''}
+    ${(filter === 'pinned') ? renderCustomSezioniHtml(rubricaQuery) : ''}
 
     ${(filteredGruppi.length === 0 && !(filter === 'pinned' && userPrefs.getCustomSezioni().length)) ? `<p style="color:var(--ink-muted);">${rubricaQuery ? `Nessun risultato per "${escapeHtml(rubricaQuery)}".` : 'Nessun contatto corrisponde al filtro.'}</p>` : ''}
 
@@ -19061,8 +19085,13 @@ setTimeout(() => {
 /* CollinettaAI - animazione splash (emblema diapason + martelletto Tromner) */
 (function(){
   "use strict";
-  var W=6,CW=1.7,CX=190,CY=100,SF=0.95,SS=0.36,FX=100,HX=280;
+  var CX=190,CY=100,SF=0.95,SS=0.36,FX=100,HX=280;
   var A=300,HOLD=1080,B=1900,CYC=1250,SETTLE=300;
+  var C=0.8, HDX=10, HPX=CX+HDX*SF;
+  var H={ topCapW:4.5, topCapH:4.25, topCapY:14.5, topCapRx:0.9, capW:33, capH:10.25, capY:17.5, shaftW:3.9, shaftTopY:26, shaftBotY:56, padTopHW:2.5, padTopY:52.5, padWideHW:6, padWideY:75, padBotY:89.5, botScrewW:4.25, botScrewH:4, botScrewY:88, botScrewRx:1.2 };
+  var F={ weightW:4.5, weightH:14, weightY:13, weightRx:1.6, tineSpread:6.5, tineW:2.7, tineTopY:24, junctionY:64, junctionCurve:9, stemW:3.6, stemBotY:84, footCollarW:5, footCollarH:3.8, footCollarY:84, footCollarRx:1, footDiscW:9.5, footDiscH:4.6, footDiscY:87, footDiscRx:2.3 };
+  var R=function(x,y,w,h,rx,c,sa){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+rx+'" fill="'+c+'"'+(sa||'')+'/>';};
+  var L=function(x1,y1,x2,y2,w,c,cap){return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+c+'" stroke-width="'+w+'" stroke-linecap="'+(cap||'round')+'"/>';};
   var gHam=document.getElementById('cl-ham'),gFork=document.getElementById('cl-fork'),wm=document.getElementById('cl-wm');
   if(!gHam||!gFork){ return; }
   var cs=getComputedStyle(document.documentElement);
@@ -19070,25 +19099,42 @@ setTimeout(() => {
   var INK=cssVar('--ink','#1A1A1A'), BG=cssVar('--bg','#F6F2EA');
   if(wm) wm.setAttribute('fill', INK);
 
-  function fork(col,w){
-    var d=(w-W)*0.5, fw=12.5+2*d, fh=5.8+2*d, fx=(50-fw/2), fy=89.3-fh/2, r=(w*0.5+1.7);
-    return '<rect x="'+fx+'" y="'+fy+'" width="'+fw+'" height="'+fh+'" rx="'+(fh/2)+'" fill="'+col+'"/>'
-      +'<line x1="50" y1="88" x2="50" y2="56" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round"/>'
-      +'<path d="M42 24 L42 49 Q42 56 50 56 Q58 56 58 49 L58 24" fill="none" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round"/>'
-      +'<circle cx="42" cy="24" r="'+r+'" fill="'+col+'"/><circle cx="58" cy="24" r="'+r+'" fill="'+col+'"/>';
+  function fork(col,infl){
+    var sa = infl>0?' stroke="'+col+'" stroke-width="'+(2*infl)+'" stroke-linejoin="round" stroke-linecap="round"':'';
+    var sp=F.tineSpread, tw=F.tineW, yTop=F.tineTopY, yMerge=F.junctionY, jc=F.junctionCurve, sw=F.stemW, yBot=F.stemBotY;
+    var lxc=50-sp, rxc=50+sp;
+    var xLO=lxc-tw/2, xLI=lxc+tw/2, xRI=rxc-tw/2, xRO=rxc+tw/2;
+    var sxL=50-sw/2, sxR=50+sw/2, yArm=yMerge-jc;
+    var body='M'+xLO+' '+yTop+' L'+xLO+' '+yArm+' '
+      +'C'+xLO+' '+(yArm+jc*0.5)+' '+sxL+' '+(yMerge-jc*0.4)+' '+sxL+' '+yMerge+' '
+      +'L'+sxL+' '+yBot+' L'+sxR+' '+yBot+' L'+sxR+' '+yMerge+' '
+      +'C'+sxR+' '+(yMerge-jc*0.4)+' '+xRO+' '+(yArm+jc*0.5)+' '+xRO+' '+yArm+' '
+      +'L'+xRO+' '+yTop+' L'+xRI+' '+yTop+' L'+xRI+' '+yArm+' '
+      +'C'+xRI+' '+(yArm+jc*0.7)+' '+xLI+' '+(yArm+jc*0.7)+' '+xLI+' '+yArm+' '
+      +'L'+xLI+' '+yTop+' Z';
+    var wL=lxc-F.weightW/2, wR=rxc-F.weightW/2, cX=50-F.footCollarW/2, dX=50-F.footDiscW/2;
+    return R(dX,F.footDiscY,F.footDiscW,F.footDiscH,F.footDiscRx,col,sa)
+      + R(cX,F.footCollarY,F.footCollarW,F.footCollarH,F.footCollarRx,col,sa)
+      + '<path d="'+body+'" fill="'+col+'"'+sa+'/>'
+      + R(wL,F.weightY,F.weightW,F.weightH,F.weightRx,col,sa)
+      + R(wR,F.weightY,F.weightW,F.weightH,F.weightRx,col,sa);
   }
-  function hammer(col,w){
-    var d=(w-W)*0.5, knob=4.0+d, cb=7.5+2*d, eye=2.4+d;
-    return '<line x1="50" y1="88" x2="50" y2="26" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round"/>'
-      +'<ellipse cx="50" cy="74" rx="'+(5+d)+'" ry="'+(18+d)+'" fill="'+col+'"/>'
-      +'<circle cx="50" cy="93" r="'+eye+'" fill="'+col+'"/>'
-      +'<line x1="39" y1="26" x2="61" y2="26" stroke="'+col+'" stroke-width="'+cb+'" stroke-linecap="round"/>'
-      +'<line x1="50" y1="26" x2="50" y2="20.5" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round"/>'
-      +'<circle cx="50" cy="20" r="'+knob+'" fill="'+col+'"/>'
-      +'<circle cx="35.5" cy="26" r="'+(5.8+d)+'" fill="'+col+'"/><circle cx="64.5" cy="26" r="'+(4.8+d)+'" fill="'+col+'"/>';
+  function hammer(col,infl){
+    var sa = infl>0?' stroke="'+col+'" stroke-width="'+(2*infl)+'" stroke-linejoin="round" stroke-linecap="round"':'';
+    var capX=50-H.capW/2, topX=50-H.topCapW/2, botX=50-H.botScrewW/2;
+    var tHW=H.padTopHW, wHW=H.padWideHW, tY=H.padTopY, wY=H.padWideY, bY=H.padBotY;
+    var k1=(wY-tY)*0.45, k2=(wY-tY)*0.32, k3=(bY-wY)*0.6;
+    var path='M'+(50-tHW)+' '+tY+' C'+(50-tHW)+' '+(tY+k1)+' '+(50-wHW)+' '+(wY-k2)+' '+(50-wHW)+' '+wY+' '
+      +'C'+(50-wHW)+' '+(bY-k3)+' '+(50-3)+' '+bY+' 50 '+(bY+0.4)+' C'+(50+3)+' '+bY+' '+(50+wHW)+' '+(bY-k3)+' '+(50+wHW)+' '+wY+' '
+      +'C'+(50+wHW)+' '+(wY-k2)+' '+(50+tHW)+' '+(tY+k1)+' '+(50+tHW)+' '+tY+' Z';
+    return R(topX,H.topCapY,H.topCapW,H.topCapH,H.topCapRx,col,sa)
+      + R(capX,H.capY,H.capW,H.capH,H.capH/2,col,sa)
+      + L(50,H.shaftTopY,50,H.shaftBotY,H.shaftW+2*infl,col)
+      + '<path d="'+path+'" fill="'+col+'"'+sa+'/>'
+      + R(botX,H.botScrewY,H.botScrewW,H.botScrewH,H.botScrewRx,col,sa);
   }
-  gHam.innerHTML  = hammer(BG, W+CW) + hammer(INK, W);
-  gFork.innerHTML = fork(BG, W+CW)   + fork(INK, W);
+  gHam.innerHTML  = hammer(BG, C) + hammer(INK, 0);
+  gFork.innerHTML = fork(BG, C)   + fork(INK, 0);
 
   function setT(el,px,ang,s){ el.setAttribute('transform','translate('+px.toFixed(2)+' '+CY+') rotate('+ang.toFixed(2)+') scale('+s.toFixed(3)+') translate(-50 -60)'); }
   var curr={fpx:FX,hpx:HX,fang:0,hang:0,s:SS,op:0,top:0};
@@ -19116,56 +19162,25 @@ setTimeout(() => {
     var t=ts-t0;
     if(t<A){ var o=t/A; place(FX,HX,0,0,SS,o,o); }
     else if(t<HOLD){ place(FX,HX,0,0,SS,1,1); }
-    else if(t<B){ var e=eo((t-HOLD)/(B-HOLD)); place(FX+(CX-FX)*e,HX+(CX-HX)*e,400*e,-400*e,SS+(SF-SS)*e,1,Math.max(0,1-e/0.55)); }
-    else { var tt=t-B,tau=(tt%CYC)/CYC,spin=360*easeLoop(tau); place(CX,CX,40+spin,-40-spin,SF,1,0); }
+    else if(t<B){ var e=eo((t-HOLD)/(B-HOLD)); place(FX+(CX-FX)*e,HX+(HPX-HX)*e,405*e,-405*e,SS+(SF-SS)*e,1,Math.max(0,1-e/0.55)); }
+    else { var tt=t-B,tau=(tt%CYC)/CYC,spin=360*easeLoop(tau); place(CX,HPX,45+spin,-45-spin,SF,1,0); }
     raf=requestAnimationFrame(frame);
   }
   function startSettle(){
     if(done||mode==='settle') return;
     sFrom={fpx:curr.fpx,hpx:curr.hpx,fang:curr.fang,hang:curr.hang,s:curr.s,top:curr.top};
-    sTo={fpx:CX,hpx:CX,fang:snap(curr.fang,40),hang:snap(curr.hang,-40),s:SF,top:0};
+    sTo={fpx:CX,hpx:HPX,fang:snap(curr.fang,45),hang:snap(curr.hang,-45),s:SF,top:0};
     sStart=performance.now(); mode='settle';
     if(!raf) raf=requestAnimationFrame(frame);
   }
   window.CollinettaSplash={ finish:function(){ if(!reduce) startSettle(); } };
 
-  if(reduce){ place(CX,CX,40,-40,SF,1,0); }
+  if(reduce){ place(CX,HPX,45,-45,SF,1,0); }
   else { place(FX,HX,0,0,SS,0,0); raf=requestAnimationFrame(frame); }
 })();
 </script>
 
 
-<script>
-/* Mobile: alla chiusura della tastiera (es. gesture indietro) toglie anche il focus dal
-   campo di testo attivo. Rilevazione via VisualViewport con baseline sull'altezza, perche'
-   con interactive-widget=resizes-content anche window.innerHeight si riduce con la tastiera. */
-(function(){
-  var vv = window.visualViewport;
-  if(!vv) return;
-  var baseH = vv.height, kbOpen = false;
-  function isText(el){
-    if(!el) return false;
-    if(el.tagName==='TEXTAREA' || el.isContentEditable) return true;
-    if(el.tagName==='INPUT'){
-      var t=(el.getAttribute('type')||'text').toLowerCase();
-      return ['button','submit','reset','checkbox','radio','range','color','file','image','hidden'].indexOf(t)===-1;
-    }
-    return false;
-  }
-  function onChange(){
-    var h = vv.height;
-    if(h > baseH) baseH = h;                  // baseline = altezza senza tastiera
-    if(baseH - h > 120){ kbOpen = true; }     // tastiera aperta
-    else if(kbOpen && h >= baseH - 60){       // tornata a baseline => tastiera chiusa
-      kbOpen = false;
-      var ae = document.activeElement;
-      if(isText(ae)){ try{ ae.blur(); }catch(e){} }
-    }
-  }
-  vv.addEventListener('resize', onChange);
-  window.addEventListener('orientationchange', function(){ setTimeout(function(){ baseH = vv.height; kbOpen = false; }, 350); });
-})();
-</script>
 
 </body>
 </html>
