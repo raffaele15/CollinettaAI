@@ -817,7 +817,7 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 /* Griglia di allineamento (toggle in editMode): linee ogni 5% nello stesso sistema di
    coordinate % dei box, così facilita l'allineamento e abilita lo snap-to-grid. */
-.mod-overlay-layer.grid-on{background-image:linear-gradient(to right,rgba(24,95,165,.20) 1px,transparent 1px),linear-gradient(to bottom,rgba(24,95,165,.20) 1px,transparent 1px);background-size:5% 5%;background-position:0 0}
+.mod-overlay-layer.grid-on{background-image:linear-gradient(to right,rgba(24,95,165,.12) 1px,transparent 1px),linear-gradient(to bottom,rgba(24,95,165,.12) 1px,transparent 1px),linear-gradient(to right,rgba(24,95,165,.28) 1px,transparent 1px),linear-gradient(to bottom,rgba(24,95,165,.28) 1px,transparent 1px);background-size:2% 2%,2% 2%,10% 10%,10% 10%;background-position:0 0}
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
 /* Span dedicato al testo del box: l'overflow:hidden è qui, NON sul .mod-box, così la maniglia
    esterna (top:-26px, right:-26px) non viene clippata dal box. Il testo che eccede viene
@@ -2635,7 +2635,7 @@ const userPrefs = {
     if (!state.userPrefs.note_giorno) state.userPrefs.note_giorno = [];
     const t = (testo || '').trim();
     if (!t) return;
-    state.userPrefs.note_giorno.push({ id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), testo: t, fatto: false });
+    state.userPrefs.note_giorno.unshift({ id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), testo: t, fatto: false });
     userPrefs.scheduleSave();
   },
   toggleNotaGiorno(id) {
@@ -11751,7 +11751,7 @@ function addModuloBox(slug) {
       y = ((cyScreen - layerRect.top) / layerRect.height) * 100 - H / 2;
     }
   }
-  if (c.showGrid) { const g = 5; x = Math.round(x / g) * g; y = Math.round(y / g) * g; }
+  if (c.showGrid) { const g = 2; x = Math.round(x / g) * g; y = Math.round(y / g) * g; }
   x = Math.max(0, Math.min(100 - W, x));
   y = Math.max(0, Math.min(100 - H, y));
   const newBox = {
@@ -12342,30 +12342,43 @@ function refreshModuloOverlays(slug) {
 }
 
 // Auto-fit del font dentro un box: parte dalla font_size configurata e riduce finché il
-// testo non entra in altezza+larghezza (o si raggiunge il minimo 6px).
-// IMPORTANTE: misura il testo solo del <span class="mod-box-text">, NON dell'intero box,
-// perché il box contiene anche le maniglie (8 span absolutely positioned) che gonfierebbero
-// scrollWidth/scrollHeight come flex items, causando auto-fit errato sui box selezionati.
+// testo non entra in larghezza+altezza (o si raggiunge il minimo 6px).
+// MISURA con canvas measureText (NON scrollWidth/scrollHeight): su un flex con
+// justify-content:center / align-items:center l'overflow è simmetrico e scrollWidth/Height NON
+// lo riportano → i box centrati non si riducevano e il testo sforava. Canvas è indipendente
+// dall'allineamento e usa lo STESSO metodo della stampa → editor e output coincidono.
+let _autoFitCtx = null;
 function _autoFitBoxFont(boxEl) {
   const textEl = boxEl.querySelector('.mod-box-text');
   if (!textEl) return;
-  // Reset al font_size originale (sennò rimpicciolisce ogni volta)
+  const text = textEl.textContent || '';
+  if (!text) return;
+  // baseSize = font_size configurato del box (così riparto sempre dal valore impostato, non dal
+  // ridotto della volta precedente).
   const baseSize = parseFloat(boxEl.dataset.baseFontSize || boxEl.style.fontSize) || 11;
   if (!boxEl.dataset.baseFontSize) boxEl.dataset.baseFontSize = baseSize;
-  let size = baseSize;
-  boxEl.style.fontSize = size + 'px';
-  // Spazio disponibile = clientWidth/Height del box (al netto di padding/border).
-  // Confronto con scrollWidth/Height del SOLO span del testo.
   const MIN_SIZE = 6;
-  const availW = boxEl.clientWidth;
-  const availH = boxEl.clientHeight;
+  const cs = getComputedStyle(boxEl);
+  const padL = parseFloat(cs.paddingLeft) || 0;
+  const padR = parseFloat(cs.paddingRight) || 0;
+  const availW = boxEl.clientWidth - padL - padR;
+  const availH = boxEl.clientHeight; // line-height:1 → altezza riga ≈ font-size
   if (availW <= 0 || availH <= 0) return;
+  if (!_autoFitCtx) _autoFitCtx = document.createElement('canvas').getContext('2d');
+  const ctx = _autoFitCtx;
+  const fam = cs.fontFamily || 'sans-serif';
+  const style = cs.fontStyle || 'normal';
+  const weight = cs.fontWeight || '400';
+  let size = baseSize;
+  ctx.font = `${style} ${weight} ${size}px ${fam}`;
   let iter = 0;
-  while ((textEl.scrollWidth > availW + 1 || textEl.scrollHeight > availH + 1) && size > MIN_SIZE && iter < 30) {
+  while ((ctx.measureText(text).width > availW || size > availH) && size > MIN_SIZE && iter < 80) {
     size -= 0.5;
-    boxEl.style.fontSize = size + 'px';
+    ctx.font = `${style} ${weight} ${size}px ${fam}`;
     iter++;
   }
+  if (size < MIN_SIZE) size = MIN_SIZE;
+  boxEl.style.fontSize = size + 'px';
 }
 
 // Bind degli eventi drag/resize/click sui box. Pointer events unificati per mouse+touch.
@@ -12592,7 +12605,7 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
     }
     // Snap-to-grid quando la griglia di allineamento è attiva (aiuta ad allineare i campi)
     if (c.showGrid) {
-      const GRID = 5;
+      const GRID = 2;
       const snap = v => Math.round(v / GRID) * GRID;
       if (!handleType) {
         nx = snap(nx); ny = snap(ny);
@@ -12706,6 +12719,12 @@ async function _renderModuloPaginaSuCanvas(slug, pageIndex /* 1-based */) {
   ctx.fillStyle = '#000';
   ctx.textBaseline = 'top';
 
+  // Font IDENTICO a quello dell'editor live (.mod-box usa var(--sans) = "Instrument Sans" …).
+  // Prima il canvas usava Helvetica/Arial (metriche diverse, più larghe): il testo entrava nel box
+  // sullo schermo (Instrument Sans, più stretto) ma traboccava sul canvas → l'auto-fit riduceva il
+  // font SOLO in stampa e non nell'editor. Usando lo stesso font le due viste si adattano uguale.
+  const fontFamily = getComputedStyle(document.body).fontFamily || 'Helvetica, Arial, sans-serif';
+
   boxes.forEach(b => {
     const value = _formatBoxValue(b, campiDefs, c.formValues);
     if (!value) return; // box vuoto o firma → niente testo
@@ -12738,11 +12757,11 @@ async function _renderModuloPaginaSuCanvas(slug, pageIndex /* 1-based */) {
     const availH = Math.max(1, h - padH);
     const MIN_SIZE_PX = Math.max(6 * scale, 4);
     let iter = 0;
-    ctx.font = `${fontSize}px Helvetica, Arial, sans-serif`;
+    ctx.font = `${fontSize}px ${fontFamily}`;
     while ((ctx.measureText(value).width > availW || fontSize > availH) && fontSize > MIN_SIZE_PX && iter < 60) {
       fontSize -= Math.max(1, Math.round(scale * 0.5));
       if (fontSize < MIN_SIZE_PX) fontSize = MIN_SIZE_PX;
-      ctx.font = `${fontSize}px Helvetica, Arial, sans-serif`;
+      ctx.font = `${fontSize}px ${fontFamily}`;
       iter++;
     }
 
@@ -12772,6 +12791,10 @@ async function _renderModuloPaginaSuCanvas(slug, pageIndex /* 1-based */) {
 async function _renderModuloTutteLePagine(slug) {
   const c = state.moduliCache[slug];
   if (!c) throw new Error('Modulo non in cache');
+  // Attendo che i web font (Instrument Sans) siano caricati: il canvas misura/disegna con lo
+  // stesso font dell'editor, quindi il font dev'essere pronto o ripiegherebbe su un fallback
+  // con metriche diverse (auto-fit incoerente con l'anteprima).
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch {}
   const canvases = [];
   for (let i = 1; i <= c.pageUrls.length; i++) {
     const cv = await _renderModuloPaginaSuCanvas(slug, i);
