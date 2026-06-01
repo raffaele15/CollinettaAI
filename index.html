@@ -815,13 +815,21 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 }
 .mod-page-img{display:block;max-width:100%;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 .mod-overlay-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+/* Griglia di allineamento (toggle in editMode): linee ogni 5% nello stesso sistema di
+   coordinate % dei box, così facilita l'allineamento e abilita lo snap-to-grid. */
+.mod-overlay-layer.grid-on{background-image:linear-gradient(to right,rgba(24,95,165,.20) 1px,transparent 1px),linear-gradient(to bottom,rgba(24,95,165,.20) 1px,transparent 1px);background-size:5% 5%;background-position:0 0}
 .mod-box{position:absolute;font-family:var(--sans);color:#000;background:rgba(255,255,200,.4);border:1px solid rgba(180,140,0,.3);box-sizing:border-box;padding:0 2px;display:flex;align-items:center;white-space:nowrap;line-height:1;border-radius:1px;min-height:0;min-width:0}
 /* Span dedicato al testo del box: l'overflow:hidden è qui, NON sul .mod-box, così la maniglia
    esterna (top:-26px, right:-26px) non viene clippata dal box. Il testo che eccede viene
    clipped dallo span. */
 .mod-box-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:clip;white-space:nowrap;display:flex;align-items:center;width:100%;height:100%}
-.mod-box[style*="text-align:center"] .mod-box-text{justify-content:center}
-.mod-box[style*="text-align:right"] .mod-box-text{justify-content:flex-end}
+/* Allineamento testo del box: pilotato da CLASSE (.align-center/.align-right), NON dalla
+   stringa inline `style`. Motivo: durante il drag impostiamo box.style.transform, e il browser
+   ri-serializza l'intero attributo style (es. "text-align: center" con spazio), facendo fallire
+   il vecchio selettore [style*="text-align:center"] → il testo scivolava a sinistra mentre/dopo
+   lo spostamento anche per box centrati. La classe è immune alla ri-serializzazione. */
+.mod-box.align-center .mod-box-text{justify-content:center}
+.mod-box.align-right .mod-box-text{justify-content:flex-end}
 .mod-box.empty{background:rgba(0,0,0,.04);border:1px dashed rgba(0,0,0,.25);color:rgba(0,0,0,.3);font-style:italic}
 /* Box con placeholder esemplificativo (in editMode quando non ha ancora valore reale).
    Stile: testo nero come il testo reale (massima leggibilità) ma background giallo chiaro
@@ -9661,9 +9669,23 @@ function renderHomeNumeriSection() {
 // Sezione "Note del giorno": todos personali rapidi, mostrati in home dopo i contatti fissati.
 // Persistiti in userPrefs.note_giorno. Ogni nota = { id, testo, fatto }.
 function renderNoteGiornoSection() {
+  return `<div class="home-section home-pins-group">
+    <div class="home-section-title"><span>Note del giorno</span></div>
+    <div class="ndg-add" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <input type="text" id="ndg-input" placeholder="Aggiungi una nota o un promemoria…" maxlength="240"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();submitNotaGiorno();}"
+        style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
+      <button class="btn primary" onmousedown="event.preventDefault()" onclick="submitNotaGiorno()" title="Aggiungi" style="flex-shrink:0;">+ Aggiungi</button>
+    </div>
+    <div class="ndg-list" id="ndg-list">${_noteGiornoRowsHtml()}</div>
+    <div id="ndg-clear-wrap">${_noteGiornoClearHtml()}</div>
+  </div>`;
+}
+
+// HTML delle sole righe note (riusato da render iniziale e refresh surgicale).
+function _noteGiornoRowsHtml() {
   const note = userPrefs.getNoteGiorno();
-  const fatte = note.filter(n => n.fatto).length;
-  const rows = note.length
+  return note.length
     ? note.map(n => `
         <div class="ndg-row ${n.fatto ? 'ndg-done' : ''}" data-id="${escapeHtml(n.id)}">
           <button class="ndg-check" onclick="toggleNotaGiorno('${escapeJs(n.id)}')" title="${n.fatto ? 'Segna da fare' : 'Segna fatto'}" aria-label="Completa">${n.fatto ? '☑' : '☐'}</button>
@@ -9671,20 +9693,24 @@ function renderNoteGiornoSection() {
           <button class="ndg-del btn-icon-mini" onclick="removeNotaGiorno('${escapeJs(n.id)}')" title="Elimina" aria-label="Elimina">✕</button>
         </div>`).join('')
     : `<div class="empty-pins" style="padding:14px 16px;font-size:13px;">Nessuna nota. Scrivi qui i promemoria della giornata (es. controlli, chiamate, consegne).</div>`;
-  const clearBtn = fatte > 0
-    ? `<button class="btn ghost" style="font-size:12px;" onclick="clearNoteGiornoFatte()" title="Rimuovi le note completate">Pulisci fatte (${fatte})</button>`
+}
+
+// HTML del bottone "Pulisci fatte" (vuoto se non ci sono note completate).
+function _noteGiornoClearHtml() {
+  const note = userPrefs.getNoteGiorno();
+  const fatte = note.filter(n => n.fatto).length;
+  return fatte > 0
+    ? `<div style="margin-top:8px;text-align:right;"><button class="btn ghost" style="font-size:12px;" onclick="clearNoteGiornoFatte()" title="Rimuovi le note completate">Pulisci fatte (${fatte})</button></div>`
     : '';
-  return `<div class="home-section home-pins-group">
-    <div class="home-section-title"><span>Note del giorno</span></div>
-    <div class="ndg-add" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <input type="text" id="ndg-input" placeholder="Aggiungi una nota o un promemoria…" maxlength="240"
-        onkeydown="if(event.key==='Enter'){event.preventDefault();submitNotaGiorno();}"
-        style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
-      <button class="btn primary" onclick="submitNotaGiorno()" title="Aggiungi" style="flex-shrink:0;">+ Aggiungi</button>
-    </div>
-    <div class="ndg-list">${rows}</div>
-    ${clearBtn ? `<div style="margin-top:8px;text-align:right;">${clearBtn}</div>` : ''}
-  </div>`;
+}
+
+// Aggiorna SOLO la lista note + bottone "pulisci", SENZA ricostruire la home: così l'input
+// #ndg-input non viene distrutto, mantenendo focus e tastiera aperta su mobile.
+function refreshNoteGiornoList() {
+  const list = document.getElementById('ndg-list');
+  if (list) list.innerHTML = _noteGiornoRowsHtml();
+  const clearWrap = document.getElementById('ndg-clear-wrap');
+  if (clearWrap) clearWrap.innerHTML = _noteGiornoClearHtml();
 }
 
 function submitNotaGiorno() {
@@ -9694,21 +9720,22 @@ function submitNotaGiorno() {
   if (!t) { input.focus(); return; }
   userPrefs.addNotaGiorno(t);
   input.value = '';
-  renderHome();
-  // Riporto il focus sull'input per inserimenti rapidi consecutivi
-  setTimeout(() => { const i = document.getElementById('ndg-input'); if (i) i.focus(); }, 0);
+  // Refresh surgicale (no renderHome): l'input resta in DOM → focus + tastiera intatti per
+  // inserimenti rapidi consecutivi.
+  refreshNoteGiornoList();
+  input.focus();
 }
 function toggleNotaGiorno(id) {
   userPrefs.toggleNotaGiorno(id);
-  renderHome();
+  refreshNoteGiornoList();
 }
 function removeNotaGiorno(id) {
   userPrefs.removeNotaGiorno(id);
-  renderHome();
+  refreshNoteGiornoList();
 }
 function clearNoteGiornoFatte() {
   userPrefs.clearNoteGiornoFatte();
-  renderHome();
+  refreshNoteGiornoList();
 }
 
 // Rende un singolo contatto nello STESSO stile dei risultati di ricerca globale
@@ -10971,6 +10998,7 @@ function _placeholderForBox(box, campiDefs) {
     if (f === 'giorno_nascita') return 'GG';
     if (f === 'mese_nascita') return 'MM';
     if (f === 'anno_nascita') return 'AAAA';
+    if (f === 'anno_breve_nascita') return 'AA';
     if (f === 'gg_mm_nascita') return 'GG/MM';
     if (f === 'mm_aaaa_nascita') return 'MM/AAAA';
     if (f === 'mese_nascita_nome') return 'mese';
@@ -10990,7 +11018,7 @@ function _placeholderForBox(box, campiDefs) {
     if (f === 'giorno') return 'GG';
     if (f === 'mese') return 'MM';
     if (f === 'anno') return 'AAAA';
-    if (f === 'gg_mm') return 'GG/MM';
+    if (f === 'anno_breve') return 'AA';
     if (f === 'mm_aaaa') return 'MM/AAAA';
     if (f === 'mese_nome') return 'mese';
     if (f === 'mese_anno_nome') return 'mese AAAA';
@@ -11013,6 +11041,7 @@ function _formatoOptionsPerTipo(tipo) {
       { value: 'giorno_nascita',           label: 'Data nascita: solo giorno (gg)' },
       { value: 'mese_nascita',             label: 'Data nascita: solo mese (mm)' },
       { value: 'anno_nascita',             label: 'Data nascita: solo anno (aaaa)' },
+      { value: 'anno_breve_nascita',       label: 'Data nascita: solo anno breve (aa)' },
       { value: 'gg_mm_nascita',            label: 'Data nascita: gg/mm' },
       { value: 'mm_aaaa_nascita',          label: 'Data nascita: mm/aaaa' },
       { value: 'mese_nascita_nome',        label: 'Data nascita: nome mese (es. marzo)' },
@@ -11038,6 +11067,7 @@ function _formatoOptionsPerTipo(tipo) {
       { value: 'giorno',           label: 'Solo giorno (gg)' },
       { value: 'mese',             label: 'Solo mese (mm)' },
       { value: 'anno',             label: 'Solo anno (aaaa)' },
+      { value: 'anno_breve',       label: 'Solo anno breve (aa)' },
       { value: 'gg_mm',            label: 'gg/mm' },
       { value: 'mm_aaaa',          label: 'mm/aaaa' },
       { value: 'mese_nome',        label: 'Nome mese (es. marzo)' },
@@ -11072,6 +11102,7 @@ function _formatDataPortion(dataStr, formato) {
     case 'giorno': return parsed.giorno;
     case 'mese': return parsed.mese;
     case 'anno': return parsed.anno;
+    case 'anno_breve': return parsed.anno.slice(-2);
     case 'gg_mm': return `${parsed.giorno}/${parsed.mese}`;
     case 'mm_aaaa': return `${parsed.mese}/${parsed.anno}`;
     case 'mese_nome': return MESI[parseInt(parsed.mese, 10) - 1] || parsed.mese;
@@ -11103,6 +11134,7 @@ function _formatBoxValue(box, campiDefs, valoriCampi) {
     if (f === 'giorno_nascita') return _formatDataPortion(v.dataNascita, 'giorno');
     if (f === 'mese_nascita') return _formatDataPortion(v.dataNascita, 'mese');
     if (f === 'anno_nascita') return _formatDataPortion(v.dataNascita, 'anno');
+    if (f === 'anno_breve_nascita') return _formatDataPortion(v.dataNascita, 'anno_breve');
     if (f === 'gg_mm_nascita') return _formatDataPortion(v.dataNascita, 'gg_mm');
     if (f === 'mm_aaaa_nascita') return _formatDataPortion(v.dataNascita, 'mm_aaaa');
     if (f === 'mese_nascita_nome') return _formatDataPortion(v.dataNascita, 'mese_nome');
@@ -11115,13 +11147,14 @@ function _formatBoxValue(box, campiDefs, valoriCampi) {
   // Formati: cognome_nome (default), nome_cognome, cognome, nome
   if (def.tipo === 'medico_nome' && typeof v === 'object') {
     const f = box.formato || '';
-    const ini = s => (s || '').trim().charAt(0).toUpperCase();
+    // Iniziali puntate di TUTTE le parole (gestisce nomi multipli: "Mario Luigi" → "M.L.").
+    const inits = s => (s || '').trim().split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + '.').join('');
     if (f === 'cognome') return v.cognome || '';
     if (f === 'nome') return v.nome || '';
     if (f === 'nome_cognome') return [v.nome, v.cognome].filter(Boolean).join(' ');
-    if (f === 'n_cognome') return [ini(v.nome) ? ini(v.nome) + '.' : '', v.cognome].filter(Boolean).join(' ');   // N. Cognome
-    if (f === 'cognome_n') return [v.cognome, ini(v.nome) ? ini(v.nome) + '.' : ''].filter(Boolean).join(' ');   // Cognome N.
-    if (f === 'iniziali') return [ini(v.nome), ini(v.cognome)].filter(Boolean).map(x => x + '.').join('');        // N.C.
+    if (f === 'n_cognome') return [inits(v.nome), v.cognome].filter(Boolean).join(' ');   // N.[N.] Cognome
+    if (f === 'cognome_n') return [v.cognome, inits(v.nome)].filter(Boolean).join(' ');   // Cognome N.[N.]
+    if (f === 'iniziali') return inits(v.nome) + inits(v.cognome);                         // N.[N.]C.
     // default: cognome_nome
     return [v.cognome, v.nome].filter(Boolean).join(' ');
   }
@@ -11532,6 +11565,7 @@ function renderModuloCompilatore(slug, det) {
       </button>
       ${editMode ? `
         <button class="btn ghost" onclick="addModuloBox('${escapeJs(slug)}')">+ Aggiungi box</button>
+        <button class="btn ${det.showGrid ? 'primary' : 'ghost'}" onclick="toggleModuloGrid('${escapeJs(slug)}')" title="Mostra/nascondi griglia di allineamento (con snap)"${det.showGrid ? ' style="background:#185FA5;border-color:#185FA5;"' : ''}>▦ Griglia</button>
         ${isDirty ? `
           <button class="btn primary" id="mod-btn-save" onclick="runWithSpinner(this, () => salvaModuloBoxes('${escapeJs(slug)}'))" style="background:#185FA5;border-color:#185FA5;">Salva</button>
           <button class="btn ghost" onclick="scartaModuloBoxesModifiche('${escapeJs(slug)}')">Scarta</button>
@@ -11697,13 +11731,32 @@ function selectModuloBox(slug, idx) {
   }
 }
 
-// Aggiunge un nuovo box di default al centro della pagina corrente
+// Aggiunge un nuovo box di default al centro di ciò che l'utente sta GUARDANDO (viewport
+// scrollata/zoomata), così appare subito a schermo invece che in una posizione fissa.
 function addModuloBox(slug) {
   const c = state.moduliCache[slug];
   if (!c) return;
+  const W = 40, H = 4;
+  let x = 30, y = 45;
+  // Centro visibile → coordinate % del layer overlay
+  const scrollEl = document.getElementById('mod-page-scroll-' + slug);
+  const layer = document.getElementById('mod-overlay-' + slug);
+  if (scrollEl && layer) {
+    const layerRect = layer.getBoundingClientRect();
+    const scRect = scrollEl.getBoundingClientRect();
+    if (layerRect.width > 0 && layerRect.height > 0) {
+      const cxScreen = scRect.left + scRect.width / 2;
+      const cyScreen = scRect.top + scRect.height / 2;
+      x = ((cxScreen - layerRect.left) / layerRect.width) * 100 - W / 2;
+      y = ((cyScreen - layerRect.top) / layerRect.height) * 100 - H / 2;
+    }
+  }
+  if (c.showGrid) { const g = 5; x = Math.round(x / g) * g; y = Math.round(y / g) * g; }
+  x = Math.max(0, Math.min(100 - W, x));
+  y = Math.max(0, Math.min(100 - H, y));
   const newBox = {
     pagina: c.currentPage || 1,
-    x: 30, y: 45, w: 40, h: 4,
+    x, y, w: W, h: H,
     campo: '',
     align: 'left',
     font_size: 11
@@ -11714,6 +11767,19 @@ function addModuloBox(slug) {
   _persistModulo(slug);
   refreshModuloOverlays(slug);
   _refreshModuloEditorPanelLight(slug);
+}
+
+// Toggle griglia di allineamento (con snap-to-grid durante drag/resize). Stato in cache.
+function toggleModuloGrid(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return;
+  c.showGrid = !c.showGrid;
+  const layer = document.getElementById('mod-overlay-' + slug);
+  if (layer) {
+    if (c.showGrid) layer.classList.add('grid-on');
+    else layer.classList.remove('grid-on');
+  }
+  _refreshModuloToolbar(slug);
 }
 
 // Duplica un box (offset di 2% per non sovrapporlo)
@@ -11788,10 +11854,10 @@ function setBoxAttr(slug, idx, attr, value) {
   }
   _persistModulo(slug);
   refreshModuloOverlays(slug);
-  // Re-render del panel SOLO quando cambia 'campo' (le opzioni del dropdown formato dipendono
-  // dal tipo del campo selezionato e devono essere ricostruite). Per align/font_size/formato
-  // niente re-render → niente scatti, niente focus perso.
-  if (attr === 'campo') {
+  // Re-render del panel quando cambia 'campo' (le opzioni del dropdown formato dipendono dal
+  // tipo del campo) o 'align' (i pulsanti segmentati Sx/Centro/Dx devono aggiornare lo stato
+  // attivo → cambio colore). Per font_size/formato niente re-render → niente focus perso.
+  if (attr === 'campo' || attr === 'align') {
     _refreshModuloEditorPanelLight(slug); // aggiorna anche la toolbar
   } else {
     _refreshModuloToolbar(slug); // il dirty può essere cambiato: aggiorno i pulsanti salva/scarta
@@ -12231,6 +12297,11 @@ function refreshModuloOverlays(slug) {
   // box (.mod-box ha touch-action:none in CSS), così tap su box → drag, tap fuori → scroll pagina.
   layer.style.touchAction = editMode ? 'pan-x pan-y' : '';
 
+  // Griglia di allineamento (toggle): applico la classe a ogni refresh così persiste
+  // anche dopo i re-render dell'overlay (selezione box, cambio valore, ecc.).
+  if (editMode && c.showGrid) layer.classList.add('grid-on');
+  else layer.classList.remove('grid-on');
+
   layer.innerHTML = visibleBoxIdx.map(({ b, i }) => {
     const value = _formatBoxValue(b, campiDefs, c.formValues);
     const isFirma = b.tipo === 'firma';
@@ -12246,7 +12317,7 @@ function refreshModuloOverlays(slug) {
     const handles = isSelected ? `
       <span class="mod-handle mod-handle-resize" data-handle="tr" title="Trascina per ridimensionare">⤢</span>
     ` : '';
-    return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${placeholder ? 'placeholder' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''}"
+    return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${placeholder ? 'placeholder' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''} ${align === 'center' ? 'align-center' : align === 'right' ? 'align-right' : ''}"
               data-box-idx="${i}"
               style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%;
                      text-align:${align};font-size:${fontSize}px;"
@@ -12424,6 +12495,7 @@ function _refreshModuloToolbar(slug) {
     </button>
     ${editMode ? `
       <button class="btn ghost" onclick="addModuloBox('${escapeJs(slug)}')">+ Aggiungi box</button>
+      <button class="btn ${c.showGrid ? 'primary' : 'ghost'}" onclick="toggleModuloGrid('${escapeJs(slug)}')" title="Mostra/nascondi griglia di allineamento (con snap)"${c.showGrid ? ' style="background:#185FA5;border-color:#185FA5;"' : ''}>▦ Griglia</button>
       ${isDirty ? `
         <button class="btn primary" id="mod-btn-save" onclick="runWithSpinner(this, () => salvaModuloBoxes('${escapeJs(slug)}'))" style="background:#185FA5;border-color:#185FA5;">Salva</button>
         <button class="btn ghost" onclick="scartaModuloBoxesModifiche('${escapeJs(slug)}')">Scarta</button>
@@ -12478,12 +12550,12 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
     const dy = curPctY - startPctY;
 
     let nx = startBox.x, ny = startBox.y, nw = startBox.w, nh = startBox.h;
+    const MIN_W = 0.5, MIN_H = 0.3;
     if (!handleType) {
       // Drag
       nx = Math.max(0, Math.min(100 - startBox.w, startBox.x + dx));
       ny = Math.max(0, Math.min(100 - startBox.h, startBox.y + dy));
     } else {
-      const MIN_W = 0.5, MIN_H = 0.3;
       if (handleType === 'br') {
         nw = Math.max(MIN_W, Math.min(100 - startBox.x, startBox.w + dx));
         nh = Math.max(MIN_H, Math.min(100 - startBox.y, startBox.h + dy));
@@ -12517,6 +12589,20 @@ function _startBoxDragOrResize(slug, idx, ev, handleType, layer, img) {
         nw = startBox.w - (newX - startBox.x);
         nx = newX;
       }
+    }
+    // Snap-to-grid quando la griglia di allineamento è attiva (aiuta ad allineare i campi)
+    if (c.showGrid) {
+      const GRID = 5;
+      const snap = v => Math.round(v / GRID) * GRID;
+      if (!handleType) {
+        nx = snap(nx); ny = snap(ny);
+      } else {
+        nw = Math.max(MIN_W, snap(nw));
+        nh = Math.max(MIN_H, snap(nh));
+        nx = snap(nx); ny = snap(ny);
+      }
+      nx = Math.max(0, Math.min(100 - nw, nx));
+      ny = Math.max(0, Math.min(100 - nh, ny));
     }
     box.x = nx; box.y = ny; box.w = nw; box.h = nh;
     if (boxEl) {
@@ -12631,21 +12717,31 @@ async function _renderModuloPaginaSuCanvas(slug, pageIndex /* 1-based */) {
     const w = (b.w / 100) * canvas.width;
     const h = (b.h / 100) * canvas.height;
 
-    // Calibratura font: dimensione box.font_size in px è riferita alla preview a schermo (~50% PNG width).
-    // Per il render canvas a piena risoluzione, scaliamo per mantenere proporzioni visive.
-    // Ipotizziamo che la preview sia a width = ~700px (laptop standard) e l'originale è ~2480px @300DPI A4
-    // → fattore di scala ≈ canvas.width / 700.
-    const previewWidth = 700;
+    // Scala font: box.font_size è px riferiti all'ANTEPRIMA a schermo (a zoom 1). Per riprodurre
+    // ESATTAMENTE ciò che si vede nell'editor sul canvas a piena risoluzione, misuro la larghezza
+    // reale dell'immagine di anteprima a zoom 1 (clientWidth / zoom) invece di un valore fisso
+    // (700px) che rendeva il font sproporzionato (più grande) rispetto all'editor.
+    let previewWidth = 700; // fallback se l'anteprima non è in DOM
+    const liveImg = document.querySelector('#mod-page-stage-' + slug + ' img.mod-page-img');
+    const zoomLvl = c.zoom || 1;
+    if (liveImg && liveImg.clientWidth > 0) previewWidth = liveImg.clientWidth / zoomLvl;
     const scale = canvas.width / previewWidth;
     let fontSize = Math.round((b.font_size || 11) * scale);
 
-    // Auto-fit: se il testo è più largo del box, riduco fontSize finché non entra (min 6*scale).
-    // Coerente con l'auto-fit della preview, così il PDF/PNG output rispetta lo spazio reale.
+    // Auto-fit identico all'editor: il box è lo SPAZIO MASSIMO, il testo deve stare DENTRO sia in
+    // LARGHEZZA sia in ALTEZZA. Prima il canvas controllava solo la larghezza → in stampa il testo
+    // poteva risultare più grande/traboccante rispetto all'editor (che riduce anche per altezza).
+    // Sottraggo padding (0 2px) + bordo (1px) coerentemente col CSS del box.
+    const padW = 6 * scale;  // padding 2px*2 + bordo 1px*2
+    const padH = 2 * scale;  // solo bordo (nessun padding verticale)
+    const availW = Math.max(1, w - padW);
+    const availH = Math.max(1, h - padH);
     const MIN_SIZE_PX = Math.max(6 * scale, 4);
     let iter = 0;
     ctx.font = `${fontSize}px Helvetica, Arial, sans-serif`;
-    while (ctx.measureText(value).width > w && fontSize > MIN_SIZE_PX && iter < 40) {
+    while ((ctx.measureText(value).width > availW || fontSize > availH) && fontSize > MIN_SIZE_PX && iter < 60) {
       fontSize -= Math.max(1, Math.round(scale * 0.5));
+      if (fontSize < MIN_SIZE_PX) fontSize = MIN_SIZE_PX;
       ctx.font = `${fontSize}px Helvetica, Arial, sans-serif`;
       iter++;
     }
@@ -13099,9 +13195,9 @@ function _renderNuovoModuloDialog() {
       </div>`,
     actions: [
       { label: 'Annulla', variant: 'ghost', onClick: () => { _nuovoModuloDraft = null; closeModal(); } },
-      { label: 'Crea modulo', disabled: !canSubmit, onClick: () => {
+      { label: 'Crea modulo', disabled: !canSubmit, onClick: (btn) => {
           if (!canSubmit) return;
-          _confermaNuovoModulo();
+          runWithSpinner(btn, () => _confermaNuovoModulo());
         } }
     ]
   });
@@ -17765,14 +17861,18 @@ function openSearchOverlay(query) {
   // Tap/swipe fuori dall'input attivo → chiudi tastiera mobile (blur input).
   if (!document._blurInputOnTouchBound) {
     document._blurInputOnTouchBound = true;
-    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap', '#ndg-input'];
+    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap', '.ndg-add'];
     document.addEventListener('touchstart', (e) => {
       const active = document.activeElement;
       if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
       const wrap = PROTECTED_SELECTORS.map(s => active.closest(s)).find(Boolean);
       if (!wrap) return;                    // input non di ricerca (es. textbox di un modulo): non toccare
-      if (wrap.contains(e.target)) return;  // tocco dentro la stessa barra di ricerca: mantieni la tastiera
-      active.blur();                        // tocco fuori dalla barra di ricerca: chiudi la tastiera
+      if (wrap.contains(e.target)) return;  // tocco dentro la stessa barra/area: mantieni la tastiera
+      // Tocco su un ALTRO campo editabile (o dentro una barra protetta): l'utente sta passando da
+      // un input all'altro (es. ricerca ↔ todos) → NON blurare, la tastiera deve restare aperta.
+      if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (PROTECTED_SELECTORS.some(s => e.target.closest(s))) return;
+      active.blur();                        // tocco fuori da qualsiasi campo: chiudi la tastiera
     }, { passive: true });
   }
   // Intercetta click sui link/risultati per chiudere l'overlay prima di navigare
@@ -19199,14 +19299,18 @@ async function init() {
   // Idempotente: se openSearchOverlay lo bindasse di nuovo, il flag previene duplicati.
   if (!document._blurInputOnTouchBound) {
     document._blurInputOnTouchBound = true;
-    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap', '#ndg-input'];
+    const PROTECTED_SELECTORS = ['.search-wrap', '.rubrica-search', '.ut-search-wrap', '.ndg-add'];
     document.addEventListener('touchstart', (e) => {
       const active = document.activeElement;
       if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) return;
       const wrap = PROTECTED_SELECTORS.map(s => active.closest(s)).find(Boolean);
       if (!wrap) return;                    // input non di ricerca (es. textbox di un modulo): non toccare
-      if (wrap.contains(e.target)) return;  // tocco dentro la stessa barra di ricerca: mantieni la tastiera
-      active.blur();                        // tocco fuori dalla barra di ricerca: chiudi la tastiera
+      if (wrap.contains(e.target)) return;  // tocco dentro la stessa barra/area: mantieni la tastiera
+      // Tocco su un ALTRO campo editabile (o dentro una barra protetta): l'utente sta passando da
+      // un input all'altro (es. ricerca ↔ todos) → NON blurare, la tastiera deve restare aperta.
+      if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (PROTECTED_SELECTORS.some(s => e.target.closest(s))) return;
+      active.blur();                        // tocco fuori da qualsiasi campo: chiudi la tastiera
     }, { passive: true });
   }
 
