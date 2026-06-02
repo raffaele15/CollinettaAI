@@ -680,6 +680,8 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .ndg-row.sortable-chosen{background:var(--bg-sink)}
 .ndg-del{flex-shrink:0;color:var(--ink-faint);opacity:.6}
 .ndg-del:hover{color:var(--danger);opacity:1}
+.ndg-edit{flex-shrink:0;color:var(--ink-faint);opacity:.6}
+.ndg-edit:hover{color:var(--accent);opacity:1}
 
 
 /* Home sections for personal pins */
@@ -2657,6 +2659,13 @@ const userPrefs = {
     if (!state.userPrefs || !state.userPrefs.note_giorno) return;
     const n = state.userPrefs.note_giorno.find(x => x.id === id);
     if (n) { n.fatto = !n.fatto; userPrefs.scheduleSave(); }
+  },
+  updateNotaGiorno(id, testo) {
+    if (!state.userPrefs || !state.userPrefs.note_giorno) return;
+    const t = (testo || '').trim();
+    if (!t) return;
+    const n = state.userPrefs.note_giorno.find(x => x.id === id);
+    if (n) { n.testo = t; userPrefs.scheduleSave(); }
   },
   removeNotaGiorno(id) {
     if (!state.userPrefs || !state.userPrefs.note_giorno) return;
@@ -8746,9 +8755,9 @@ function renderCustomSezioniHtml(query) {
       });
     }).join('') || (q ? '' : '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>');
     if (q && !contattiHtml) return '';
-    return `<div class="fav-bucket" data-cs-id="${escapeHtml(sez.id)}">
-      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="true">
-        <span class="fav-bucket-caret">&#9662;</span>
+    return `<div class="fav-bucket fav-bucket-collapsed" data-cs-id="${escapeHtml(sez.id)}">
+      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="false">
+        <span class="fav-bucket-caret">&#9656;</span>
         <span class="sede-bucket-tipo">${escapeHtml(sez.nome)}</span>
         ${editMode ? `<span class="fav-bucket-edit" style="margin-left:auto;display:inline-flex;gap:6px;" onclick="event.stopPropagation();">
           <button class="btn-icon-mini" onclick="event.stopPropagation();moveCsSezione('${escapeJs(sez.id)}',-1)" title="Sposta sezione su" ${si === 0 ? 'disabled' : ''}>↑</button>
@@ -9688,9 +9697,10 @@ function _noteGiornoRowsHtml() {
   return note.length
     ? note.map(n => `
         <div class="ndg-row ${n.fatto ? 'ndg-done' : ''}" data-id="${escapeHtml(n.id)}">
+          <span class="ndg-drag drag-handle" title="Trascina per riordinare" aria-label="Riordina">⠿</span>
+          <button class="ndg-edit btn-icon-mini" onclick="editNotaGiorno('${escapeJs(n.id)}')" title="Modifica" aria-label="Modifica">✎</button>
           <button class="ndg-check" onclick="toggleNotaGiorno('${escapeJs(n.id)}')" title="${n.fatto ? 'Segna da fare' : 'Segna fatto'}" aria-label="Completa">${n.fatto ? '☑' : '☐'}</button>
           <span class="ndg-text">${escapeHtml(n.testo)}</span>
-          <span class="ndg-drag drag-handle" title="Trascina per riordinare" aria-label="Riordina">⠿</span>
           <button class="ndg-del btn-icon-mini" onclick="removeNotaGiorno('${escapeJs(n.id)}')" title="Elimina" aria-label="Elimina">✕</button>
         </div>`).join('')
     : `<div class="empty-pins" style="padding:14px 16px;font-size:13px;">Nessuna nota. Scrivi qui i promemoria della giornata (es. controlli, chiamate, consegne).</div>`;
@@ -9709,7 +9719,13 @@ function _noteGiornoClearHtml() {
 // #ndg-input non viene distrutto, mantenendo focus e tastiera aperta su mobile.
 function refreshNoteGiornoList() {
   const list = document.getElementById('ndg-list');
-  if (list) { list.innerHTML = _noteGiornoRowsHtml(); list._sortable = null; }
+  if (list) {
+    // Distruggo l'eventuale istanza Sortable precedente PRIMA di riscrivere il DOM: azzerare
+    // solo il riferimento (senza destroy) lasciava agganciata la vecchia istanza ai nodi
+    // sostituiti, impedendo il drag dei todo appena aggiunti finché non si rientrava in pagina.
+    if (list._sortable) { try { list._sortable.destroy(); } catch {} list._sortable = null; }
+    list.innerHTML = _noteGiornoRowsHtml();
+  }
   const clearWrap = document.getElementById('ndg-clear-wrap');
   if (clearWrap) clearWrap.innerHTML = _noteGiornoClearHtml();
   initNoteGiornoSortable();
@@ -9749,6 +9765,15 @@ function submitNotaGiorno(btnEl) {
 }
 function toggleNotaGiorno(id) {
   userPrefs.toggleNotaGiorno(id);
+  refreshNoteGiornoList();
+}
+function editNotaGiorno(id) {
+  const nota = userPrefs.getNoteGiorno().find(x => x.id === id);
+  if (!nota) return;
+  const nuovo = prompt('Modifica nota:', nota.testo);
+  if (nuovo === null) return;            // annullato
+  if (!nuovo.trim()) return;             // vuoto: non modifico
+  userPrefs.updateNotaGiorno(id, nuovo);
   refreshNoteGiornoList();
 }
 function removeNotaGiorno(id) {
@@ -9900,9 +9925,9 @@ function renderContattiGroupedBox(items, opts = {}) {
             onDown: `movePrefUoc('${escapeJs(c.id)}',1)`
           } : null
         })).join('');
-    return `<div class="fav-bucket" data-uoc-id="${escapeHtml(grp.gId)}">
-      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="true">
-        <span class="fav-bucket-caret">&#9662;</span>
+    return `<div class="fav-bucket fav-bucket-collapsed" data-uoc-id="${escapeHtml(grp.gId)}">
+      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="false">
+        <span class="fav-bucket-caret">&#9656;</span>
         <span class="sede-bucket-tipo">${titleUoc}${titleSez}</span>${uocReorder}
       </button>
       <div class="fav-bucket-contatti">${rows}</div>
@@ -18962,6 +18987,7 @@ function initEventListeners() {
   initEditModeButtons();
   initGlobalSearch();
   initWindowResize();
+  initKeyboardBlurOnViewport();
 }
 
 function initLoginAndNav() {
@@ -19283,6 +19309,33 @@ function initWindowResize() {
         window._modOverlayRaf = requestAnimationFrame(() => refreshModuloOverlays(slug));
       }
     }
+  });
+}
+
+// Rete di sicurezza per la chiusura della tastiera mobile tramite gesture "indietro".
+// Su Android Chrome il primo back con tastiera aperta spesso la chiude senza che il nostro
+// handler popstate riesca a sfocare l'input (l'evento può non arrivare, oppure activeElement
+// resta a fuoco e il sistema riapre la tastiera). Quando la tastiera si chiude, la
+// visualViewport si "rialza" (height torna vicino a window.innerHeight): se in quel momento
+// un campo editabile è ancora a fuoco, lo sfoco esplicitamente. Così barra di ricerca,
+// ricerca rubrica e "Note del giorno" non restano selezionate dopo aver chiuso la tastiera.
+function initKeyboardBlurOnViewport() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  // Soglia: consideriamo la tastiera "aperta" se la viewport è più bassa della finestra
+  // di almeno questa frazione. Al ritorno sopra soglia → tastiera chiusa.
+  const KB_RATIO = 0.85;
+  let kbWasOpen = false;
+  vv.addEventListener('resize', () => {
+    const open = vv.height < window.innerHeight * KB_RATIO;
+    if (kbWasOpen && !open) {
+      // La tastiera si è appena chiusa: se un campo editabile è ancora a fuoco, sfocalo.
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+        try { ae.blur(); } catch {}
+      }
+    }
+    kbWasOpen = open;
   });
 }
 
