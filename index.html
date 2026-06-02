@@ -3178,26 +3178,46 @@ function toast(message, level = 'info', duration = 3500) {
    altrimenti copia il link in clipboard con feedback toast. Esperienza nativa
    su iOS/Android, comportamento standard "copy link" su desktop. */
 async function shareLink(url, title) {
-  // Web Share API: tipicamente disponibile su mobile (iOS Safari, Chrome Android)
-  // e su Edge/Chrome desktop in alcune versioni. È la via canonica.
-  if (navigator.share) {
+  // Copia in clipboard con feedback. Tentata per prima su desktop (dove il foglio di
+  // condivisione nativo è assente o inaffidabile) e come fallback ovunque.
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('Link copiato', 'success', 1800);
+      return true;
+    } catch {
+      // Fallback legacy: textarea temporanea + execCommand (per contesti senza clipboard API).
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) { toast('Link copiato', 'success', 1800); return true; }
+      } catch {}
+      // Fallback estremo: prompt visibile per copia manuale.
+      try { prompt('Copia il link:', url); return true; } catch {}
+      return false;
+    }
+  };
+
+  // Considero "mobile" la presenza di touch + viewport stretto: lì il foglio di condivisione
+  // nativo è la via migliore. Su desktop vado dritto al clipboard (più affidabile e immediato).
+  const isMobileLike = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && window.innerWidth <= 900;
+
+  if (navigator.share && isMobileLike) {
     try {
       await navigator.share({ title: title || 'CollinettaAI', url });
       return;
     } catch (err) {
-      // L'utente potrebbe aver chiuso il foglio di condivisione: non è un errore
-      // Se invece è un fallimento reale, ricado sul clipboard
-      if (err && err.name === 'AbortError') return;
+      if (err && err.name === 'AbortError') return;  // utente ha chiuso il foglio: non è un errore
+      // Qualsiasi altro errore → ricado sul clipboard.
     }
   }
-  // Fallback: copia in clipboard (desktop)
-  try {
-    await navigator.clipboard.writeText(url);
-    toast('Link copiato', 'success', 1800);
-  } catch {
-    // Fallback estremo: prompt visibile per copia manuale
-    try { prompt('Copia il link:', url); } catch {}
-  }
+  await copyToClipboard();
 }
 
 /* Gestisce il click su una riga contatto in vista rubrica.
@@ -3359,8 +3379,9 @@ async function shareContattoById(contattoId) {
     cells.forEach(c => lines.push(`pers. ${c}`));
   }
   const text = lines.join('\n');
-  // Web Share API se disponibile (mobile), altrimenti clipboard
-  if (navigator.share) {
+  // Web Share API solo su mobile; su desktop vado dritto al clipboard (più affidabile).
+  const isMobileLike = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && window.innerWidth <= 900;
+  if (navigator.share && isMobileLike) {
     try {
       await navigator.share({ text });
       return;
@@ -3372,7 +3393,16 @@ async function shareContattoById(contattoId) {
     await navigator.clipboard.writeText(text);
     if (typeof toast === 'function') toast('Copiato negli appunti', 'success');
   } catch (e) {
-    if (typeof toast === 'function') toast('Errore: ' + e.message, 'error');
+    // Fallback legacy per contesti senza clipboard API.
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) { if (typeof toast === 'function') toast('Copiato negli appunti', 'success'); return; }
+    } catch {}
+    try { prompt('Copia il contatto:', text); } catch {}
   }
 }
 
@@ -11229,12 +11259,22 @@ function _parseDataString(s) {
   const m = String(s).trim().match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{2,4})$/);
   if (!m) return null;
   let [, gg, mm, aaaa] = m;
-  if (aaaa.length === 2) aaaa = (parseInt(aaaa, 10) > 30 ? '19' : '20') + aaaa;
+  if (aaaa.length === 2) aaaa = _expandAnnoBreve(aaaa);
   return {
     giorno: gg.padStart(2, '0'),
     mese: mm.padStart(2, '0'),
     anno: aaaa
   };
+}
+
+// Espande un anno a 2 cifre nel secolo corretto. Per evitare errori a cavallo di fine anno,
+// gli anni fino a (anno corrente + 2) restano nel 2000 (es. 26→2026, 28→2028), mentre da
+// (anno corrente + 3) in poi vanno nel 1900 (es. 29→1929). La soglia è dinamica sull'anno reale.
+function _expandAnnoBreve(aa2) {
+  const n = parseInt(aa2, 10);
+  const annoCorrente = new Date().getFullYear();
+  const cutoff = (annoCorrente % 100) + 2;  // es. 2026 → 28
+  return (n <= cutoff ? '20' : '19') + String(n).padStart(2, '0');
 }
 
 // Estrai una "porzione" da una stringa data secondo il formato richiesto.
@@ -11712,7 +11752,7 @@ function renderModuloCompilatore(slug, det) {
         <button class="btn ghost" onclick="addModuloBox('${escapeJs(slug)}')">+ Aggiungi box</button>
         <button class="btn ${det.showGrid ? 'primary' : 'ghost'}" onclick="toggleModuloGrid('${escapeJs(slug)}')" title="Mostra/nascondi griglia di allineamento (con snap)"${det.showGrid ? ' style="background:#185FA5;border-color:#185FA5;"' : ''}>▦ Griglia</button>
         ${isDirty ? `
-          <button class="btn primary" id="mod-btn-save" onclick="runWithSpinner(this, () => salvaModuloBoxes('${escapeJs(slug)}'))" style="background:#185FA5;border-color:#185FA5;">Salva</button>
+          <button class="btn primary" id="mod-btn-save" onclick="salvaModuloBoxes('${escapeJs(slug)}')" style="background:#185FA5;border-color:#185FA5;">Salva</button>
           <button class="btn ghost" onclick="scartaModuloBoxesModifiche('${escapeJs(slug)}')">Scarta</button>
           <span class="mod-toolbar-hint" style="color:#A32D2D;font-style:normal;">Modifiche non salvate</span>
         ` : `<span class="mod-toolbar-hint">Trascina i box per spostarli, usa gli angoli per ridimensionarli.</span>`}
@@ -11823,8 +11863,8 @@ function _renderModuloEditorPanel(slug, det) {
           <label class="mod-field-label">Dimensione font (px)</label>
           <div class="mod-fontsize-stepper">
             <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},-1)" aria-label="Riduci dimensione font">−</button>
-            <input type="number" class="mod-input mod-fs-input" min="6" max="48" value="${selBox.font_size || 11}"
-                   oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',parseInt(this.value)||11)">
+            <input type="text" inputmode="numeric" class="mod-input mod-fs-input" value="${selBox.font_size || 11}"
+                   oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',Math.min(48,Math.max(6,parseInt(this.value)||11)))">
             <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},+1)" aria-label="Aumenta dimensione font">+</button>
           </div>
         </div>
@@ -12065,10 +12105,10 @@ function _renderCampoInput(c, value, slug) {
                  oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','nome',this.value)"
                  onblur="_salvaPazienteSeCompleto('${escapeJs(slug)}','${escapeJs(c.id)}')">
         </div>
-        <input type="text" placeholder="Data di nascita (gg/mm/aaaa)" class="mod-input" style="margin-top:6px;"
+        <input type="text" inputmode="numeric" placeholder="gg/mm/aaaa" class="mod-input" style="margin-top:6px;"
                value="${escapeHtml(v.dataNascita || '')}"
                data-paziente-field="dataNascita" data-paziente-fid="${escapeHtml(c.id)}"
-               oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}','dataNascita',this.value)"
+               oninput="maskDataInput(this,'${escapeJs(slug)}','${escapeJs(c.id)}','dataNascita')"
                onblur="_salvaPazienteSeCompleto('${escapeJs(slug)}','${escapeJs(c.id)}')">
         <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn ghost sm" onclick="salvaPazienteCorrente('${escapeJs(slug)}','${escapeJs(c.id)}')" title="Salva questo paziente per le prossime volte">💾 Salva paziente</button>
@@ -12098,8 +12138,8 @@ function _renderCampoInput(c, value, slug) {
     return `
       <div class="mod-field-group">
         <label class="mod-field-label" for="${id}">${escapeHtml(c.label)}${required}</label>
-        <input type="text" id="${id}" class="mod-input" placeholder="gg/mm/aaaa" value="${escapeHtml(value || '')}"
-               oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}',null,this.value)">
+        <input type="text" id="${id}" inputmode="numeric" class="mod-input" placeholder="gg/mm/aaaa" value="${escapeHtml(value || '')}"
+               oninput="maskDataInput(this,'${escapeJs(slug)}','${escapeJs(c.id)}',null)">
       </div>`;
   }
   if (c.tipo === 'testo_lungo') {
@@ -12117,6 +12157,23 @@ function _renderCampoInput(c, value, slug) {
       <input type="text" id="${id}" class="mod-input" value="${escapeHtml(value || '')}"
              oninput="updateModuloField('${escapeJs(slug)}','${escapeJs(c.id)}',null,this.value)">
     </div>`;
+}
+
+// Maschera per gli input data: mentre l'utente digita le cifre, inserisce automaticamente gli
+// slash nelle posizioni gg/mm/aaaa. Accetta sia anno intero (4 cifre) sia ridotto (2 cifre): non
+// forza la lunghezza dell'anno, così "01/02/26" e "01/02/2026" sono entrambi validi (l'espansione
+// del secolo avviene poi in _parseDataString). Aggiorna l'input in-place e propaga il valore.
+function maskDataInput(el, slug, fieldId, subKey) {
+  const raw = el.value;
+  // Tengo solo le cifre; ammetto fino a 8 (gg mm aaaa). Se l'utente digita più di 8, taglio.
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  let out = digits;
+  if (digits.length > 4) out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+  else if (digits.length > 2) out = digits.slice(0, 2) + '/' + digits.slice(2);
+  // Se l'utente sta cancellando e resta uno slash finale "12/", lo lascio per non bloccare.
+  el.value = out;
+  if (subKey) updateModuloField(slug, fieldId, subKey, out);
+  else updateModuloField(slug, fieldId, null, out);
 }
 
 // Update field handler: aggiorna stato + re-render overlay (NON l'intero compilatore)
@@ -12655,7 +12712,7 @@ function _refreshModuloToolbar(slug) {
       <button class="btn ghost" onclick="addModuloBox('${escapeJs(slug)}')">+ Aggiungi box</button>
       <button class="btn ${c.showGrid ? 'primary' : 'ghost'}" onclick="toggleModuloGrid('${escapeJs(slug)}')" title="Mostra/nascondi griglia di allineamento (con snap)"${c.showGrid ? ' style="background:#185FA5;border-color:#185FA5;"' : ''}>▦ Griglia</button>
       ${isDirty ? `
-        <button class="btn primary" id="mod-btn-save" onclick="runWithSpinner(this, () => salvaModuloBoxes('${escapeJs(slug)}'))" style="background:#185FA5;border-color:#185FA5;">Salva</button>
+        <button class="btn primary" id="mod-btn-save" onclick="salvaModuloBoxes('${escapeJs(slug)}')" style="background:#185FA5;border-color:#185FA5;">Salva</button>
         <button class="btn ghost" onclick="scartaModuloBoxesModifiche('${escapeJs(slug)}')">Scarta</button>
         <span class="mod-toolbar-hint" style="color:#A32D2D;font-style:normal;">Modifiche non salvate</span>
       ` : `<span class="mod-toolbar-hint">Trascina i box per spostarli, usa gli angoli per ridimensionarli.</span>`}
@@ -13169,9 +13226,25 @@ async function salvaModuloBoxes(slug) {
   const m = (state.index.moduli || []).find(x => x.slug === slug);
   if (!m) return toast('Modulo non in indice', 'error');
 
-  // Conferma esplicita (operazione "permanente" sul repo)
+  // Conferma esplicita (operazione "permanente" sul repo) tramite popup dell'app, non confirm() nativo.
   const nBoxes = (c.boxesData.box || []).length;
-  if (!confirm(`Salvare ${nBoxes} box su GitHub?\n\nQuesta modifica sarà visibile a tutti gli utenti.`)) return;
+  showModal({
+    title: 'Salvare le modifiche?',
+    subtitle: `${nBoxes} box verranno salvati su GitHub. La modifica sarà visibile a tutti gli utenti.`,
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
+      { label: 'Salva', onClick: () => { closeModal(); _doSalvaModuloBoxes(slug); } }
+    ]
+  });
+}
+
+// Esegue il salvataggio effettivo dei box su GitHub (chiamato dopo la conferma nel popup).
+async function _doSalvaModuloBoxes(slug) {
+  const c = state.moduliCache[slug];
+  if (!c) return toast('Modulo non in cache', 'error');
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  if (!m) return toast('Modulo non in indice', 'error');
+  const nBoxes = (c.boxesData.box || []).length;
 
   const btn = document.getElementById('mod-btn-save');
   if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
