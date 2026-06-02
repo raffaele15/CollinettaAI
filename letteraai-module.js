@@ -44,6 +44,7 @@ const PROMPT_PATHS = {
   VERIFICA_SYSTEM:       PATHS.promptsDir + 'verifica.md',
   ESAMI_LAB_SYS:         PATHS.promptsDir + 'esami_lab.md',
   PREF_BLOCKS:           PATHS.promptsDir + 'prompt_preferenze.md',
+  LETTER_TEMPLATE:       PATHS.promptsDir + 'letter_template.md',
 };
 
 /* ── CDN (lazy-load: solo al primo uso) ── */
@@ -60,7 +61,6 @@ const CDN = {
 const WARDS = ['Stroke Unit','Clinica Neurologica','Neurologia','Neurochirurgia','Altro'];
 const TIPI = [
   { id:'dimissione',    label:'Dimissione' },
-  { id:'completamento', label:'Lettera di completamento' },
 ];
 
 /* ── PROMPT (let: sovrascrivibili da repo, fallback embedded identico a standalone) ── */
@@ -584,7 +584,7 @@ let PREF_BLOCKS = `[lab.altered]
 - ACCERTAMENTI STRUMENTALI: riporta il referto in forma estesa, includendo tutti i reperti del documento con il testo reale del referto (non parafrasato).
 
 [acc.brief]
-- ACCERTAMENTI STRUMENTALI: riporta in forma sintetica i soli reperti clinicamente rilevanti, ma usando il testo reale del referto (copiando/accorciando le frasi del documento), NON una parafrasi con parole tue. Se il referto non ha conclusioni esplicite, riporta i reperti descrittivi così come sono.
+- ACCERTAMENTI STRUMENTALI: riporta SOLO le conclusioni di ciascun referto, usando il testo reale del documento (copiando/accorciando le frasi delle conclusioni), NON una parafrasi con parole tue e NON i reperti descrittivi. Se un referto non ha conclusioni esplicite, riporta in forma sintetica i soli reperti clinicamente rilevanti, sempre col testo reale del referto.
 
 [acc.default]
 - ACCERTAMENTI STRUMENTALI: riporta i reperti usando il testo reale del referto (copiando/accorciando le frasi del documento), NON una parafrasi con parole tue. Se mancano conclusioni esplicite, riporta i reperti descrittivi come nel referto, senza riassumerli in una frase generica.
@@ -604,7 +604,99 @@ let PREF_BLOCKS = `[lab.altered]
 [ter.lastPlusHome]
 - TERAPIA ALLA DIMISSIONE: nella tabella della terapia alla dimissione, oltre agli ultimi farmaci prescritti durante il ricovero, includi anche i farmaci della terapia domiciliare che erano stati sospesi solo per esigenze organizzative del ricovero (es. farmaci non disponibili in reparto, sostituiti temporaneamente con equivalenti) e che il paziente dovrà riprendere dopo la dimissione.`;
 
-const PROMPT_EMBEDDED_FALLBACKS = { DEFAULT_SYS, FINGERPRINT_PROMPT_V3, VERIFICA_SYSTEM, ESAMI_LAB_SYS, PREF_BLOCKS };
+// ── LETTER_TEMPLATE (fac-simile editabile) ──
+// Fac-simile di reparto di default, modificabile solo da admin (Editor Prompt) e
+// salvato su prompts/letter_template.md. Ogni utente può sovrascriverlo con un
+// fac-simile personale salvato in user_templates/<user>.json (campo letterTemplate).
+// [DATA_OGGI] viene sostituito con la data corrente al momento della generazione.
+let LETTER_TEMPLATE = `## TEMPLATE LETTERA — DIMISSIONE DIRETTA DA [REPARTO]
+
+Genera la lettera seguendo ESATTAMENTE questa struttura. Per dati assenti: "Non documentato." — MAI inventare.
+
+---
+Padova, [DATA_OGGI]
+
+Egregi Colleghi,
+        dimettiamo in data odierna il Sig. **[PAZIENTE_NOME]**, di anni [ETA'] (nato il [DATA_NASCITA]), ricoverato presso il nostro Reparto in data [DD/MM] u.s. con diagnosi di:
+
+"[DIAGNOSI_PRINCIPALE]"
+
+**In anamnesi:** [APR dall'input — prosa continua]
+
+mRS pre-evento = [valore se presente — solo per stroke/TIA, altrimenti ometti].
+
+**Terapia domiciliare:** [farmaci pre-ricovero dall'input]
+
+[farmacoallergie se documentate, altrimenti: Non farmacoallergie note.]
+
+**Motivo del ricovero:**
+[esordio sintomatologico dall'input — passato prossimo — MAI passato remoto]
+
+Presso il Pronto Soccorso AOUP è stato sottoposto a:
+- **Esami ematochimici:** [dall'input]
+- **TC encefalo:** [dall'input]
+- **AngioTC dei vasi intracranici:** [se eseguita — altrimenti ometti]
+- **Valutazione neurologica:** [EON verbatim — NIHSS — dall'input]
+
+**Esame obiettivo neurologico all'ingresso in [REPARTO]:**
+[EON verbatim dall'input — NIHSS X]
+
+**Esame obiettivo generale all'ingresso in [REPARTO]:**
+[dall'input]
+
+Durante la degenza il paziente è stato sottoposto ai seguenti **esami ematochimici:**
+- **Emocromo con formula:** [valori o "nella norma"]
+- **Profilo coagulativo:** [dall'input]
+- **Indici di flogosi:** [dall'input]
+- **Funzionalità epatica:** [dall'input]
+- **Funzionalità renale con ionemia:** [dall'input]
+- **Profilo metabolico:** [dall'input]
+- **Profilo proteico:** [dall'input]
+- **Enzimi muscolari:** [dall'input]
+- **Albumina:** [dall'input]
+- **Profilo carenziale:** [dall'input]
+- **Funzionalità tiroidea:** [dall'input]
+- **ntBNP:** [dall'input]
+- **Esame urine:** [dall'input]
+- **Esame chimico-fisico liquorale (DD/MM):** [SOLO se presente esame del liquor/rachicentesi nell'input; aspetto, cellule, proteine, glucosio, ecc.]
+
+Sono stati inoltre eseguiti i seguenti **esami microbiologici e sierologici:**
+- **Microbiologia:** [dall'input — ogni microrganismo/anticorpo cercato con esito; colture con data (DD/MM)]
+
+e alle seguenti **indagini diagnostico-strumentali e valutazioni specialistiche:**
+- **ECG (DD/MM):** [dall'input]
+- **Rx torace (DD/MM):** [dall'input]
+- **TC encefalo (DD/MM):** [dall'input]
+- **Valutazione fisiatrica (DD/MM):** [se eseguita]
+- [altri accertamenti se presenti nell'input]
+
+**Decorso Clinico:**
+[Prosa clinica unica 150-300 parole, passato prossimo, MAI passato remoto, NESSUNA riga vuota interna — sintesi decisioni terapeutiche e andamento]
+
+**L'obiettività alla dimissione mostra:**
+[condizioni neurologiche e generali alla dimissione. NIHSS: XX. mRS: XX. (solo per stroke/TIA — omettere entrambi per altre patologie)]
+
+**Terapia alla dimissione:**
+
+| Farmaco | Posologia | Orario | Note |
+|---------|-----------|--------|------|
+[Una riga per farmaco — nome+dosaggio | n cp per os | 8.00 o 8.00-20.00 | terapia domiciliare / nuova terapia / nuova terapia fino a rivalutazione]
+
+Il paziente è atteso in regime di post-degenza per eseguire **visita neurologica ed ecocolordoppler dei tronchi sovraortici e transcranico** di controllo in data **[DD/MM/YYYY]** alle ore **[HH:MM]** per l'Ambulatorio di Malattie Cerebrovascolari, al piano terra della Palazzina di Neuroscienze.
+
+Si raccomanda:
+- [raccomandazione 1]
+- [raccomandazione 2]
+- [raccomandazione N — una per riga, con trattino breve (-), basate sull'input]
+
+Rimaniamo a disposizione e porgiamo cordiali saluti.
+
+[FIRMA_MEDICO_FORMAZIONE]                     [FIRMA_DIRIGENTE]
+(medici in formazione specialistica)            (Dirigente medico)
+
+---`;
+
+const PROMPT_EMBEDDED_FALLBACKS = { DEFAULT_SYS, FINGERPRINT_PROMPT_V3, VERIFICA_SYSTEM, ESAMI_LAB_SYS, PREF_BLOCKS, LETTER_TEMPLATE };
 
 /* ── Costanti dominio (verbatim da standalone) ── */
 const DEFAULT_USER_PREFS = {
@@ -620,67 +712,18 @@ const DEFAULT_USER_PREFS = {
 /* Descrizioni per i tooltip (hover) dei pulsanti di preferenza, per chiave→valore. */
 const PREF_TITLES = {
   lab: { all: 'Riporta tutti i valori di laboratorio, con range di normalità', altered: 'Riporta solo i valori alterati (fuori range) e i 6 obbligatori (colesterolo totale, HDL, LDL, trigliceridi, HbA1c, creatinina)' },
-  acc: { brief: 'Accertamenti strumentali: solo i reperti rilevanti, ma col testo reale del referto (non parafrasato)', extended: 'Accertamenti strumentali: tutti i reperti del referto, col testo reale del documento (non parafrasato)' },
+  acc: { brief: 'Accertamenti strumentali: solo le conclusioni', extended: 'Accertamenti strumentali: tutti i reperti del referto, col testo reale del documento (non parafrasato)' },
   dec: { short: 'Decorso clinico: sintesi concisa (150-250 parole), solo eventi e decisioni principali', standard: 'Decorso clinico: lunghezza standard', long: 'Decorso clinico: racconto dettagliato (400-600 parole) con eventi intermedi e ragionamento clinico' },
   an: { essential: 'Anamnesi essenziale: riporta tutte le patologie ma in forma sintetica', complete: 'Anamnesi completa, con i dettagli rilevanti' },
   rac: { main: 'Solo le raccomandazioni principali (terapia, follow-up clinico)', all: 'Tutte le raccomandazioni' },
   ter: { last: 'Terapia alla dimissione: solo gli ultimi farmaci prescritti durante il ricovero', lastPlusHome: 'Terapia alla dimissione: ultimi farmaci + i domiciliari sospesi solo per esigenze organizzative del ricovero' }
 };
 
-/* ── TEMPLATE_SECTIONS_AVAILABLE ── */
-const TEMPLATE_SECTIONS_AVAILABLE = [
-  { id: 'diagnosi_quotata',           label: 'Diagnosi (in apertura)' },
-  { id: 'anamnesi_patologica_remota', label: 'Anamnesi patologica remota' },
-  { id: 'terapia_domiciliare',        label: 'Terapia domiciliare' },
-  { id: 'motivo_ricovero',            label: 'Motivo del ricovero' },
-  { id: 'ricoveri_precedenti',        label: 'Ricoveri precedenti (auto-skip se assenti)' },
-  { id: 'eo_neurologico_ingresso',    label: 'Esame obiettivo neurologico all\'ingresso' },
-  { id: 'eo_generale_ingresso',       label: 'Esame obiettivo generale all\'ingresso' },
-  { id: 'esami_ematochimici',         label: 'Esami ematochimici' },
-  { id: 'indagini_strumentali',       label: 'Indagini diagnostico-strumentali' },
-  { id: 'decorso_clinico',            label: 'Decorso clinico' },
-  { id: 'eo_neurologico_dimissione',  label: 'Esame obiettivo neurologico alla dimissione' },
-  { id: 'terapia_dimissione',         label: 'Terapia alla dimissione (tabella)' },
-  { id: 'visite_controllo',           label: 'Visite di controllo' },
-  { id: 'raccomandazioni',            label: 'Raccomandazioni' },
-];
-
-/* ── DEFAULT_TEMPLATE_EMBEDDED ── */
-const DEFAULT_TEMPLATE_EMBEDDED = {
-  id: 'default',
-  name: 'Dimissione standard (default)',
-  scenario: 'dimissione_domicilio',
-  intestazione: 'Alla cortese attenzione del Medico Curante',
-  saluto: 'Egregi Colleghi,',
-  apertura: 'dimettiamo in data odierna il/la sig./sig.ra [PAZIENTE_NOME], di anni [ETÀ] ([DATA_NASCITA]), ricoverato/a presso il nostro reparto in data [DATA_INGRESSO], con diagnosi di:',
-  ordine_sezioni: [
-    'diagnosi_quotata',
-    'anamnesi_patologica_remota',
-    'terapia_domiciliare',
-    'motivo_ricovero',
-    'ricoveri_precedenti',
-    'eo_neurologico_ingresso',
-    'eo_generale_ingresso',
-    'esami_ematochimici',
-    'indagini_strumentali',
-    'decorso_clinico',
-    'eo_neurologico_dimissione',
-    'terapia_dimissione',
-    'visite_controllo',
-    'raccomandazioni',
-  ],
-  chiusura: 'Rimaniamo a disposizione e porgiamo cordiali saluti.',
-  firma_specializzando_label: '[NOME_SPECIALIZZANDO]',
-  firma_dirigente_label: '[NOME_DIRIGENTE]',
-  firma_ruolo_sx: 'Medico in formazione specialistica',
-  firma_ruolo_dx: 'Dirigente medico',
-};
-
 /* ═══════════════════════════════════════════════════════════════════════════
    STATO MODULO + shim di compatibilità "S" (mappa lo stato standalone)
    ═══════════════════════════════════════════════════════════════════════════ */
 const L = {
-  casi: [], wards: [], allItems: [], templates: [],
+  casi: [], wards: [], allItems: [],
   systemPromptSha: {},
   userOverride: '', userOverrideSha: null,
   userTemplateData: null, userTemplateSha: null,
@@ -691,7 +734,6 @@ const L = {
 // Variabili module-level usate dalle funzioni di dominio (nomi identici a standalone)
 let _userOverride = '';
 let _userTemplateData = null;
-let _templates = [];
 let _refInjectMode = 'none';
 let _refCaseId = null;
 
@@ -3248,48 +3290,6 @@ function buildWardFpSystemAddendum(fpObj){
   return '';
 }
 
-// ── getEffectiveTemplate ──
-function getEffectiveTemplate(){
-  let base = null;
-  if(_userTemplateData && _userTemplateData.base_template_id){
-    base = _templates.find(t => t.id === _userTemplateData.base_template_id);
-  }
-  if(!base) base = _templates.find(t => t.id === 'default') || _templates[0] || DEFAULT_TEMPLATE_EMBEDDED;
-
-  // Deep copy to avoid mutating library
-  const eff = JSON.parse(JSON.stringify(base));
-
-  // Apply user overrides if present
-  if(_userTemplateData && _userTemplateData.overrides){
-    const ov = _userTemplateData.overrides;
-    Object.keys(ov).forEach(k => { eff[k] = ov[k]; });
-  }
-  return eff;
-}
-
-// ── renderTemplateForPrompt ──
-function renderTemplateForPrompt(tpl){
-  const sections = (tpl.ordine_sezioni||[]).map(id => {
-    const s = TEMPLATE_SECTIONS_AVAILABLE.find(x => x.id === id);
-    return s ? `${id}: ${s.label}` : id;
-  });
-  let out = '\n\n═══════════════════════════════════════════════════════════════\n';
-  out += 'TEMPLATE DELLA LETTERA — STRUTTURA SCELTA\n';
-  out += '═══════════════════════════════════════════════════════════════\n\n';
-  out += `INTESTAZIONE:\n${tpl.intestazione || ''}\n\n`;
-  out += `SALUTO:\n${tpl.saluto || ''}\n\n`;
-  out += `APERTURA (dopo il saluto, segue la diagnosi tra virgolette):\n${tpl.apertura || ''}\n\n`;
-  out += `ORDINE SEZIONI (segui esattamente questo ordine):\n`;
-  sections.forEach((s,i) => { out += `${i+1}. ${s}\n`; });
-  out += `\nCHIUSURA:\n${tpl.chiusura || ''}\n\n`;
-  out += `FIRMA (due colonne):\n`;
-  out += `Sinistra: ${tpl.firma_specializzando_label || '[NOME_SPECIALIZZANDO]'}\n`;
-  out += `         (${tpl.firma_ruolo_sx || 'Medico in formazione specialistica'})\n`;
-  out += `Destra:  ${tpl.firma_dirigente_label || '[NOME_DIRIGENTE]'}\n`;
-  out += `         (${tpl.firma_ruolo_dx || 'Dirigente medico'})\n`;
-  return out;
-}
-
 // ── renderUserOverrideForPrompt ──
 function renderUserOverrideForPrompt(){
   if(!_userOverride || !_userOverride.trim()) return '';
@@ -3303,7 +3303,6 @@ function renderUserOverrideForPrompt(){
 function getEffectiveSystemPrompt(){
   let out = DEFAULT_SYS;
   out += renderUserOverrideForPrompt();
-  out += renderTemplateForPrompt(getEffectiveTemplate());
   return out;
 }
 
@@ -3361,97 +3360,15 @@ function buildPreferencesPromptBlock(){
 }
 
 // ── buildLetterTemplate ──
+// Restituisce il fac-simile personale dell'utente se presente, altrimenti il
+// default di reparto (LETTER_TEMPLATE, definito vicino agli altri prompt).
+// Sostituisce [DATA_OGGI] con la data odierna.
 function buildLetterTemplate(){
-  const diagnosi='[DIAGNOSI_PRINCIPALE]';
-  const today=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-
-  // Default: DIMISSIONE DIRETTA
-  return `## TEMPLATE LETTERA — DIMISSIONE DIRETTA DA [REPARTO]
-
-Genera la lettera seguendo ESATTAMENTE questa struttura. Per dati assenti: "Non documentato." — MAI inventare.
-
----
-Padova, ${today}
-
-Egregi Colleghi,
-        dimettiamo in data odierna il Sig. **[PAZIENTE_NOME]**, di anni [ETA'] (nato il [DATA_NASCITA]), ricoverato presso il nostro Reparto in data [DD/MM] u.s. con diagnosi di:
-
-"${diagnosi}"
-
-**In anamnesi:** [APR dall'input — prosa continua]
-
-mRS pre-evento = [valore se presente — solo per stroke/TIA, altrimenti ometti].
-
-**Terapia domiciliare:** [farmaci pre-ricovero dall'input]
-
-[farmacoallergie se documentate, altrimenti: Non farmacoallergie note.]
-
-**Motivo del ricovero:**
-[esordio sintomatologico dall'input — passato prossimo — MAI passato remoto]
-
-Presso il Pronto Soccorso AOUP è stato sottoposto a:
-- **Esami ematochimici:** [dall'input]
-- **TC encefalo:** [dall'input]
-- **AngioTC dei vasi intracranici:** [se eseguita — altrimenti ometti]
-- **Valutazione neurologica:** [EON verbatim — NIHSS — dall'input]
-
-**Esame obiettivo neurologico all'ingresso in [REPARTO]:**
-[EON verbatim dall'input — NIHSS X]
-
-**Esame obiettivo generale all'ingresso in [REPARTO]:**
-[dall'input]
-
-Durante la degenza il paziente è stato sottoposto ai seguenti **esami ematochimici:**
-- **Emocromo con formula:** [valori o "nella norma"]
-- **Profilo coagulativo:** [dall'input]
-- **Indici di flogosi:** [dall'input]
-- **Funzionalità epatica:** [dall'input]
-- **Funzionalità renale con ionemia:** [dall'input]
-- **Profilo metabolico:** [dall'input]
-- **Profilo proteico:** [dall'input]
-- **Enzimi muscolari:** [dall'input]
-- **Albumina:** [dall'input]
-- **Profilo carenziale:** [dall'input]
-- **Funzionalità tiroidea:** [dall'input]
-- **ntBNP:** [dall'input]
-- **Esame urine:** [dall'input]
-- **Esame chimico-fisico liquorale (DD/MM):** [SOLO se presente esame del liquor/rachicentesi nell'input; aspetto, cellule, proteine, glucosio, ecc.]
-
-Sono stati inoltre eseguiti i seguenti **esami microbiologici e sierologici:**
-- **Microbiologia:** [dall'input — ogni microrganismo/anticorpo cercato con esito; colture con data (DD/MM)]
-
-e alle seguenti **indagini diagnostico-strumentali e valutazioni specialistiche:**
-- **ECG (DD/MM):** [dall'input]
-- **Rx torace (DD/MM):** [dall'input]
-- **TC encefalo (DD/MM):** [dall'input]
-- **Valutazione fisiatrica (DD/MM):** [se eseguita]
-- [altri accertamenti se presenti nell'input]
-
-**Decorso Clinico:**
-[Prosa clinica unica 150-300 parole, passato prossimo, MAI passato remoto, NESSUNA riga vuota interna — sintesi decisioni terapeutiche e andamento]
-
-**L'obiettività alla dimissione mostra:**
-[condizioni neurologiche e generali alla dimissione. NIHSS: XX. mRS: XX. (solo per stroke/TIA — omettere entrambi per altre patologie)]
-
-**Terapia alla dimissione:**
-
-| Farmaco | Posologia | Orario | Note |
-|---------|-----------|--------|------|
-[Una riga per farmaco — nome+dosaggio | n cp per os | 8.00 o 8.00-20.00 | terapia domiciliare / nuova terapia / nuova terapia fino a rivalutazione]
-
-Il paziente è atteso in regime di post-degenza per eseguire **visita neurologica ed ecocolordoppler dei tronchi sovraortici e transcranico** di controllo in data **[DD/MM/YYYY]** alle ore **[HH:MM]** per l'Ambulatorio di Malattie Cerebrovascolari, al piano terra della Palazzina di Neuroscienze.
-
-Si raccomanda:
-- [raccomandazione 1]
-- [raccomandazione 2]
-- [raccomandazione N — una per riga, con trattino breve (-), basate sull'input]
-
-Rimaniamo a disposizione e porgiamo cordiali saluti.
-
-[FIRMA_MEDICO_FORMAZIONE]                     [FIRMA_DIRIGENTE]
-(medici in formazione specialistica)            (Dirigente medico)
-
----`;
+  const personal = (_userTemplateData && typeof _userTemplateData.letterTemplate === 'string')
+    ? _userTemplateData.letterTemplate.trim() : '';
+  const tpl = personal || LETTER_TEMPLATE;
+  const today = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return tpl.replace(/\[DATA_OGGI\]/g, today);
 }
 
 // ── buildUserPromptStr ──
@@ -3475,8 +3392,7 @@ function buildUserPromptStr(){
     p+='---\n\n';
   }
 
-  p+=`## DATI CLINICI ANONIMIZZATI\n\n<clinical_input>\n${S.anonText}\n</clinical_input>\n\n---\n\n`;
-  p+=buildLetterTemplate();
+  p+=`## DATI CLINICI ANONIMIZZATI\n\n<clinical_input>\n${S.anonText}\n</clinical_input>`;
   return p;
 }
 
@@ -3575,33 +3491,13 @@ async function bootstrapPrompts(){
       else if (varName === 'VERIFICA_SYSTEM') VERIFICA_SYSTEM = f.content;
       else if (varName === 'ESAMI_LAB_SYS') ESAMI_LAB_SYS = f.content;
       else if (varName === 'PREF_BLOCKS') PREF_BLOCKS = f.content;
+      else if (varName === 'LETTER_TEMPLATE') LETTER_TEMPLATE = f.content;
       L.systemPromptSha[varName] = f.sha;
     }
   }
 }
 
 /* Bootstrap template library (identico allo standalone: legge templates/*.json) */
-async function bootstrapTemplatesRepo(){
-  // Replica la logica dell'originale: i template del repo SOSTITUISCONO la lista;
-  // il default embedded si usa solo se il repo non ne contiene. Dedup per id per
-  // evitare doppioni (es. se nel repo esiste un default.json oltre all'embedded).
-  const fetched = [];
-  const entries = await ghList(PATHS.templatesDir);
-  for (const e of entries){
-    if (e.type !== 'file' || !e.name.endsWith('.json')) continue;
-    const f = await ghGet(e.path);
-    if (!f) continue;
-    try {
-      const tpl = JSON.parse(f.content); tpl._sha = f.sha;
-      if (tpl && tpl.id && !fetched.some(x => x.id === tpl.id)) fetched.push(tpl);
-    } catch(err){}
-  }
-  // Garantisco la presenza del default: se il repo non lo include, aggiungo l'embedded in testa
-  if (!fetched.some(t => t.id === 'default')) fetched.unshift(DEFAULT_TEMPLATE_EMBEDDED);
-  _templates = fetched.length ? fetched : [DEFAULT_TEMPLATE_EMBEDDED];
-  L.templates = _templates;
-}
-
 /* Carica override + template dell'utente corrente (identico allo standalone) */
 async function loadUserOverrideRepo(){
   const path = PATHS.userOverrides + username() + '.md';
@@ -3620,7 +3516,6 @@ async function loadUserTemplateRepo(){
 async function loadLibrary(){
   if (!ghHost()) { L.loaded = false; return; }
   await bootstrapPrompts();
-  await bootstrapTemplatesRepo();
   await loadUserOverrideRepo();
   await loadUserTemplateRepo();
   // cases.json: separo casi (con lettera) dai reparti (type:'ward')
@@ -3757,6 +3652,7 @@ async function savePromptToRepo(varName, newText){
   else if (varName === 'VERIFICA_SYSTEM') VERIFICA_SYSTEM = newText;
   else if (varName === 'ESAMI_LAB_SYS') ESAMI_LAB_SYS = newText;
   else if (varName === 'PREF_BLOCKS') PREF_BLOCKS = newText;
+  else if (varName === 'LETTER_TEMPLATE') LETTER_TEMPLATE = newText;
   if (res.content) L.systemPromptSha[varName] = res.content.sha;
   return res;
 }
@@ -3767,36 +3663,6 @@ async function saveUserOverrideToRepo(newText){
   _userOverride = newText; L.userOverride = newText;
   if (res.content) L.userOverrideSha = res.content.sha;
   return res;
-}
-
-/* ── Editor template di libreria (admin): push/elimina su templates/<id>.json ── */
-async function saveLibraryTemplateRepo(tpl){
-  if (!canEdit()) throw new Error('Solo gli amministratori possono modificare i template');
-  if (!tpl.id) throw new Error('Template senza id');
-  const path = PATHS.templatesDir + tpl.id + '.json';
-  // Trova lo sha attuale (se il file esiste già)
-  const existing = _templates.find(t => t.id === tpl.id);
-  let sha = existing && existing._sha ? existing._sha : null;
-  if (!sha){ const f = await ghGet(path); sha = f ? f.sha : null; }
-  const clean = Object.assign({}, tpl); delete clean._sha;
-  const res = await ghHost().putFile(path, JSON.stringify(clean, null, 2), sha,
-    `LetteraAI — salva template ${tpl.id} (by ${username()})`);
-  if (res && res.content && res.content.sha) tpl._sha = res.content.sha;
-  // Aggiorna copia locale
-  const idx = _templates.findIndex(t => t.id === tpl.id);
-  if (idx >= 0) _templates[idx] = tpl; else _templates.push(tpl);
-  L.templates = _templates;
-  return res;
-}
-async function deleteLibraryTemplateRepo(templateId){
-  if (!canEdit()) throw new Error('Solo gli amministratori possono eliminare i template');
-  if (templateId === 'default') throw new Error('Il template di default non può essere eliminato');
-  const path = PATHS.templatesDir + templateId + '.json';
-  const f = await ghGet(path);
-  if (!f) throw new Error('Template non trovato sul repository');
-  await ghHost().deleteFile(path, f.sha, `LetteraAI — elimina template ${templateId} (by ${username()})`);
-  _templates = _templates.filter(t => t.id !== templateId);
-  L.templates = _templates;
 }
 
 async function saveUserTemplateToRepo(data){
@@ -3898,6 +3764,7 @@ function buildCopyPrompt(wiz){
       if (wardFpObj) fullSystem += buildWardFpSystemAddendum(wardFpObj);
       if (refFpObj)  fullSystem += buildFpSystemAddendum(refFpObj);
       fullSystem += buildPreferencesPromptBlock();
+      fullSystem += '\n\n' + buildLetterTemplate();
     }
     userPrompt = buildUserPromptStr();
   }
@@ -4896,12 +4763,9 @@ function renderImpostazioni(){
   const p = (L.userTemplateData && L.userTemplateData.prefs) ? L.userTemplateData.prefs : DEFAULT_USER_PREFS;
   // Stesso stile e tooltip della sezione "Genera lettera": pulsanti lt-tab con title da PREF_TITLES.
   const seg=(key,opts)=>opts.map(o=>`<button class="lt-tab${p[key]===o.v?' on':''}" title="${escapeHtml((PREF_TITLES[key]||{})[o.v]||o.l)}" onclick="window.Lettere._setDefPref('${key}','${o.v}')">${o.l}</button>`).join('');
-  // Dati per il template personale (base + overrides)
-  const tplOpts=_templates.map(t=>`<option value="${escapeHtml(t.id)}"${(_userTemplateData&&_userTemplateData.base_template_id===t.id)?' selected':''}>${escapeHtml(t.name||t.id)}</option>`).join('');
-  const ov = (_userTemplateData && _userTemplateData.overrides) || {};
-  const baseTpl = _templates.find(t=>t.id===(_userTemplateData&&_userTemplateData.base_template_id)) || _templates[0] || {};
-  const v=(k,def)=> (ov[k]!==undefined ? ov[k] : (baseTpl[k]!==undefined ? baseTpl[k] : (def||'')));
-  const ordine = (ov.ordine_sezioni && ov.ordine_sezioni.length) ? ov.ordine_sezioni : (baseTpl.ordine_sezioni||[]);
+  // Fac-simile personale: se l'utente non ne ha uno, parte dal default di reparto (LETTER_TEMPLATE)
+  const personalTpl = (_userTemplateData && typeof _userTemplateData.letterTemplate === 'string' && _userTemplateData.letterTemplate.trim())
+    ? _userTemplateData.letterTemplate : '';
   mc().innerHTML=pageHead('Preferenze', lettereBreadcrumb([{label:'Preferenze', route:'lettere-impostazioni'}]))+`
     <div class="lt-card-static">
       <div class="lt-side-title">Preferenze generazione lettera (default)</div>
@@ -4930,35 +4794,15 @@ function renderImpostazioni(){
     </div>
 
     <div class="lt-card-static">
-      <div class="lt-side-title">Mio template di lettera</div>
-      <div class="field"><label>Template di base</label><select id="lt-utpl-base" onchange="window.Lettere._onUserTplBase(this.value)">${tplOpts}</select></div>
-      <div class="field"><label>Intestazione (a chi è indirizzata la lettera)</label>
-        <input type="text" id="utpl-intestazione" value="${escapeHtml(v('intestazione'))}" placeholder="Alla cortese attenzione del Medico Curante"></div>
-      <div class="field"><label>Saluto (riga prima dell'apertura)</label>
-        <input type="text" id="utpl-saluto" value="${escapeHtml(v('saluto'))}" placeholder="Egregi Colleghi,"></div>
-      <div class="field"><label>Apertura (testo dopo il saluto, prima della diagnosi)</label>
-        <textarea id="utpl-apertura" rows="3">${escapeHtml(v('apertura'))}</textarea></div>
-      <div class="field"><label>Chiusura</label>
-        <input type="text" id="utpl-chiusura" value="${escapeHtml(v('chiusura'))}" placeholder="Rimaniamo a disposizione e porgiamo cordiali saluti."></div>
-      <div class="lt-row">
-        <div class="field" style="flex:1"><label>Firma — colonna sinistra (placeholder)</label>
-          <input type="text" id="utpl-firma-sx" value="${escapeHtml(v('firma_specializzando_label'))}" placeholder="[NOME_SPECIALIZZANDO]">
-          <label style="font-size:9px;color:var(--ink-faint);margin-top:6px">Ruolo colonna sinistra</label>
-          <input type="text" id="utpl-ruolo-sx" value="${escapeHtml(v('firma_ruolo_sx'))}" placeholder="Medico in formazione specialistica"></div>
-        <div class="field" style="flex:1"><label>Firma — colonna destra (placeholder)</label>
-          <input type="text" id="utpl-firma-dx" value="${escapeHtml(v('firma_dirigente_label'))}" placeholder="[NOME_DIRIGENTE]">
-          <label style="font-size:9px;color:var(--ink-faint);margin-top:6px">Ruolo colonna destra</label>
-          <input type="text" id="utpl-ruolo-dx" value="${escapeHtml(v('firma_ruolo_dx'))}" placeholder="Dirigente medico"></div>
-      </div>
-      <div class="field"><label>Ordine delle sezioni della lettera (trascina per riordinare)</label>
-        <div id="utpl-sections"></div></div>
-      <div class="lt-row" style="justify-content:flex-end;gap:8px">
+      <div class="lt-side-title">Mio fac-simile di lettera</div>
+      <p class="lt-status" style="margin:0 0 10px">Fac-simile personale: se compilato, sostituisce quello di reparto (modificabile solo dagli amministratori) nella generazione delle tue lettere. Lascia vuoto per usare il default. Usa <code>[DATA_OGGI]</code> per la data corrente e i placeholder come <code>[PAZIENTE_NOME]</code>, <code>[REPARTO]</code>.</p>
+      <textarea id="lt-utpl-letter" rows="22" class="mono-input" placeholder="Lascia vuoto per usare il fac-simile di reparto, oppure incolla qui il tuo fac-simile personalizzato...">${escapeHtml(personalTpl)}</textarea>
+      <div class="lt-row" style="margin-top:10px;justify-content:flex-end;gap:8px">
+        <button class="btn ghost" onclick="window.Lettere._loadDefaultIntoMyTpl()" title="Copia il fac-simile di reparto nel campo, per partire da quello">⎘ Parti dal default di reparto</button>
         <button class="btn ghost" onclick="window.Lettere._discardMyTpl()">✕ Scarta modifiche</button>
-        <button class="btn ghost" onclick="window.Lettere._resetMyTpl()">↺ Ripristina default</button>
-        <button class="btn" onclick="window.Lettere._saveMyTpl()">Salva template</button></div>
+        <button class="btn ghost" onclick="window.Lettere._resetMyTpl()" title="Svuota il fac-simile personale: tornerai a usare quello di reparto">↺ Usa default di reparto</button>
+        <button class="btn" onclick="window.Lettere._saveMyTpl()">Salva fac-simile</button></div>
     </div>`;
-  // Renderizzo l'editor di riordino sezioni (riusa l'helper esistente)
-  setTimeout(()=>renderSectionsEditor('utpl-sections', ordine), 50);
 }
 
 /* ── Segnala errori (tutti possono inviare) — solo il form ── */
@@ -5018,23 +4862,11 @@ function renderConfig(){
   if(!canEdit()){ mc().innerHTML=pageHead('Editor Prompt','LetteraAI')+'<p>Riservato agli amministratori.</p>'; return; }
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderConfig); return; }
   // Tab prompt con le etichette dell'originale
-  const tabs=[['DEFAULT_SYS','Prompt di sistema'],['FINGERPRINT_PROMPT_V3','Prompt estrazione decorso'],['VERIFICA_SYSTEM','Prompt verifica'],['ESAMI_LAB_SYS','Prompt esami lab'],['PREF_BLOCKS','Prompt preferenze']];
+  const tabs=[['DEFAULT_SYS','Prompt di sistema'],['LETTER_TEMPLATE','Fac-simile lettera'],['FINGERPRINT_PROMPT_V3','Prompt estrazione decorso'],['VERIFICA_SYSTEM','Prompt verifica'],['ESAMI_LAB_SYS','Prompt esami lab'],['PREF_BLOCKS','Prompt preferenze']];
   const cur=L._cfgTab||'DEFAULT_SYS';
-  const curVal={DEFAULT_SYS,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS,PREF_BLOCKS}[cur];
+  const curVal={DEFAULT_SYS,LETTER_TEMPLATE,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS,PREF_BLOCKS}[cur];
   const tabBtns=tabs.map(([k,l])=>`<button class="lt-tab${cur===k?' on':''}" onclick="window.Lettere._cfgTab('${k}')">${l}</button>`).join('');
-  // Lista template di libreria
-  const tplRows=(_templates||[]).map(t=>{
-    const sectCount=(t.ordine_sezioni||[]).length;
-    const isDefault=t.id==='default';
-    const del=isDefault?'':`<button class="btn ghost sm" onclick="window.Lettere._delTpl('${escapeHtml(t.id)}')">Elimina</button>`;
-    return `<tr>
-      <td>${escapeHtml(t.name||t.id)}</td>
-      <td><code>${escapeHtml(t.id)}</code></td>
-      <td>${sectCount} sezioni</td>
-      <td style="text-align:right"><button class="btn ghost sm" onclick="window.Lettere._editTpl('${escapeHtml(t.id)}')">Modifica</button>${del}</td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="4" class="lt-sub-empty">Nessun template.</td></tr>';
-  mc().innerHTML=pageHead('Editor Prompt + Template', lettereBreadcrumb([{label:'Editor Prompt', route:'lettere-config'}]))+`
+  mc().innerHTML=pageHead('Editor Prompt', lettereBreadcrumb([{label:'Editor Prompt', route:'lettere-config'}]))+`
     <div class="lt-card-static">
       <div class="lt-side-title">Prompt globali</div>
       <div class="lt-tabs" style="margin-bottom:12px">${tabBtns}</div>
@@ -5044,110 +4876,7 @@ function renderConfig(){
         <button class="btn ghost" onclick="window.Lettere._resetCfgEmbedded('${cur}')" title="Resetta al fallback embedded (non salva)">⟲ Resetta a default embedded</button>
         <button class="btn ghost" onclick="window.Lettere._discardCfg()" title="Scarta le modifiche">✕ Scarta modifiche</button>
       </div>
-    </div>
-
-    <div class="lt-card-static">
-      <div class="lt-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="lt-side-title" style="margin:0">Libreria template lettera</div>
-        <button class="btn sm" onclick="window.Lettere._editTpl('__new__')">+ Nuovo template</button>
-      </div>
-      <table class="lt-table"><thead><tr><th>Nome</th><th>ID</th><th>Sezioni</th><th></th></tr></thead><tbody>${tplRows}</tbody></table>
     </div>`;
-}
-
-/* Editor template (modale): crea o modifica un template, con riordino sezioni drag&drop */
-function renderTemplateEditor(tplId){
-  const isNew = tplId === '__new__';
-  const tpl = isNew
-    ? { id:'', name:'', scenario:'dimissione_domicilio', intestazione:'', saluto:'', apertura:'',
-        chiusura:'', firma_specializzando_label:'[NOME_SPECIALIZZANDO]', firma_ruolo_sx:'Medico in formazione specialistica',
-        firma_dirigente_label:'[NOME_DIRIGENTE]', firma_ruolo_dx:'Dirigente medico',
-        ordine_sezioni:(DEFAULT_TEMPLATE_EMBEDDED.ordine_sezioni||[]).slice() }
-    : (_templates.find(t=>t.id===tplId) || null);
-  if (!tpl){ toast('Template non trovato','error'); return; }
-  const fld=(id,label,val,rows)=> rows
-    ? `<div class="field"><label>${label}</label><textarea id="tpl-${id}" rows="${rows}">${escapeHtml(val||'')}</textarea></div>`
-    : `<div class="field"><label>${label}</label><input type="text" id="tpl-${id}" value="${escapeHtml(val||'')}"></div>`;
-  const body=`
-    <div class="lt-row">
-      ${fld('id','ID (lettere minuscole, numeri, underscore)',tpl.id)}
-      ${fld('name','Nome visualizzato',tpl.name)}
-    </div>
-    ${isNew?'':'<input type="hidden" id="tpl-id" value="'+escapeHtml(tpl.id)+'">'}
-    ${fld('scenario','Scenario',tpl.scenario)}
-    ${fld('intestazione','Intestazione',tpl.intestazione,2)}
-    ${fld('saluto','Saluto',tpl.saluto)}
-    ${fld('apertura','Apertura',tpl.apertura,3)}
-    ${fld('chiusura','Chiusura',tpl.chiusura,2)}
-    <div class="lt-row">
-      ${fld('firma_specializzando_label','Firma sx (label)',tpl.firma_specializzando_label)}
-      ${fld('firma_ruolo_sx','Ruolo sx',tpl.firma_ruolo_sx)}
-    </div>
-    <div class="lt-row">
-      ${fld('firma_dirigente_label','Firma dx (label)',tpl.firma_dirigente_label)}
-      ${fld('firma_ruolo_dx','Ruolo dx',tpl.firma_ruolo_dx)}
-    </div>
-    <div class="field"><label>Sezioni (trascina per riordinare, spunta per includere)</label>
-      <div id="tpl-sections" class="lt-sections-editor"></div></div>`;
-  showModal({
-    title: isNew ? 'Nuovo template' : 'Modifica template',
-    subtitle: isNew ? 'Crea un nuovo template di lettera' : escapeHtml(tpl.name||tpl.id),
-    body,
-    actions: [
-      { label:'Annulla', variant:'ghost', onClick:()=>closeModal() },
-      { label:'Salva template', onClick:()=>window.Lettere._saveTpl(isNew, tplId) }
-    ]
-  });
-  // Popola l'editor delle sezioni (drag&drop + checkbox)
-  setTimeout(()=>renderSectionsEditor('tpl-sections', tpl.ordine_sezioni||[]), 50);
-}
-
-/* Editor sezioni con riordino drag&drop. Replica la logica dello standalone. */
-function renderSectionsEditor(containerId, currentOrder){
-  const container=document.getElementById(containerId);
-  if(!container) return;
-  const orderedIds=(currentOrder||[]).filter(id=>TEMPLATE_SECTIONS_AVAILABLE.find(s=>s.id===id));
-  const orderedSet=new Set(orderedIds);
-  const remaining=TEMPLATE_SECTIONS_AVAILABLE.filter(s=>!orderedSet.has(s.id)).map(s=>s.id);
-  const finalOrder=[...orderedIds,...remaining];
-  container.innerHTML=finalOrder.map(id=>{
-    const meta=TEMPLATE_SECTIONS_AVAILABLE.find(s=>s.id===id);
-    if(!meta) return '';
-    const enabled=orderedSet.has(id);
-    return `<div class="lt-section-row" draggable="true" data-section-id="${escapeHtml(id)}">
-      <span class="lt-drag-handle">⠿</span>
-      <input type="checkbox" ${enabled?'checked':''} data-section-cb="${escapeHtml(id)}">
-      <span class="lt-section-label">${escapeHtml(meta.label)}</span>
-      <span class="lt-section-id">${escapeHtml(id)}</span>
-    </div>`;
-  }).join('');
-  attachSectionDrag(container);
-}
-function attachSectionDrag(container){
-  let dragged=null;
-  container.querySelectorAll('.lt-section-row').forEach(row=>{
-    row.addEventListener('dragstart',()=>{ dragged=row; row.style.opacity='0.4'; });
-    row.addEventListener('dragend',()=>{ if(dragged)dragged.style.opacity='1'; dragged=null; });
-    row.addEventListener('dragover',(e)=>{ e.preventDefault();
-      const rect=row.getBoundingClientRect();
-      const after=(e.clientY-rect.top)>rect.height/2;
-      if(dragged&&dragged!==row){
-        if(after) row.parentNode.insertBefore(dragged,row.nextSibling);
-        else row.parentNode.insertBefore(dragged,row);
-      }});
-    row.addEventListener('drop',(e)=>e.preventDefault());
-  });
-}
-function getSectionOrder(containerId){
-  const container=document.getElementById(containerId);
-  if(!container) return [];
-  const out=[];
-  container.querySelectorAll('.lt-section-row').forEach(row=>{
-    const id=row.getAttribute('data-section-id');
-    const cb=row.querySelector('input[type="checkbox"]');
-    if(cb&&cb.checked) out.push(id);
-  });
-  return out;
 }
 
 /* ── Editor caso esistente (modale): modifica name/folder/letter/fingerprint ──
@@ -5672,41 +5401,31 @@ window.Lettere = {
     catch(e){ toast('Errore: '+e.message,'error'); }
   },
   _discardOverride(){ const el=document.getElementById('lt-uoverride'); if(el) el.value=_userOverride||''; toast('Modifiche scartate.','info'); },
-  _onUserTplBase(id){
-    if(!_userTemplateData) _userTemplateData={};
-    _userTemplateData.base_template_id=id;
-    L.userTemplateData=_userTemplateData;
-    renderImpostazioni();
-  },
-  // Scarta le modifiche non salvate al template personale: ricarica dal repo
+  // Copia il fac-simile di reparto (default) nel campo del fac-simile personale
+  _loadDefaultIntoMyTpl(){ const ta=document.getElementById('lt-utpl-letter'); if(ta){ ta.value=LETTER_TEMPLATE; toast('Caricato il fac-simile di reparto (non ancora salvato).','info'); } },
+  // Scarta le modifiche non salvate al fac-simile personale: ricarica dal repo
   async _discardMyTpl(){
     try{ await loadUserTemplateRepo(); }catch(e){}
     renderImpostazioni(); toast('Modifiche scartate.','info');
   },
   async _saveMyTpl(){
-    const get=(id)=>{ const el=document.getElementById(id); return el?el.value:''; };
+    const ta=document.getElementById('lt-utpl-letter');
+    const txt=ta?ta.value.trim():'';
     const data=_userTemplateData||{};
-    data.base_template_id=get('lt-utpl-base')||data.base_template_id;
-    data.overrides=Object.assign({}, data.overrides, {
-      intestazione:get('utpl-intestazione'),
-      saluto:get('utpl-saluto'),
-      apertura:get('utpl-apertura'),
-      chiusura:get('utpl-chiusura'),
-      firma_specializzando_label:get('utpl-firma-sx'),
-      firma_ruolo_sx:get('utpl-ruolo-sx'),
-      firma_dirigente_label:get('utpl-firma-dx'),
-      firma_ruolo_dx:get('utpl-ruolo-dx'),
-      ordine_sezioni:getSectionOrder('utpl-sections'),
-    });
+    if(txt) data.letterTemplate=txt; else delete data.letterTemplate;
     data.updatedAt=new Date().toISOString();
-    try{ await saveUserTemplateToRepo(data); toast('Template personale salvato.','success'); }
-    catch(e){ toast('Errore: '+e.message,'error'); }
+    try{ await saveUserTemplateToRepo(data);
+      toast(txt?'Fac-simile personale salvato.':'Fac-simile personale rimosso: userai il default di reparto.','success');
+      renderImpostazioni();
+    }catch(e){ toast('Errore: '+e.message,'error'); }
   },
   _resetMyTpl(){
-    Modals().confirm({ title:'Ripristinare il template al default?', message:'Cancellerà le tue personalizzazioni del template (intestazione, firme, ordine sezioni).', confirmLabel:'Ripristina', danger:true,
+    Modals().confirm({ title:'Usare il fac-simile di reparto?', message:'Cancellerà il tuo fac-simile personale. Tornerai a usare quello di reparto (default).', confirmLabel:'Conferma', danger:true,
       onConfirm:async()=>{
-        const data={ base_template_id:(_templates[0]&&_templates[0].id)||'default', overrides:{}, updatedAt:new Date().toISOString() };
-        try{ await saveUserTemplateToRepo(data); toast('Template ripristinato al default.','success'); renderImpostazioni(); }
+        const data=_userTemplateData||{};
+        delete data.letterTemplate;
+        data.updatedAt=new Date().toISOString();
+        try{ await saveUserTemplateToRepo(data); toast('Userai il fac-simile di reparto.','success'); renderImpostazioni(); }
         catch(e){ toast('Errore: '+e.message,'error'); }
       } });
   },
@@ -5716,44 +5435,7 @@ window.Lettere = {
   _resetCfgEmbedded(varName){ const ta=document.getElementById('lt-cfgtext'); if(!ta)return;
     const fb=PROMPT_EMBEDDED_FALLBACKS[varName]; if(fb!==undefined){ ta.value=fb; toast('Ripristinato al default embedded (non ancora salvato).','info'); } },
   _discardCfg(){ const cur=L._cfgTab||'DEFAULT_SYS'; const ta=document.getElementById('lt-cfgtext');
-    const cv={DEFAULT_SYS,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS,PREF_BLOCKS}[cur]; if(ta){ ta.value=cv; toast('Modifiche scartate.','info'); } },
-
-  // ── Editor template di libreria ──
-  _editTpl(id){ renderTemplateEditor(id); },
-  async _saveTpl(isNew, origId){
-    const get=(k)=>{ const el=document.getElementById('tpl-'+k); return el?el.value:''; };
-    const id=(get('id')||'').trim();
-    if(!id || !/^[a-z0-9_]+$/.test(id)){ toast('ID non valido: usa solo lettere minuscole, numeri e underscore.','error'); return; }
-    const tpl={
-      id,
-      name: get('name').trim() || id,
-      scenario: get('scenario'),
-      intestazione: get('intestazione'),
-      saluto: get('saluto'),
-      apertura: get('apertura'),
-      chiusura: get('chiusura'),
-      firma_specializzando_label: get('firma_specializzando_label'),
-      firma_ruolo_sx: get('firma_ruolo_sx'),
-      firma_dirigente_label: get('firma_dirigente_label'),
-      firma_ruolo_dx: get('firma_ruolo_dx'),
-      ordine_sezioni: getSectionOrder('tpl-sections'),
-      updatedAt: new Date().toISOString(),
-    };
-    // Preserva lo _sha se è un update dello stesso id
-    if(!isNew){ const ex=_templates.find(t=>t.id===id); if(ex&&ex._sha) tpl._sha=ex._sha; }
-    try{
-      await saveLibraryTemplateRepo(tpl);
-      // Se ho rinominato l'id di un template esistente, elimino il vecchio file
-      if(!isNew && origId && origId!=='__new__' && origId!==id && origId!=='default'){
-        try{ await deleteLibraryTemplateRepo(origId); }catch(e){}
-      }
-      toast('Template salvato.','success'); closeModal(); renderConfig();
-    }catch(e){ toast('Errore: '+e.message,'error'); }
-  },
-  _delTpl(id){
-    Modals().confirm({ title:'Eliminare il template?', subtitle:`<code>${escapeHtml(id)}</code>`, confirmLabel:'Elimina', danger:true,
-      onConfirm:async()=>{ try{ await deleteLibraryTemplateRepo(id); toast('Template eliminato.','success'); renderConfig(); }catch(e){ toast('Errore: '+e.message,'error'); } } });
-  },
+    const cv={DEFAULT_SYS,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS,PREF_BLOCKS,LETTER_TEMPLATE}[cur]; if(ta){ ta.value=cv; toast('Modifiche scartate.','info'); } },
 };
 
 /* ── CSS (usa solo le CSS variables di CollinettaAI) ── */
