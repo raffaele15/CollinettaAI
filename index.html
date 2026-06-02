@@ -674,7 +674,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .ndg-check{background:transparent;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:var(--ink-muted);flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .ndg-check:hover{color:var(--accent)}
 .ndg-text{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.4;word-break:break-word}
-.ndg-edit-input{flex:1;min-width:0;font-size:14px;font-family:var(--serif);color:var(--ink);line-height:1.4;padding:2px 6px;border:1px solid var(--accent);border-radius:3px;background:var(--bg-paper)}
+.ndg-edit-input{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--ink);line-height:1.4;padding:2px 6px;border:1px solid var(--accent);border-radius:3px;background:var(--bg-paper);resize:none;overflow:hidden;word-break:break-word;white-space:pre-wrap}
 .ndg-edit-input:focus{outline:none}
 .ndg-done .ndg-text{text-decoration:line-through;color:var(--ink-faint)}
 .ndg-done .ndg-check{color:var(--accent)}
@@ -9686,7 +9686,7 @@ function renderNoteGiornoSection() {
   return `<div class="home-section home-pins-group">
     <div class="home-section-title"><span>Note del giorno</span></div>
     <div class="ndg-add" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <input type="text" id="ndg-input" placeholder="Aggiungi una nota o un promemoria…" maxlength="240"
+      <input type="text" id="ndg-input" placeholder="Aggiungi una nota…" maxlength="240"
         onkeydown="if(event.key==='Enter'){event.preventDefault();submitNotaGiorno();}"
         style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--rule);border-radius:3px;font-size:14px;font-family:var(--serif);background:var(--bg-paper);">
       <button class="btn primary" onmousedown="event.preventDefault()" onclick="submitNotaGiorno(this)" title="Aggiungi" style="flex-shrink:0;">+ Aggiungi</button>
@@ -9779,12 +9779,15 @@ function editNotaGiorno(id) {
   if (!row) return;
   const textEl = row.querySelector('.ndg-text');
   if (!textEl || row.querySelector('.ndg-edit-input')) return;  // già in edit
-  // Sostituisco lo span testo con un input precompilato col testo attuale, editabile sul posto.
-  const input = document.createElement('input');
-  input.type = 'text';
+  // Sostituisco lo span testo con una textarea precompilata col testo attuale, editabile sul
+  // posto. Uso textarea (non input) così il testo va a capo e resta tutto visibile, e cresco
+  // l'altezza al contenuto invece di farlo scorrere orizzontalmente.
+  const input = document.createElement('textarea');
   input.className = 'ndg-edit-input';
   input.value = nota.testo;
   input.maxLength = 240;
+  input.rows = 1;
+  const autosize = () => { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; };
   let done = false;
   const finish = (salva) => {
     if (done) return;
@@ -9795,12 +9798,15 @@ function editNotaGiorno(id) {
     }
     refreshNoteGiornoList();  // ripristina la riga normale (e re-inizializza il Sortable)
   };
+  input.addEventListener('input', autosize);
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    // Enter salva (senza newline); Shift+Enter inserisce un a capo; Escape annulla.
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finish(true); }
     else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
   });
   input.addEventListener('blur', () => finish(true));
   textEl.replaceWith(input);
+  autosize();
   input.focus();
   input.select();
 }
