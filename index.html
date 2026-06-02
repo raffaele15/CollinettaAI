@@ -19120,6 +19120,9 @@ function initMobileDrawer() {
   //                sulla sidebar aperta verso sinistra = chiude
   //                dalla cima verso il basso = focus sulla barra di ricerca
   let touchStart = null;
+  // Altezza massima vista del visualViewport: baseline "schermo senza tastiera". Usata per
+  // capire se la tastiera è attualmente visibile (viewport sensibilmente più basso di questa).
+  let _vvMaxH = window.visualViewport ? window.visualViewport.height : 0;
   // Ritorna il container scrollabile orizzontalmente più vicino al touch (o null), risalendo gli
   // antenati (es. tabelle in overflow .bl-table-wrap / .bk-table-wrap, .mod-page-scroll). Non
   // hardcoda i selettori, così copre anche container futuri. La decisione se bloccare l'apertura
@@ -19174,12 +19177,16 @@ function initMobileDrawer() {
     // Tastiera mobile aperta: blocco apertura sidebar/pulldown solo se la tastiera è DAVVERO
     // visibile. Non basta che un campo sia a fuoco: dopo che la tastiera si chiude (es. gesture
     // back) il focus può restare nel campo di ricerca, ma in quel caso la gesture sidebar deve
-    // tornare a funzionare. Stimo la visibilità reale della tastiera dal visualViewport: se è
-    // ristretto rispetto alla finestra, la tastiera occupa spazio → è aperta.
+    // tornare a funzionare. Stimo la visibilità reale della tastiera dal visualViewport.
+    // Uso come riferimento il MASSIMO tra innerHeight e l'altezza nota senza tastiera: su Android
+    // innerHeight si restringe con la tastiera (a differenza di iOS), quindi confrontare con esso
+    // soltanto fallirebbe. Traccio l'altezza massima vista del viewport come baseline "no tastiera".
     const ae = document.activeElement;
     const fieldFocused = !!ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
     const vv = window.visualViewport;
-    const kbLikelyVisible = vv ? (vv.height < window.innerHeight - 120) : false;
+    if (vv) { _vvMaxH = Math.max(_vvMaxH || 0, vv.height); }
+    const baseline = vv ? Math.max(_vvMaxH || 0, window.innerHeight) : 0;
+    const kbLikelyVisible = vv ? (vv.height < baseline - 120) : false;
     const keyboardOpen = fieldFocused && kbLikelyVisible;
     // Memorizzo lo startY e tutti i mode potenzialmente validi; il mode effettivo viene deciso al primo movimento
     touchStart = {
