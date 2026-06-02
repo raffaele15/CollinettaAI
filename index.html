@@ -946,6 +946,15 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .numero-row-reparto{border-left-color:var(--accent)}
 .numero-row-reparto .numero-num-primary{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .numero-row-reparto .numero-num-primary:hover{background:var(--accent);color:#fff}
+/* Dropzone sezione Reparto — replica dello stile "Carica cartella" di LetteraAI */
+.rep-card{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:16px 18px;margin-bottom:14px}
+.rep-dz-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px}
+.rep-dz{border:2px dashed var(--rule);border-radius:4px;padding:24px 20px;text-align:center;cursor:pointer;background:var(--bg-sink);transition:border-color .15s}
+.rep-dz:hover,.rep-dz.drag{border-color:var(--accent)}
+.rep-dz-ic{font-size:24px;margin-bottom:6px;opacity:.7}
+.rep-dz-txt{font-family:var(--mono);font-size:11px;color:var(--ink-muted)}
+.rep-dz-txt strong{color:var(--ink)}
+.rep-dz-status{margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
 .numero-row-utile{border-left-color:#2e7d32}
 .numero-row-utile .numero-num-primary{background:#e8f5e9;border-color:#2e7d32;color:#2e7d32}
 .numero-row-utile .numero-num-primary:hover{background:#2e7d32;color:#fff}
@@ -5762,39 +5771,35 @@ function renderReparto() {
 
     <div class="card" style="margin-bottom:16px;">
       <div class="ctitle">1 · Cartella clinica del paziente</div>
-      <div id="reparto-drop" onclick="document.getElementById('reparto-pdf').click()"
-        style="border:2px dashed var(--rule);border-radius:6px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px;background:var(--bg-sink);"
-        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-        ondragleave="this.style.borderColor='var(--rule)'"
-        ondrop="event.preventDefault();this.style.borderColor='var(--rule)';window.onRepartoPdf(event.dataTransfer.files[0])">
+      <div class="rep-dz" id="reparto-drop" onclick="document.getElementById('reparto-pdf').click()"
+        style="margin-bottom:12px;"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');window.onRepartoPdf(event.dataTransfer.files[0])">
         <input type="file" id="reparto-pdf" accept="application/pdf" style="display:none" onchange="window.onRepartoPdf(this.files[0])">
-        <div style="font-size:22px;">📁</div>
-        <div style="font-size:13px;color:var(--ink-muted);margin-top:4px;"><strong>Clicca o trascina un PDF</strong>, oppure incolla il testo qui sotto</div>
-        <div id="reparto-pdf-status" style="font-size:12px;color:var(--accent);margin-top:6px;"></div>
+        <div class="rep-dz-ic">📁</div>
+        <div class="rep-dz-txt"><strong>Clicca o trascina un PDF</strong>, oppure incolla il testo qui sotto</div>
+        <div id="reparto-pdf-status" class="rep-dz-status" style="${r.anonimizzato ? '' : 'display:none;'}"></div>
       </div>
-      <textarea id="reparto-raw" rows="8" class="mono-input" style="width:100%;font-size:12px;" placeholder="Incolla qui il testo della cartella clinica..." oninput="window.setRepartoRaw(this.value)">${escapeHtml(r.rawText)}</textarea>
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-        <button class="btn primary" onclick="window.anonimizzaReparto()" style="background:var(--ink);color:var(--bg-paper);border-color:var(--ink);">🔒 Anonimizza</button>
-        ${r.anonimizzato ? `<span style="font-size:12px;color:#2e7d32;">✓ Cartella anonimizzata</span>` : '<span style="font-size:12px;color:var(--ink-muted);">L\'anonimizzazione rimuove nomi, date e dati identificativi.</span>'}
-      </div>
+      <textarea id="reparto-raw" rows="8" class="mono-input" style="width:100%;font-size:12px;" placeholder="Incolla qui il testo della cartella clinica..." oninput="window.setRepartoRaw(this.value)" onchange="window.anonimizzaReparto()">${escapeHtml(r.rawText)}</textarea>
       ${r.anonimizzato ? `
         <div style="margin-top:12px;">
-          <label style="font-size:12px;color:var(--ink-muted);">Cartella anonimizzata (rivedi prima di usarla)</label>
+          <label style="font-size:12px;color:var(--ink-muted);">Cartella anonimizzata</label>
           <textarea id="reparto-anon" rows="8" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoAnon(this.value)">${escapeHtml(r.anonText)}</textarea>
-        </div>` : ''}
+        </div>` : '<div style="font-size:12px;color:var(--ink-muted);margin-top:10px;">La cartella viene anonimizzata automaticamente: nomi, date e dati identificativi vengono rimossi.</div>'}
     </div>
 
     <div class="card" style="margin-bottom:16px;">
-      <div class="ctitle">2 · Tabella esami di laboratorio <span style="font-weight:normal;color:var(--ink-muted);font-size:12px;">(opzionale)</span></div>
-      <div id="reparto-xls-drop" onclick="document.getElementById('reparto-xls').click()"
-        style="border:2px dashed var(--rule);border-radius:6px;padding:16px;text-align:center;cursor:pointer;margin-top:8px;background:var(--bg-sink);"
-        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-        ondragleave="this.style.borderColor='var(--rule)'"
-        ondrop="event.preventDefault();this.style.borderColor='var(--rule)';window.onRepartoXls(event.dataTransfer.files[0])">
+      <div class="ctitle">2 · Tabella esami di laboratorio</div>
+      <div class="rep-dz" id="reparto-xls-drop" onclick="document.getElementById('reparto-xls').click()"
+        style="margin-top:8px;"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');window.onRepartoXls(event.dataTransfer.files[0])">
         <input type="file" id="reparto-xls" accept=".xls,.xlsx,.csv" style="display:none" onchange="window.onRepartoXls(this.files[0])">
-        <div style="font-size:20px;">🧪</div>
-        <div style="font-size:13px;color:var(--ink-muted);margin-top:4px;"><strong>Clicca o trascina la tabella esami</strong> (XLS/CSV)</div>
-        <div id="reparto-xls-status" style="font-size:12px;color:var(--accent);margin-top:6px;"></div>
+        <div class="rep-dz-ic">🧪</div>
+        <div class="rep-dz-txt"><strong>Clicca o trascina la tabella esami</strong> (XLS/CSV)</div>
+        <div id="reparto-xls-status" class="rep-dz-status" style="display:none;"></div>
       </div>
       ${r.xlsText ? `
         <div style="margin-top:10px;">
@@ -5802,6 +5807,9 @@ function renderReparto() {
           <textarea id="reparto-xls-text" rows="6" class="mono-input" style="width:100%;font-size:12px;" oninput="window.setRepartoXls(this.value)">${escapeHtml(r.xlsText)}</textarea>
           <button class="btn" style="margin-top:6px;font-size:12px;" onclick="window.clearRepartoXls()">✕ Rimuovi esami</button>
         </div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn" onclick="window.copyRepartoCartella()">⎘ Copia cartella anonimizzata</button>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:16px;">
@@ -5843,6 +5851,7 @@ function renderReparto() {
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
         <button class="btn primary" onclick="window.copyRepartoPrompt()" style="background:var(--ink);color:var(--bg-paper);border-color:var(--ink);">⎘ Copia prompt</button>
         <button class="btn" onclick="window.rebuildRepartoPrompt()">↻ Rigenera dal modello</button>
+        <button class="btn" onclick="window.resetRepartoCartella()">🗑 Reset</button>
       </div>
     </div>`;
 }
@@ -5969,7 +5978,7 @@ window.clearRepartoXls = function () {
 window.onRepartoXls = async function (file) {
   if (!file) return;
   const status = document.getElementById('reparto-xls-status');
-  if (status) status.textContent = 'Lettura esami…';
+  if (status) { status.style.display = ''; status.textContent = 'Lettura esami…'; }
   try {
     const L = await ensureLetterAI();
     if (!L || typeof L.extractXlsRows !== 'function') throw new Error('Modulo esami non disponibile');
@@ -6003,10 +6012,30 @@ window.copyRepartoPrompt = async function () {
   try { await navigator.clipboard.writeText(txt); toast('Prompt copiato', 'success'); }
   catch (e) { toast('Copia non riuscita', 'error'); }
 };
+// Copia la sola cartella anonimizzata (con eventuali esami in coda), senza il prompt.
+window.copyRepartoCartella = async function () {
+  const r = state.reparto;
+  const cartella = (r.anonText || '').trim();
+  if (!cartella) return toast('Carica prima una cartella', 'warning');
+  const esami = (r.xlsText || '').trim() ? `\n\n### Tabella esami di laboratorio\n\n${r.xlsText.trim()}` : '';
+  try { await navigator.clipboard.writeText(cartella + esami); toast('Cartella anonimizzata copiata', 'success'); }
+  catch (e) { toast('Copia non riuscita', 'error'); }
+};
+// Reset: svuota cartella ed esami e li rimuove dal prompt, per caricarne un'altra.
+window.resetRepartoCartella = function () {
+  const r = state.reparto;
+  r.rawText = '';
+  r.anonText = '';
+  r.anonimizzato = false;
+  r.xlsText = '';
+  r.promptCustom = '';
+  renderReparto();
+  toast('Cartella ed esami azzerati', 'info');
+};
 window.onRepartoPdf = async function (file) {
   if (!file) return;
   const status = document.getElementById('reparto-pdf-status');
-  if (status) status.textContent = 'Lettura PDF…';
+  if (status) { status.style.display = ''; status.textContent = 'Lettura PDF…'; }
   try {
     const L = await ensureLetterAI();
     if (!L || typeof L.extractPdfText !== 'function') throw new Error('Modulo di estrazione non disponibile');
@@ -6014,14 +6043,21 @@ window.onRepartoPdf = async function (file) {
     state.reparto.rawText = text;
     const ta = document.getElementById('reparto-raw');
     if (ta) ta.value = text;
-    if (status) status.textContent = '✓ PDF letto: rivedi il testo e premi Anonimizza';
+    if (status) status.textContent = '✓ PDF letto, anonimizzazione in corso…';
+    await window.anonimizzaReparto();
+    // Dopo l'anonimizzazione la UI è stata ri-renderizzata e la cartella
+    // anonimizzata è già visibile: non aggiorno più lo status (elemento staccato).
   } catch (e) {
     if (status) status.textContent = 'Errore PDF: ' + e.message;
   }
 };
 window.anonimizzaReparto = async function () {
   const raw = (state.reparto.rawText || '').trim();
-  if (!raw) return toast('Inserisci o carica prima la cartella', 'warning');
+  if (!raw) {
+    // Niente testo: azzero lo stato anonimizzato senza warning (può scattare da onchange)
+    if (state.reparto.anonimizzato) { state.reparto.anonimizzato = false; state.reparto.anonText = ''; }
+    return;
+  }
   try {
     const L = await ensureLetterAI();
     if (!L || typeof L.anonymizeText !== 'function') throw new Error('Motore di anonimizzazione non disponibile');
@@ -6030,7 +6066,6 @@ window.anonimizzaReparto = async function () {
     state.reparto.anonimizzato = true;
     state.reparto.promptCustom = ''; // rigenero il prompt con la cartella anonimizzata
     renderReparto();
-    toast('Cartella anonimizzata', 'success');
   } catch (e) {
     toast('Errore anonimizzazione: ' + e.message, 'error');
   }
