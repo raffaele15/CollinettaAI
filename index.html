@@ -666,14 +666,14 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 
 /* Note del giorno (todos in home) */
 .ndg-list{display:flex;flex-direction:column;gap:4px}
-.ndg-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--bg-paper);transition:background .12s}
+.ndg-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--bg-paper);transition:background .12s}
 .ndg-row:hover{background:var(--bg-sink)}
-.ndg-check{background:transparent;border:none;cursor:pointer;font-size:18px;line-height:1.2;padding:0;color:var(--ink-muted);flex-shrink:0}
+.ndg-check{background:transparent;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:var(--ink-muted);flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .ndg-check:hover{color:var(--accent)}
-.ndg-text{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.4;word-break:break-word;padding-top:1px}
+.ndg-text{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.4;word-break:break-word}
 .ndg-done .ndg-text{text-decoration:line-through;color:var(--ink-faint)}
 .ndg-done .ndg-check{color:var(--accent)}
-.ndg-drag{cursor:grab;color:var(--ink-faint);font-size:13px;line-height:1;letter-spacing:-2px;padding:2px 2px;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;align-self:center}
+.ndg-drag{cursor:grab;color:var(--ink-muted);font-size:16px;line-height:1;padding:4px 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;display:flex;align-items:center;justify-content:center;letter-spacing:1px}
 .ndg-drag:hover{color:var(--ink)}
 .ndg-drag:active{cursor:grabbing}
 .ndg-row.sortable-ghost{opacity:.4}
@@ -1296,6 +1296,19 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 .pinned-uoc-name{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ink);text-decoration:none;flex:1;border-bottom:1px dotted var(--rule-strong)}
 .pinned-uoc-name:hover{color:var(--accent)}
 .pinned-uoc-contatti{padding:4px 0}
+
+/* Bucket sezione nei Preferiti (sezioni UOC raggruppate + sezioni personalizzate).
+   Stessa estetica delle sezioni nelle UOC: header grigio cliccabile con caret,
+   nessuna linea sotto, nessun colore blu/tap-highlight. */
+.fav-bucket{margin-bottom:6px}
+.fav-bucket-header{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;background:var(--bg-sink);border:none;border-radius:4px;margin:0 0 4px;cursor:pointer;text-align:left;font-family:inherit;color:inherit;transition:background .12s;-webkit-tap-highlight-color:transparent}
+.fav-bucket-header:hover{background:var(--bg-raised)}
+.fav-bucket-caret{font-family:var(--mono);font-size:10px;color:var(--ink-muted);width:10px;display:inline-block;flex-shrink:0}
+.fav-bucket-header .sede-bucket-tipo{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);font-weight:700}
+.fav-bucket-edit .btn-icon-mini{cursor:pointer}
+.fav-uoc-name{color:inherit;cursor:default}
+.fav-bucket-contatti{padding:0 4px}
+.fav-bucket-collapsed .fav-bucket-contatti{display:none}
 .pinned-contatto-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:start;padding:6px 14px;border-bottom:1px solid var(--rule-soft)}
 .pinned-contatto-row:last-child{border-bottom:none}
 .pinned-contatto-label{font-size:14px;color:var(--ink);cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
@@ -2455,7 +2468,6 @@ function initNumeriCorrelatiPicker() {
 //   {type:'clinica-sub', sub}             // clinica subcategory
 //   {type:'categoria', cat}               // procedure macro category
 //   {type:'contatto', id}
-//   {type:'gruppo', id}
 
 const userPrefs = {
   async load() {
@@ -2575,7 +2587,6 @@ const userPrefs = {
       case 'modulo':
         return a.slug === b.slug;
       case 'contatto':
-      case 'gruppo':
         return a.id === b.id;
       case 'sottocategoria':
         return a.cat === b.cat && a.sub === b.sub;
@@ -2882,8 +2893,6 @@ function togglePin(type, ...args) {
     case 'clinica':
     case 'modulo':
       pin = { type, slug: args[0] }; break;
-    case 'gruppo':
-      pin = { type, id: args[0] }; break;
     case 'sottocategoria':
       pin = { type, cat: args[0], sub: args[1] }; break;
     case 'clinica-sub':
@@ -2961,17 +2970,14 @@ function isPinned(type, id) {
   if (!userPrefs) return false;
   // I contatti usano il sistema home_numeri dedicato
   if (type === 'contatto') return userPrefs.isContattoStarred(id);
-  const pin = (type === 'gruppo')
-    ? { type, id }
-    : { type, slug: id };
-  return userPrefs.has(pin);
+  return userPrefs.has({ type, slug: id });
 }
 
 function pinKey(pin) {
   switch (pin.type) {
     case 'procedura': case 'clinica': case 'modulo':
       return `${pin.type}:${pin.slug}`;
-    case 'contatto': case 'gruppo':
+    case 'contatto':
       return `${pin.type}:${pin.id}`;
     case 'sottocategoria': return `sottocategoria:${pin.cat}:${pin.sub}`;
     case 'clinica-sub': return `clinica-sub:${pin.sub}`;
@@ -2992,8 +2998,6 @@ function renderPinButton(type, ...args) {
   switch (type) {
     case 'procedura': case 'clinica': case 'modulo':
       pin = { type, slug: args[0] }; break;
-    case 'gruppo':
-      pin = { type, id: args[0] }; break;
     case 'sottocategoria':
       pin = { type, cat: args[0], sub: args[1] }; break;
     case 'clinica-sub':
@@ -5325,13 +5329,11 @@ function renderHome() {
   const pins = (state.userPrefs && state.userPrefs.pins) || [];
   const pinsByType = {
     schede: [],      // procedura, clinica, modulo
-    cartelle: [],    // categoria, sottocategoria, clinica-sub
-    gruppi: []
+    cartelle: []     // categoria, sottocategoria, clinica-sub
   };
   pins.forEach(p => {
     if (['procedura','clinica','modulo'].includes(p.type)) pinsByType.schede.push(p);
     else if (['categoria','sottocategoria','clinica-sub'].includes(p.type)) pinsByType.cartelle.push(p);
-    else if (p.type === 'gruppo') pinsByType.gruppi.push(p);
     // I contatti (type='contatto') non vanno più nei pins generici: usano home_numeri
   });
 
@@ -5379,13 +5381,6 @@ function renderHome() {
       <div class="home-section home-pins-group">
         <div class="home-section-title"><span>Cartelle fissate</span></div>
         ${pinsByType.cartelle.map(p => renderPinnedCartella(p)).filter(Boolean).join('')}
-      </div>
-    ` : ''}
-
-    ${pinsByType.gruppi.length > 0 ? `
-      <div class="home-section home-pins-group">
-        <div class="home-section-title"><span>Gruppi fissati</span></div>
-        ${pinsByType.gruppi.map(p => renderPinnedGruppo(p.id)).filter(Boolean).join('')}
       </div>
     ` : ''}
 
@@ -5480,19 +5475,6 @@ function renderPinnedContatto(id) {
     <span class="pinned-folder-icon">☎</span>
     <div class="pinned-contact-label">${escapeHtml(foundContact.etichetta)}<div style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);margin-top:2px;">${escapeHtml(foundGroup.nome)}</div></div>
     <div class="pinned-contact-num">${nums || '—'}</div>
-  </div>`;
-}
-
-function renderPinnedGruppo(id) {
-  const g = getVisibleNumeriGroups().find(x => x.id === id);
-  if (!g) return null;
-  const count = (g.contatti || []).length;
-  return `<div class="pinned-folder" onclick="navigate('numeri', {filter:'${escapeJs(id)}'})">
-    <span class="pinned-folder-icon">📞</span>
-    <div class="pinned-folder-text">
-      <div class="pinned-folder-label">${escapeHtml(g.nome)}</div>
-      <div class="pinned-folder-sub">${count} contatt${count === 1 ? 'o' : 'i'}</div>
-    </div>
   </div>`;
 }
 
@@ -8764,17 +8746,18 @@ function renderCustomSezioniHtml(query) {
       });
     }).join('') || (q ? '' : '<div style="padding:8px 14px;font-size:12px;color:var(--ink-muted);font-style:italic;">Nessun contatto in questa sezione. Usa la ☆ su un contatto per aggiungerlo qui.</div>');
     if (q && !contattiHtml) return '';
-    return `<div class="pinned-uoc-block" data-cs-id="${escapeHtml(sez.id)}">
-      <div class="pinned-uoc-header">
-        <span class="pinned-uoc-name" style="cursor:default;">${escapeHtml(sez.nome)}</span>
-        ${editMode ? `<span style="margin-left:auto;display:inline-flex;gap:6px;">
-          <button class="btn-icon-mini" onclick="moveCsSezione('${escapeJs(sez.id)}',-1)" title="Sposta sezione su" ${si === 0 ? 'disabled' : ''}>↑</button>
-          <button class="btn-icon-mini" onclick="moveCsSezione('${escapeJs(sez.id)}',1)" title="Sposta sezione giù" ${si === sezioni.length - 1 ? 'disabled' : ''}>↓</button>
-          <button class="btn-icon-mini" onclick="renameCustomSezionePrompt('${escapeJs(sez.id)}')" title="Rinomina sezione">✎</button>
-          <button class="btn-icon-mini" onclick="deleteCustomSezionePrompt('${escapeJs(sez.id)}')" title="Elimina sezione">🗑</button>
+    return `<div class="fav-bucket" data-cs-id="${escapeHtml(sez.id)}">
+      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="true">
+        <span class="fav-bucket-caret">&#9662;</span>
+        <span class="sede-bucket-tipo">${escapeHtml(sez.nome)}</span>
+        ${editMode ? `<span class="fav-bucket-edit" style="margin-left:auto;display:inline-flex;gap:6px;" onclick="event.stopPropagation();">
+          <button class="btn-icon-mini" onclick="event.stopPropagation();moveCsSezione('${escapeJs(sez.id)}',-1)" title="Sposta sezione su" ${si === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn-icon-mini" onclick="event.stopPropagation();moveCsSezione('${escapeJs(sez.id)}',1)" title="Sposta sezione giù" ${si === sezioni.length - 1 ? 'disabled' : ''}>↓</button>
+          <button class="btn-icon-mini" onclick="event.stopPropagation();renameCustomSezionePrompt('${escapeJs(sez.id)}')" title="Rinomina sezione">✎</button>
+          <button class="btn-icon-mini" onclick="event.stopPropagation();deleteCustomSezionePrompt('${escapeJs(sez.id)}')" title="Elimina sezione">🗑</button>
         </span>` : ''}
-      </div>
-      <div class="pinned-uoc-contatti">${contattiHtml}</div>
+      </button>
+      <div class="fav-bucket-contatti">${contattiHtml}</div>
     </div>`;
   }).filter(Boolean).join('');
   const addSezBtn = editMode
@@ -8955,7 +8938,6 @@ function renderNumeri(filter, targetContainer) {
   // (UOC pinnate + contatti in home_numeri) invece di tutti i numeri, se ce ne sono.
   if (!filter && !state.rubricaSearch) {
     const hasAnyPin = allGroups.some(g =>
-      isPinned('gruppo', g.id) ||
       (g.contatti || []).some(c => isPinned('contatto', c.id))
     );
     const hasCustomSezioni = userPrefs.getCustomSezioni().length > 0;
@@ -8977,7 +8959,6 @@ function renderNumeri(filter, targetContainer) {
     // (pref_uoc). Separato dai fissati in home (home_numeri). Le sezioni personalizzate
     // sono rese separatamente da renderCustomSezioniHtml.
     filteredGruppi = allGroups.filter(g => (g._source || 'aopd') === 'aopd').map(g => {
-      const gPinned = isPinned('gruppo', g.id);
       let cInUoc = (g.contatti || []).filter(c => userPrefs.hasPrefUoc(c.id));
       // Ordino i preferiti UOC secondo l'ordine salvato in pref_uoc (riordinabile con ↑↓).
       const order = (state.userPrefs && state.userPrefs.pref_uoc) || [];
@@ -8985,7 +8966,6 @@ function renderNumeri(filter, targetContainer) {
         const ia = order.indexOf(a.id), ib = order.indexOf(b.id);
         return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib);
       });
-      if (gPinned) return { ...g };
       if (cInUoc.length) return { ...g, contatti: cInUoc };
       return null;
     }).filter(Boolean);
@@ -9344,7 +9324,6 @@ function renderNumeri(filter, targetContainer) {
                 <button style="background:none;border:none;flex:1;text-align:left;cursor:pointer;padding:0;font:inherit;color:inherit;min-width:0;" onclick="navigate('numeri', {filter:'${escapeJs(g.id)}'})">
                   <span class="uoc-compact-name">${escapeHtml(stripPrefix(g.nome))}</span>
                 </button>
-                ${renderPinButton('gruppo', g.id)}
               </div>`;
             }).join('')}
           </div>`;
@@ -9371,7 +9350,7 @@ function renderNumeri(filter, targetContainer) {
                 : (filter && filter !== g.id)
                   ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri tutta la UOC">${escapeHtml(displayName)}</a>`
                   : escapeHtml(displayName)
-              } ${renderPinButton('gruppo', g.id)}
+              }
               <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center;">
                 ${isManuallyExpanded ? `<button class="btn-icon-mini" onclick="collapseGroup('${escapeJs(g.id)}')" title="Nascondi tutti i numeri di questa UOC" style="font-size:11px;color:var(--ink-muted);">↕ nascondi</button>` : ''}
                 <span class="edit-only" style="display:inline-flex;gap:6px;">
@@ -9523,6 +9502,7 @@ function renderNumeri(filter, targetContainer) {
                     ${(b.sede && b.sede.nome) ? `<span class="ssp-reorder edit-only">
                       <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${escapeJs(b.sede.nome)}',-1)" title="Sposta sezione su" ${bIdx === 0 ? 'disabled' : ''}>↑</button>
                       <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${escapeJs(b.sede.nome)}',1)" title="Sposta sezione giù" ${bIdx === allB.length - 1 ? 'disabled' : ''}>↓</button>
+                      <button class="btn-icon-mini" onclick="event.stopPropagation();editSezioneAlias('${escapeJs(g.id)}','${escapeJs(b.sede.nome)}')" title="Rinomina sezione e modifica tag">✎</button>
                     </span>` : ''}
                   </div>
                   ${isOpen ? `<div class="sede-bucket-contatti">${(function(){
@@ -9710,7 +9690,7 @@ function _noteGiornoRowsHtml() {
         <div class="ndg-row ${n.fatto ? 'ndg-done' : ''}" data-id="${escapeHtml(n.id)}">
           <button class="ndg-check" onclick="toggleNotaGiorno('${escapeJs(n.id)}')" title="${n.fatto ? 'Segna da fare' : 'Segna fatto'}" aria-label="Completa">${n.fatto ? '☑' : '☐'}</button>
           <span class="ndg-text">${escapeHtml(n.testo)}</span>
-          <span class="ndg-drag drag-handle" title="Trascina per riordinare" aria-label="Riordina">⋮⋮</span>
+          <span class="ndg-drag drag-handle" title="Trascina per riordinare" aria-label="Riordina">⠿</span>
           <button class="ndg-del btn-icon-mini" onclick="removeNotaGiorno('${escapeJs(n.id)}')" title="Elimina" aria-label="Elimina">✕</button>
         </div>`).join('')
     : `<div class="empty-pins" style="padding:14px 16px;font-size:13px;">Nessuna nota. Scrivi qui i promemoria della giornata (es. controlli, chiamate, consegne).</div>`;
@@ -9885,11 +9865,11 @@ function renderContattiGroupedBox(items, opts = {}) {
   }
   const nGroups = groups.length;
   return groups.map((grp, gi) => {
-    const titleUoc = `<span class="ctx-uoc" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})">${escapeHtml(grp.gNome)}</span>`;
-    const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();navigate('numeri',{filter:'${escapeJs(grp.gId)}'})" title="Apri ${escapeHtml(grp.gNome)}">${escapeHtml(grp.sezione)}</span>` : '';
+    const titleUoc = `<span class="fav-uoc-name">${escapeHtml(grp.gNome)}</span>`;
+    const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="fav-uoc-name">${escapeHtml(grp.sezione)}</span>` : '';
     // Frecce di riordino del box-UOC (solo in edit-mode, solo se richiesto)
     const uocReorder = (opts.reorderUocBoxes && navState.editMode)
-      ? `<span class="edit-only" style="margin-left:auto;display:inline-flex;gap:6px;">
+      ? `<span class="edit-only fav-bucket-edit" style="margin-left:auto;display:inline-flex;gap:6px;" onclick="event.stopPropagation();">
           <button class="btn-icon-mini" onclick="event.stopPropagation();moveUocBox('${escapeJs(grp.gId)}',-1)" title="Sposta UOC su" ${gi === 0 ? 'disabled' : ''}>↑</button>
           <button class="btn-icon-mini" onclick="event.stopPropagation();moveUocBox('${escapeJs(grp.gId)}',1)" title="Sposta UOC giù" ${gi === nGroups - 1 ? 'disabled' : ''}>↓</button>
         </span>`
@@ -9920,11 +9900,12 @@ function renderContattiGroupedBox(items, opts = {}) {
             onDown: `movePrefUoc('${escapeJs(c.id)}',1)`
           } : null
         })).join('');
-    return `<div class="sr-sede-bucket" data-uoc-id="${escapeHtml(grp.gId)}" style="margin-bottom:10px;">
-      <div class="sr-sede-bucket-header sr-sede-bucket-static" style="display:flex;align-items:center;">
+    return `<div class="fav-bucket" data-uoc-id="${escapeHtml(grp.gId)}">
+      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="true">
+        <span class="fav-bucket-caret">&#9662;</span>
         <span class="sede-bucket-tipo">${titleUoc}${titleSez}</span>${uocReorder}
-      </div>
-      <div class="sr-sede-bucket-contatti">${rows}</div>
+      </button>
+      <div class="fav-bucket-contatti">${rows}</div>
     </div>`;
   }).join('');
 }
@@ -10423,6 +10404,18 @@ function renderSedeBucketHeader(s, customLabel, gruppo) {
   const loc = parts.join(' · ');
   return `<span class="sede-bucket-tipo">${escapeHtml(label)}</span>
     ${loc ? `<span class="sede-bucket-loc">${loc}</span>` : ''}`;
+}
+
+// Collasso/espansione LOCALE di un bucket sezione nei Preferiti (sia sezioni UOC
+// raggruppate sia sezioni personalizzate). Non fa re-render: agisce solo sul DOM del
+// blocco premuto, aggiornando classe e caret. Stesso comportamento visivo delle UOC.
+function toggleFavBucket(btn) {
+  const block = btn.closest('.fav-bucket');
+  if (!block) return;
+  const collapsed = block.classList.toggle('fav-bucket-collapsed');
+  const caret = btn.querySelector('.fav-bucket-caret');
+  if (caret) caret.textContent = collapsed ? '\u25B8' : '\u25BE';
+  btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
 }
 
 function toggleSedeBucket(gid, sedeKey, defaultOpen) {
