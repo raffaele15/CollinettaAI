@@ -304,11 +304,11 @@ header.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:grid;grid-t
 .nav-history-btn{width:32px;height:32px;border:1px solid var(--rule);background:var(--bg-raised);color:var(--ink-soft);border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s,color .12s,border-color .12s}
 .nav-history-btn:hover:not(:disabled){background:var(--bg-sink);color:var(--ink);border-color:var(--rule-strong)}
 .nav-history-btn:disabled{opacity:.3;cursor:default}
-.search-clear{position:absolute;right:44px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--bg-raised);color:var(--ink-muted);border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--bg-raised);color:var(--ink-muted);border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
 .search-clear:hover{background:var(--rule);color:var(--ink)}
 @media (max-width:900px){.search-clear{right:10px}}
-.search-wrap input{padding-right:72px}
-.search-kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding:2px 6px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-raised)}
+.search-wrap input{padding-right:96px}
+.search-kbd{position:absolute;right:40px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-faint);padding:2px 6px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-raised)}
 .topbar-actions{display:flex;align-items:center;gap:8px}
 .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:2px;color:var(--ink-soft);transition:background .15s,color .15s;position:relative}
 .icon-btn:hover{background:var(--rule-soft);color:var(--ink)}
@@ -673,6 +673,11 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .ndg-text{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.4;word-break:break-word;padding-top:1px}
 .ndg-done .ndg-text{text-decoration:line-through;color:var(--ink-faint)}
 .ndg-done .ndg-check{color:var(--accent)}
+.ndg-drag{cursor:grab;color:var(--ink-faint);font-size:13px;line-height:1;letter-spacing:-2px;padding:2px 2px;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;align-self:center}
+.ndg-drag:hover{color:var(--ink)}
+.ndg-drag:active{cursor:grabbing}
+.ndg-row.sortable-ghost{opacity:.4}
+.ndg-row.sortable-chosen{background:var(--bg-sink)}
 .ndg-del{flex-shrink:0;color:var(--ink-faint);opacity:.6}
 .ndg-del:hover{color:var(--danger);opacity:1}
 
@@ -2650,6 +2655,15 @@ const userPrefs = {
   clearNoteGiornoFatte() {
     if (!state.userPrefs || !state.userPrefs.note_giorno) return;
     state.userPrefs.note_giorno = state.userPrefs.note_giorno.filter(x => !x.fatto);
+    userPrefs.scheduleSave();
+  },
+  reorderNoteGiorno(newOrderIds) {
+    if (!state.userPrefs || !Array.isArray(state.userPrefs.note_giorno)) return;
+    const byId = new Map(state.userPrefs.note_giorno.map(n => [n.id, n]));
+    const reordered = newOrderIds.map(id => byId.get(id)).filter(Boolean);
+    // accodo eventuali note non presenti nell'ordine passato (safety)
+    state.userPrefs.note_giorno.forEach(n => { if (!newOrderIds.includes(n.id)) reordered.push(n); });
+    state.userPrefs.note_giorno = reordered;
     userPrefs.scheduleSave();
   },
 
@@ -9674,6 +9688,7 @@ function renderHomeNumeriSection() {
 // Sezione "Note del giorno": todos personali rapidi, mostrati in home dopo i contatti fissati.
 // Persistiti in userPrefs.note_giorno. Ogni nota = { id, testo, fatto }.
 function renderNoteGiornoSection() {
+  setTimeout(() => initNoteGiornoSortable(), 0);
   return `<div class="home-section home-pins-group">
     <div class="home-section-title"><span>Note del giorno</span></div>
     <div class="ndg-add" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -9695,6 +9710,7 @@ function _noteGiornoRowsHtml() {
         <div class="ndg-row ${n.fatto ? 'ndg-done' : ''}" data-id="${escapeHtml(n.id)}">
           <button class="ndg-check" onclick="toggleNotaGiorno('${escapeJs(n.id)}')" title="${n.fatto ? 'Segna da fare' : 'Segna fatto'}" aria-label="Completa">${n.fatto ? '☑' : '☐'}</button>
           <span class="ndg-text">${escapeHtml(n.testo)}</span>
+          <span class="ndg-drag drag-handle" title="Trascina per riordinare" aria-label="Riordina">⋮⋮</span>
           <button class="ndg-del btn-icon-mini" onclick="removeNotaGiorno('${escapeJs(n.id)}')" title="Elimina" aria-label="Elimina">✕</button>
         </div>`).join('')
     : `<div class="empty-pins" style="padding:14px 16px;font-size:13px;">Nessuna nota. Scrivi qui i promemoria della giornata (es. controlli, chiamate, consegne).</div>`;
@@ -9713,9 +9729,26 @@ function _noteGiornoClearHtml() {
 // #ndg-input non viene distrutto, mantenendo focus e tastiera aperta su mobile.
 function refreshNoteGiornoList() {
   const list = document.getElementById('ndg-list');
-  if (list) list.innerHTML = _noteGiornoRowsHtml();
+  if (list) { list.innerHTML = _noteGiornoRowsHtml(); list._sortable = null; }
   const clearWrap = document.getElementById('ndg-clear-wrap');
   if (clearWrap) clearWrap.innerHTML = _noteGiornoClearHtml();
+  initNoteGiornoSortable();
+}
+
+// Drag&drop di riordino delle note del giorno, stesso meccanismo dei numeri in home
+// (SortableJS con handle dedicato). Persisto il nuovo ordine in userPrefs.
+function initNoteGiornoSortable() {
+  if (typeof Sortable === 'undefined') return;
+  const el = document.getElementById('ndg-list');
+  if (!el || el._sortable) return;
+  el._sortable = Sortable.create(el, {
+    handle: '.ndg-drag',
+    animation: 150,
+    onEnd: () => {
+      const order = Array.from(el.children).map(x => x.dataset.id).filter(Boolean);
+      userPrefs.reorderNoteGiorno(order);
+    }
+  });
 }
 
 function submitNotaGiorno(btnEl) {
@@ -19367,8 +19400,10 @@ function initGlobalSearch() {
     }
     if (e.key === 'Escape') {
       if ($('modal-container').children.length > 0) closeModal();
-      else if (!$('search-overlay').classList.contains('hidden')) {
-        closeSearchOverlay();
+      else {
+        if (!$('search-overlay').classList.contains('hidden')) closeSearchOverlay();
+        // Se sto digitando nella barra di ricerca, esco anche dal focus (chiude tastiera su mobile).
+        if (document.activeElement === searchInput) searchInput.blur();
       }
     }
   });
