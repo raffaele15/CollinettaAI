@@ -4149,7 +4149,7 @@ function renderLettereHome(){
     <div class="lt-home-group">Strumenti</div>
     <div class="lt-home-list">
       <div class="lt-home-row" onclick="navigate('lettere-libreria')">
-        <span class="lt-home-ic">📚</span><div><div class="lt-home-t">Libreria Casi <span class="lt-badge">${L.casi.length}</span></div><div class="lt-home-d">Esempi anonimizzati con fingerprint di stile, e gestione reparti.</div></div></div>
+        <span class="lt-home-ic">📚</span><div><div class="lt-home-t">Libreria Casi <span class="lt-badge">${L.casi.length}</span></div><div class="lt-home-d">Esempi anonimizzati con logica decorso, e gestione reparti.</div></div></div>
       <div class="lt-home-row" onclick="navigate('lettere-impostazioni')">
         <span class="lt-home-ic">⚙</span><div><div class="lt-home-t">Preferenze</div><div class="lt-home-d">Preferenze lettera, template personale e regole aggiuntive.</div></div></div>
       <div class="lt-home-row" onclick="navigate('lettere-segnalazioni')">
@@ -4590,7 +4590,7 @@ function renderLibreria(){
     const chips=[
       c.folder?`<span class="lt-lib-chip">📁 cartella</span>`:'',
       c.letter?`<span class="lt-lib-chip">📄 lettera</span>`:'',
-      c.fingerprint?`<span class="lt-lib-chip on">🧠 fingerprint</span>`:''
+      c.fingerprint?`<span class="lt-lib-chip on">🧠 logica decorso</span>`:''
     ].filter(Boolean).join('');
     return `<div class="lt-lib-card${sel===c.id?' on':''}" onclick="window.Lettere._selCaso('${c.id}')">
       <div class="lt-lib-card-main">
@@ -4750,7 +4750,7 @@ function renderCaso(id){
     ${c.cartella?`<details class="lt-det"><summary>Cartella anonimizzata</summary><pre class="lt-pre">${escapeHtml(c.cartella)}</pre></details>`:''}
     <div class="lt-side-title" style="margin-top:18px">Lettera</div><pre class="lt-pre">${escapeHtml(c.letter||'(vuota)')}</pre>
     ${expBtns}
-    ${c.fingerprint?`<details class="lt-det"><summary>Fingerprint stilistico</summary><pre class="lt-pre">${escapeHtml(typeof c.fingerprint==='string'?c.fingerprint:JSON.stringify(c.fingerprint,null,2))}</pre></details>`:''}`;
+    ${c.fingerprint?`<details class="lt-det"><summary>Logica decorso</summary><pre class="lt-pre">${escapeHtml(typeof c.fingerprint==='string'?c.fingerprint:JSON.stringify(c.fingerprint,null,2))}</pre></details>`:''}`;
 }
 
 /* ── "Mie personalizzazioni" è ora unito in Preferenze (renderImpostazioni) ── */
@@ -4890,11 +4890,11 @@ function renderCaseEditor(id){
   const fpStr = typeof c.fingerprint === 'string' ? c.fingerprint : (c.fingerprint ? JSON.stringify(c.fingerprint) : '');
   const fpObj = parseFpJson(fpStr);
   const isV3 = fpObj && fpObj.patologia;
-  // Editor fingerprint: strutturato se V3, altrimenti textarea JSON grezzo
+  // Editor logica decorso: strutturato se V3, altrimenti textarea JSON grezzo
   const fpEditor = isV3
-    ? `<div class="lt-side-title" style="margin-top:6px">Fingerprint (editor strutturato V3)</div>
+    ? `<div class="lt-side-title" style="margin-top:6px">Logica decorso (editor strutturato V3)</div>
        <div id="ce-fp-v3">${renderFpV3EditorHtml(fpObj, 'ce-fpv3')}</div>`
-    : `<div class="field"><label>Fingerprint (JSON grezzo)</label>
+    : `<div class="field"><label>Logica decorso (JSON grezzo)</label>
         <textarea id="ce-fp-raw" rows="6" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'>${escapeHtml(fpStr)}</textarea></div>`;
   const body = `
     <div class="field"><label>Nome / Diagnosi</label><input type="text" id="ce-name" value="${escapeHtml(c.diagnosi||c.name||'')}"></div>
@@ -4909,11 +4909,11 @@ function renderCaseEditor(id){
     <div class="field"><label>Cartella anonimizzata</label><textarea id="ce-cartella" rows="5" class="mono-input">${escapeHtml(c.cartella||'')}</textarea></div>
     <div class="field"><label>Lettera</label><textarea id="ce-letter" rows="8" class="mono-input">${escapeHtml(c.letter||'')}</textarea></div>
     ${fpEditor}
-    <details class="lt-det" style="margin-top:10px"><summary>Ri-estrai fingerprint da un'AI esterna</summary>
+    <details class="lt-det" style="margin-top:10px"><summary>Ri-estrai logica decorso da un'AI esterna</summary>
       <p class="lt-status" style="margin:8px 0">Copia il prompt di estrazione, incollalo in Claude/ChatGPT con cartella e lettera, poi incolla qui sotto il JSON risultante e premi "Importa".</p>
-      <div class="lt-row" style="margin-bottom:8px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPrompt('${escapeHtml(id)}')">Copia prompt fingerprint</button></div>
-      <textarea id="ce-fp-import" rows="4" class="mono-input" placeholder="Incolla qui il JSON del fingerprint estratto..."></textarea>
-      <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._importFp('${escapeHtml(id)}')">Importa fingerprint</button></div>
+      <div class="lt-row" style="margin-bottom:8px"><button class="btn ghost sm" onclick="window.Lettere._copyFpPrompt('${escapeHtml(id)}')">Copia prompt logica decorso</button></div>
+      <textarea id="ce-fp-import" rows="4" class="mono-input" placeholder="Incolla qui il JSON della logica decorso estratta..."></textarea>
+      <div class="lt-row" style="margin-top:8px"><button class="btn ghost sm" onclick="window.Lettere._importFp('${escapeHtml(id)}')">Importa logica decorso</button></div>
     </details>`;
   showModal({
     title: 'Modifica caso',
@@ -5086,7 +5086,7 @@ window.Lettere = {
     const lettera=((document.getElementById('nc-letter')||{}).value||'').trim();
     if(!lettera){ toast('Incolla prima la lettera nel form.','error'); return; }
     const prompt=buildFingerprintPrompt(cartella, lettera);
-    try{ await navigator.clipboard.writeText(prompt); toast('Prompt fingerprint copiato. Incollalo in un\'AI esterna.','success'); }
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt logica decorso copiato. Incollalo in un\'AI esterna.','success'); }
     catch(e){ toast('Copia non riuscita.','error'); }
   },
   // Salva un caso creato dal form di inserimento diretto nella Libreria
@@ -5245,7 +5245,7 @@ window.Lettere = {
     const lettera=(document.getElementById('ce-letter')||{}).value || c.letter || '';
     if(!lettera.trim()){ toast('Compila prima la lettera.','error'); return; }
     const prompt=buildFingerprintPrompt(cartella, lettera);
-    try{ await navigator.clipboard.writeText(prompt); toast('Prompt fingerprint copiato. Incollalo in un\'AI esterna.','success'); }
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt logica decorso copiato. Incollalo in un\'AI esterna.','success'); }
     catch(e){ toast('Copia non riuscita.','error'); }
   },
   async _saveEditedCaseInline(id){
@@ -5294,13 +5294,13 @@ window.Lettere = {
     const cartella=(document.getElementById('ce-cartella')||{}).value || c.cartella || '';
     const lettera=(document.getElementById('ce-letter')||{}).value || c.letter || '';
     const prompt=buildFingerprintPrompt(cartella, lettera);
-    try{ await navigator.clipboard.writeText(prompt); toast('Prompt fingerprint copiato.','success'); }
+    try{ await navigator.clipboard.writeText(prompt); toast('Prompt logica decorso copiato.','success'); }
     catch(e){ toast('Copia non riuscita.','error'); }
   },
   _importFp(id){
     const ta=document.getElementById('ce-fp-import'); if(!ta)return;
     const raw=(ta.value||'').replace(/```json[\s\S]*?```|```/g,'').trim();
-    if(!raw){ toast('Incolla il JSON del fingerprint.','error'); return; }
+    if(!raw){ toast('Incolla il JSON della logica decorso.','error'); return; }
     let parsed;
     try{ parsed=JSON.parse(raw); }catch(e){ toast('JSON non valido: '+e.message,'error'); return; }
     // Normalizzo: V3 (patologia+decorso_esempio), V2 (lettera_modello), legacy 4-field
@@ -5308,11 +5308,11 @@ window.Lettere = {
     if(parsed.patologia && parsed.decorso_esempio){ fpObj=parsed; }
     else if(parsed.lettera_modello){ fpObj=parsed; }
     else if(parsed.apertura||parsed.decorso||parsed.terapia||parsed.chiusura){ fpObj=parsed; }
-    else { toast('Schema fingerprint non riconosciuto.','error'); return; }
+    else { toast('Schema logica decorso non riconosciuto.','error'); return; }
     // Aggiorno il caso col nuovo fingerprint e riapro l'editor per review
     const c=L.casi.find(x=>x.id===id); if(!c)return;
     c.fingerprint=JSON.stringify(fpObj);
-    toast('Fingerprint importato. Rivedi e salva.','success');
+    toast('Logica decorso importata. Rivedi e salva.','success');
     renderCaseEditor(id);
   },
   _delCaso(id){ const c=L.casi.find(x=>x.id===id); if(!c)return;
