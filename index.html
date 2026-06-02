@@ -168,6 +168,7 @@ html.splash-removed #boot-splash{
 .login-subtitle{font-family:var(--serif);font-style:italic;font-weight:300;font-size:16px;color:var(--ink-muted);margin-bottom:36px}
 .field{margin-bottom:20px}
 label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:6px}
+.login-card .field label{font-size:12px}
 input[type="text"],input[type="password"],textarea,select{width:100%;font-family:var(--sans);font-size:15px;padding:12px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);transition:border-color .15s,box-shadow .15s}
 .mono-input{font-family:var(--mono);font-size:14px}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -981,6 +982,7 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .cal-dot.compleanni{background:#f5a35f}
 .cal-dot.congressi{background:#b388ff}
 .cal-dot.guardie{background:#f07070}
+.cal-dot.coguardie{background:#e8739e}
 .cal-dot.amb_divisionale{background:#ffa94d}
 .cal-dot.altro{background:#8fc857}
 .cal-day.selected .cal-dot,.cal-day.today .cal-dot{box-shadow:0 0 0 1px var(--bg-paper)}
@@ -1012,6 +1014,7 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 .cal-event.compleanni{border-left-color:#f5a35f}
 .cal-event.congressi{border-left-color:#b388ff}
 .cal-event.guardie{border-left-color:#f07070}
+.cal-event.coguardie{border-left-color:#e8739e}
 .cal-event.amb_divisionale{border-left-color:#ffa94d}
 .cal-event.altro{border-left-color:#8fc857}
 .cal-empty{text-align:center;padding:30px 10px;color:var(--ink-muted);font-size:13px}
@@ -13822,7 +13825,12 @@ function _calRefreshGrid() {
       if (d.isToday) classes.push('today');
       if (d.isSelected) classes.push('selected');
       const cats = [...new Set(d.events.map(e => e.categoria || 'altro'))].slice(0,5);
-      const dots = cats.map(c => `<span class="cal-dot ${c}"></span>`).join('');
+      // Colore inline da CAL_CATEGORIES (sorgente di verità) con fallback alla classe CSS:
+      // così aggiungere una categoria non richiede di ricordarsi una regola .cal-dot dedicata.
+      const dots = cats.map(c => {
+        const col = CAL_CATEGORIES[c]?.color;
+        return `<span class="cal-dot ${c}"${col ? ` style="background:${col}"` : ''}></span>`;
+      }).join('');
       return `<div class="${classes.join(' ')}" onclick="calSelectDay('${d.key}')">
         <span class="cal-day-num">${d.num}</span>
         <div class="cal-dots">${dots}</div>
@@ -13900,7 +13908,8 @@ function _calRefreshEvents() {
             : '';
           const annoLabel = (cat === 'lezioni' && e.anno)
             ? ` · ${escapeHtml(e.anno)}° anno` : '';
-          return `<div class="cal-event ${cat}">
+          const catColor = CAL_CATEGORIES[cat]?.color;
+          return `<div class="cal-event ${cat}"${catColor ? ` style="border-left-color:${catColor}"` : ''}>
             <div class="cal-event-body">
               <div class="cal-event-titolo">${escapeHtml(e.titolo || '(senza titolo)')}${recurIcon}</div>
               <div class="cal-event-cat">${escapeHtml(catLabel)}${annoLabel}</div>
