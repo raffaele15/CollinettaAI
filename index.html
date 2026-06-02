@@ -676,6 +676,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .ndg-text{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.4;word-break:break-word}
 .ndg-edit-input{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--ink);line-height:1.4;padding:2px 6px;border:1px solid var(--accent);border-radius:3px;background:var(--bg-paper);resize:none;overflow:hidden;word-break:break-word;white-space:pre-wrap}
 .ndg-edit-input:focus{outline:none}
+.ndg-row-editing .ndg-del,.ndg-row-editing .ndg-drag{display:none}
 .ndg-done .ndg-text{text-decoration:line-through;color:var(--ink-faint)}
 .ndg-done .ndg-check{color:var(--accent)}
 .ndg-drag{cursor:grab;color:var(--ink-muted);font-size:16px;line-height:1;padding:4px 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;display:flex;align-items:center;justify-content:center;letter-spacing:1px}
@@ -9806,6 +9807,9 @@ function editNotaGiorno(id) {
   });
   input.addEventListener('blur', () => finish(true));
   textEl.replaceWith(input);
+  // Marca la riga in editing: il CSS nasconde X e grip così non vengono premuti per sbaglio
+  // e il testo ha più spazio a destra.
+  row.classList.add('ndg-row-editing');
   autosize();
   input.focus();
   input.select();
@@ -15986,12 +15990,14 @@ function renderNavTree() {
     </div>`;
 
     // L'header mostra la categoria/sottocategoria corrente: la rendo cliccabile per navigare
-    // alla sua vista (panoramica), così resta raggiungibile anche dopo essere entrati nel drill.
+    // alla sua vista (panoramica). Cliccandola, chiudo anche la sidebar mobile (come quando si
+    // apre una vista finale) e mostro la freccia a destra come le altre voci.
     const headerClick = rootTarget
-      ? `navigate('${escapeJs(rootTarget.route)}', ${JSON.stringify(rootTarget.params || {}).replace(/"/g, '&quot;')})`
+      ? `closeMobileMenu();navigate('${escapeJs(rootTarget.route)}', ${JSON.stringify(rootTarget.params || {}).replace(/"/g, '&quot;')})`
       : '';
     const header = `<div class="nav-drill-header${rootTarget ? ' nav-drill-header-clickable' : ''}"${headerClick ? ` onclick="${headerClick}"` : ''}>
       <span class="nav-drill-title">${escapeHtml(currentNode.label)}</span>
+      ${rootTarget ? '<span class="nav-tree-chevron">›</span>' : ''}
     </div>`;
 
     // Voce "Panoramica" rimossa: cliccando la sezione principale l'utente vede già
@@ -16270,7 +16276,7 @@ function renderNavTreeNode(node, depth) {
   if (inDrill) {
     const clickAction = hasChildren
       ? `handleNavDrillClick('${escapeJs(node.id)}', ${node.navTarget ? `'${escapeJs(node.navTarget.route)}'` : 'null'}, ${node.navTarget && node.navTarget.params ? JSON.stringify(node.navTarget.params).replace(/"/g, '&quot;') : 'null'})`
-      : (node.navTarget ? `navigate('${escapeJs(node.navTarget.route)}', ${JSON.stringify(node.navTarget.params || {}).replace(/"/g, '&quot;')})` : '');
+      : (node.navTarget ? `closeMobileMenu();navigate('${escapeJs(node.navTarget.route)}', ${JSON.stringify(node.navTarget.params || {}).replace(/"/g, '&quot;')})` : '');
 
     const folderKinds = new Set(['macro','sub','clinica-sub','gruppo','top']);
     const nodeKind = node.kind || 'top';
