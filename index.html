@@ -19358,30 +19358,39 @@ function initWindowResize() {
 }
 
 // Rete di sicurezza per la chiusura della tastiera mobile tramite gesture "indietro".
-// Su Android Chrome il primo back con tastiera aperta spesso la chiude senza che il nostro
-// handler popstate riesca a sfocare l'input (l'evento può non arrivare, oppure activeElement
-// resta a fuoco e il sistema riapre la tastiera). Quando la tastiera si chiude, la
-// visualViewport si "rialza" (height torna vicino a window.innerHeight): se in quel momento
-// un campo editabile è ancora a fuoco, lo sfoco esplicitamente. Così barra di ricerca,
-// ricerca rubrica e "Note del giorno" non restano selezionate dopo aver chiuso la tastiera.
+// Su Android Chrome il primo back con tastiera aperta spesso la chiude senza emettere un
+// popstate utilizzabile (quindi il blur in _onPopState non scatta) e, in PWA standalone, a
+// volte non emette nemmeno un resize "pulito" del visualViewport. Per coprire tutti i casi
+// monitoro più segnali (resize E scroll del visualViewport, più resize della finestra): quando
+// la viewport si "rialza" rispetto al minimo visto con tastiera aperta, se un campo editabile è
+// ancora a fuoco lo sfoco. Così barra di ricerca globale e "Note del giorno" non restano
+// selezionate dopo aver chiuso la tastiera con il back.
 function initKeyboardBlurOnViewport() {
   const vv = window.visualViewport;
   if (!vv) return;
-  // Soglia: consideriamo la tastiera "aperta" se la viewport è più bassa della finestra
-  // di almeno questa frazione. Al ritorno sopra soglia → tastiera chiusa.
-  const KB_RATIO = 0.85;
-  let kbWasOpen = false;
-  vv.addEventListener('resize', () => {
-    const open = vv.height < window.innerHeight * KB_RATIO;
-    if (kbWasOpen && !open) {
-      // La tastiera si è appena chiusa: se un campo editabile è ancora a fuoco, sfocalo.
-      const ae = document.activeElement;
-      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
-        try { ae.blur(); } catch {}
-      }
+  // Traccio l'altezza massima vista (≈ finestra senza tastiera) e quella minima (tastiera aperta).
+  let maxH = vv.height;
+  let kbOpen = false;
+  const blurActive = () => {
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+      try { ae.blur(); } catch {}
     }
-    kbWasOpen = open;
-  });
+  };
+  const check = () => {
+    const h = vv.height;
+    if (h > maxH) maxH = h;
+    // Tastiera "aperta" se la viewport è sensibilmente più bassa del massimo (≈ >120px sotto).
+    const nowOpen = h < maxH - 120;
+    if (kbOpen && !nowOpen) {
+      // La viewport si è rialzata: la tastiera si è chiusa → sfoco il campo eventualmente attivo.
+      blurActive();
+    }
+    kbOpen = nowOpen;
+  };
+  vv.addEventListener('resize', check);
+  vv.addEventListener('scroll', check);
+  window.addEventListener('resize', check);
 }
 
 function initEditModeButtons() {
