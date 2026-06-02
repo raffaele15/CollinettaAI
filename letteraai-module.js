@@ -3998,44 +3998,92 @@ function buildFingerprintPrompt(cartella, lettera){
   if (lettera)  p = p.replace('[INCOLLA QUI LA LETTERA DI DIMISSIONE]', lettera);
   return p;
 }
-/* I 10 campi del fingerprint V3 (schema patologia-specifico) */
+/* Campi NOTI della logica decorso V3: forniscono etichetta/ordine/tipo preferiti.
+   L'editor è data-driven: rende anche eventuali campi extra presenti nel JSON
+   (così si possono aggiungere campi dal solo prompt, senza toccare il codice). */
 const FP_V3_FIELDS = [
   { k:'patologia',                  label:'Patologia',                       type:'text' },
+  { k:'scenario_clinico',           label:'Scenario clinico',                type:'area', rows:2 },
   { k:'diagnosi_pattern',           label:'Diagnosi pattern',                type:'area', rows:2 },
   { k:'logica_diagnostica',         label:'Logica diagnostica',              type:'area', rows:4 },
   { k:'decorso_esempio',            label:'Decorso esempio (narrativo)',     type:'area', rows:8 },
   { k:'checklist_decorso',          label:'Checklist decorso',               type:'list' },
   { k:'esami_aggiuntivi',           label:'Esami aggiuntivi',                type:'list' },
   { k:'diari_da_monitorare',        label:'Diari da monitorare',             type:'list' },
+  { k:'eventi_intercorrenti',       label:'Eventi intercorrenti',            type:'list' },
   { k:'raccomandazioni_specifiche', label:'Raccomandazioni specifiche',      type:'list' },
   { k:'terapia_pattern',            label:'Terapia pattern',                 type:'area', rows:3 },
   { k:'note',                       label:'Note (vincoli speciali)',         type:'area', rows:3 },
 ];
-/* Rende un editor a campi per il fingerprint V3 dentro un container.
-   Restituisce l'HTML; la lettura avviene con readFpV3Editor(prefix). */
+const FP_V3_KNOWN = Object.fromEntries(FP_V3_FIELDS.map(f=>[f.k,f]));
+/* Trasforma una chiave snake_case in etichetta leggibile (per campi non noti). */
+function _fpKeyToLabel(k){
+  return String(k).replace(/_/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+}
+/* Deduce il tipo di campo per una chiave non nota, in base al valore. */
+function _fpInferType(val){
+  if (Array.isArray(val)) return 'list';
+  if (typeof val === 'string' && (val.length > 80 || val.includes('\n'))) return 'area';
+  return 'text';
+}
+/* Rende un editor a campi per la logica decorso V3 dentro un container.
+   Data-driven: disegna i campi noti presenti + eventuali campi extra del JSON.
+   Registra in #<prefix>-keys (hidden) l'elenco "chiave:tipo" reso, così
+   readFpV3Editor sa quali campi rileggere senza dipendere da FP_V3_FIELDS. */
 function renderFpV3EditorHtml(fpObj, prefix){
   fpObj = fpObj || {};
-  return FP_V3_FIELDS.map(f=>{
-    const id = prefix + '_' + f.k;
-    const val = fpObj[f.k];
-    if (f.type === 'text')
-      return `<div class="field"><label>${f.label}</label><input type="text" id="${id}" value="${escapeHtml(val||'')}"></div>`;
-    if (f.type === 'list'){
-      const txt = Array.isArray(val) ? val.join('\n') : '';
-      return `<div class="field"><label>${f.label} (uno per riga)</label><textarea id="${id}" rows="4" class="mono-input">${escapeHtml(txt)}</textarea></div>`;
+  // Ordine: prima i campi noti che esistono nel JSON, poi eventuali extra.
+  const knownKeys = FP_V3_FIELDS.map(f=>f.k).filter(k=> k in fpObj);
+  const extraKeys = Object.keys(fpObj).filter(k=> !(k in FP_V3_KNOWN));
+  const keys = knownKeys.concat(extraKeys);
+  const rendered = [];
+  const html = keys.map(k=>{
+    const known = FP_V3_KNOWN[k];
+    const val = fpObj[k];
+    const type = known ? known.type : _fpInferType(val);
+    const label = known ? known.label : _fpKeyToLabel(k);
+    const id = prefix + '_' + k;
+    rendered.push(k + ':' + type);
+    if (type === 'text')
+      return `<div class="field"><label>${escapeHtml(label)}</label><input type="text" id="${id}" value="${escapeHtml(val||'')}"></div>`;
+    if (type === 'list'){
+      const txt = Array.isArray(val) ? val.join('\n') : (val||'');
+      return `<div class="field"><label>${escapeHtml(label)} (uno per riga)</label><textarea id="${id}" rows="4" class="mono-input">${escapeHtml(txt)}</textarea></div>`;
     }
-    return `<div class="field"><label>${f.label}</label><textarea id="${id}" rows="${f.rows||3}" class="mono-input">${escapeHtml(val||'')}</textarea></div>`;
+    const rows = known && known.rows ? known.rows : 3;
+    return `<div class="field"><label>${escapeHtml(label)}</label><textarea id="${id}" rows="${rows}" class="mono-input">${escapeHtml(val||'')}</textarea></div>`;
   }).join('');
+  // Campo nascosto con l'elenco chiave:tipo reso, per la rilettura.
+  return `<input type="hidden" id="${prefix}-keys" value="${escapeHtml(rendered.join(','))}">` + html;
 }
+/* Rilegge l'editor data-driven: ricostruisce l'oggetto da #<prefix>-keys,
+   preservando qualunque campo presente (noti ed extra). */
 function readFpV3Editor(prefix){
   const get = (k)=>{ const el=document.getElementById(prefix+'_'+k); return el?el.value:''; };
   const lines = (k)=> get(k).split('\n').map(s=>s.trim()).filter(Boolean);
+  const keysEl = document.getElementById(prefix+'-keys');
+  // Fallback ai campi noti se il campo chiavi non è disponibile.
+  const specs = keysEl && keysEl.value
+    ? keysEl.value.split(',').filter(Boolean).map(s=>{ const i=s.lastIndexOf(':'); return { k:s.slice(0,i), type:s.slice(i+1) }; })
+    : FP_V3_FIELDS.map(f=>({ k:f.k, type:f.type }));
   const out = {};
-  FP_V3_FIELDS.forEach(f=>{
+  specs.forEach(f=>{
     if (f.type==='list') out[f.k] = lines(f.k);
     else out[f.k] = get(f.k);
   });
   return out;
+}
+/* Costruisce l'oggetto logica decorso da passare all'editor strutturato:
+   parsa il fingerprint del caso; se vuoto/malformato parte dallo scheletro
+   dei campi noti (caselle vuote da compilare). Usato da entrambi gli editor. */
+function _caseFpObjForEditor(c){
+  const fpStr = typeof c.fingerprint === 'string' ? c.fingerprint : (c.fingerprint ? JSON.stringify(c.fingerprint) : '');
+  let fpObj = parseFpJson(fpStr);
+  if (!fpObj || typeof fpObj !== 'object' || !Object.keys(fpObj).length){
+    fpObj = {};
+    FP_V3_FIELDS.forEach(f=>{ fpObj[f.k] = (f.type==='list') ? [] : ''; });
+  }
+  return fpObj;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -4666,10 +4714,10 @@ function renderCaseEditInline(id){
       <textarea id="ce-cartella" rows="8" class="mono-input">${escapeHtml(c.cartella||'')}</textarea></div>
     <div class="field"><label>Lettera di dimissione</label>
       <textarea id="ce-letter" rows="8" class="mono-input">${escapeHtml(c.letter||'')}</textarea></div>
-    <div class="field"><label>Logica decorso (JSON, opzionale)</label>
-      <div class="lt-row" style="margin-bottom:6px">
-        <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptEdit('${escapeHtml(id)}')">⎘ Copia prompt esterno</button></div>
-      <textarea id="ce-fp-raw" rows="6" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'>${escapeHtml(c.fingerprint||'')}</textarea></div>
+    <div class="lt-side-title" style="margin-top:6px">Logica decorso</div>
+    <div class="lt-row" style="margin-bottom:6px">
+      <button class="btn ghost sm" onclick="window.Lettere._copyFpPromptEdit('${escapeHtml(id)}')">⎘ Copia prompt esterno</button></div>
+    <div id="ce-fp-v3">${renderFpV3EditorHtml(_caseFpObjForEditor(c), 'ce-fpv3')}</div>
     <div class="lt-row" style="justify-content:flex-end;gap:8px;margin-top:14px">
       <button class="btn ghost" onclick="window.Lettere._closeEditCaso()">Annulla</button>
       <button class="btn" onclick="window.Lettere._saveEditedCaseInline('${escapeHtml(id)}')">✓ Salva Modifiche</button>
@@ -4879,23 +4927,17 @@ function renderConfig(){
     </div>`;
 }
 
-/* ── Editor caso esistente (modale): modifica name/folder/letter/fingerprint ──
-   Il fingerprint può essere modificato in tre modi:
-   1) editor strutturato a campi (se è un V3 valido con patologia)
-   2) JSON grezzo in textarea
-   3) re-importato incollando il prompt di estrazione in un'AI esterna */
+/* ── Editor caso esistente (modale): modifica name/folder/letter/logica decorso ──
+   La logica decorso si modifica con un unico editor strutturato data-driven
+   (rende qualunque campo presente nel JSON; se assente/malformato, parte da
+   uno scheletro dei campi noti). Può anche essere re-importata incollando il
+   prompt di estrazione in un'AI esterna. */
 function renderCaseEditor(id){
   const c = L.casi.find(x => x.id === id);
   if (!c){ toast('Caso non trovato','error'); return; }
-  const fpStr = typeof c.fingerprint === 'string' ? c.fingerprint : (c.fingerprint ? JSON.stringify(c.fingerprint) : '');
-  const fpObj = parseFpJson(fpStr);
-  const isV3 = fpObj && fpObj.patologia;
-  // Editor logica decorso: strutturato se V3, altrimenti textarea JSON grezzo
-  const fpEditor = isV3
-    ? `<div class="lt-side-title" style="margin-top:6px">Logica decorso (editor strutturato V3)</div>
-       <div id="ce-fp-v3">${renderFpV3EditorHtml(fpObj, 'ce-fpv3')}</div>`
-    : `<div class="field"><label>Logica decorso (JSON grezzo)</label>
-        <textarea id="ce-fp-raw" rows="6" class="mono-input" placeholder='{"patologia":"...","decorso_esempio":"..."}'>${escapeHtml(fpStr)}</textarea></div>`;
+  const fpObj = _caseFpObjForEditor(c);
+  const fpEditor = `<div class="lt-side-title" style="margin-top:6px">Logica decorso</div>
+       <div id="ce-fp-v3">${renderFpV3EditorHtml(fpObj, 'ce-fpv3')}</div>`;
   const body = `
     <div class="field"><label>Nome / Diagnosi</label><input type="text" id="ce-name" value="${escapeHtml(c.diagnosi||c.name||'')}"></div>
     <div class="lt-row">
@@ -5258,7 +5300,7 @@ window.Lettere = {
       wardId:get('ce-wardid')||'',
       tipo:get('ce-tipo').trim()||'dimissione',
       cartella:get('ce-cartella'), letter:get('ce-letter'),
-      fingerprint:get('ce-fp-raw').trim(),
+      fingerprint: document.getElementById('ce-fpv3-keys') ? JSON.stringify(readFpV3Editor('ce-fpv3')) : get('ce-fp-raw').trim(),
       folder:c.folder||'', autore:c.autore||username(), createdAt:c.createdAt,
     };
     try{ await saveCaso(updated); toast('Modifiche salvate.','success'); L._libEditId=null; renderLibreria(); }
@@ -5271,7 +5313,7 @@ window.Lettere = {
     if(!name){ toast('Inserisci un nome/diagnosi.','error'); return; }
     // Fingerprint: dall'editor V3 strutturato (se presente) o dal JSON grezzo
     let fingerprint;
-    if(document.getElementById('ce-fpv3_patologia')){
+    if(document.getElementById('ce-fpv3-keys')){
       fingerprint = JSON.stringify(readFpV3Editor('ce-fpv3'));
     } else {
       fingerprint = get('ce-fp-raw').trim();
