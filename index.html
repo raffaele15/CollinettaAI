@@ -692,7 +692,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 
 
 /* Home sections for personal pins */
-.home-pins-group{margin-bottom:24px}
+.home-pins-group{margin-bottom:20px}
 .home-pins-group:empty{display:none}
 .pinned-folder{display:flex;align-items:center;gap:10px;padding:12px 16px;border:1px solid var(--rule);border-radius:2px;background:var(--bg-paper);cursor:pointer;transition:background .12s,border-color .12s;margin-bottom:6px}
 .pinned-folder:hover{border-color:var(--accent);background:var(--accent-soft)}
@@ -743,7 +743,7 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .home-title{font-family:var(--serif);font-weight:300;font-size:clamp(36px,6vw,56px);line-height:1.0;letter-spacing:-.03em;margin-bottom:10px}
 .home-title em{font-style:italic}
 .home-lead{font-family:var(--serif);font-style:italic;font-weight:300;font-size:18px;color:var(--ink-muted);max-width:62ch;line-height:1.5}
-.home-section{margin-bottom:48px}
+.home-section{margin-bottom:28px}
 .home-section-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px}
 .home-section-title::after{content:'';flex:1;height:1px;background:var(--rule)}
 .procedure-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -758,6 +758,9 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .card-actions .pin-star{font-size:16px;padding:2px 4px}
 .procedure-card-meta{font-size:12px;color:var(--ink-muted);display:flex;align-items:center;gap:10px;margin-top:12px}
 .procedure-card-tags{margin-top:10px}
+/* Card "snelle" nella home (solo titolo + stella): meno padding, nessun margine sotto il titolo. */
+.procedure-card-slim{padding:14px 18px}
+.procedure-card-slim .procedure-card-title{margin-bottom:0;font-size:17px}
 
 /* NUMERI */
 .numeri-filters{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
@@ -1125,6 +1128,10 @@ body.edit-mode .editor-head{top:calc(var(--topbar-height, 64px) + var(--edit-ban
 @keyframes slideInRight{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes slideOutRight{from{transform:translateX(0);opacity:1}to{transform:translateX(20px);opacity:0}}
 .toast.leaving{animation:slideOutRight .2s ease-in forwards}
+.toast-undo{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.toast-undo-text{min-width:0;flex:1}
+.toast-undo-btn{flex-shrink:0;background:transparent;border:1px solid var(--bg-paper);color:var(--bg-paper);border-radius:2px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.toast-undo-btn:hover{background:var(--bg-paper);color:var(--ink)}
 
 .loading{display:flex;align-items:center;justify-content:center;padding:60px 20px;color:var(--ink-muted);font-size:14px}
 .spinner{width:18px;height:18px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;margin-right:10px}
@@ -2627,8 +2634,19 @@ const userPrefs = {
     }
     userPrefs.scheduleSave();
     // Visual feedback
-    if (typeof toast === 'function') {
-      toast(nowPinned ? 'Aggiunto in home' : 'Rimosso dalla home', 'info', 1500);
+    if (nowPinned) {
+      if (typeof toast === 'function') toast('Aggiunto in home', 'info', 1500);
+    } else if (typeof toastUndo === 'function') {
+      // Rimozione reversibile: offro "Annulla" per ripristinare il preferito.
+      toastUndo('Rimosso dalla home', () => {
+        if (!state.userPrefs) return;
+        if (!state.userPrefs.pins.some(p => userPrefs.pinEquals(p, pin))) {
+          state.userPrefs.pins.push(pin);
+          userPrefs.scheduleSave();
+          if (state.currentView === 'home') renderHome();
+          else if (typeof renderNumeri === 'function' && state.currentView === 'numeri') renderNumeri(state.currentParams && state.currentParams.filter);
+        }
+      });
     }
     return nowPinned;
   },
@@ -2683,6 +2701,15 @@ const userPrefs = {
   removeNotaGiorno(id) {
     if (!state.userPrefs || !state.userPrefs.note_giorno) return;
     state.userPrefs.note_giorno = state.userPrefs.note_giorno.filter(x => x.id !== id);
+    userPrefs.scheduleSave();
+  },
+  restoreNotaGiorno(nota, pos) {
+    if (!state.userPrefs || !nota) return;
+    if (!state.userPrefs.note_giorno) state.userPrefs.note_giorno = [];
+    // Evito duplicati se già presente (es. doppio Annulla).
+    if (state.userPrefs.note_giorno.some(x => x.id === nota.id)) return;
+    const i = (typeof pos === 'number' && pos >= 0 && pos <= state.userPrefs.note_giorno.length) ? pos : state.userPrefs.note_giorno.length;
+    state.userPrefs.note_giorno.splice(i, 0, nota);
     userPrefs.scheduleSave();
   },
   clearNoteGiornoFatte() {
@@ -3175,6 +3202,32 @@ function toast(message, level = 'info', duration = 3500) {
   el.textContent = message;
   stack.appendChild(el);
   setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 220); }, duration);
+}
+
+// Toast con pulsante "Annulla": mostra un messaggio breve e, se l'utente preme Annulla entro
+// la durata, esegue onUndo() (ripristino dell'azione). Usato per rimozioni reversibili
+// (preferito dalla home, nota del giorno eliminata).
+function toastUndo(message, onUndo, duration = 5000) {
+  const stack = $('toast-stack');
+  const el = document.createElement('div');
+  el.className = 'toast info toast-undo';
+  const txt = document.createElement('span');
+  txt.className = 'toast-undo-text';
+  txt.textContent = message;
+  const btn = document.createElement('button');
+  btn.className = 'toast-undo-btn';
+  btn.textContent = 'Annulla';
+  el.appendChild(txt);
+  el.appendChild(btn);
+  stack.appendChild(el);
+  let done = false;
+  const close = () => { if (done) return; done = true; el.classList.add('leaving'); setTimeout(() => el.remove(), 220); };
+  const timer = setTimeout(close, duration);
+  btn.addEventListener('click', () => {
+    clearTimeout(timer);
+    close();
+    try { if (typeof onUndo === 'function') onUndo(); } catch (e) { console.warn('[toastUndo] onUndo error', e); }
+  });
 }
 
 /* ============================ CONDIVISIONE LINK ============================
@@ -5399,35 +5452,9 @@ function renderHome() {
     // I contatti (type='contatto') non vanno più nei pins generici: usano home_numeri
   });
 
-  // Detect emergenze count
-  const emergenzeCount = procs.filter(p => p.categoria === 'emergenze').length;
   const username = state.session?.username || '';
 
   $('main-content').innerHTML = `
-    <div class="home-section" style="margin-top:16px;">
-      <div class="home-quickaccess">
-        <div class="quickaccess-card quickaccess-emergency" onclick="navigate('procedure-cat', {cat:'emergenze'})">
-          <div class="quickaccess-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          </div>
-          <div class="quickaccess-text">
-            <div class="quickaccess-title">Emergenze</div>
-            <div class="quickaccess-sub">${emergenzeCount === 0 ? 'Nessuna procedura' : `${emergenzeCount} procedur${emergenzeCount === 1 ? 'a' : 'e'}`}</div>
-          </div>
-        </div>
-
-        <div class="quickaccess-card quickaccess-guardia" onclick="openGuardieRubrica()">
-          <div class="quickaccess-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          </div>
-          <div class="quickaccess-text">
-            <div class="quickaccess-title">Medici di guardia</div>
-            <div class="quickaccess-sub">Tutte le UOC · cerca per reparto</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     ${renderHomeNumeriSection()}
 
     ${renderNoteGiornoSection()}
@@ -5476,28 +5503,32 @@ function renderHome() {
 }
 
 function renderPinnedSchedaCard(pin) {
+  // Card "snelle" per la home: solo titolo + stella (+ ⋯ azioni in modalità modifica).
+  // Niente tag/descrizione/meta — diversamente dalle card nelle liste complete.
+  let titolo = null, route = null, ctxType = null, pinType = pin.type, slug = pin.slug;
   if (pin.type === 'procedura') {
     const p = state.index.procedure.find(x => x.slug === pin.slug);
-    return p ? renderProcedureCard(p) : null;
-  }
-  if (pin.type === 'clinica') {
+    if (!p) return null;
+    titolo = p.titolo || p.slug; route = 'procedura'; ctxType = 'procedure';
+  } else if (pin.type === 'clinica') {
     const c = (state.index.clinica || []).find(x => x.slug === pin.slug);
-    return c ? renderClinicaCard(c) : null;
-  }
-  if (pin.type === 'modulo') {
+    if (!c) return null;
+    titolo = c.titolo || c.slug; route = 'clinica-scheda'; ctxType = 'clinica';
+  } else if (pin.type === 'modulo') {
     const m = state.index.moduli.find(x => x.slug === pin.slug);
     if (!m) return null;
-    return `<div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeJs(m.slug)}'})">
-      <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
-        <span class="card-actions">
-          ${renderPinButton('modulo', m.slug)}
-          <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, 'modulo', '${escapeJs(m.slug)}')" title="Azioni">⋯</button>
-        </span>
-      </div>
-      <div class="procedure-card-meta"><span>Modulo</span></div>
-    </div>`;
+    titolo = m.titolo || m.slug; route = 'modulo'; ctxType = 'modulo';
+  } else {
+    return null;
   }
-  return null;
+  return `<div class="procedure-card procedure-card-slim" onclick="navigate('${route}', {slug:'${escapeJs(slug)}'})">
+    <div class="procedure-card-title">${escapeHtml(titolo)}
+      <span class="card-actions">
+        ${renderPinButton(pinType, slug)}
+        <button class="btn-icon-mini edit-only card-edit-btn" onclick="event.stopPropagation();showNavContextMenu(this, '${ctxType}', '${escapeJs(slug)}')" title="Azioni">⋯</button>
+      </span>
+    </div>
+  </div>`;
 }
 
 function renderPinnedCartella(pin) {
@@ -9874,8 +9905,18 @@ function editNotaGiorno(id) {
   input.select();
 }
 function removeNotaGiorno(id) {
+  // Salvo la nota e la sua posizione PRIMA di rimuoverla, così "Annulla" la ripristina dov'era.
+  const note = userPrefs.getNoteGiorno();
+  const pos = note.findIndex(n => n.id === id);
+  const nota = pos >= 0 ? { ...note[pos] } : null;
   userPrefs.removeNotaGiorno(id);
   refreshNoteGiornoList();
+  if (nota && typeof toastUndo === 'function') {
+    toastUndo('Nota eliminata', () => {
+      userPrefs.restoreNotaGiorno(nota, pos);
+      refreshNoteGiornoList();
+    });
+  }
 }
 function clearNoteGiornoFatte() {
   userPrefs.clearNoteGiornoFatte();
@@ -11452,7 +11493,7 @@ async function editModuloMeta(slug) {
         })}
       </div>
       <div class="field">
-        <label>Note / istruzioni <span style="font-weight:normal;color:var(--ink-muted);">(opzionale)</span></label>
+        <label>Note <span style="font-weight:normal;color:var(--ink-muted);">(opzionale)</span></label>
         <textarea id="me-note" class="mod-input" rows="4" placeholder="Es. come compilare il modulo, a chi inviarlo, dove consegnarlo…">${escapeHtml(m.note || '')}</textarea>
       </div>
       <div class="field">
@@ -11544,7 +11585,6 @@ async function renderModulo(slug) {
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Moduli compilabili', route:'moduli'}])}</div>
       <h1 class="page-title">${escapeHtml(m.titolo || slug)} ${renderPinButton('modulo', slug)}</h1>
-      ${m.descrizione ? `<div style="margin-top:8px;font-size:14px;color:var(--ink-muted);font-style:italic;">${escapeHtml(m.descrizione)}</div>` : ''}
       ${(m.tag && m.tag.length) ? `<div style="margin-top:12px;">${m.tag.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
       <div class="page-meta" style="margin-top:12px;">
         <div class="page-meta-item">${m.pagine || 1} ${(m.pagine || 1) === 1 ? 'pagina' : 'pagine'}</div>
@@ -11556,10 +11596,12 @@ async function renderModulo(slug) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Condividi
         </button>
+        <button class="btn ghost edit-only" onclick="editModuloMeta('${escapeJs(slug)}')">Modifica</button>
+        <button class="btn ghost edit-only" style="color:#A32D2D;" onclick="confirmDeleteModulo('${escapeJs(slug)}')">Elimina</button>
       </div>
     </div>
     ${m.note ? `<div class="mod-note-box" style="margin-top:20px;padding:16px 20px;background:var(--bg-sink);border-left:3px solid var(--accent);border-radius:0 2px 2px 0;">
-      <div style="font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:8px;">Note / istruzioni</div>
+      <div style="font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);font-weight:500;margin-bottom:8px;">Note</div>
       <div style="font-size:14px;line-height:1.6;color:var(--ink-soft);white-space:pre-wrap;">${escapeHtml(m.note)}</div>
     </div>` : ''}
     <div id="mod-detail-area" style="margin-top:24px;">
