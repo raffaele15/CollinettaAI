@@ -2911,14 +2911,14 @@ function getLuogoContatto(c) {
   return (c.luogo || '').toString().trim();
 }
 
-/** Ritorna il nome ridotto della UOC, da usare nelle barre contesto compatte su mobile.
- *  Il valore è salvato nello YAML come campo `nome_ridotto` di ogni gruppo.
+/** Ritorna il nome breve della UOC, da usare nelle barre contesto compatte su mobile.
+ *  Il valore è salvato nello YAML come campo `nome_breve` di ogni gruppo (coerente coi contatti).
  *  Per UOC nuove o non ancora processate, fallback al nome senza prefisso (U.O.C., ecc.). */
 function shortenUocName(group) {
   if (!group) return '';
-  const custom = group.nome_ridotto && String(group.nome_ridotto).trim();
+  const custom = group.nome_breve && String(group.nome_breve).trim();
   if (custom) return custom;
-  // Fallback minimale per UOC senza nome_ridotto: rimuovi solo il prefisso
+  // Fallback minimale per UOC senza nome_breve: rimuovi solo il prefisso
   return stripPrefixNome(group.nome || '');
 }
 
@@ -4353,7 +4353,7 @@ function rebuildSearchIndex() {
     body: m.descrizione || ''  // descrizione compilabile come body searchable
   }));
   getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd').forEach(g => {
-    const groupAliases = (g.alias || []).join(' ');
+    const groupTags = (g.tag || []).join(' ');
     // Precomputo il bucketing contatto→tipo_sede una volta per gruppo
     let sedeBuckets = [];
     try {
@@ -4407,8 +4407,6 @@ function rebuildSearchIndex() {
         kind,
         kindAliases[kind] || '',
         sedeTipoStr,
-        (c.alias || []).join(' '),
-        groupAliases,
         compactForms
       ].filter(Boolean).join(' ');
       docs.push({
@@ -4421,7 +4419,7 @@ function rebuildSearchIndex() {
         ospedale: g._source || 'aopd',
         sezione: c.sezione || '',
         tag: (c.tag || []).join(' '),
-        alias: [...(c.alias || []), ...(g.alias || [])].join(' '),
+        keywords: [c.nome_breve || '', groupTags].filter(Boolean).join(' '),
         termini: termini,
         _dedupKey: `numero:${c.id || c.etichetta}`
       });
@@ -4439,7 +4437,7 @@ function rebuildSearchIndex() {
     keys: [
       { name: 'gruppo', weight: 4 },
       { name: 'titolo', weight: 3 },
-      { name: 'alias', weight: 3 },
+      { name: 'keywords', weight: 3 },
       { name: 'termini', weight: 2 },
       { name: 'tag', weight: 2 },
       { name: 'numeri', weight: 1 },
@@ -4627,6 +4625,9 @@ async function attemptLogin(username, passphrase) {
       cognome: payload.cognome || null
     };
     saveSession();
+    // Login validato: ri-mostro lo splash animato a copertura del caricamento
+    // dell'app (buildIndex ecc.), così la pagina non resta sul "Caricamento…".
+    showBootSplash();
     await enterApp();
   } catch (e) {
     loginError.textContent = e.message;
@@ -4636,6 +4637,9 @@ async function attemptLogin(username, passphrase) {
     btn.removeAttribute('aria-busy');
     btn.style.pointerEvents = '';
     btnText.textContent = 'Accedi';
+    // App pronta (o errore): nascondo lo splash. Idempotente: se non era stato
+    // mostrato (es. passphrase errata) qui è già 'splash-done' e non fa nulla.
+    hideBootSplash();
   }
 }
 
@@ -9116,11 +9120,11 @@ function renderNumeri(filter, targetContainer) {
       ].filter(Boolean).join(' ').toLowerCase();
     };
     
-    // Testo del gruppo per matchGroupOnly: nome + alias del gruppo.
+    // Testo del gruppo per matchGroupOnly: nome + tag del gruppo.
     // Le sezioni NON sono incluse: cercare "ucic" deve tornare i contatti UCIC, non
     // tutti quelli della UOC che ha UCIC tra le sue sezioni.
     const groupText = (g) => {
-      return [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
+      return [g.nome, (g.tag || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
     };
     
     // Un contatto matcha se OGNI token è soddisfatto. Per ogni token, le regole sono:
@@ -9411,7 +9415,7 @@ function renderNumeri(filter, targetContainer) {
                       ${isReorderable ? `<span class="ssp-reorder edit-only">
                         <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${sezNomeEsc}',-1)" title="Sposta su" ${isFirst ? 'disabled' : ''}>↑</button>
                         <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${sezNomeEsc}',1)" title="Sposta giù" ${isLast ? 'disabled' : ''}>↓</button>
-                        <button class="btn-icon-mini" onclick="event.stopPropagation();editSezioneAlias('${escapeJs(g.id)}','${sezNomeEsc}')" title="Rinomina sezione e modifica alias">✎</button>
+                        <button class="btn-icon-mini" onclick="event.stopPropagation();editSezioneAlias('${escapeJs(g.id)}','${sezNomeEsc}')" title="Rinomina sezione e modifica tag">✎</button>
                       </span>` : ''}
                     </div>`;
                   }).join('')}
@@ -9788,7 +9792,7 @@ function renderContattoCard(c, opts = {}) {
   // Nome breve: se il contatto ha un "nome breve" (primo alias) e siamo in un contesto
   // dove lo spazio è poco (preferiti), lo mostro al posto dell'etichetta completa.
   // L'etichetta intera resta nel tooltip (title).
-  const nomeBreve = (c.alias && c.alias.length && c.alias[0]) ? String(c.alias[0]).trim() : '';
+  const nomeBreve = c.nome_breve ? String(c.nome_breve).trim() : '';
   const displayName = (opts.preferBreve && nomeBreve) ? nomeBreve : c.etichetta;
   const displayTitle = (opts.preferBreve && nomeBreve) ? ` title="${escapeHtml(c.etichetta)}"` : '';
   // Maniglie di riordino opzionali (solo edit-mode), per la lista preferiti UOC.
@@ -9995,9 +9999,9 @@ function _contattoMatchesQuery(query, c, g) {
   const cTxt = [
     c.etichetta, c.sezione, c.sottosezione, c.edificio, c.piano, c.luogo,
     cell1, cell2, c.breve,
-    ...((c.numeri || []).map(String)), ...(c.tag || []), ...(c.alias || [])
+    ...((c.numeri || []).map(String)), ...(c.tag || []), c.nome_breve || ''
   ].filter(Boolean).join(' ').toLowerCase();
-  const gTxt = [g && g.nome, g && (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
+  const gTxt = [g && g.nome, g && (g.tag || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
   return tokens.every(tok => tmatch(tok, gTxt) || tmatch(tok, cTxt));
 }
 
@@ -10540,7 +10544,7 @@ async function editSezioneAlias(gid, sezNome) {
   const g = gruppi.find(x => x.id === gid);
   if (!g) return toast('Gruppo non trovato', 'error');
   const sezObj = (g.sezioni || []).find(s => (s.nome || '').trim().toLowerCase() === sezNome.trim().toLowerCase());
-  const aliasStr = sezObj && Array.isArray(sezObj.alias) ? sezObj.alias.join(', ') : '';
+  const tagStr = sezObj && Array.isArray(sezObj.tag) ? sezObj.tag.join(', ') : '';
   const nContatti = (g.contatti || []).filter(ct => (ct.sezione || '').trim().toLowerCase() === sezNome.trim().toLowerCase()).length;
   const body = `
     <form onsubmit="return false;" style="display:flex;flex-direction:column;gap:12px;">
@@ -10550,8 +10554,8 @@ async function editSezioneAlias(gid, sezNome) {
         <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Rinominandola, i <strong>${nContatti}</strong> contatti di questa sezione verranno aggiornati automaticamente.</div>
       </div>
       <div class="field">
-        <label>Alias della sezione <span style="font-weight:normal;color:var(--ink-muted);">(nomi alternativi per la ricerca, separati da virgola)</span></label>
-        <input type="text" id="se-alias" value="${escapeHtml(aliasStr)}" placeholder="es. ucic, unità coronarica">
+        <label>Tag della sezione <span style="font-weight:normal;color:var(--ink-muted);">(parole chiave per la ricerca, separate da virgola)</span></label>
+        <input type="text" id="se-tag" value="${escapeHtml(tagStr)}" placeholder="es. ucic, unità coronarica">
       </div>
     </form>`;
   showModal({
@@ -10564,7 +10568,7 @@ async function editSezioneAlias(gid, sezNome) {
         const oldNome = sezNome.trim();
         const newNome = ($('se-nome').value || '').trim();
         if (!newNome) return toast('Il nome della sezione è obbligatorio', 'warning');
-        const alias = ($('se-alias').value || '').split(',').map(s => s.trim()).filter(Boolean);
+        const tag = ($('se-tag').value || '').split(',').map(s => s.trim()).filter(Boolean);
         const renaming = newNome.toLowerCase() !== oldNome.toLowerCase();
 
         if (renaming) {
@@ -10579,15 +10583,15 @@ async function editSezioneAlias(gid, sezNome) {
           (ct.sezione || '').trim().toLowerCase() === oldNome.toLowerCase() ? { ...ct, sezione: newNome } : ct
         );
 
-        // Aggiorno/creo l'oggetto sezione (nome + alias).
+        // Aggiorno/creo l'oggetto sezione (nome + tag).
         let sezioni = [...(g.sezioni || [])];
         const idx = sezioni.findIndex(s => (s.nome || '').trim().toLowerCase() === oldNome.toLowerCase());
         if (idx >= 0) {
           const updated = { ...sezioni[idx], nome: newNome };
-          if (alias.length) updated.alias = alias; else delete updated.alias;
+          if (tag.length) updated.tag = tag; else delete updated.tag;
           sezioni[idx] = updated;
-        } else if (alias.length || renaming) {
-          sezioni.push({ nome: newNome, ...(alias.length ? { alias } : {}) });
+        } else if (tag.length || renaming) {
+          sezioni.push({ nome: newNome, ...(tag.length ? { tag } : {}) });
         }
         // Se il rename porta a due oggetti sezione con lo stesso nome (merge), li fondo
         // unendo alias e sottosezioni per non lasciare duplicati.
@@ -10598,8 +10602,8 @@ async function editSezioneAlias(gid, sezNome) {
             const key = (s.nome || '').trim().toLowerCase();
             if (seen[key] != null) {
               const ex = merged[seen[key]];
-              const a = [...new Set([...(ex.alias || []), ...(s.alias || [])])];
-              if (a.length) ex.alias = a;
+              const a = [...new Set([...(ex.tag || []), ...(s.tag || [])])];
+              if (a.length) ex.tag = a;
               const ss = [...(ex.sottosezioni || []), ...(s.sottosezioni || [])];
               if (ss.length) ex.sottosezioni = ss;
             } else { seen[key] = merged.length; merged.push({ ...s }); }
@@ -10609,8 +10613,8 @@ async function editSezioneAlias(gid, sezNome) {
 
         const newGruppi = gruppi.map(x => x.id === gid ? { ...x, sezioni, contatti: newContatti } : x);
         try {
-          await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, renaming ? `rinomina sezione "${oldNome}" → "${newNome}" in ${g.nome}` : `alias sezione "${oldNome}" in ${g.nome}`);
-          toast(renaming ? 'Sezione rinominata' : 'Alias sezione salvato', 'success');
+          await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, renaming ? `rinomina sezione "${oldNome}" → "${newNome}" in ${g.nome}` : `tag sezione "${oldNome}" in ${g.nome}`);
+          toast(renaming ? 'Sezione rinominata' : 'Tag sezione salvato', 'success');
           closeModal();
           await buildIndex();
           if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
@@ -10719,7 +10723,7 @@ function renderNumeroRow(c, gruppoId, classify, opts) {
     : '';
   // Nome breve: nei preferiti (preferBreve) mostro il primo alias al posto dell'etichetta
   // completa, con l'etichetta intera nel tooltip. Coerente con renderContattoCard.
-  const nomeBreve = (c.alias && c.alias.length && c.alias[0]) ? String(c.alias[0]).trim() : '';
+  const nomeBreve = c.nome_breve ? String(c.nome_breve).trim() : '';
   const displayName = (opts && opts.preferBreve && nomeBreve) ? nomeBreve : c.etichetta;
   const displayTitle = (opts && opts.preferBreve && nomeBreve) ? ` title="${escapeHtml(c.etichetta)}"` : '';
   // Riga inferiore: solo se c'è qualcosa da mostrare (sede, extras, note, email, kindSelector)
@@ -17056,8 +17060,8 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         <input type="text" id="ce-etichetta" value="${escapeHtml(c.etichetta || '')}" placeholder="es. Medico di Guardia" required>
       </div>
       <div class="field">
-        <label>Nome breve <span style="font-weight:normal;color:var(--ink-muted);">(per la ricerca e mostrato quando lo spazio è poco, es. su mobile e nei preferiti)</span></label>
-        <input type="text" id="ce-alias" value="${escapeHtml((c.alias || []).join(', '))}" placeholder="es. Guardia neuro, Stroke">
+        <label>Nome breve <span style="font-weight:normal;color:var(--ink-muted);">(mostrato quando lo spazio è poco, es. su mobile e nei preferiti)</span></label>
+        <input type="text" id="ce-nome-breve" value="${escapeHtml(c.nome_breve || '')}" placeholder="es. Guardia neuro">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="field">
@@ -17211,8 +17215,8 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         const orari = $('ce-orari').value.trim();
         const tag = $('ce-tag').value.split(',').map(s => s.trim()).filter(Boolean);
         const note = $('ce-note').value.trim();
-        const aliasEl = document.getElementById('ce-alias');
-        const alias = aliasEl ? aliasEl.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const nomeBreveEl = document.getElementById('ce-nome-breve');
+        const nomeBreve = nomeBreveEl ? nomeBreveEl.value.trim() : '';
         // Parto dai campi esistenti del contatto (in modifica) così NON perdo le proprietà
         // non gestite da questo form — in particolare `kind` (chip guardia/reparto/utile),
         // impostato altrove. Poi sovrascrivo/ripulisco solo i campi del form.
@@ -17239,7 +17243,7 @@ function openContattoEditor({ mode, gruppoId, contatto }) {
         if (orari) newC.orari = orari; else delete newC.orari;
         if (tag.length) newC.tag = tag; else delete newC.tag;
         if (note) newC.note = note; else delete newC.note;
-        if (alias.length) newC.alias = alias; else delete newC.alias;
+        if (nomeBreve) newC.nome_breve = nomeBreve; else delete newC.nome_breve;
         // Rimuovo eventuali proprietà interne di runtime che non vanno persistite.
         delete newC._gruppo; delete newC._source; delete newC._classify;
         if (!newC.numeri && !newC.cellulare_personale && !newC.cellulare_aziendale && !newC.breve) {
@@ -17756,7 +17760,7 @@ function openGruppoEditor({ mode, gruppo, source }) {
     ...(state.index?.numeriExtended?.osa?.gruppi || []),
     ...(state.index?.numeriExtended?.iov?.gruppi || []),
   ].forEach(gg => {
-    (gg.alias || []).forEach(a => { if (a) allGroupTagsSet.add(a); });
+    (gg.tag || []).forEach(a => { if (a) allGroupTagsSet.add(a); });
     (gg.contatti || []).forEach(ct => (ct.tag || []).forEach(t => { if (t) allGroupTagsSet.add(t); }));
   });
   const allGroupTagsOptions = [...allGroupTagsSet].sort((a, b) => a.localeCompare(b, 'it')).map(t => `<option value="${escapeHtml(t)}">`).join('');
@@ -17768,8 +17772,8 @@ function openGruppoEditor({ mode, gruppo, source }) {
         <input type="text" id="ge-nome" value="${escapeHtml(g.nome || '')}" placeholder="es. U.O.S.D. Stroke Unit" required>
       </div>
       <div class="field">
-        <label>Nome ridotto <span style="color:var(--ink-muted);font-weight:400;text-transform:none;letter-spacing:0;">(versione compatta usata nelle barre contesto su mobile)</span></label>
-        <input type="text" id="ge-nome-ridotto" value="${escapeHtml(g.nome_ridotto || '')}" placeholder="es. Cardiologia, ORL, Mal. Infettive">
+        <label>Nome breve <span style="color:var(--ink-muted);font-weight:400;text-transform:none;letter-spacing:0;">(versione compatta usata nelle barre contesto su mobile)</span></label>
+        <input type="text" id="ge-nome-breve" value="${escapeHtml(g.nome_breve || '')}" placeholder="es. Cardiologia, ORL, Mal. Infettive">
       </div>
       <div class="field">
         <label>Ospedale</label>
@@ -17786,7 +17790,7 @@ function openGruppoEditor({ mode, gruppo, source }) {
       </div>
       <div class="field">
         <label>Tag <span style="font-weight:normal;color:var(--ink-muted);">(parole chiave per la ricerca — scegli dai suggerimenti o aggiungine, separati da virgola)</span></label>
-        <input type="text" id="ge-alias" value="${escapeHtml((g.alias || []).join(', '))}" list="ge-tag-list" placeholder="es. neuro, stroke unit, prenotazioni">
+        <input type="text" id="ge-tag" value="${escapeHtml((g.tag || []).join(', '))}" list="ge-tag-list" placeholder="es. neuro, stroke unit, prenotazioni">
         <datalist id="ge-tag-list">${allGroupTagsOptions}</datalist>
       </div>
       <fieldset style="border:1px solid var(--rule);border-radius:4px;padding:10px;">
@@ -17814,19 +17818,19 @@ function openGruppoEditor({ mode, gruppo, source }) {
         const id = g.id || slugifyLocal(nome).slice(0, 60);
         if (isNew && gruppi.find(x => x.id === id)) return toast('Esiste già un gruppo con questo id', 'error');
         const updatedGroup = { id, nome };
-        const nomeRidotto = $('ge-nome-ridotto').value.trim();
-        if (nomeRidotto) updatedGroup.nome_ridotto = nomeRidotto;
+        const nomeBreve = $('ge-nome-breve').value.trim();
+        if (nomeBreve) updatedGroup.nome_breve = nomeBreve;
         const direttore = $('ge-direttore').value.trim();
         const email = $('ge-email').value.trim();
         const struttura = $('ge-struttura').value.trim();
         const piano = $('ge-piano').value.trim();
         const indirizzo = $('ge-indirizzo').value.trim();
         const sede = $('ge-sede').value.trim();
-        const aliasGeEl = document.getElementById('ge-alias');
-        const aliasGe = aliasGeEl ? aliasGeEl.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const tagGeEl = document.getElementById('ge-tag');
+        const tagGe = tagGeEl ? tagGeEl.value.split(',').map(s => s.trim()).filter(Boolean) : [];
         if (direttore) updatedGroup.direttore = direttore;
         if (email) updatedGroup.email = email;
-        if (aliasGe.length) updatedGroup.alias = aliasGe;
+        if (tagGe.length) updatedGroup.tag = tagGe;
         const ubicazione = {};
         if (struttura) ubicazione.struttura = struttura;
         if (piano) ubicazione.piano = piano;
@@ -17837,7 +17841,7 @@ function openGruppoEditor({ mode, gruppo, source }) {
         // che non vengono toccati dal form. Senza questo passaggio le UOC perderebbero le
         // sezioni custom o altri campi al primo "Salva" da editor.
         if (!isNew) {
-          const knownEditedFields = new Set(['id','nome','nome_ridotto','direttore','email','ubicazione','contatti','alias']);
+          const knownEditedFields = new Set(['id','nome','nome_breve','direttore','email','ubicazione','contatti','tag']);
           for (const key of Object.keys(g)) {
             if (!knownEditedFields.has(key)) {
               updatedGroup[key] = g[key];
@@ -18145,7 +18149,7 @@ function renderSearchResults(query, targetId) {
     // includere tutti i contatti di un gruppo solo perché il nome gruppo matcha qualche token).
     if (queryTerms.length >= 1 && !isNumericQuery) {
       const ctxt = contactText(r.item);
-      const gtxt = (r.item.gruppo + ' ' + (r.item.alias || '')).toLowerCase();
+      const gtxt = (r.item.gruppo + ' ' + (r.item.keywords || '')).toLowerCase();
       if (!allTokensMatch(ctxt, gtxt)) return;
       // Almeno un token deve essere presente nel contatto stesso (non solo nel gruppo)
       const anyTokenInContact = queryTerms.some(t => tokenMatches(t, ctxt));
@@ -18178,14 +18182,14 @@ function renderSearchResults(query, targetId) {
   const groupHasMatchingSezione = (g) => {
     const sezioni = g.sezioni || [];
     return sezioni.some(s => {
-      const sezText = [s.nome, Array.isArray(s.alias) ? s.alias.join(' ') : (s.alias || '')]
+      const sezText = [s.nome, Array.isArray(s.tag) ? s.tag.join(' ') : (s.tag || '')]
         .filter(Boolean).join(' ').toLowerCase();
       if (!sezText) return false;
       return queryTerms.every(t => tokenMatches(t, sezText));
     });
   };
   allGroupsForSearch.forEach(g => {
-    const nameAlias = [g.nome, (g.alias || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
+    const nameAlias = [g.nome, (g.tag || []).join(' ')].filter(Boolean).join(' ').toLowerCase();
     const groupMatches = queryTerms.every(t => tokenMatches(t, nameAlias));
     // Match parziale: almeno un token matcha il nome E gli altri matchano almeno un contatto
     // Esempio: "degenze cardiol" → "cardiol" matcha il nome, "degenze" matcha alcuni contatti
@@ -18196,8 +18200,8 @@ function renderSearchResults(query, targetId) {
       // Controllo: esiste almeno un contatto che matcha TUTTI i token rimanenti?
       partialGroupMatch = (g.contatti || []).some(c => {
         const tagsStr = Array.isArray(c.tag) ? c.tag.join(' ') : (c.tag || '');
-        const aliasStr = Array.isArray(c.alias) ? c.alias.join(' ') : (c.alias || '');
-        const ctxt = [c.etichetta, c.sezione, c.sottosezione, c.edificio, c.piano, c.luogo, tagsStr, aliasStr].filter(Boolean).join(' ').toLowerCase();
+        const nbStr = c.nome_breve || '';
+        const ctxt = [c.etichetta, c.sezione, c.sottosezione, c.edificio, c.piano, c.luogo, tagsStr, nbStr].filter(Boolean).join(' ').toLowerCase();
         return tokensNotInName.every(t => tokenMatches(t, ctxt));
       });
     }
@@ -18458,8 +18462,8 @@ function renderSearchResults(query, targetId) {
         // Filtra contatti che matchano i token extra in qualunque campo
         const filtered = u.contatti.filter(c => {
           const tagsStr = Array.isArray(c.tag) ? c.tag.join(' ') : (c.tag || '');
-          const aliasStr = Array.isArray(c.alias) ? c.alias.join(' ') : (c.alias || '');
-          const ctxt = [c.etichetta, c.sezione, c.sottosezione, c.edificio, c.piano, c.luogo, tagsStr, aliasStr].filter(Boolean).join(' ').toLowerCase();
+          const nbStr = c.nome_breve || '';
+          const ctxt = [c.etichetta, c.sezione, c.sottosezione, c.edificio, c.piano, c.luogo, tagsStr, nbStr].filter(Boolean).join(' ').toLowerCase();
           return extraTokens.every(t => tokenMatches(t, ctxt));
         });
         topContatti = filtered.length > 0 ? filtered.slice(0, 30) : u.contatti.filter(hasExplicitTag);
@@ -19445,6 +19449,23 @@ function hideBootSplash() {
   }, 280);
 }
 
+/**
+ * Ri-mostra lo splash di boot (con l'animazione che riparte) sopra tutto.
+ * Usato dopo la validazione del login per coprire il caricamento dell'app
+ * (buildIndex ecc.) finché enterApp non ha completato il primo render.
+ */
+function showBootSplash() {
+  const html = document.documentElement;
+  const el = document.getElementById('boot-splash');
+  if (!el) return;
+  html.classList.remove('splash-removed');   // torna display:flex
+  void el.offsetWidth;                        // reflow per riabilitare la transition
+  html.classList.remove('splash-done');       // opacity 0 → 1 (fade-in)
+  if (window.CollinettaSplash && window.CollinettaSplash.restart) {
+    window.CollinettaSplash.restart();
+  }
+}
+
 document.addEventListener('DOMContentLoaded', init);
 // Safety net: se per qualche motivo init non chiama hideBootSplash entro 8s,
 // lo nascondo comunque per evitare che l'utente resti bloccato sullo splash.
@@ -19550,7 +19571,16 @@ setTimeout(() => {
     sStart=performance.now(); mode='settle';
     if(!raf) raf=requestAnimationFrame(frame);
   }
-  window.CollinettaSplash={ finish:function(){ if(!reduce) startSettle(); } };
+  window.CollinettaSplash={
+    finish:function(){ if(!reduce) startSettle(); },
+    restart:function(){
+      if(reduce){ place(CX,HPX,45,-45,SF,1,0); return; }
+      if(raf){ cancelAnimationFrame(raf); raf=null; }
+      t0=null; mode='run'; done=false;
+      place(FX,HX,0,0,SS,0,0);
+      raf=requestAnimationFrame(frame);
+    }
+  };
 
   if(reduce){ place(CX,HPX,45,-45,SF,1,0); }
   else { place(FX,HX,0,0,SS,0,0); raf=requestAnimationFrame(frame); }
