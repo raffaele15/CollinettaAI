@@ -5540,6 +5540,7 @@ function renderPinnedCartella(pin) {
         <div class="pinned-folder-label">${escapeHtml(CATEGORIA_LABELS[pin.cat] || pin.cat)}</div>
         <div class="pinned-folder-sub">${count} procedur${count === 1 ? 'a' : 'e'}</div>
       </div>
+      ${renderPinButton('categoria', pin.cat)}
     </div>`;
   }
   if (pin.type === 'sottocategoria') {
@@ -5550,6 +5551,7 @@ function renderPinnedCartella(pin) {
         <div class="pinned-folder-label">${escapeHtml(SOTTO_LABELS[pin.sub] || pin.sub)}</div>
         <div class="pinned-folder-sub">${escapeHtml(CATEGORIA_LABELS[pin.cat] || pin.cat)} · ${count} sched${count === 1 ? 'a' : 'e'}</div>
       </div>
+      ${renderPinButton('sottocategoria', pin.cat, pin.sub)}
     </div>`;
   }
   if (pin.type === 'clinica-sub') {
@@ -5560,6 +5562,7 @@ function renderPinnedCartella(pin) {
         <div class="pinned-folder-label">${escapeHtml(SOTTO_LABELS[pin.sub] || pin.sub)}</div>
         <div class="pinned-folder-sub">Clinica · ${count} sched${count === 1 ? 'a' : 'e'}</div>
       </div>
+      ${renderPinButton('clinica-sub', pin.sub)}
     </div>`;
   }
   return null;
