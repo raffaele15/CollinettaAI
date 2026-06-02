@@ -5169,8 +5169,12 @@ const urlRouter = (function() {
     const _rsY = _scrollByPos[_historyPos || 0] || 0;
     navigate(route, params, { fromHistory: true, restoreScrollY: _rsY });
     // navigate(fromHistory) non passa per _onHistoryPush, quindi la guardia non si è
-    // riarmata. Se siamo atterrati in zona protetta (es. home in PWA), riarmo qui.
-    if (!_backGuardArmed) {
+    // riarmata. Se siamo atterrati in zona protetta (es. home in PWA), riarmo qui — MA non
+    // quando l'utente sta navigando la cronologia con le frecce interne e ha ancora "avanti"
+    // disponibile: in quel caso armare la guardia inserirebbe un pushState che tronca lo stack
+    // forward del browser, rompendo la freccia avanti (e facendo scattare la guardia al back).
+    const _navigatingHistory = _wasArrow && (_historyPos < _historyMax);
+    if (!_backGuardArmed && !_navigatingHistory) {
       const ctx = shouldGuardBack();
       if (ctx.active) armBackGuard(ctx.silent);
     }
