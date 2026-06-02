@@ -446,6 +446,9 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 .nav-drill-back:hover{background:var(--rule);color:var(--ink)}
 .nav-drill-back svg{flex-shrink:0}
 .nav-drill-header{padding:10px 12px 8px;border-bottom:1px solid var(--rule);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.nav-drill-header-clickable{cursor:pointer;border-radius:3px;transition:background .1s}
+.nav-drill-header-clickable:hover{background:var(--rule-soft)}
+.nav-drill-header-clickable:hover .nav-drill-title{color:var(--accent)}
 .nav-drill-title{font-family:var(--serif);font-size:17px;font-weight:500;color:var(--ink);flex:1}
 .nav-drill-header .nav-tree-count{display:inline-flex;font-family:var(--mono);font-size:11px;color:var(--ink-muted);background:var(--rule-soft);padding:2px 6px;border-radius:2px}
 .nav-drill-overview{border-bottom:1px dashed var(--rule-soft);margin-bottom:6px;padding-bottom:8px;font-style:italic;color:var(--ink-soft)}
@@ -671,6 +674,8 @@ main.content{padding:40px 48px 80px;width:100%;min-width:0}
 .ndg-check{background:transparent;border:none;cursor:pointer;font-size:18px;line-height:1;padding:0;color:var(--ink-muted);flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .ndg-check:hover{color:var(--accent)}
 .ndg-text{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.4;word-break:break-word}
+.ndg-edit-input{flex:1;min-width:0;font-size:14px;font-family:var(--serif);color:var(--ink);line-height:1.4;padding:2px 6px;border:1px solid var(--accent);border-radius:3px;background:var(--bg-paper)}
+.ndg-edit-input:focus{outline:none}
 .ndg-done .ndg-text{text-decoration:line-through;color:var(--ink-faint)}
 .ndg-done .ndg-check{color:var(--accent)}
 .ndg-drag{cursor:grab;color:var(--ink-muted);font-size:16px;line-height:1;padding:4px 4px;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;display:flex;align-items:center;justify-content:center;letter-spacing:1px}
@@ -9697,11 +9702,11 @@ function _noteGiornoRowsHtml() {
   return note.length
     ? note.map(n => `
         <div class="ndg-row ${n.fatto ? 'ndg-done' : ''}" data-id="${escapeHtml(n.id)}">
-          <span class="ndg-drag drag-handle" title="Trascina per riordinare" aria-label="Riordina">⠿</span>
-          <button class="ndg-edit btn-icon-mini" onclick="editNotaGiorno('${escapeJs(n.id)}')" title="Modifica" aria-label="Modifica">✎</button>
           <button class="ndg-check" onclick="toggleNotaGiorno('${escapeJs(n.id)}')" title="${n.fatto ? 'Segna da fare' : 'Segna fatto'}" aria-label="Completa">${n.fatto ? '☑' : '☐'}</button>
           <span class="ndg-text">${escapeHtml(n.testo)}</span>
+          <button class="ndg-edit btn-icon-mini" onclick="editNotaGiorno('${escapeJs(n.id)}')" title="Modifica" aria-label="Modifica">✎</button>
           <button class="ndg-del btn-icon-mini" onclick="removeNotaGiorno('${escapeJs(n.id)}')" title="Elimina" aria-label="Elimina">✕</button>
+          <span class="ndg-drag drag-handle" title="Trascina per riordinare" aria-label="Riordina">⠿</span>
         </div>`).join('')
     : `<div class="empty-pins" style="padding:14px 16px;font-size:13px;">Nessuna nota. Scrivi qui i promemoria della giornata (es. controlli, chiamate, consegne).</div>`;
 }
@@ -9770,11 +9775,34 @@ function toggleNotaGiorno(id) {
 function editNotaGiorno(id) {
   const nota = userPrefs.getNoteGiorno().find(x => x.id === id);
   if (!nota) return;
-  const nuovo = prompt('Modifica nota:', nota.testo);
-  if (nuovo === null) return;            // annullato
-  if (!nuovo.trim()) return;             // vuoto: non modifico
-  userPrefs.updateNotaGiorno(id, nuovo);
-  refreshNoteGiornoList();
+  const row = document.querySelector(`.ndg-row[data-id="${CSS.escape(id)}"]`);
+  if (!row) return;
+  const textEl = row.querySelector('.ndg-text');
+  if (!textEl || row.querySelector('.ndg-edit-input')) return;  // già in edit
+  // Sostituisco lo span testo con un input precompilato col testo attuale, editabile sul posto.
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'ndg-edit-input';
+  input.value = nota.testo;
+  input.maxLength = 240;
+  let done = false;
+  const finish = (salva) => {
+    if (done) return;
+    done = true;
+    if (salva) {
+      const t = input.value.trim();
+      if (t && t !== nota.testo) userPrefs.updateNotaGiorno(id, t);
+    }
+    refreshNoteGiornoList();  // ripristina la riga normale (e re-inizializza il Sortable)
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  input.addEventListener('blur', () => finish(true));
+  textEl.replaceWith(input);
+  input.focus();
+  input.select();
 }
 function removeNotaGiorno(id) {
   userPrefs.removeNotaGiorno(id);
@@ -15951,7 +15979,12 @@ function renderNavTree() {
       <span>${escapeHtml(parentLabel)}</span>
     </div>`;
 
-    const header = `<div class="nav-drill-header">
+    // L'header mostra la categoria/sottocategoria corrente: la rendo cliccabile per navigare
+    // alla sua vista (panoramica), così resta raggiungibile anche dopo essere entrati nel drill.
+    const headerClick = rootTarget
+      ? `navigate('${escapeJs(rootTarget.route)}', ${JSON.stringify(rootTarget.params || {}).replace(/"/g, '&quot;')})`
+      : '';
+    const header = `<div class="nav-drill-header${rootTarget ? ' nav-drill-header-clickable' : ''}"${headerClick ? ` onclick="${headerClick}"` : ''}>
       <span class="nav-drill-title">${escapeHtml(currentNode.label)}</span>
     </div>`;
 
@@ -18688,7 +18721,7 @@ function renderSearchResults(query, targetId) {
   const chipTypes = [
     { key: 'numeri',    label: 'Rubrica',        count: countByType.numeri },
     { key: 'procedura', label: 'Procedure',      count: countByType.procedura },
-    { key: 'clinica',   label: 'Schede cliniche', count: countByType.clinica },
+    { key: 'clinica',   label: 'Clinica',        count: countByType.clinica },
     { key: 'modulo',    label: 'Moduli',         count: countByType.modulo }
   ].filter(c => c.count > 0);
 
