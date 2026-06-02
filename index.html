@@ -437,6 +437,9 @@ body.edit-mode .edit-only.btn{display:inline-flex !important}
 }
 .nav-tree-row.expanded > .nav-tree-caret{transform:rotate(0)}
 .nav-tree-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Bollino blu numerato del flusso LetteraAI in sidebar (stile coerente con .lt-home-n della home) */
+.nav-tree-num{flex:0 0 20px;height:20px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-family:var(--mono,monospace);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.nav-tree-row.active .nav-tree-num,.nav-tree-row.expanded .nav-tree-num{background:var(--accent);color:#fff}
 .nav-tree-count{display:none}
 .nav-tree-children{padding-left:14px;border-left:1px dashed var(--rule-soft);margin-left:10px;display:none}
 .nav-tree-node.open > .nav-tree-children{display:block}
@@ -16409,20 +16412,21 @@ function buildModuliChildren() {
 // I Reparti NON sono una voce separata: la gestione reparti è dentro Libreria Casi.
 function buildLettereChildren() {
   const isAdmin = !!(state.session && state.session.isAdmin);
-  const mk = (id, label, route, kind) => ({
+  const mk = (id, label, route, kind, numBadge) => ({
     id: 'lettere:' + id, label, count: null, action: 'navigate',
-    navTarget: { route, params: {} }, kind: kind || 'lettere-sezione', slug: id, children: null
+    navTarget: { route, params: {} }, kind: kind || 'lettere-sezione', slug: id, children: null,
+    numBadge: numBadge != null ? numBadge : null
   });
   // Header di gruppo non cliccabile (renderizzato come etichetta di sezione)
   const grp = (id, label) => ({ id: 'lettere-grp:' + id, label, kind: 'group-label', children: null, navTarget: null });
   const nodes = [
     grp('flusso', 'Flusso di generazione'),
-    // Stesse icone della home: numeri 1-5 per il flusso
-    mk('carica', '① Carica cartella', 'lettere-carica'),
-    mk('anonimizza', '② Anonimizza dati', 'lettere-anonimizza'),
-    mk('genera', '③ Genera lettera', 'lettere-genera'),
-    mk('verifica', '④ Verifica', 'lettere-verifica'),
-    mk('esporta', '⑤ Esporta', 'lettere-esporta'),
+    // Bollini blu numerati 1-5 per il flusso (stile come la home di LetteraAI)
+    mk('carica', 'Carica cartella', 'lettere-carica', null, 1),
+    mk('anonimizza', 'Anonimizza dati', 'lettere-anonimizza', null, 2),
+    mk('genera', 'Genera lettera', 'lettere-genera', null, 3),
+    mk('verifica', 'Verifica', 'lettere-verifica', null, 4),
+    mk('esporta', 'Esporta', 'lettere-esporta', null, 5),
     grp('strumenti', 'Strumenti'),
     // Stesse icone della home per gli strumenti
     mk('libreria', '📚 Libreria casi', 'lettere-libreria'),
@@ -16467,6 +16471,7 @@ function renderNavTreeNode(node, depth) {
     return `
       <div class="nav-tree-node" data-id="${escapeHtml(node.id)}">
         <div class="nav-tree-row nav-tree-drill-row" data-slug="${escapeHtml(node.slug || '')}" data-kind="${nodeKind}" onclick="${clickAction}">
+          ${node.numBadge != null ? `<span class="nav-tree-num">${escapeHtml(String(node.numBadge))}</span>` : ''}
           <span class="nav-tree-label">${escapeHtml(node.label)}</span>
           ${hasChildren ? '<span class="nav-tree-chevron">›</span>' : ''}
           ${editBtn}
@@ -16498,6 +16503,7 @@ function renderNavTreeNode(node, depth) {
     <div class="nav-tree-node ${expanded ? 'open' : ''}" data-id="${escapeHtml(node.id)}">
       <div class="nav-tree-row ${expanded ? 'expanded' : ''}" data-slug="${escapeHtml(node.slug || '')}" data-kind="${node.kind || 'top'}" onclick="${rowClickAction}">
         <span class="nav-tree-caret${hasChildren ? ' nav-tree-caret-clickable' : ''}" ${hasChildren ? `onclick="event.stopPropagation(); toggleNavNode('${escapeJs(node.id)}')"` : ''}>${hasChildren ? (expanded ? '▾' : '▸') : '·'}</span>
+        ${node.numBadge != null ? `<span class="nav-tree-num">${escapeHtml(String(node.numBadge))}</span>` : ''}
         <span class="nav-tree-label">${escapeHtml(node.label)}</span>
         ${node.count !== null && node.count !== undefined ? `<span class="nav-tree-count">${node.count}</span>` : ''}
         ${editBtn}
