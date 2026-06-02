@@ -712,7 +712,7 @@ const DEFAULT_USER_PREFS = {
 /* Descrizioni per i tooltip (hover) dei pulsanti di preferenza, per chiave→valore. */
 const PREF_TITLES = {
   lab: { all: 'Riporta tutti i valori di laboratorio, con range di normalità', altered: 'Riporta solo i valori alterati (fuori range) e i 6 obbligatori (colesterolo totale, HDL, LDL, trigliceridi, HbA1c, creatinina)' },
-  acc: { brief: 'Accertamenti strumentali: solo le conclusioni', extended: 'Accertamenti strumentali: tutti i reperti del referto, col testo reale del documento (non parafrasato)' },
+  acc: { brief: 'Solo conclusioni', extended: 'Referti completi' },
   dec: { short: 'Decorso clinico: sintesi concisa (150-250 parole), solo eventi e decisioni principali', standard: 'Decorso clinico: lunghezza standard', long: 'Decorso clinico: racconto dettagliato (400-600 parole) con eventi intermedi e ragionamento clinico' },
   an: { essential: 'Anamnesi essenziale: riporta tutte le patologie ma in forma sintetica', complete: 'Anamnesi completa, con i dettagli rilevanti' },
   rac: { main: 'Solo le raccomandazioni principali (terapia, follow-up clinico)', all: 'Tutte le raccomandazioni' },
@@ -4566,7 +4566,7 @@ function renderLibreria(){
   const totCasi = L.casi.length;
   const nSenzaReparto = L.casi.filter(c=>!wardName(c)).length;
   const nByWard = (n)=> L.casi.filter(c=>wardName(c)===n).length;
-  const filterOpts = `<option value="__all__"${wardFilter==='__all__'?' selected':''}>Tutti i reparti (${totCasi})</option>` +
+  const filterOpts = `<option value="__all__"${wardFilter==='__all__'?' selected':''}>Tutti i casi (${totCasi})</option>` +
     `<option value="__none__"${wardFilter==='__none__'?' selected':''}>— Senza reparto (${nSenzaReparto})</option>` +
     wardNames.map(n=>`<option value="${escapeHtml(n)}"${wardFilter===n?' selected':''}>${escapeHtml(n)} (${nByWard(n)})</option>`).join('');
   // Casi filtrati — il reparto si risolve via wardName(c) (wardId → nome), MAI via folder
