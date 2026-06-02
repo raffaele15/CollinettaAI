@@ -4684,7 +4684,15 @@ function renderAddCaseForm(){
   const tipoOpts=(TIPI||[]).map(t=>`<option value="${escapeHtml(t.id)}"${t.id==='dimissione'?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
   return `<div class="lt-card-static" style="margin-top:20px">
     <div class="lt-side-title" style="margin:0 0 10px">Aggiungi Caso</div>
-    <div class="lt-side-title" style="font-size:11px;margin:0 0 8px;color:var(--ink-muted)">Carica PDF cartella clinica <span class="lt-sub">(estrae e separa la lettera automaticamente)</span></div>
+    <div class="field"><label>Nome / Diagnosi</label>
+      <input type="text" id="nc-name" placeholder='Es: "Stroke ischemico ACM dx"'></div>
+    <div class="lt-row">
+      <div class="field" style="flex:1"><label>Reparto</label>
+        <select id="nc-wardid">${wardOpts}</select></div>
+      <div class="field" style="flex:1"><label>Tipo</label>
+        <select id="nc-tipo">${tipoOpts}</select></div>
+    </div>
+    <div class="lt-side-title" style="font-size:11px;margin:4px 0 8px;color:var(--ink-muted)">Carica PDF cartella clinica</div>
     <div class="lt-dropzone" onclick="document.getElementById('nc-pdf').click()"
       ondragover="event.preventDefault();this.classList.add('drag')"
       ondragleave="this.classList.remove('drag')"
@@ -4694,17 +4702,9 @@ function renderAddCaseForm(){
       <div class="lt-dz-txt"><strong>Clicca o trascina il PDF della cartella</strong></div>
     </div>
     <div id="nc-pdf-status" class="lt-dz-status" style="display:none;margin-bottom:10px"><span id="nc-pdf-status-txt"></span></div>
-    <div class="field"><label>Nome / Diagnosi</label>
-      <input type="text" id="nc-name" placeholder='Es: "Stroke ischemico ACM dx"'></div>
-    <div class="lt-row">
-      <div class="field" style="flex:1"><label>Reparto</label>
-        <select id="nc-wardid">${wardOpts}</select></div>
-      <div class="field" style="flex:1"><label>Tipo</label>
-        <select id="nc-tipo">${tipoOpts}</select></div>
-    </div>
     <div class="field"><label>Cartella clinica anonimizzata</label>
       <textarea id="nc-cartella" rows="6" class="mono-input" placeholder="Incolla la cartella anonimizzata..."></textarea></div>
-    <div class="field"><label>Esami di laboratorio <span class="lt-sub">(opzionale)</span></label>
+    <div class="field"><label>Esami di laboratorio</label>
       <div class="lt-dropzone" onclick="document.getElementById('nc-xls').click()"
         ondragover="event.preventDefault();this.classList.add('drag')"
         ondragleave="this.classList.remove('drag')"
