@@ -158,8 +158,7 @@ html.splash-removed #boot-splash{
 
 /* LOGIN */
 #login-view{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 24px}
-.login-card{max-width:440px;width:100%;background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;padding:48px 40px;box-shadow:var(--shadow-raised);position:relative}
-.login-card::before{content:'';position:absolute;top:-1px;left:-1px;right:-1px;height:3px;background:var(--ink)}
+.login-card{max-width:440px;width:100%;background:var(--bg-paper);border:1px solid var(--ink);border-radius:2px;padding:48px 40px;box-shadow:6px 6px 0 var(--rule-strong);position:relative}
 .login-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:14px}
 .login-title{font-family:var(--serif);font-weight:500;font-style:italic;font-size:34px;line-height:1.05;letter-spacing:-.02em;margin:0}
 .login-title em{font-style:italic;font-weight:500}
@@ -9348,13 +9347,13 @@ function renderNumeri(filter, targetContainer) {
             : (rubricaQuery ? shortenUocName(g) : g.nome);
           return `
           <div class="numeri-group${isCollapsedSearch ? ' numeri-group-collapsed' : ''}">
-            ${isCollapsedSearch ? '' : `<h2 class="numeri-group-title">
+            ${isCollapsedSearch ? '' : `<h2 class="numeri-group-title"><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               ${rubricaQuery
                 ? `<a href="#" onclick="event.preventDefault(); _navigateOutOfRubricaSearch('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri vista UOC completa">${escapeHtml(displayName)}</a>`
                 : (filter && filter !== g.id)
                   ? `<a href="#" onclick="event.preventDefault(); navigate('numeri', {filter:'${escapeJs(g.id)}'})" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer;" title="Apri tutta la UOC">${escapeHtml(displayName)}</a>`
                   : escapeHtml(displayName)
-              }${isGuardiaFilter ? '' : renderUbicazioneBadge(g.ubicazione)} ${renderPinButton('gruppo', g.id)}
+              } ${renderPinButton('gruppo', g.id)}
               <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center;">
                 ${isManuallyExpanded ? `<button class="btn-icon-mini" onclick="collapseGroup('${escapeJs(g.id)}')" title="Nascondi tutti i numeri di questa UOC" style="font-size:11px;color:var(--ink-muted);">↕ nascondi</button>` : ''}
                 <span class="edit-only" style="display:inline-flex;gap:6px;">
@@ -9362,6 +9361,8 @@ function renderNumeri(filter, targetContainer) {
                   <button class="btn-icon-mini" onclick="deleteGruppoNumeri('${escapeJs(g.id)}')" title="Elimina gruppo">🗑</button>
                 </span>
               </span>
+              </span>
+              ${isGuardiaFilter ? '' : renderUbicazioneBadge(g.ubicazione)}
             </h2>`}
             ${(g.direttore && filter !== 'guardia' && !rubricaQuery) ? `<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">Direttore: ${escapeHtml(g.direttore)}</div>` : ''}
             ${(g.email && filter !== 'guardia' && !rubricaQuery) ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-family:var(--mono);">${escapeHtml(g.email)}</div>` : ''}
@@ -9410,7 +9411,7 @@ function renderNumeri(filter, targetContainer) {
                       ${isReorderable ? `<span class="ssp-reorder edit-only">
                         <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${sezNomeEsc}',-1)" title="Sposta su" ${isFirst ? 'disabled' : ''}>↑</button>
                         <button class="btn-icon-mini" onclick="event.stopPropagation();moveSezione('${escapeJs(g.id)}','${sezNomeEsc}',1)" title="Sposta giù" ${isLast ? 'disabled' : ''}>↓</button>
-                        <button class="btn-icon-mini" onclick="event.stopPropagation();editSezioneAlias('${escapeJs(g.id)}','${sezNomeEsc}')" title="Modifica alias sezione">✎</button>
+                        <button class="btn-icon-mini" onclick="event.stopPropagation();editSezioneAlias('${escapeJs(g.id)}','${sezNomeEsc}')" title="Rinomina sezione e modifica alias">✎</button>
                       </span>` : ''}
                     </div>`;
                   }).join('')}
@@ -10540,36 +10541,76 @@ async function editSezioneAlias(gid, sezNome) {
   if (!g) return toast('Gruppo non trovato', 'error');
   const sezObj = (g.sezioni || []).find(s => (s.nome || '').trim().toLowerCase() === sezNome.trim().toLowerCase());
   const aliasStr = sezObj && Array.isArray(sezObj.alias) ? sezObj.alias.join(', ') : '';
+  const nContatti = (g.contatti || []).filter(ct => (ct.sezione || '').trim().toLowerCase() === sezNome.trim().toLowerCase()).length;
   const body = `
     <form onsubmit="return false;" style="display:flex;flex-direction:column;gap:12px;">
       <div class="field">
+        <label>Nome sezione</label>
+        <input type="text" id="se-nome" value="${escapeHtml(sezNome)}" placeholder="es. Ambulatori">
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Rinominandola, i <strong>${nContatti}</strong> contatti di questa sezione verranno aggiornati automaticamente.</div>
+      </div>
+      <div class="field">
         <label>Alias della sezione <span style="font-weight:normal;color:var(--ink-muted);">(nomi alternativi per la ricerca, separati da virgola)</span></label>
         <input type="text" id="se-alias" value="${escapeHtml(aliasStr)}" placeholder="es. ucic, unità coronarica">
-        <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">Sezione: <strong>${escapeHtml(sezNome)}</strong></div>
       </div>
     </form>`;
   showModal({
-    title: 'Alias sezione',
+    title: 'Modifica sezione',
     subtitle: `${escapeHtml(g.nome)}`,
     body,
     actions: [
       { label: 'Annulla', variant: 'ghost', onClick: () => closeModal() },
       { label: 'Salva', onClick: async () => {
+        const oldNome = sezNome.trim();
+        const newNome = ($('se-nome').value || '').trim();
+        if (!newNome) return toast('Il nome della sezione è obbligatorio', 'warning');
         const alias = ($('se-alias').value || '').split(',').map(s => s.trim()).filter(Boolean);
-        const sezioni = [...(g.sezioni || [])];
-        const idx = sezioni.findIndex(s => (s.nome || '').trim().toLowerCase() === sezNome.trim().toLowerCase());
+        const renaming = newNome.toLowerCase() !== oldNome.toLowerCase();
+
+        if (renaming) {
+          const collision = (g.sezioni || []).some(s => s !== sezObj && (s.nome || '').trim().toLowerCase() === newNome.toLowerCase())
+            || (g.contatti || []).some(ct => (ct.sezione || '').trim().toLowerCase() === newNome.toLowerCase());
+          if (collision && !confirm(`Esiste già una sezione "${newNome}" in questa UOC: i contatti verranno uniti. Procedere?`)) return;
+          if (!confirm(`Rinominare la sezione "${oldNome}" in "${newNome}" e aggiornare ${nContatti} contatto/i?`)) return;
+        }
+
+        // Propago il nuovo nome a tutti i contatti della sezione nel gruppo.
+        const newContatti = (g.contatti || []).map(ct =>
+          (ct.sezione || '').trim().toLowerCase() === oldNome.toLowerCase() ? { ...ct, sezione: newNome } : ct
+        );
+
+        // Aggiorno/creo l'oggetto sezione (nome + alias).
+        let sezioni = [...(g.sezioni || [])];
+        const idx = sezioni.findIndex(s => (s.nome || '').trim().toLowerCase() === oldNome.toLowerCase());
         if (idx >= 0) {
-          const updated = { ...sezioni[idx] };
+          const updated = { ...sezioni[idx], nome: newNome };
           if (alias.length) updated.alias = alias; else delete updated.alias;
           sezioni[idx] = updated;
-        } else {
-          // La sezione non aveva un oggetto dedicato: lo creo (solo se c'è un alias da salvare)
-          if (alias.length) sezioni.push({ nome: sezNome, alias });
+        } else if (alias.length || renaming) {
+          sezioni.push({ nome: newNome, ...(alias.length ? { alias } : {}) });
         }
-        const newGruppi = gruppi.map(x => x.id === gid ? { ...x, sezioni } : x);
+        // Se il rename porta a due oggetti sezione con lo stesso nome (merge), li fondo
+        // unendo alias e sottosezioni per non lasciare duplicati.
+        if (renaming) {
+          const seen = {};
+          const merged = [];
+          sezioni.forEach(s => {
+            const key = (s.nome || '').trim().toLowerCase();
+            if (seen[key] != null) {
+              const ex = merged[seen[key]];
+              const a = [...new Set([...(ex.alias || []), ...(s.alias || [])])];
+              if (a.length) ex.alias = a;
+              const ss = [...(ex.sottosezioni || []), ...(s.sottosezioni || [])];
+              if (ss.length) ex.sottosezioni = ss;
+            } else { seen[key] = merged.length; merged.push({ ...s }); }
+          });
+          sezioni = merged;
+        }
+
+        const newGruppi = gruppi.map(x => x.id === gid ? { ...x, sezioni, contatti: newContatti } : x);
         try {
-          await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, `alias sezione "${sezNome}" in ${g.nome}`);
-          toast('Alias sezione salvato', 'success');
+          await saveNumeriForSource(src, { ...data, gruppi: newGruppi }, renaming ? `rinomina sezione "${oldNome}" → "${newNome}" in ${g.nome}` : `alias sezione "${oldNome}" in ${g.nome}`);
+          toast(renaming ? 'Sezione rinominata' : 'Alias sezione salvato', 'success');
           closeModal();
           await buildIndex();
           if (state.showExtendedNumeri?.osa) await loadExtendedNumeri('osa');
@@ -17706,6 +17747,19 @@ function openGruppoEditor({ mode, gruppo, source }) {
   const isNew = mode === 'new';
   const g = gruppo || {};
   const ub = g.ubicazione || {};
+  // Suggerimenti per il campo "Tag" della UOC (coerente coi contatti). La UOC salva le parole
+  // chiave di ricerca nel campo `alias`; raccolgo qui sia gli alias di gruppo già usati sia i tag
+  // dei contatti, così il datalist offre le stesse scelte del form contatto.
+  const allGroupTagsSet = new Set();
+  [
+    ...(state.index?.numeri?.gruppi || []),
+    ...(state.index?.numeriExtended?.osa?.gruppi || []),
+    ...(state.index?.numeriExtended?.iov?.gruppi || []),
+  ].forEach(gg => {
+    (gg.alias || []).forEach(a => { if (a) allGroupTagsSet.add(a); });
+    (gg.contatti || []).forEach(ct => (ct.tag || []).forEach(t => { if (t) allGroupTagsSet.add(t); }));
+  });
+  const allGroupTagsOptions = [...allGroupTagsSet].sort((a, b) => a.localeCompare(b, 'it')).map(t => `<option value="${escapeHtml(t)}">`).join('');
   const sourceOptions = ['aopd', 'osa', 'iov'].map(s => `<option value="${s}" ${(source || 'aopd') === s ? 'selected' : ''}>${s.toUpperCase()}</option>`).join('');
   const body = `
     <form id="gruppo-form" onsubmit="return false;" style="display:flex;flex-direction:column;gap:12px;">
@@ -17731,8 +17785,9 @@ function openGruppoEditor({ mode, gruppo, source }) {
         <input type="text" id="ge-email" value="${escapeHtml(g.email || '')}" class="mono-input" placeholder="es. neurologia@aopd.veneto.it">
       </div>
       <div class="field">
-        <label>Alias <span style="font-weight:normal;color:var(--ink-muted);">(nomi alternativi per la ricerca, separati da virgola)</span></label>
-        <input type="text" id="ge-alias" value="${escapeHtml((g.alias || []).join(', '))}" placeholder="es. neuro, stroke unit">
+        <label>Tag <span style="font-weight:normal;color:var(--ink-muted);">(parole chiave per la ricerca — scegli dai suggerimenti o aggiungine, separati da virgola)</span></label>
+        <input type="text" id="ge-alias" value="${escapeHtml((g.alias || []).join(', '))}" list="ge-tag-list" placeholder="es. neuro, stroke unit, prenotazioni">
+        <datalist id="ge-tag-list">${allGroupTagsOptions}</datalist>
       </div>
       <fieldset style="border:1px solid var(--rule);border-radius:4px;padding:10px;">
         <legend style="font-size:12px;color:var(--ink-muted);padding:0 6px;">Ubicazione</legend>
