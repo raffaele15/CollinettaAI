@@ -604,10 +604,10 @@ let PREF_BLOCKS = `[lab.altered]
 [ter.lastPlusHome]
 - TERAPIA ALLA DIMISSIONE: nella tabella della terapia alla dimissione, oltre agli ultimi farmaci prescritti durante il ricovero, includi anche i farmaci della terapia domiciliare che erano stati sospesi solo per esigenze organizzative del ricovero (es. farmaci non disponibili in reparto, sostituiti temporaneamente con equivalenti) e che il paziente dovrà riprendere dopo la dimissione.`;
 
-// ── LETTER_TEMPLATE (fac-simile editabile) ──
-// Fac-simile di reparto di default, modificabile solo da admin (Editor Prompt) e
+// ── LETTER_TEMPLATE (modello lettera editabile) ──
+// Modello di default, modificabile solo da admin (Editor Prompt) e
 // salvato su prompts/letter_template.md. Ogni utente può sovrascriverlo con un
-// fac-simile personale salvato in user_templates/<user>.json (campo letterTemplate).
+// modello lettera personale salvato in user_templates/<user>.json (campo letterTemplate).
 // [DATA_OGGI] viene sostituito con la data corrente al momento della generazione.
 let LETTER_TEMPLATE = `## TEMPLATE LETTERA — DIMISSIONE DIRETTA DA [REPARTO]
 
@@ -3360,7 +3360,7 @@ function buildPreferencesPromptBlock(){
 }
 
 // ── buildLetterTemplate ──
-// Restituisce il fac-simile personale dell'utente se presente, altrimenti il
+// Restituisce il modello lettera personale dell'utente se presente, altrimenti il
 // default di reparto (LETTER_TEMPLATE, definito vicino agli altri prompt).
 // Sostituisce [DATA_OGGI] con la data odierna.
 function buildLetterTemplate(){
@@ -4763,7 +4763,7 @@ function renderImpostazioni(){
   const p = (L.userTemplateData && L.userTemplateData.prefs) ? L.userTemplateData.prefs : DEFAULT_USER_PREFS;
   // Stesso stile e tooltip della sezione "Genera lettera": pulsanti lt-tab con title da PREF_TITLES.
   const seg=(key,opts)=>opts.map(o=>`<button class="lt-tab${p[key]===o.v?' on':''}" title="${escapeHtml((PREF_TITLES[key]||{})[o.v]||o.l)}" onclick="window.Lettere._setDefPref('${key}','${o.v}')">${o.l}</button>`).join('');
-  // Fac-simile personale: se l'utente non ne ha uno, parte dal default di reparto (LETTER_TEMPLATE)
+  // Modello lettera personale: se l'utente non ne ha uno, parte dal default (LETTER_TEMPLATE)
   const personalTpl = (_userTemplateData && typeof _userTemplateData.letterTemplate === 'string' && _userTemplateData.letterTemplate.trim())
     ? _userTemplateData.letterTemplate : '';
   mc().innerHTML=pageHead('Preferenze', lettereBreadcrumb([{label:'Preferenze', route:'lettere-impostazioni'}]))+`
@@ -4794,14 +4794,14 @@ function renderImpostazioni(){
     </div>
 
     <div class="lt-card-static">
-      <div class="lt-side-title">Mio fac-simile di lettera</div>
-      <p class="lt-status" style="margin:0 0 10px">Fac-simile personale: se compilato, sostituisce quello di reparto (modificabile solo dagli amministratori) nella generazione delle tue lettere. Lascia vuoto per usare il default. Usa <code>[DATA_OGGI]</code> per la data corrente e i placeholder come <code>[PAZIENTE_NOME]</code>, <code>[REPARTO]</code>.</p>
-      <textarea id="lt-utpl-letter" rows="22" class="mono-input" placeholder="Lascia vuoto per usare il fac-simile di reparto, oppure incolla qui il tuo fac-simile personalizzato...">${escapeHtml(personalTpl)}</textarea>
+      <div class="lt-side-title">Mio modello di lettera</div>
+      <p class="lt-status" style="margin:0 0 10px">Modello lettera personale: se compilato, sostituisce quello di default. Usa <code>[DATA_OGGI]</code> per la data corrente e i placeholder come <code>[PAZIENTE_NOME]</code>, <code>[REPARTO]</code>.</p>
+      <textarea id="lt-utpl-letter" rows="22" class="mono-input" placeholder="Lascia vuoto per usare il modello di default, oppure incolla qui il tuo modello personalizzato...">${escapeHtml(personalTpl)}</textarea>
       <div class="lt-row" style="margin-top:10px;justify-content:flex-end;gap:8px">
-        <button class="btn ghost" onclick="window.Lettere._loadDefaultIntoMyTpl()" title="Copia il fac-simile di reparto nel campo, per partire da quello">⎘ Parti dal default di reparto</button>
+        <button class="btn ghost" onclick="window.Lettere._loadDefaultIntoMyTpl()" title="Copia il modello di default nel campo, per partire da quello">⎘ Parti dal modello di default</button>
         <button class="btn ghost" onclick="window.Lettere._discardMyTpl()">✕ Scarta modifiche</button>
-        <button class="btn ghost" onclick="window.Lettere._resetMyTpl()" title="Svuota il fac-simile personale: tornerai a usare quello di reparto">↺ Usa default di reparto</button>
-        <button class="btn" onclick="window.Lettere._saveMyTpl()">Salva fac-simile</button></div>
+        <button class="btn ghost" onclick="window.Lettere._resetMyTpl()" title="Svuota il modello personale: tornerai a usare quello di default">↺ Usa modello di default</button>
+        <button class="btn" onclick="window.Lettere._saveMyTpl()">Salva modello</button></div>
     </div>`;
 }
 
@@ -4862,7 +4862,7 @@ function renderConfig(){
   if(!canEdit()){ mc().innerHTML=pageHead('Editor Prompt','LetteraAI')+'<p>Riservato agli amministratori.</p>'; return; }
   if(!L.loaded){ mc().innerHTML=`<div class="loading"><span class="spinner"></span> Caricamento...</div>`; loadLibrary().then(renderConfig); return; }
   // Tab prompt con le etichette dell'originale
-  const tabs=[['DEFAULT_SYS','Prompt di sistema'],['LETTER_TEMPLATE','Fac-simile lettera'],['FINGERPRINT_PROMPT_V3','Prompt estrazione decorso'],['VERIFICA_SYSTEM','Prompt verifica'],['ESAMI_LAB_SYS','Prompt esami lab'],['PREF_BLOCKS','Prompt preferenze']];
+  const tabs=[['DEFAULT_SYS','Prompt di sistema'],['LETTER_TEMPLATE','Modello lettera'],['FINGERPRINT_PROMPT_V3','Prompt estrazione decorso'],['VERIFICA_SYSTEM','Prompt verifica'],['ESAMI_LAB_SYS','Prompt esami lab'],['PREF_BLOCKS','Prompt preferenze']];
   const cur=L._cfgTab||'DEFAULT_SYS';
   const curVal={DEFAULT_SYS,LETTER_TEMPLATE,FINGERPRINT_PROMPT_V3,VERIFICA_SYSTEM,ESAMI_LAB_SYS,PREF_BLOCKS}[cur];
   const tabBtns=tabs.map(([k,l])=>`<button class="lt-tab${cur===k?' on':''}" onclick="window.Lettere._cfgTab('${k}')">${l}</button>`).join('');
@@ -5401,9 +5401,9 @@ window.Lettere = {
     catch(e){ toast('Errore: '+e.message,'error'); }
   },
   _discardOverride(){ const el=document.getElementById('lt-uoverride'); if(el) el.value=_userOverride||''; toast('Modifiche scartate.','info'); },
-  // Copia il fac-simile di reparto (default) nel campo del fac-simile personale
-  _loadDefaultIntoMyTpl(){ const ta=document.getElementById('lt-utpl-letter'); if(ta){ ta.value=LETTER_TEMPLATE; toast('Caricato il fac-simile di reparto (non ancora salvato).','info'); } },
-  // Scarta le modifiche non salvate al fac-simile personale: ricarica dal repo
+  // Copia il modello di default nel campo del modello personale
+  _loadDefaultIntoMyTpl(){ const ta=document.getElementById('lt-utpl-letter'); if(ta){ ta.value=LETTER_TEMPLATE; toast('Caricato il modello di default (non ancora salvato).','info'); } },
+  // Scarta le modifiche non salvate al modello personale: ricarica dal repo
   async _discardMyTpl(){
     try{ await loadUserTemplateRepo(); }catch(e){}
     renderImpostazioni(); toast('Modifiche scartate.','info');
@@ -5415,17 +5415,17 @@ window.Lettere = {
     if(txt) data.letterTemplate=txt; else delete data.letterTemplate;
     data.updatedAt=new Date().toISOString();
     try{ await saveUserTemplateToRepo(data);
-      toast(txt?'Fac-simile personale salvato.':'Fac-simile personale rimosso: userai il default di reparto.','success');
+      toast(txt?'Modello personale salvato.':'Modello personale rimosso: userai il modello di default.','success');
       renderImpostazioni();
     }catch(e){ toast('Errore: '+e.message,'error'); }
   },
   _resetMyTpl(){
-    Modals().confirm({ title:'Usare il fac-simile di reparto?', message:'Cancellerà il tuo fac-simile personale. Tornerai a usare quello di reparto (default).', confirmLabel:'Conferma', danger:true,
+    Modals().confirm({ title:'Usare il modello di default?', message:'Cancellerà il tuo modello personale. Tornerai a usare quello di default.', confirmLabel:'Conferma', danger:true,
       onConfirm:async()=>{
         const data=_userTemplateData||{};
         delete data.letterTemplate;
         data.updatedAt=new Date().toISOString();
-        try{ await saveUserTemplateToRepo(data); toast('Userai il fac-simile di reparto.','success'); renderImpostazioni(); }
+        try{ await saveUserTemplateToRepo(data); toast('Userai il modello di default.','success'); renderImpostazioni(); }
         catch(e){ toast('Errore: '+e.message,'error'); }
       } });
   },
