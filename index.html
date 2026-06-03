@@ -1154,7 +1154,7 @@ body.edit-mode .editor-head{top:calc(var(--topbar-height, 64px) + var(--edit-ban
 @keyframes spin{to{transform:rotate(360deg)}}
 /* Search overlay: visivamente identico alla pagina normale, sopra al main area
    — l'utente non deve percepire la differenza. La topbar resta sopra, la sidebar dietro. */
-#search-overlay{position:fixed;top:var(--topbar-height,65px);left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+#search-overlay{position:fixed;top:calc(var(--topbar-height,65px) - 1px);left:240px;right:0;bottom:0;z-index:40;background:var(--bg);overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 #search-overlay.hidden{display:none}
 /* Quando l'overlay ricerca è aperto, blocca scroll del body sottostante.
    `overscroll-behavior-y:none` su html previene anche il pull-to-refresh
@@ -1168,7 +1168,7 @@ body.search-overlay-open{overscroll-behavior-y:none}
 body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-y:contain}
 #search-overlay > .content{padding:40px 48px 80px;width:100%;min-width:0}
 @media (max-width:900px){
-  #search-overlay{left:0;top:var(--topbar-height,110px)}
+  #search-overlay{left:0;top:calc(var(--topbar-height,110px) - 1px)}
   #search-overlay > .content{padding:14px 16px 60px}
 }
 .btn-spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
@@ -1376,6 +1376,7 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 .sede-bucket-toggle.sede-bucket-navigate::after{content:'→';margin-left:auto;color:var(--ink-muted);font-size:13px;opacity:.5;transition:transform .15s,opacity .15s}
 .sede-bucket-toggle.sede-bucket-navigate:hover::after{opacity:1;transform:translateX(2px)}
 .sede-bucket-sep{color:var(--ink-faint);margin:0 4px;font-weight:400}
+.sede-bucket-sez{text-transform:none}
 /* Search section pills: quando una UOC matcha per nome durante ricerca, mostra le sezioni
    come pillole compatte cliccabili invece dei contatti aperti */
 .search-section-pills{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
@@ -5877,7 +5878,7 @@ function renderReparto() {
         <button class="btn primary" onclick="window.copyRepartoPrompt()" style="background:var(--ink);color:var(--bg-paper);border-color:var(--ink);">⎘ Copia prompt</button>
         <button class="btn" onclick="window.copyRepartoCartella()">⎘ Copia cartella anonimizzata</button>
         <button class="btn ghost sm" onclick="window.rebuildRepartoPrompt()">↻ Ricostruisci</button>
-        <button class="btn" onclick="window.resetRepartoCartella()">🗑 Reset</button>
+        <button class="btn ghost" onclick="window.resetRepartoCartella()">✕ Reset</button>
       </div>
     </div>`;
 }
@@ -9406,7 +9407,7 @@ function renderNumeri(filter, targetContainer) {
 
     <div class="rubrica-search" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
       <div style="position:relative;flex:1;display:flex;align-items:center;">
-        <input type="text" id="rubrica-search-input" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="${filter && allGroups.find(g => g.id === filter) ? `Cerca in ${escapeHtml(stripPrefixNome(allGroups.find(g => g.id === filter).nome))}…` : 'Cerca in rubrica: nome, interno, reparto…'}"
+        <input type="text" id="rubrica-search-input" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="${filter === 'pinned' ? 'Cerca tra i preferiti' : (filter && allGroups.find(g => g.id === filter) ? `Cerca in ${escapeHtml(stripPrefixNome(allGroups.find(g => g.id === filter).nome))}…` : 'Cerca in rubrica: nome, interno, reparto…')}"
           value="${escapeHtml(state.rubricaSearch || '')}"
           oninput="onRubricaSearchInput(this.value)"
           style="flex:1;font-family:var(--sans);font-size:16px;padding:10px 36px 10px 14px;background:var(--bg-raised);border:1px solid var(--rule);border-radius:2px;color:var(--ink);width:100%;box-sizing:border-box;">
@@ -9462,7 +9463,7 @@ function renderNumeri(filter, targetContainer) {
       if (filter === 'pinned' && src === 'aopd') {
         const items = [];
         list.forEach(g => (g.contatti || []).forEach(c => items.push({ c, g })));
-        return renderContattiGroupedBox(items, { inline: true, starAlways: true, reorderPrefUoc: true, reorderUocBoxes: true });
+        return renderContattiGroupedBox(items, { inline: true, starAlways: true, reorderPrefUoc: true, reorderUocBoxes: true, expanded: !!rubricaQuery });
       }
       // Altre source (osa/iov) non mostrano nulla in modalità pinned
       if (filter === 'pinned') return '';
@@ -9663,7 +9664,7 @@ function renderNumeri(filter, targetContainer) {
                   // UOC e Sezione cliccabili separatamente: UOC → overview UOC, Sezione → UOC + sezione espansa
                   bucketHeaderHtml = `<div class="sede-bucket-toggle sede-bucket-static">
                     <span class="sede-bucket-tipo">
-                      <span class="ctx-uoc" onclick="event.stopPropagation();_navigateOutOfRubricaSearch('numeri',{filter:'${escapeJs(g.id)}'})" title="Apri ${escapeHtml(g.nome)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione" onclick="event.stopPropagation();openUocWithSede('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(g.nome)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
+                      <span class="ctx-uoc" onclick="event.stopPropagation();_navigateOutOfRubricaSearch('numeri',{filter:'${escapeJs(g.id)}'})" title="Apri ${escapeHtml(g.nome)}">${escapeHtml(uocShort)}</span><span class="sede-bucket-sep"> · </span><span class="ctx-sezione sede-bucket-sez" onclick="event.stopPropagation();openUocWithSede('${escapeJs(g.id)}','${escapeJs(b.sedeKey)}')" title="Apri ${escapeHtml(g.nome)} con ${escapeHtml(sezioneLabel)} espansa">${escapeHtml(sezioneLabel)}</span>
                     </span>
                   </div>`;
                 } else if (matchedByName) {
@@ -9843,7 +9844,7 @@ function renderHomeNumeriSection() {
     // Vista normale: box compatto con "UOC · Sezione" inline nel titolo (risparmia spazio),
     // ma con il rendering ricco delle righe (etichetta, luogo, orari, note) come in rubrica.
     // La stella su ogni riga apre il popup fissati/preferiti.
-    listHtml = renderContattiGroupedBox(items, { rich: true });
+    listHtml = renderContattiGroupedBox(items, { rich: true, expanded: true });
   }
 
   const empty = !items.length
@@ -10116,7 +10117,7 @@ function renderContattiGroupedBox(items, opts = {}) {
   const nGroups = groups.length;
   return groups.map((grp, gi) => {
     const titleUoc = `<span class="fav-uoc-name">${escapeHtml(grp.gNome)}</span>`;
-    const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="fav-uoc-name">${escapeHtml(grp.sezione)}</span>` : '';
+    const titleSez = grp.sezione ? `<span class="sede-bucket-sep"> · </span><span class="fav-uoc-name sede-bucket-sez">${escapeHtml(grp.sezione)}</span>` : '';
     // Frecce di riordino del box-UOC (solo in edit-mode, solo se richiesto)
     const uocReorder = (opts.reorderUocBoxes && navState.editMode)
       ? `<span class="edit-only fav-bucket-edit" style="margin-left:auto;display:inline-flex;gap:6px;" onclick="event.stopPropagation();">
@@ -10150,9 +10151,10 @@ function renderContattiGroupedBox(items, opts = {}) {
             onDown: `movePrefUoc('${escapeJs(c.id)}',1)`
           } : null
         })).join('');
-    return `<div class="fav-bucket fav-bucket-collapsed" data-uoc-id="${escapeHtml(grp.gId)}">
-      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="false">
-        <span class="fav-bucket-caret">&#9656;</span>
+    const isExpanded = !!opts.expanded;
+    return `<div class="fav-bucket ${isExpanded ? '' : 'fav-bucket-collapsed'}" data-uoc-id="${escapeHtml(grp.gId)}">
+      <button class="fav-bucket-header" onclick="toggleFavBucket(this)" aria-expanded="${isExpanded ? 'true' : 'false'}">
+        <span class="fav-bucket-caret">${isExpanded ? '\u25BE' : '\u25B8'}</span>
         <span class="sede-bucket-tipo">${titleUoc}${titleSez}</span>${uocReorder}
       </button>
       <div class="fav-bucket-contatti">${rows}</div>
