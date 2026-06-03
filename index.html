@@ -15906,7 +15906,7 @@ async function _fetchAttivitaCommits() {
     if (!dateStr) continue;
     // Estrae "by <user>" dal messaggio (formato del nostro codice)
     const m = msg.match(/\(by ([^)]+)\)/);
-    const user = m ? m[1] : '—';
+    let user = m ? m[1] : '—';
     // Prima riga = titolo
     const firstLine = msg.split('\n')[0] || '';
     // Euristica per classificare il tipo dal messaggio
