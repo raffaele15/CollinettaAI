@@ -5688,6 +5688,7 @@ state.reparto = state.reparto || {
   topicsCustom: {},     // override delle istruzioni dei topic: { id: 'istruzione' } (vuoto = usa default)
   topicsSha: null,      // sha del file topics nel repo
   promptCustom: '',     // se l'utente edita il prompt finale, lo conserviamo
+  richiestaLibera: '',  // richiesta libera aggiuntiva da iniettare nel prompt
   promptTab: 'full'     // vista attiva nei tab del prompt: full | system | user
 };
 
@@ -5745,7 +5746,10 @@ function repartoPromptParts() {
   const esamiBlock = (r.xlsText || '').trim()
     ? `\n\n### Tabella esami di laboratorio\n\n${r.xlsText.trim()}`
     : '';
-  const system = `${sys}\n\nSulla base dei soli dati forniti, indica:\n${elenco}`;
+  const libera = (r.richiestaLibera || '').trim()
+    ? `\n\nRichiesta aggiuntiva:\n${(r.richiestaLibera || '').trim()}`
+    : '';
+  const system = `${sys}\n\nSulla base dei soli dati forniti, indica:\n${elenco}${libera}`;
   const user = `### Cartella clinica anonimizzata\n\n${cartella}${esamiBlock}`;
   return { system, user };
 }
@@ -5775,7 +5779,7 @@ function renderReparto() {
     }).catch(() => {});
   }
   const topicChecks = REPARTO_TOPICS.map(t =>
-    `<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;padding:4px 0;">
+    `<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;padding:4px 0;text-transform:none;letter-spacing:normal;font-family:inherit;font-weight:400;color:var(--ink);">
       <input type="checkbox" ${r.chiedi[t.id] ? 'checked' : ''} onchange="window.setRepartoTopic('${t.id}', this.checked)">
       <span>${escapeHtml(t.label)}</span>
     </label>`).join('');
@@ -5832,6 +5836,10 @@ function renderReparto() {
     <div class="rep-card">
       <div class="rep-dz-title">Cosa vuoi chiedere all'AI</div>
       <div style="margin-top:8px;">${topicChecks}</div>
+      <div style="margin-top:12px;">
+        <label style="font-size:12px;color:var(--ink-muted);font-weight:600;">Richiesta libera (opzionale)</label>
+        <textarea id="reparto-richiesta-libera" rows="3" class="mono-input" style="width:100%;font-size:12px;" placeholder="Aggiungi qui una richiesta specifica da includere nel prompt..." oninput="window.setRepartoRichiestaLibera(this.value)">${escapeHtml(r.richiestaLibera || '')}</textarea>
+      </div>
       <details style="margin-top:12px;">
         <summary style="cursor:pointer;font-size:13px;color:var(--accent);">⚙ Istruzioni di sistema e dei punti (modificabili)</summary>
         <div style="margin-top:10px;">
@@ -5879,6 +5887,14 @@ window.setRepartoRaw = function (v) { state.reparto.rawText = v; };
 window.setRepartoAnon = function (v) { state.reparto.anonText = v; };
 window.setRepartoXls = function (v) { state.reparto.xlsText = v; };
 window.setRepartoPromptCustom = function (v) { state.reparto.promptCustom = v; };
+// Richiesta libera aggiuntiva: aggiorna il prompt se l'utente non l'ha editato a mano.
+window.setRepartoRichiestaLibera = function (v) {
+  state.reparto.richiestaLibera = v;
+  if (!state.reparto.promptCustom && (state.reparto.promptTab || 'full') === 'full') {
+    const ta = document.getElementById('reparto-prompt');
+    if (ta) ta.value = buildRepartoPrompt();
+  }
+};
 // Cambia la vista del prompt (Completo / Istruzioni / Caso clinico) e ri-renderizza.
 window.setRepartoPromptTab = function (tab) {
   state.reparto.promptTab = tab;
