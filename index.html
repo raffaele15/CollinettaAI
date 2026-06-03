@@ -15865,12 +15865,17 @@ function renderAttivita() {
   });
 }
 
+/* Iniziali per l'avatar di un evento attività: prima e ultima lettera dello username
+ * (gli username sono nel formato "nome"+iniziale cognome, es. raffaelep → RP, danieln → DN). */
+function computeUserInitials(rawUser) {
+  const u = (rawUser || '').trim();
+  if (!u || u === '—') return '?';
+  return (u.length >= 2 ? (u[0] + u[u.length - 1]) : u).toUpperCase();
+}
+
 /* Render di un singolo evento (riga nella lista) */
 function renderAttivitaEvent(e) {
-  const _nameParts = (e.user || '?').trim().split(/\s+/).filter(Boolean);
-  const initials = (_nameParts.length >= 2
-    ? (_nameParts[0][0] + _nameParts[_nameParts.length - 1][0])
-    : (_nameParts[0] || '?').slice(0, 2)).toUpperCase();
+  const initials = computeUserInitials(e.user);
   const userIsAdmin = e.user && state.tokensFile && state.tokensFile.utenti
     && state.tokensFile.utenti[e.user] && state.tokensFile.utenti[e.user].is_admin;
   const avatarClass = userIsAdmin ? 'at-avatar at-avatar-admin' : 'at-avatar';
