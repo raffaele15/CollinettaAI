@@ -907,18 +907,6 @@ body.is-dragging-modulo-box{touch-action:none;overscroll-behavior:none;user-sele
 
 /* Pannello editor (sostituisce il form di compilazione) */
 .mod-edit-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--rule-soft)}
-.mod-pages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;margin-top:8px}
-.mod-page-thumb{position:relative;background:#fff;border:1px solid var(--rule);border-radius:3px;padding:4px;cursor:pointer;transition:border-color .12s,box-shadow .12s}
-.mod-page-thumb:hover{border-color:var(--accent)}
-.mod-page-thumb.current{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.mod-page-thumb img{width:100%;height:84px;object-fit:contain;display:block}
-.mod-page-thumb-num{margin-top:3px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-muted)}
-.mod-page-thumb-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border:none;border-radius:50%;background:rgba(180,0,0,.85);color:#fff;font-size:12px;line-height:1;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.mod-page-thumb-del:hover{background:rgba(150,0,0,1)}
-.mod-page-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:110px;border:2px dashed var(--rule);border-radius:3px;background:var(--bg-sink);color:var(--ink-muted);cursor:pointer;font-family:var(--sans);transition:border-color .12s,color .12s}
-.mod-page-add:hover{border-color:var(--accent);color:var(--accent)}
-.mod-page-add-plus{font-size:22px;line-height:1}
-.mod-page-add-label{font-size:10px;text-align:center;line-height:1.2}
 .mod-edit-section-title{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);margin-bottom:8px;font-weight:500}
 .mod-box-list{display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;border:1px solid var(--rule-soft);border-radius:2px;background:var(--bg-base)}
 .mod-box-list-item{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--rule-soft);transition:background .1s}
@@ -1612,6 +1600,9 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 /* clinical_note */
 .bl-clinical-note{border:1px solid var(--rule);background:var(--bg-paper);border-radius:3px;border-left:3px solid var(--success)}
 .bl-cn-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--rule-soft);background:var(--bg-sink)}
+/* Lascio spazio a destra per il pulsante condividi (.bl-share-btn, absolute top-right ~32px),
+   così il "Copia" non viene coperto al hover. */
+.bl-clinical-note .bl-cn-head .bl-mini-btn{margin-right:30px}
 .bl-cn-title{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--success);font-weight:600}
 .bl-cn-body{padding:14px;font-family:var(--serif);font-size:14px;line-height:1.6;color:var(--ink-soft);white-space:pre-wrap;font-style:italic}
 
@@ -11830,12 +11821,6 @@ async function renderModulo(slug, opts = {}) {
   try {
     const det = await loadModuloDettaglio(slug, { skipBoxes: true });
     renderModuloViewer(slug, det);
-    // Apertura diretta in modalità modifica (es. dal menu "Gestione pagine"): ora che il
-    // modulo è in cache, attivo l'edit mode che mostra il pannello con la griglia pagine.
-    if (opts && opts.editPagine) {
-      const c = state.moduliCache[slug];
-      if (c && !c.editMode) toggleModuloEditMode(slug);
-    }
   } catch (e) {
     const area = document.getElementById('mod-detail-area');
     if (area) area.innerHTML = `<div class="callout callout-warning"><p>Errore caricamento modulo: ${escapeHtml(e.message)}</p></div>`;
@@ -11918,6 +11903,8 @@ async function apriModuloCompilatore(slug) {
   }
   try {
     if (!c.boxesData) await loadModuloBoxes(slug);
+    c.editMode = false;  // "Compila" apre sempre il form di compilazione, mai l'editor box
+    c.selectedBoxIdx = null;
     renderModuloCompilatore(slug, c);
   } catch (e) {
     if (area) area.innerHTML = `<div class="callout callout-warning"><p>Errore caricamento campi: ${escapeHtml(e.message)}</p></div>`;
@@ -12006,6 +11993,13 @@ function renderModuloCompilatore(slug, det) {
   const area = document.getElementById('mod-detail-area');
   if (!area) return;
   const { boxesData, pageUrls } = det;
+  if (!boxesData) {
+    // I box non sono ancora caricati: non posso renderizzare il compilatore/editor.
+    // Lo carico e ritento, evitando l'accesso a boxesData.campi_richiesti su null.
+    loadModuloBoxes(slug).then(() => renderModuloCompilatore(slug, state.moduliCache[slug] || det)).catch(() => {});
+    area.innerHTML = `<div class="loading"><span class="spinner"></span> Caricamento campi modulo…</div>`;
+    return;
+  }
   const campiDefs = boxesData.campi_richiesti || [];
   const boxes = boxesData.box || [];
   const editMode = !!det.editMode;
@@ -12197,24 +12191,11 @@ function _renderModuloEditorPanel(slug, det) {
     </div>
     <div class="mod-edit-section">
       <div class="mod-edit-section-title">Gestione pagine</div>
-      <div class="mod-pages-grid">
-        ${(det.pageUrls || []).map((url, i) => {
-          const pageNum = i + 1;
-          const thumb = (det.pageUrlsLight && det.pageUrlsLight[i]) || url;
-          const isCurrent = (det.currentPage || 1) === pageNum;
-          return `<div class="mod-page-thumb ${isCurrent ? 'current' : ''}" onclick="changeModuloPage('${escapeJs(slug)}', ${pageNum})" title="Vai alla pagina ${pageNum}">
-            <img src="${thumb}" alt="Pagina ${pageNum}" loading="lazy">
-            <div class="mod-page-thumb-num">p${pageNum}</div>
-            <button type="button" class="mod-page-thumb-del" title="Rimuovi pagina ${pageNum}"
-              onclick="event.stopPropagation();rimuoviPaginaModulo('${escapeJs(slug)}', ${pageNum})">×</button>
-          </div>`;
-        }).join('')}
-        <button type="button" class="mod-page-add" onclick="inserisciPaginaModulo('${escapeJs(slug)}')" title="Aggiungi pagina">
-          <span class="mod-page-add-plus">+</span>
-          <span class="mod-page-add-label">Aggiungi<br>pagina</span>
-        </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn ghost" onclick="inserisciPaginaModulo('${escapeJs(slug)}')">+ Inserisci pagina</button>
+        <button class="btn ghost" style="color:#A32D2D;" onclick="rimuoviPaginaModulo('${escapeJs(slug)}', ${det.currentPage || 1})">− Rimuovi pagina ${det.currentPage || 1}</button>
       </div>
-      <p style="margin:8px 0 0;font-size:11px;color:var(--ink-muted);font-style:italic;">I box scorrono con le rispettive pagine; quelli della pagina rimossa vengono eliminati. Le modifiche alle pagine sono salvate subito sul repo.</p>
+      <p style="margin:6px 0 0;font-size:11px;color:var(--ink-muted);font-style:italic;">Inserendo/rimuovendo pagine i box scorrono con le rispettive pagine; quelli della pagina rimossa vengono eliminati. Operazione salvata subito sul repo.</p>
     </div>
     <div class="mod-edit-section">
       <div class="mod-edit-section-title">Tutti i box (${boxes.length})</div>
@@ -16892,7 +16873,6 @@ function showNavContextMenu(triggerBtn, kind, slug) {
   } else if (kind === 'modulo') {
     items = [
       { label: 'Modifica dati', action: () => editModuloMeta(slug) },
-      { label: 'Modifica pagine', action: () => apriGestionePagine(slug) },
       { label: 'Elimina', danger: true, action: () => confirmDeleteModulo(slug) },
     ];
   }
@@ -16957,7 +16937,6 @@ function showItemContextMenu(triggerBtn, kind, slug) {
   } else if (kind === 'modulo') {
     items = [
       { label: 'Modifica dati', action: () => editModuloMeta(slug) },
-      { label: 'Modifica pagine', action: () => apriGestionePagine(slug) },
       { label: 'Elimina', danger: true, action: () => confirmDeleteModulo(slug) },
     ];
   } else if (kind === 'contatto') {
@@ -17679,12 +17658,6 @@ async function _salvaBoxesRimappati(slug, boxesData) {
   const f = await gh.getFile(`${dir}/boxes.yml`);
   const yamlStr = jsyaml.dump(boxesData, { lineWidth: 120, noRefs: true, sortKeys: false });
   await gh.putFile(`${dir}/boxes.yml`, yamlStr, f ? f.sha : null, `Rimappa box dopo modifica pagine (${slug})`);
-}
-
-// Apre un modulo direttamente in modalità modifica, dove è disponibile la griglia di
-// gestione pagine. Usato dal menu ⋯ delle card moduli.
-function apriGestionePagine(slug) {
-  navigate('modulo', { slug, editPagine: true });
 }
 
 // INSERISCI una o più pagine alla posizione `pos` (1-based; pos = N+1 per aggiungere in fondo).
