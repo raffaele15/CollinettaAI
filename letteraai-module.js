@@ -2052,6 +2052,58 @@ function loadNameDictionaryLocal(){
 // ═══════════════════════════════════════════════════
 // STRIP BOILERPLATE (verbatim da standalone)
 // ═══════════════════════════════════════════════════
+// Rimuove il blocco "Rete sociale" del frontespizio infermieristico (nomi e telefoni
+// dei parenti, dati di terzi). Va eseguito PRIMA dell'anonimizzazione, così i nomi dei
+// parenti vengono eliminati interamente invece di diventare [OPERATORE] sparsi.
+// Confine: da "Rete sociale" fino (escluso) alla riga "Stampato il..." / "Pagina X/Y".
+// Gestisce due layout: blocco su righe separate e blocco collassato su una sola riga.
+function stripReteSociale(text) {
+  const stripped = [];
+  // Marcatore di FINE: "Stampato il ..." o "Pagina N / M" (footer del frontespizio).
+  const endLineRe = /^(?:Stampato\s+il\b|Pagina\s+\d+\s*\/\s*\d+)/i;
+  const endInlineRe = /Stampato\s+il\b|Pagina\s+\d+\s*\/\s*\d+/i;
+
+  // Caso A — blocco collassato su UNA riga: "...Rete sociale ... Stampato il ..."
+  // Taglio dal "Rete sociale" fino al marcatore di fine, lasciando il resto della riga.
+  const lines = text.split('\n').map(line => {
+    const m = line.match(/Rete\s+sociale\b/i);
+    if (m && endInlineRe.test(line.slice(m.index))) {
+      const before = line.slice(0, m.index);
+      const rest = line.slice(m.index);
+      const em = rest.match(endInlineRe);
+      const removed = rest.slice(0, em.index).trim();
+      if (removed.length > 2) stripped.push({ text: removed.slice(0, 120), tag: 'Rete sociale' });
+      return (before + ' ' + rest.slice(em.index)).replace(/\s{2,}/g, ' ').trim();
+    }
+    return line;
+  });
+
+  // Caso B — blocco su righe separate: dalla riga "Rete sociale" fino (esclusa) alla
+  // riga "Stampato il..."/"Pagina X/Y". Se il footer non compare, mi fermo a una riga vuota.
+  const out = [];
+  let inBlock = false;
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (!inBlock && /^Rete\s+sociale\s*$/i.test(t)) {
+      inBlock = true;
+      stripped.push({ text: t, tag: 'Rete sociale' });
+      continue;
+    }
+    if (inBlock) {
+      if (endLineRe.test(t)) { inBlock = false; out.push(lines[i]); continue; }
+      if (t === '') { inBlock = false; continue; } // blocco terminato senza footer
+      if (t.length > 2 && !stripped.find(b => b.text === t.slice(0, 120)))
+        stripped.push({ text: t.slice(0, 120), tag: 'Rete sociale' });
+      continue; // riga del blocco rete sociale → rimossa
+    }
+    out.push(lines[i]);
+  }
+  return {
+    clean: out.join('\n').replace(/\n{3,}/g, '\n\n').trim(),
+    strippedBlocks: stripped,
+  };
+}
+
 function stripBoilerplate(text) {
   const stripped = [];
   const lines = text.split('\n');
@@ -2453,8 +2505,11 @@ function anonymizeText(rawText){
   // Stage 0 — estrai i dati del paziente dal testo grezzo PRIMA dell'anonimizzazione
   const patientData = extractPatientData(rawText);
 
-  // Stage 1 — rimozione righe boilerplate istituzionali
-  const { clean: cleanRaw, strippedBlocks } = stripBoilerplate(rawText);
+  // Stage 1 — rimozione del blocco "Rete sociale" (dati di terzi) PRIMA dell'anonimizzazione,
+  // poi rimozione righe boilerplate istituzionali.
+  const rs = stripReteSociale(rawText);
+  const { clean: cleanRaw, strippedBlocks: bpBlocks } = stripBoilerplate(rs.clean);
+  const strippedBlocks = rs.strippedBlocks.concat(bpBlocks);
 
   // ── Stage 0.5 — Pre-anonimizza nome paziente & data nascita dal frontespizio ──
   // Sostituisce TUTTE le occorrenze del nome del paziente e della DOB in tutto il
@@ -5527,7 +5582,7 @@ window.Lettere = {
   .lt-step.done{color:var(--success)}
   .lt-step-n{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;font-size:10px}
   .lt-step-sep{flex:0 0 16px;height:1px;background:var(--rule)}
-  .lt-wizbody{max-width:920px}
+  .lt-wizbody{width:100%}
   .lt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .lt-status{font-size:12px;color:var(--ink-muted)}
   .lt-wiz-actions{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:10px;flex-wrap:wrap}
