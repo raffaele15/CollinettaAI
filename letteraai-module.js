@@ -3810,9 +3810,20 @@ ${t3}`;
 // non stampabili così gli asterischi non restano visibili. Gestisce anche "diagnosi"
 // tra virgolette (→ grassetto), opzionale.
 function letteraMarkInline(s, boldQuotes){
-  // I valori patologici **...** vengono resi SOTTOLINEATI (<u>); le diagnosi tra virgolette
-  // (solo export Word, boldQuotes=true) restano in GRASSETTO (<b>). Uso due sentinelle distinte.
-  let marked = String(s).replace(/\*\*([^*]+)\*\*/g, '\u0002U\u0001$1\u0002/U\u0001');
+  // Il marcatore **...** ha DUE significati distinti:
+  //  • Titoli/etichette e nome paziente → GRASSETTO (<b>). Riconosciuti perché terminano
+  //    con ":" (es. "**In anamnesi:**", "**Esami ematochimici:**") o non contengono cifre
+  //    (es. il nome "**Cognome Nome**").
+  //  • Valori ematochimici patologici → SOTTOLINEATI (<u>). Contengono cifre e NON terminano
+  //    con ":" (es. "**Emoglobina 102 g/L**", "**PCR 16,89 → 3,87 mg/L**", "**INR 1,40**").
+  // Le diagnosi tra virgolette (solo export Word, boldQuotes=true) restano in GRASSETTO (<b>).
+  let marked = String(s).replace(/\*\*([^*]+)\*\*/g, (m, inner) => {
+    const t = inner.trim();
+    const isLabValue = /\d/.test(t) && !t.endsWith(':');
+    return isLabValue
+      ? '\u0002U\u0001' + inner + '\u0002/U\u0001'
+      : '\u0002B\u0001' + inner + '\u0002/B\u0001';
+  });
   if (boldQuotes) marked = marked.replace(/"([^"\n]+)"/g, '\u0002B\u0001"$1"\u0002/B\u0001');
   const esc = (window.escapeHtml ? window.escapeHtml(marked) : String(marked).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
   return esc
@@ -3885,15 +3896,18 @@ function letteraTextToExportHtml(text, boldQuotes){
     out += `<pre style="white-space:pre-wrap;font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:0;">${html}</pre>`;
     para = [];
   };
-  // Blocco firma: NON una tabella, ma le due colonne separate da una tabulazione (come l'originale).
-  // Uso un <pre> con un carattere TAB tra sinistra e destra; tab-size ampio per separarle.
+  // Blocco firma a due colonne. Una <table> senza bordi è più robusta di un <pre> in Word:
+  // il <pre> faceva ricadere i campi firma in un font monospaziato di fallback, dando font
+  // e dimensione diversi dal resto. La tabella mantiene 'Times New Roman' 10.5pt uniforme.
   const flushFirma = (rows) => {
-    const lines = rows.map(r => {
+    const cellStyle = "border:none;padding:0;font-family:'Times New Roman',serif;font-size:10.5pt;vertical-align:top;";
+    const trs = rows.map(r => {
       const l = letteraMarkInline(r[0], false);
       const rt = letteraMarkInline(r[1], false);
-      return rt ? (l + '\t' + rt) : l;
-    }).join('\n');
-    out += `<pre style="white-space:pre;tab-size:24;-moz-tab-size:24;font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:10pt 0 0;">${lines}</pre>`;
+      return `<tr><td width="50%" style="${cellStyle}text-align:left;">${l}</td>`
+           + `<td width="50%" style="${cellStyle}text-align:left;">${rt}</td></tr>`;
+    }).join('');
+    out += `<table width="100%" style="border:none;border-collapse:collapse;width:100%;table-layout:fixed;margin:10pt 0 0;">${trs}</table>`;
   };
   let seenNonEmpty = 0; // per riconoscere la riga luogo/data solo all'inizio del documento
   for (let i = 0; i < lines.length; i++) {
@@ -3942,8 +3956,8 @@ function letteraTextToExportHtml(text, boldQuotes){
         i++;
       }
       i--; // compenso l'incremento del for
-      out += `<ul style="font-family:'Times New Roman',serif;font-size:10.5pt;line-height:1.7;margin:4pt 0;padding-left:22px;">`
-        + items.map(it => `<li style="margin:0;">${letteraMarkInline(it, boldQuotes)}</li>`).join('')
+      out += `<ul style="font-family:'Times New Roman',serif;font-size:10.5pt;margin:0;padding-left:22px;">`
+        + items.map(it => `<li style="margin:0;padding:0;">${letteraMarkInline(it, boldQuotes)}</li>`).join('')
         + `</ul>`;
     } else {
       para.push(lines[i]);
