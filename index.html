@@ -12159,12 +12159,12 @@ function _renderModuloEditorPanel(slug, det) {
           </div>
         </div>
         <div class="mod-field-group">
-          <label class="mod-field-label">Dimensione font (px)</label>
+          <label class="mod-field-label">Dimensione font (% pagina)</label>
           <div class="mod-fontsize-stepper">
-            <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},-1)" aria-label="Riduci dimensione font">−</button>
-            <input type="text" inputmode="numeric" class="mod-input mod-fs-input" value="${selBox.font_size || 11}"
-                   oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',Math.min(48,Math.max(6,parseInt(this.value)||11)))">
-            <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},+1)" aria-label="Aumenta dimensione font">+</button>
+            <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},-0.2)" aria-label="Riduci dimensione font">−</button>
+            <input type="text" inputmode="decimal" class="mod-input mod-fs-input" value="${selBox.font_size || 2.0}"
+                   oninput="setBoxAttr('${escapeJs(slug)}',${selIdx},'font_size',Math.min(10,Math.max(0.5,parseFloat(this.value)||2.0)))">
+            <button type="button" class="btn ghost mod-fs-btn" onclick="changeBoxFontSize('${escapeJs(slug)}',${selIdx},+0.2)" aria-label="Aumenta dimensione font">+</button>
           </div>
         </div>
         <div class="mod-form-actions" style="margin-top:12px;display:flex;gap:8px;">
@@ -12251,7 +12251,7 @@ function addModuloBox(slug) {
     x, y, w: W, h: H,
     campo: '',
     align: 'left',
-    font_size: 11
+    font_size: 2.0  // % dell'altezza pagina (universale)
   };
   if (!c.boxesData.box) c.boxesData.box = [];
   c.boxesData.box.push(newBox);
@@ -12302,25 +12302,19 @@ function deleteModuloBox(slug, idx) {
 }
 
 // Setta un attributo (campo, align, font_size, label, formato) di un box
-// Incrementa/decrementa la dimensione del font del box selezionato (clamped 6-48 px).
+// Incrementa/decrementa la dimensione del font del box selezionato.
+// font_size è in % dell'ALTEZZA della pagina (universale tra dispositivi). Step 0.2%, range 0.5–10%.
 // Usato dai bottoni +/- nel pannello editor: aggiorna il valore dell'input visualizzato
 // e re-renderizza l'overlay con il nuovo font (auto-fit lo ridurrà ulteriormente se serve).
 function changeBoxFontSize(slug, idx, delta) {
   const c = state.moduliCache[slug];
   if (!c || !c.boxesData.box || !c.boxesData.box[idx]) return;
-  const cur = c.boxesData.box[idx].font_size || 11;
-  const next = Math.max(6, Math.min(48, cur + delta));
+  const cur = c.boxesData.box[idx].font_size || 2.0;
+  const next = Math.round(Math.max(0.5, Math.min(10, cur + delta)) * 10) / 10;
   if (next === cur) return;
   c.boxesData.box[idx].font_size = next;
-  // Aggiorno l'input visualizzato senza re-render del pannello (no perdita focus)
   const input = document.querySelector('.mod-fs-input');
   if (input) input.value = next;
-  // Invalido cache baseFontSize del box DOM così auto-fit riparte dal nuovo valore
-  const layer = document.querySelector('.mod-overlay-layer');
-  if (layer) {
-    const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
-    if (boxEl) delete boxEl.dataset.baseFontSize;
-  }
   _persistModulo(slug);
   refreshModuloOverlays(slug);
   _refreshModuloToolbar(slug);
@@ -12334,15 +12328,6 @@ function setBoxAttr(slug, idx, attr, value) {
   // i valori vecchi non sono compatibili con il nuovo tipo).
   if (attr === 'campo') {
     delete c.boxesData.box[idx].formato;
-  }
-  // Quando cambia font_size: invalido il dataset cached del box DOM, così l'auto-fit
-  // riparte dal nuovo valore base alla prossima refresh.
-  if (attr === 'font_size') {
-    const layer = document.querySelector('.mod-overlay-layer');
-    if (layer) {
-      const boxEl = layer.querySelector(`.mod-box[data-box-idx="${idx}"]`);
-      if (boxEl) delete boxEl.dataset.baseFontSize;
-    }
   }
   _persistModulo(slug);
   refreshModuloOverlays(slug);
@@ -12821,15 +12806,15 @@ function refreshModuloOverlays(slug) {
     const isEmpty = !value && !isFirma && !placeholder;
     const display = isFirma ? '✎ Firma' : (value || placeholder);
     const align = b.align || 'left';
-    const fontSize = b.font_size || 11;
+    const fontSizePct = b.font_size || 2.0;  // % dell'altezza della pagina (universale)
     const isSelected = editMode && i === selIdx;
     const handles = isSelected ? `
       <span class="mod-handle mod-handle-resize" data-handle="tr" title="Trascina per ridimensionare">⤢</span>
     ` : '';
     return `<div class="mod-box ${isEmpty ? 'empty' : ''} ${placeholder ? 'placeholder' : ''} ${isFirma ? 'firma' : ''} ${editMode ? 'editable' : ''} ${isSelected ? 'selected' : ''} ${align === 'center' ? 'align-center' : align === 'right' ? 'align-right' : ''}"
-              data-box-idx="${i}"
+              data-box-idx="${i}" data-font-pct="${fontSizePct}"
               style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%;
-                     text-align:${align};font-size:${fontSize}px;"
+                     text-align:${align};"
               title="${escapeHtml(b.campo || b.label || '')}"><span class="mod-box-text">${escapeHtml(display)}</span>${handles}</div>`;
   }).join('');
 
@@ -12862,25 +12847,26 @@ function _autoFitBoxFont(boxEl) {
   if (!textEl) return;
   const text = textEl.textContent || '';
   if (!text) return;
-  // baseSize = font_size configurato del box (così riparto sempre dal valore impostato, non dal
-  // ridotto della volta precedente).
-  const baseSize = parseFloat(boxEl.dataset.baseFontSize || boxEl.style.fontSize) || 11;
-  if (!boxEl.dataset.baseFontSize) boxEl.dataset.baseFontSize = baseSize;
+  // baseSize ricavato da font_pct (% dell'ALTEZZA della pagina), come la stampa → universale.
+  // Trovo l'altezza dell'immagine pagina (il layer dei box è dimensionato su di essa).
+  const layer = boxEl.closest('.mod-overlay-layer') || boxEl.parentElement;
+  const stage = layer ? layer.parentElement : null;
+  const pageImg = stage ? stage.querySelector('img.mod-page-img') : null;
+  const pageH = pageImg && pageImg.clientHeight > 0 ? pageImg.clientHeight : (layer ? layer.clientHeight : 0);
+  const fontPct = parseFloat(boxEl.dataset.fontPct) || 2.0;
+  const baseSize = pageH > 0 ? (fontPct / 100) * pageH : 11;
   const MIN_SIZE = 6;
   const cs = getComputedStyle(boxEl);
   const padL = parseFloat(cs.paddingLeft) || 0;
   const padR = parseFloat(cs.paddingRight) || 0;
   const availW = boxEl.clientWidth - padL - padR;
-  const availH = boxEl.clientHeight; // line-height:1 → altezza riga ≈ font-size; niente bordo (outline)
+  const availH = boxEl.clientHeight;
   if (availW <= 0 || availH <= 0) return;
   if (!_autoFitCtx) _autoFitCtx = document.createElement('canvas').getContext('2d');
   const ctx = _autoFitCtx;
   const fam = cs.fontFamily || 'sans-serif';
   const style = cs.fontStyle || 'normal';
   const weight = cs.fontWeight || '400';
-  // Calcolo analitico (no loop): la larghezza del testo è proporzionale al font-size, quindi
-  // il font che fa stare il testo in availW è baseSize*availW/larghezza. Robusto per font enormi
-  // (il vecchio loop a step fisso poteva non raggiungere il target). Stesso metodo della stampa.
   ctx.font = `${style} ${weight} ${baseSize}px ${fam}`;
   const measuredW = ctx.measureText(text).width;
   let size = baseSize;
@@ -13245,25 +13231,14 @@ async function _renderModuloPaginaSuCanvas(slug, pageIndex /* 1-based */) {
     const w = (b.w / 100) * canvas.width;
     const h = (b.h / 100) * canvas.height;
 
-    // Scala font: box.font_size è px riferiti all'ANTEPRIMA a schermo (a zoom 1). Per riprodurre
-    // ESATTAMENTE ciò che si vede nell'editor sul canvas a piena risoluzione, misuro la larghezza
-    // reale dell'immagine di anteprima a zoom 1 (clientWidth / zoom) invece di un valore fisso
-    // (700px) che rendeva il font sproporzionato (più grande) rispetto all'editor.
-    let previewWidth = 700; // fallback se l'anteprima non è in DOM
-    const liveImg = document.querySelector('#mod-page-stage-' + slug + ' img.mod-page-img');
-    const zoomLvl = c.zoom || 1;
-    if (liveImg && liveImg.clientWidth > 0) previewWidth = liveImg.clientWidth / zoomLvl;
-    const scale = canvas.width / previewWidth;
-
-    // Auto-fit analitico identico all'editor: la larghezza del testo è proporzionale al font-size,
-    // quindi calcolo in un colpo solo il font che fa stare il testo (no loop a step fisso, che con
-    // canvas ad alta risoluzione non riusciva a rimpicciolire font molto grandi → testo tagliato).
-    // In stampa NON c'è bordo (solo testo sull'immagine): considero solo il padding orizzontale 2px.
-    const padW = 4 * scale;  // padding 2px * 2 lati
+    // font_size è espresso in % dell'ALTEZZA della pagina (come x/y/w/h), quindi universale:
+    // indipendente da dispositivo e risoluzione. Lo converto in px del canvas qui.
+    // Auto-fit: riduco solo se il testo non entra in larghezza/altezza del box.
+    const padW = (0.4 / 100) * canvas.width;  // ~0.4% larghezza pagina di padding orizzontale (2px*2 su ~1000px)
     const availW = Math.max(1, w - padW);
     const availH = Math.max(1, h);
-    const MIN_SIZE_PX = Math.max(6 * scale, 4);
-    let fontSize = (b.font_size || 11) * scale;
+    const MIN_SIZE_PX = Math.max((0.6 / 100) * canvas.height, 4);
+    let fontSize = ((b.font_size || 2.0) / 100) * canvas.height;
     ctx.font = `${fontSize}px ${fontFamily}`;
     const measuredW = ctx.measureText(value).width;
     if (measuredW > availW) fontSize = fontSize * (availW / measuredW);
