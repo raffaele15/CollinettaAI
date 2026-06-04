@@ -584,7 +584,7 @@ body.edit-mode .nav-edit-actions.menu-open{display:inline-flex}
 .nav-item.active{background:var(--ink);color:var(--bg-paper)}
 .nav-item-count{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
 .nav-item.active .nav-item-count{color:rgba(251,248,242,.6)}
-main.content{padding:40px 48px 80px;width:100%;min-width:0}
+main.content{padding:40px 48px 80px;width:100%;min-width:0;position:relative;z-index:0}
 @media (max-width:700px){
   main.content{padding:14px 16px 60px}
   body .home-hero{margin-bottom:20px}
@@ -1104,6 +1104,14 @@ body.edit-mode .editor-head{top:calc(var(--topbar-height, 64px) + var(--edit-ban
 
 /* MODALS */
 .modal-backdrop{position:fixed;inset:0;background:rgba(26,26,26,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .15s ease-out;overscroll-behavior:contain}
+/* Overlay bloccante per operazioni multi-step su repo (gestione pagine, eliminazione moduli):
+   impedisce click/navigazione finché l'operazione non termina, evitando stati inconsistenti. */
+#blocking-overlay{position:fixed;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(26,26,26,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);overscroll-behavior:contain;touch-action:none}
+#blocking-overlay.show{display:flex}
+.blocking-card{background:var(--bg-paper);border:1px solid var(--rule);border-radius:8px;padding:24px 28px;max-width:340px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.blocking-spinner{width:34px;height:34px;border:3px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+.blocking-msg{font-family:var(--serif);font-size:15px;color:var(--ink);line-height:1.4}
+.blocking-sub{margin-top:8px;font-size:12px;color:var(--ink-muted)}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .modal{background:var(--bg-paper);border:1px solid var(--rule);border-radius:2px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-modal);animation:slideUp .2s ease-out;display:flex;flex-direction:column;overscroll-behavior:contain}
 @keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -1885,6 +1893,7 @@ body.search-overlay-open #search-overlay{touch-action:pan-y;overscroll-behavior-
 </div>
 
 <div id="modal-container"></div>
+<div id="blocking-overlay" aria-hidden="true"></div>
 <div id="toast-stack"></div>
 <div id="search-overlay" class="hidden">
   <main class="content" id="search-overlay-content"></main>
@@ -4265,9 +4274,11 @@ async function buildIndex() {
           titolo: m.titolo || m.slug,
           descrizione: m.descrizione || '',
           tag: Array.isArray(m.tag) ? m.tag : [],
+          termini_equivalenti: Array.isArray(m.termini_equivalenti) ? m.termini_equivalenti : [],
           note: m.note || '',
           pagine: m.pagine || 1,
           autore: m.autore || '',
+          categoria: m.categoria || '',
           aggiornato: m.aggiornato || null,
           ultima_modifica: m.aggiornato || null  // alias per timeAgo() usato altrove
         });
@@ -4457,9 +4468,11 @@ async function buildIndexFallback() {
           titolo: m.titolo || m.slug,
           descrizione: m.descrizione || '',
           tag: Array.isArray(m.tag) ? m.tag : [],
+          termini_equivalenti: Array.isArray(m.termini_equivalenti) ? m.termini_equivalenti : [],
           note: m.note || '',
           pagine: m.pagine || 1,
           autore: m.autore || '',
+          categoria: m.categoria || '',
           aggiornato: m.aggiornato || null,
           ultima_modifica: m.aggiornato || null
         });
@@ -4494,8 +4507,8 @@ function rebuildSearchIndex() {
     // Fuse (extended search) valuta l'AND multi-token PER CAMPO: perché "modulo consenso" matchi
     // (dove "modulo" è termine di tipo e "consenso" è nel titolo) raccolgo titolo + descrizione +
     // termini-tipo nello STESSO campo (tag), così l'AND per-campo trova entrambi i token.
-    tag: ((m.tag || []).join(' ') + ' ' + (m.titolo || m.slug) + ' ' + (m.descrizione || '') + ' modulo moduli modulistica').trim(),
-    termini: 'modulo moduli modulistica',
+    tag: ((m.tag || []).join(' ') + ' ' + (m.termini_equivalenti || []).join(' ') + ' ' + (m.titolo || m.slug) + ' ' + (m.descrizione || '') + ' modulo moduli modulistica').trim(),
+    termini: ((m.termini_equivalenti || []).join(' ') + ' modulo moduli modulistica').trim(),
     body: ''
   }));
   getVisibleNumeriGroups().filter(g => (g._source || 'aopd') === 'aopd').forEach(g => {
@@ -11560,8 +11573,62 @@ function _resolveDefault(def) {
 }
 
 /* ============================ VIEW — MODULI COMPILABILI ============================ */
+// Raccoglie le categorie distinte presenti tra i moduli (per datalist/suggerimenti).
+function _collectModuliCategorie() {
+  const set = new Set();
+  (state.index.moduli || []).forEach(m => { if (m.categoria && m.categoria.trim()) set.add(m.categoria.trim()); });
+  return [...set].sort((a, b) => a.localeCompare(b, 'it'));
+}
+
 function renderModuliList() {
   const moduli = state.index.moduli || [];
+  const cardHtml = (m) => `
+    <div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeHtml(m.slug)}'})">
+      <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
+        <span class="card-actions">${renderPinButton('modulo', m.slug)}<button class="btn-icon-mini edit-only" onclick="event.stopPropagation();editModuloMeta('${escapeJs(m.slug)}')" title="Modifica nome/slug">✎</button></span>
+      </div>
+      ${m.descrizione ? `<div class="procedure-card-desc" style="font-size:13px;color:var(--ink-muted);margin-top:6px;line-height:1.4;">${escapeHtml(m.descrizione)}</div>` : ''}
+      ${(m.tag && m.tag.length) ? `<div style="margin-top:8px;">${m.tag.slice(0,3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      <div class="procedure-card-meta" style="margin-top:8px;">
+        <span>${m.pagine || 1} ${(m.pagine || 1) === 1 ? 'pagina' : 'pagine'}</span>
+        ${m.autore ? `<span>· ${escapeHtml(m.autore)}</span>` : ''}
+      </div>
+    </div>`;
+
+  // Raggruppo per categoria. I moduli senza categoria vanno in un gruppo finale "Altri".
+  const SENZA = '__senza__';
+  const gruppi = new Map();
+  moduli.forEach(m => {
+    const key = (m.categoria && m.categoria.trim()) ? m.categoria.trim() : SENZA;
+    if (!gruppi.has(key)) gruppi.set(key, []);
+    gruppi.get(key).push(m);
+  });
+  // Ordino le categorie alfabeticamente, "Altri" sempre per ultimo
+  const categorie = [...gruppi.keys()].filter(k => k !== SENZA).sort((a, b) => a.localeCompare(b, 'it'));
+  if (gruppi.has(SENZA)) categorie.push(SENZA);
+
+  let bodyHtml;
+  if (!moduli.length) {
+    bodyHtml = '<p style="color:var(--ink-muted);font-style:italic;">Nessun modulo presente. Premi "+ Nuovo modulo" per crearne uno.</p>';
+  } else if (categorie.length === 1 && categorie[0] === SENZA) {
+    // Nessuna categoria assegnata: mostro la griglia piatta come prima
+    bodyHtml = `<div class="procedure-grid">${moduli.map(cardHtml).join('')}</div>`;
+  } else {
+    bodyHtml = categorie.map(cat => {
+      const items = gruppi.get(cat);
+      const titolo = cat === SENZA ? 'Altri' : cat;
+      return `<details class="categoria-block" open>
+        <summary class="categoria-summary">
+          <span class="categoria-title">${escapeHtml(titolo)}</span>
+          <span class="categoria-count">${items.length}</span>
+        </summary>
+        <div class="categoria-content">
+          <div class="procedure-grid">${items.map(cardHtml).join('')}</div>
+        </div>
+      </details>`;
+    }).join('');
+  }
+
   $('main-content').innerHTML = `
     <div class="page-head">
       <div class="page-eyebrow">${buildBreadcrumb([{label:'Home', route:'home'}])}</div>
@@ -11573,21 +11640,7 @@ function renderModuliList() {
         <button class="btn primary" onclick="apriNuovoModuloDialog()" style="background:var(--ink);color:var(--bg-paper);border-color:var(--ink);">+ Nuovo modulo</button>
       </div>
     </div>
-    <div class="procedure-grid">
-      ${moduli.map(m => `
-        <div class="procedure-card" onclick="navigate('modulo', {slug:'${escapeHtml(m.slug)}'})">
-          <div class="procedure-card-title">${escapeHtml(m.titolo || m.slug)}
-            <span class="card-actions">${renderPinButton('modulo', m.slug)}<button class="btn-icon-mini edit-only" onclick="event.stopPropagation();editModuloMeta('${escapeJs(m.slug)}')" title="Modifica nome/slug">✎</button></span>
-          </div>
-          ${m.descrizione ? `<div class="procedure-card-desc" style="font-size:13px;color:var(--ink-muted);margin-top:6px;line-height:1.4;">${escapeHtml(m.descrizione)}</div>` : ''}
-          ${(m.tag && m.tag.length) ? `<div style="margin-top:8px;">${m.tag.slice(0,3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
-          <div class="procedure-card-meta" style="margin-top:8px;">
-            <span>${m.pagine || 1} ${(m.pagine || 1) === 1 ? 'pagina' : 'pagine'}</span>
-            ${m.autore ? `<span>· ${escapeHtml(m.autore)}</span>` : ''}
-          </div>
-        </div>
-      `).join('') || '<p style="color:var(--ink-muted);font-style:italic;">Nessun modulo presente. Premi "+ Nuovo modulo" per crearne uno.</p>'}
-    </div>`;
+    ${bodyHtml}`;
 }
 
 // Modifica i metadati di un modulo: titolo, descrizione e (opzionale) slug.
@@ -11610,12 +11663,27 @@ async function editModuloMeta(slug) {
         <input type="text" id="me-descrizione" class="mod-input" value="${escapeHtml(m.descrizione || '')}" placeholder="Breve descrizione">
       </div>
       <div class="field">
+        <label>Categoria <span style="font-weight:normal;color:var(--ink-muted);">(opzionale — es. Imaging, Biopsie, Cardiologici)</span></label>
+        <input type="text" id="me-categoria" class="mod-input" value="${escapeHtml(m.categoria || '')}" placeholder="es. Imaging" list="me-categoria-list" autocomplete="off">
+        <datalist id="me-categoria-list">${_collectModuliCategorie().map(c => `<option value="${escapeHtml(c)}"></option>`).join('')}</datalist>
+      </div>
+      <div class="field">
         <label>Tag <span style="font-weight:normal;color:var(--ink-muted);">(opzionale)</span></label>
         ${renderChipsField({
           id: 'me-tag-chips',
           values: m.tag || [],
           suggestions: collectAllTags(),
           placeholder: 'cerca o crea tag…',
+          allowNew: true
+        })}
+      </div>
+      <div class="field">
+        <label>Termini equivalenti <span style="font-weight:normal;color:var(--ink-muted);">(sinonimi/sigle per la ricerca — es. PL, puntura lombare)</span></label>
+        ${renderChipsField({
+          id: 'me-termini-chips',
+          values: m.termini_equivalenti || [],
+          suggestions: [],
+          placeholder: 'aggiungi sinonimo…',
           allowNew: true
         })}
       </div>
@@ -11638,7 +11706,9 @@ async function editModuloMeta(slug) {
       { label: 'Salva', onClick: async () => {
         const titolo = ($('me-titolo').value || '').trim();
         const descrizione = ($('me-descrizione').value || '').trim();
+        const categoria = ($('me-categoria') ? ($('me-categoria').value || '').trim() : '');
         const tag = typeof chipsGet === 'function' ? chipsGet('me-tag-chips') : [];
+        const terminiEq = typeof chipsGet === 'function' ? chipsGet('me-termini-chips') : [];
         const note = ($('me-note').value || '').trim();
         const newSlug = slugifyLocal(($('me-slug').value || '').trim());
         if (!titolo) return toast('Titolo obbligatorio', 'warning');
@@ -11682,7 +11752,9 @@ async function editModuloMeta(slug) {
           // 3. Aggiorno l'entry in index.yml
           entry.titolo = titolo;
           entry.descrizione = descrizione;
+          if (categoria) entry.categoria = categoria; else delete entry.categoria;
           if (tag.length) entry.tag = tag; else delete entry.tag;
+          if (terminiEq.length) entry.termini_equivalenti = terminiEq; else delete entry.termini_equivalenti;
           if (note) entry.note = note; else delete entry.note;
           if (slugChanged) entry.slug = newSlug;
           entry.aggiornato = new Date().toISOString();
@@ -11700,6 +11772,7 @@ async function editModuloMeta(slug) {
   });
   // Inizializzo i chip dei tag dopo che il modal è nel DOM.
   if (typeof chipsInit === 'function') chipsInit('me-tag-chips', collectAllTags());
+  if (typeof chipsInit === 'function') chipsInit('me-termini-chips', []);
 }
 
 async function renderModulo(slug) {
@@ -12106,6 +12179,14 @@ function _renderModuloEditorPanel(slug, det) {
     <div class="mod-form-head">
       <h3 style="margin:0 0 6px 0;font-family:var(--serif);font-size:18px;">Editor box</h3>
       <p style="margin:0;font-size:12px;color:var(--ink-muted);">Posiziona i box sul modulo. Le modifiche restano in questa sessione finché non vengono salvate sul repo (Tappa 5).</p>
+    </div>
+    <div class="mod-edit-section">
+      <div class="mod-edit-section-title">Gestione pagine</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn ghost" onclick="inserisciPaginaModulo('${escapeJs(slug)}')">+ Inserisci pagina</button>
+        <button class="btn ghost" style="color:#A32D2D;" onclick="rimuoviPaginaModulo('${escapeJs(slug)}', ${det.currentPage || 1})">− Rimuovi pagina ${det.currentPage || 1}</button>
+      </div>
+      <p style="margin:6px 0 0;font-size:11px;color:var(--ink-muted);font-style:italic;">Inserendo/rimuovendo pagine i box scorrono con le rispettive pagine; quelli della pagina rimossa vengono eliminati. Operazione salvata subito sul repo.</p>
     </div>
     <div class="mod-edit-section">
       <div class="mod-edit-section-title">Tutti i box (${boxes.length})</div>
@@ -13348,10 +13429,10 @@ async function _canvasesToPdfBlob(canvases) {
       finalH = 297;
       finalW = finalH / aspect;
     }
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92); // JPG per dimensioni file ragionevoli
+    const dataUrl = canvas.toDataURL('image/png'); // PNG lossless: testo nitido (JPEG sgranava le lettere)
     const offsetX = (pageW - finalW) / 2;
     const offsetY = (297 - finalH) / 2;
-    pdf.addImage(dataUrl, 'JPEG', offsetX, offsetY, finalW, finalH);
+    pdf.addImage(dataUrl, 'PNG', offsetX, offsetY, finalW, finalH);
   }
   return pdf.output('blob');
 }
@@ -13365,8 +13446,9 @@ async function stampaModuloCompilato(slug) {
   try {
     const canvases = await _renderModuloTutteLePagine(slug);
     if (!canvases.length) return toast('Nessuna pagina da stampare', 'error');
-    // Converto ogni canvas in dataURL JPEG (più leggero del PNG, qualità 0.92 sufficiente per stampa)
-    const pageDataUrls = canvases.map(c => c.toDataURL('image/jpeg', 0.92));
+    // PNG lossless: il JPEG (anche a qualità alta) introduce artefatti di compressione attorno
+    // al testo nero su sfondo bianco, rendendolo sgranato in stampa. Il PNG mantiene il testo nitido.
+    const pageDataUrls = canvases.map(c => c.toDataURL('image/png'));
     _stampaPagineA4(slug, pageDataUrls, 'compilato');
   } catch (e) {
     console.error(e);
@@ -13572,6 +13654,7 @@ function apriNuovoModuloDialog() {
   _nuovoModuloDraft = {
     titolo: '',
     descrizione: '',
+    categoria: '',
     autore: state.session.cognome && state.session.nome
       ? `${state.session.nome} ${state.session.cognome}`
       : (state.session.username || ''),
@@ -13610,6 +13693,13 @@ function _renderNuovoModuloDialog() {
           <label class="mod-field-label" for="nm-descr">Descrizione</label>
           <textarea id="nm-descr" class="mod-input" rows="2" placeholder="Breve descrizione (opzionale)"
                     oninput="_updateNuovoModuloField('descrizione', this.value)">${escapeHtml(draft.descrizione)}</textarea>
+        </div>
+        <div class="field">
+          <label class="mod-field-label" for="nm-categoria">Categoria <span style="font-weight:normal;color:var(--ink-muted);">(opzionale — es. Imaging, Biopsie)</span></label>
+          <input type="text" id="nm-categoria" class="mod-input" placeholder="es. Imaging" list="nm-categoria-list" autocomplete="off"
+                 value="${escapeHtml(draft.categoria || '')}"
+                 oninput="_updateNuovoModuloField('categoria', this.value)">
+          <datalist id="nm-categoria-list">${_collectModuliCategorie().map(c => `<option value="${escapeHtml(c)}"></option>`).join('')}</datalist>
         </div>
         <div class="field">
           <label class="mod-field-label" for="nm-autore">Autore</label>
@@ -13852,6 +13942,7 @@ async function _appendModuloIndex(slug, draft) {
     descrizione: draft.descrizione.trim() || undefined,
     pagine: draft.pages.length,
     autore: draft.autore.trim() || undefined,
+    categoria: (draft.categoria && draft.categoria.trim()) || undefined,
     aggiornato: today
   };
   // Rimuovi chiavi undefined (jsyaml le scriverebbe come null, sporcando il file)
@@ -17415,8 +17506,297 @@ async function renameModulo(slug) {
 }
 
 async function confirmDeleteModulo(slug) {
-  // Vedi renameModulo: stesso vincolo sulle cartelle multi-file.
-  return toast('Eliminazione moduli compilabili non ancora supportata. Modifica content/moduli/index.yml manualmente.', 'warning', 4000);
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  const titolo = m ? (m.titolo || slug) : slug;
+  showModal({
+    title: 'Eliminare il modulo?',
+    subtitle: `<strong>${escapeHtml(titolo)}</strong> verrà eliminato definitivamente (cartella e pagine). L'operazione non è reversibile.`,
+    body: '<p style="font-size:13px;color:var(--ink-muted);">A differenza di schede e procedure, i moduli non hanno cestino: verranno rimossi subito dal repository.</p>',
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Elimina definitivamente', variant: 'danger', onClick: () => { closeModal(); doDeleteModulo(slug); } }
+    ]
+  });
+}
+
+async function doDeleteModulo(slug) {
+  showBlockingOverlay('Eliminazione modulo…', 'Non chiudere o ricaricare la pagina.');
+  try {
+    // 1. Elimino PRIMA tutti i file della cartella content/moduli/<slug>/ (boxes.yml + PNG).
+    //    Se qualcosa fallisce, la voce in index.yml NON viene rimossa → il modulo resta
+    //    visibile e riprovabile, senza lasciare pagine orfane sul repo.
+    const dir = `content/moduli/${slug}`;
+    let items = [];
+    try { etagCache.delete('dir:' + dir); } catch (e) {}
+    try { items = await gh.listDir(dir); } catch (e) { items = []; }
+    const fileItems = items.filter(it => it.type === 'file');
+    const failed = [];
+    let _fi = 0;
+    for (const it of fileItems) {
+      _fi++;
+      updateBlockingOverlay('Eliminazione file…', `File ${_fi} di ${fileItems.length}`);
+      try {
+        await gh.deleteFile(`${dir}/${it.name}`, it.sha, `Elimina modulo ${slug}: ${it.name}`);
+      } catch (e) {
+        console.warn('delete file modulo fallita', it.name, e);
+        failed.push(it.name);
+      }
+    }
+    if (failed.length) {
+      throw new Error(`Impossibile eliminare ${failed.length} file (${failed.join(', ')}). Riprova.`);
+    }
+
+    // 2. Solo ora rimuovo la voce da content/moduli/index.yml
+    updateBlockingOverlay('Aggiornamento indice…', '');
+    const idxFile = await gh.getFile('content/moduli/index.yml');
+    if (!idxFile) throw new Error('index.yml dei moduli non trovato');
+    const idxData = jsyaml.load(idxFile.content) || {};
+    const moduliArr = idxData.moduli || [];
+    const before = moduliArr.length;
+    idxData.moduli = moduliArr.filter(x => x.slug !== slug);
+    if (idxData.moduli.length === before) {
+      // Le pagine sono già state eliminate; segnalo ma non blocco (il modulo è di fatto vuoto).
+      console.warn('Modulo non presente in index.yml, ma file cartella eliminati:', slug);
+    } else {
+      await gh.putFile('content/moduli/index.yml', jsyaml.dump(idxData), idxFile.sha, `Elimina modulo: ${slug} (by ${state.session.username})`);
+    }
+
+    // 3. Pulisco cache e ricostruisco indice/navigazione
+    if (state.moduliCache) delete state.moduliCache[slug];
+    hideBlockingOverlay();
+    toast('Modulo eliminato', 'success');
+    await buildIndex();
+    renderNavTree();
+    navigate('moduli');
+  } catch (e) {
+    hideBlockingOverlay();
+    toast('Errore eliminazione: ' + e.message, 'error', 6000);
+  }
+}
+
+/* ====================== MODULI — GESTIONE PAGINE (inserisci / rimuovi) ====================== */
+
+// Estrae le pagine da un file caricato (PDF multipagina o immagine singola) in un array
+// di { base64 } pronti per l'upload come page-N.png. Riusa la pipeline del wizard.
+async function _estraiPaginePerInserimento(file) {
+  const out = [];
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  if (isPdf) {
+    await _ensureLib('pdfjs');
+    const arrayBuf = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuf }).promise;
+    const SCALE = 2.0;
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: SCALE });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width; canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const dataUrl = canvas.toDataURL('image/png');
+      out.push({ base64: dataUrl.split(',')[1] });
+    }
+  } else {
+    // immagine: riconverto a PNG via canvas per uniformità (page-N.png)
+    const dataUrl = await new Promise((resolve, reject) => {
+      const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file);
+    });
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image(); im.onload = () => resolve(im); im.onerror = reject; im.src = dataUrl;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    out.push({ base64: canvas.toDataURL('image/png').split(',')[1] });
+  }
+  return out;
+}
+
+// Conta le pagine effettive del modulo (da index.yml, con fallback alla cache).
+function _moduloPageCount(slug) {
+  const m = (state.index.moduli || []).find(x => x.slug === slug);
+  if (m && m.pagine > 0) return m.pagine;
+  const c = state.moduliCache && state.moduliCache[slug];
+  if (c && c.pageUrls) return c.pageUrls.length;
+  return 1;
+}
+
+// Sposta page-from.png → page-to.png (copia base64 + elimina origine). Usato per rinumerare.
+async function _spostaPaginaFile(slug, from, to) {
+  const dir = `content/moduli/${slug}`;
+  const src = await gh.getFileBase64(`${dir}/page-${from}.png`);
+  if (!src) throw new Error(`page-${from}.png non trovata`);
+  await gh.putFile(`${dir}/page-${to}.png`, src.base64, null, `Sposta pagina ${from}→${to} (${slug})`, true);
+  await gh.deleteFile(`${dir}/page-${from}.png`, src.sha, `Rimuovi vecchia page-${from}.png (${slug})`);
+}
+
+// Aggiorna il conteggio pagine in content/moduli/index.yml.
+async function _aggiornaPagineIndex(slug, nuovoConteggio) {
+  const idxFile = await gh.getFile('content/moduli/index.yml');
+  if (!idxFile) throw new Error('index.yml non trovato');
+  const idxData = jsyaml.load(idxFile.content) || {};
+  const entry = (idxData.moduli || []).find(x => x.slug === slug);
+  if (!entry) throw new Error('Modulo non in index.yml');
+  entry.pagine = nuovoConteggio;
+  entry.aggiornato = new Date().toISOString();
+  await gh.putFile('content/moduli/index.yml', jsyaml.dump(idxData), idxFile.sha, `Aggiorna pagine modulo ${slug}: ${nuovoConteggio}`);
+}
+
+// Riscrive boxes.yml dopo aver rimappato i box (slittamento pagine).
+async function _salvaBoxesRimappati(slug, boxesData) {
+  const dir = `content/moduli/${slug}`;
+  const f = await gh.getFile(`${dir}/boxes.yml`);
+  const yamlStr = jsyaml.dump(boxesData, { lineWidth: 120, noRefs: true, sortKeys: false });
+  await gh.putFile(`${dir}/boxes.yml`, yamlStr, f ? f.sha : null, `Rimappa box dopo modifica pagine (${slug})`);
+}
+
+// INSERISCI una o più pagine alla posizione `pos` (1-based; pos = N+1 per aggiungere in fondo).
+async function inserisciPaginaModulo(slug) {
+  const total = _moduloPageCount(slug);
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/pdf,image/png,image/jpeg';
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    // Popup app per scegliere la posizione di inserimento
+    const opts = [];
+    for (let p = 1; p <= total; p++) opts.push(`<option value="${p}">Prima della pagina ${p}</option>`);
+    opts.push(`<option value="${total + 1}" selected>In fondo (dopo la pagina ${total})</option>`);
+    showModal({
+      title: 'Inserisci pagina',
+      subtitle: `File: <strong>${escapeHtml(file.name)}</strong>`,
+      body: `<div class="mod-field-group">
+        <label class="mod-field-label">Posizione</label>
+        <select id="mod-insert-pos" class="mod-input">${opts.join('')}</select>
+      </div>`,
+      actions: [
+        { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+        { label: 'Inserisci', onClick: () => {
+            const sel = document.getElementById('mod-insert-pos');
+            const pos = sel ? parseInt(sel.value, 10) : (total + 1);
+            closeModal();
+            if (isNaN(pos) || pos < 1 || pos > total + 1) return toast('Posizione non valida', 'error');
+            _doInserisciPagina(slug, file, pos, total);
+          } }
+      ]
+    });
+  };
+  input.click();
+}
+
+async function _doInserisciPagina(slug, file, pos, total) {
+  showBlockingOverlay('Estrazione pagine…', 'Non chiudere o ricaricare la pagina.');
+  try {
+    const nuove = await _estraiPaginePerInserimento(file);
+    const k = nuove.length;
+    if (!k) { hideBlockingOverlay(); return toast('Nessuna pagina estratta', 'error'); }
+    const dir = `content/moduli/${slug}`;
+    try { etagCache.delete('dir:' + dir); } catch (e) {}
+    let step = 0;
+    const totSteps = (total - pos + 1) + k + 2; // spostamenti + scritture + boxes + index
+    const tick = (label) => { step++; updateBlockingOverlay(label, `Passo ${step} di ${totSteps}`); };
+    // 1. Sposto in avanti le pagine esistenti >= pos, dall'ultima alla pos (per non sovrascrivere)
+    for (let p = total; p >= pos; p--) {
+      tick('Riordino pagine…');
+      await _spostaPaginaFile(slug, p, p + k);
+    }
+    // 2. Scrivo le nuove pagine in pos..pos+k-1
+    for (let i = 0; i < k; i++) {
+      tick(`Caricamento nuova pagina ${i + 1} di ${k}…`);
+      await gh.putFile(`${dir}/page-${pos + i}.png`, nuove[i].base64, null, `Inserisci pagina ${pos + i} (${slug})`, true);
+    }
+    // 3. Rimappo i box: quelli con pagina >= pos slittano di +k
+    tick('Aggiornamento box…');
+    const c = state.moduliCache && state.moduliCache[slug];
+    if (c && c.boxesData && Array.isArray(c.boxesData.box)) {
+      c.boxesData.box.forEach(b => { if ((b.pagina || 1) >= pos) b.pagina = (b.pagina || 1) + k; });
+      await _salvaBoxesRimappati(slug, c.boxesData);
+    } else {
+      const f = await gh.getFile(`${dir}/boxes.yml`);
+      if (f) {
+        const bd = jsyaml.load(f.content) || { box: [] };
+        (bd.box || []).forEach(b => { if ((b.pagina || 1) >= pos) b.pagina = (b.pagina || 1) + k; });
+        await _salvaBoxesRimappati(slug, bd);
+      }
+    }
+    // 4. Aggiorno conteggio e ricostruisco
+    tick('Finalizzazione…');
+    await _aggiornaPagineIndex(slug, total + k);
+    if (state.moduliCache) delete state.moduliCache[slug];
+    hideBlockingOverlay();
+    toast(`${k} pagina/e inserita/e`, 'success');
+    await buildIndex();
+    navigate('modulo', { slug });
+  } catch (e) {
+    hideBlockingOverlay();
+    toast('Errore inserimento pagina: ' + e.message, 'error', 6000);
+  }
+}
+
+// RIMUOVI la pagina `pageNum`.
+function rimuoviPaginaModulo(slug, pageNum) {
+  const total = _moduloPageCount(slug);
+  if (total <= 1) return toast('Un modulo deve avere almeno una pagina', 'warning');
+  showModal({
+    title: `Rimuovere la pagina ${pageNum}?`,
+    subtitle: `La pagina ${pageNum} e i box su di essa verranno eliminati. Le pagine successive verranno rinumerate.`,
+    body: '<p style="font-size:13px;color:var(--ink-muted);">Operazione non reversibile.</p>',
+    actions: [
+      { label: 'Annulla', variant: 'ghost', onClick: closeModal },
+      { label: 'Rimuovi pagina', variant: 'danger', onClick: () => { closeModal(); _doRimuoviPaginaModulo(slug, pageNum, total); } }
+    ]
+  });
+}
+
+async function _doRimuoviPaginaModulo(slug, pageNum, total) {
+  showBlockingOverlay('Rimozione pagina…', 'Non chiudere o ricaricare la pagina.');
+  try {
+    const dir = `content/moduli/${slug}`;
+    try { etagCache.delete('dir:' + dir); } catch (e) {}
+    let step = 0;
+    const totSteps = 1 + (total - pageNum) + 2;
+    const tick = (label) => { step++; updateBlockingOverlay(label, `Passo ${step} di ${totSteps}`); };
+    // 1. Elimino il file della pagina
+    tick('Eliminazione pagina…');
+    const target = await gh.getFileBase64(`${dir}/page-${pageNum}.png`);
+    if (target) await gh.deleteFile(`${dir}/page-${pageNum}.png`, target.sha, `Rimuovi pagina ${pageNum} (${slug})`);
+    // 2. Sposto indietro di 1 le pagine successive (pageNum+1 → pageNum, ecc.)
+    for (let p = pageNum + 1; p <= total; p++) {
+      tick('Riordino pagine…');
+      await _spostaPaginaFile(slug, p, p - 1);
+    }
+    // 3. Rimappo i box: elimino quelli di pageNum, decremento quelli > pageNum
+    tick('Aggiornamento box…');
+    const applyBoxRemap = (bd) => {
+      bd.box = (bd.box || [])
+        .filter(b => (b.pagina || 1) !== pageNum)
+        .map(b => { if ((b.pagina || 1) > pageNum) b.pagina = (b.pagina || 1) - 1; return b; });
+      return bd;
+    };
+    const c = state.moduliCache && state.moduliCache[slug];
+    if (c && c.boxesData && Array.isArray(c.boxesData.box)) {
+      applyBoxRemap(c.boxesData);
+      await _salvaBoxesRimappati(slug, c.boxesData);
+    } else {
+      const f = await gh.getFile(`${dir}/boxes.yml`);
+      if (f) { const bd = applyBoxRemap(jsyaml.load(f.content) || { box: [] }); await _salvaBoxesRimappati(slug, bd); }
+    }
+    // 4. Aggiorno conteggio e ricostruisco
+    tick('Finalizzazione…');
+    await _aggiornaPagineIndex(slug, total - 1);
+    if (state.moduliCache) delete state.moduliCache[slug];
+    hideBlockingOverlay();
+    toast('Pagina rimossa', 'success');
+    await buildIndex();
+    navigate('modulo', { slug });
+  } catch (e) {
+    hideBlockingOverlay();
+    toast('Errore rimozione pagina: ' + e.message, 'error', 6000);
+  }
 }
 
 // Helper: find which source file (aopd/osa/iov) contains a contact or group
@@ -19177,6 +19557,42 @@ function showModal({ title, subtitle, body, actions }) {
 
 function closeModal() {
   $('modal-container').innerHTML = '';
+}
+
+// Overlay bloccante per operazioni multi-step (gestione pagine, eliminazione moduli).
+// Mostra spinner + messaggio principale e un sottotitolo opzionale (es. progresso "2/5").
+// Blocca click e navigazione finché non viene chiuso con hideBlockingOverlay().
+let _blockingActive = false;
+window.addEventListener('beforeunload', (e) => {
+  if (_blockingActive) { e.preventDefault(); e.returnValue = ''; return ''; }
+});
+function showBlockingOverlay(msg, sub) {
+  const el = document.getElementById('blocking-overlay');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="blocking-card" role="status" aria-live="polite">
+      <div class="blocking-spinner"></div>
+      <div class="blocking-msg" id="blocking-msg">${escapeHtml(msg || 'Operazione in corso…')}</div>
+      <div class="blocking-sub" id="blocking-sub">${escapeHtml(sub || 'Non chiudere o ricaricare la pagina.')}</div>
+    </div>`;
+  el.classList.add('show');
+  el.setAttribute('aria-hidden', 'false');
+  _blockingActive = true;
+}
+function updateBlockingOverlay(msg, sub) {
+  if (!_blockingActive) return;
+  const m = document.getElementById('blocking-msg');
+  const s = document.getElementById('blocking-sub');
+  if (m && msg != null) m.textContent = msg;
+  if (s && sub != null) s.textContent = sub;
+}
+function hideBlockingOverlay() {
+  const el = document.getElementById('blocking-overlay');
+  if (!el) return;
+  el.classList.remove('show');
+  el.innerHTML = '';
+  el.setAttribute('aria-hidden', 'true');
+  _blockingActive = false;
 }
 
 // Esegue un'azione asincrona (salvataggio/modifica) mostrando uno spinner nel pulsante e
