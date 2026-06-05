@@ -2055,22 +2055,22 @@ function loadNameDictionaryLocal(){
 // Rimuove il blocco "Rete sociale" del frontespizio infermieristico (nomi e telefoni
 // dei parenti, dati di terzi). Va eseguito PRIMA dell'anonimizzazione, così i nomi dei
 // parenti vengono eliminati interamente invece di diventare [OPERATORE] sparsi.
-// Confine: da "Rete sociale" fino (escluso) alla riga "Stampato il..." / "Pagina X/Y".
-// Gestisce due layout: blocco su righe separate e blocco collassato su una sola riga.
+// Inizio: "Rete sociale". Fine (esclusa): "Regione del Veneto" (intestazione che apre
+// la sezione successiva). Gestisce sia il blocco collassato su una sola riga sia quello
+// su righe separate.
 function stripReteSociale(text) {
   const stripped = [];
-  // Marcatore di FINE: "Stampato il ..." o "Pagina N / M" (footer del frontespizio).
-  const endLineRe = /^(?:Stampato\s+il\b|Pagina\s+\d+\s*\/\s*\d+)/i;
-  const endInlineRe = /Stampato\s+il\b|Pagina\s+\d+\s*\/\s*\d+/i;
+  const startRe = /Rete\s+sociale\b/i;
+  const endRe   = /Regione\s+del\s+Veneto\b/i;
 
-  // Caso A — blocco collassato su UNA riga: "...Rete sociale ... Stampato il ..."
-  // Taglio dal "Rete sociale" fino al marcatore di fine, lasciando il resto della riga.
+  // Caso A — blocco collassato su UNA riga: "...Rete sociale ... Regione del Veneto ...".
   const lines = text.split('\n').map(line => {
-    const m = line.match(/Rete\s+sociale\b/i);
-    if (m && endInlineRe.test(line.slice(m.index))) {
-      const before = line.slice(0, m.index);
-      const rest = line.slice(m.index);
-      const em = rest.match(endInlineRe);
+    const sm = line.match(startRe);
+    if (!sm) return line;
+    const rest = line.slice(sm.index);
+    const em = rest.match(endRe);
+    if (em) {
+      const before = line.slice(0, sm.index);
       const removed = rest.slice(0, em.index).trim();
       if (removed.length > 2) stripped.push({ text: removed.slice(0, 120), tag: 'Rete sociale' });
       return (before + ' ' + rest.slice(em.index)).replace(/\s{2,}/g, ' ').trim();
@@ -2079,22 +2079,21 @@ function stripReteSociale(text) {
   });
 
   // Caso B — blocco su righe separate: dalla riga "Rete sociale" fino (esclusa) alla
-  // riga "Stampato il..."/"Pagina X/Y". Se il footer non compare, mi fermo a una riga vuota.
+  // riga "Regione del Veneto".
   const out = [];
   let inBlock = false;
   for (let i = 0; i < lines.length; i++) {
     const t = lines[i].trim();
-    if (!inBlock && /^Rete\s+sociale\s*$/i.test(t)) {
+    if (!inBlock && startRe.test(t)) {
       inBlock = true;
-      stripped.push({ text: t, tag: 'Rete sociale' });
+      stripped.push({ text: t.slice(0, 120), tag: 'Rete sociale' });
       continue;
     }
     if (inBlock) {
-      if (endLineRe.test(t)) { inBlock = false; out.push(lines[i]); continue; }
-      if (t === '') { inBlock = false; continue; } // blocco terminato senza footer
+      if (endRe.test(t)) { inBlock = false; out.push(lines[i]); continue; }
       if (t.length > 2 && !stripped.find(b => b.text === t.slice(0, 120)))
         stripped.push({ text: t.slice(0, 120), tag: 'Rete sociale' });
-      continue; // riga del blocco rete sociale → rimossa
+      continue; // riga del blocco → rimossa
     }
     out.push(lines[i]);
   }
